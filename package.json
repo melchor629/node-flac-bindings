@@ -1,0 +1,23 @@
+{
+  "name": "flac-bindings",
+  "version": "0.0.1",
+  "description": "libflac bindings to node.js with easy to use API",
+  "repository": "https://github.com/melchor629/node-flac-bindings/",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "flac",
+    "encoder",
+    "decoder",
+    "binding"
+  ],
+  "author": "melchor9000",
+  "license": "ISC",
+  "dependencies": {
+    "bindings": "^1.2.1",
+    "nan": "^2.4.0"
+  },
+  "gypfile": true
+}
