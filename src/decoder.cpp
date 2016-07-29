@@ -30,17 +30,6 @@ typedef int(*FLAC__StreamDecoderWriteCallback)(const FLAC__StreamDecoder*, const
 typedef void(*FLAC__StreamDecoderMetadataCallback)(const FLAC__StreamDecoder*, const FLAC__StreamMetadata*, void*);
 typedef void(*FLAC__StreamDecoderErrorCallback)(const FLAC__StreamDecoder*, int, void*);
 
-static void terminate_async(uv_work_t*);
-static void flush_async(uv_work_t*);
-static void reset_async(uv_work_t*);
-static void process_single_async(uv_work_t*);
-static void process_metadata_async(uv_work_t*);
-static void process_eof_async(uv_work_t*);
-static void skip_async(uv_work_t*);
-static void seek_async(uv_work_t*);
-
-static void decode_after(uv_work_t*, int);
-
 static int read_callback(const FLAC__StreamDecoder*, FLAC__byte [], size_t*, void*);
 static int seek_callback(const FLAC__StreamDecoder*, uint64_t, void*);
 static int tell_callback(const FLAC__StreamDecoder*, uint64_t*, void*);
@@ -253,107 +242,51 @@ namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__stream_decoder_finish) {
         UNWRAP_FLAC
-
-        flac_decoding_request* req = new flac_decoding_request;
-        req->dec = dec;
-        req->work.data = req;
-        req->cbk.Reset(info[1].As<Function>());
-
-        //uv_queue_work(uv_default_loop(), &req->work, terminate_async, decode_after);
-        terminate_async(&req->work);
-        decode_after(&req->work, 0);
+        bool returnValue = FLAC__stream_decoder_finish(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_flush) {
         UNWRAP_FLAC
-
-        flac_decoding_request* req = new flac_decoding_request;
-        req->dec = dec;
-        req->work.data = req;
-        req->cbk.Reset(info[1].As<Function>());
-
-        //uv_queue_work(uv_default_loop(), &req->work, flush_async, decode_after);
-        flush_async(&req->work);
-        decode_after(&req->work, 0);
+        bool returnValue = FLAC__stream_decoder_flush(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_reset) {
         UNWRAP_FLAC
-
-        flac_decoding_request* req = new flac_decoding_request;
-        req->dec = dec;
-        req->work.data = req;
-        req->cbk.Reset(info[1].As<Function>());
-
-        //uv_queue_work(uv_default_loop(), &req->work, reset_async, decode_after);
-        reset_async(&req->work);
-        decode_after(&req->work, 0);
+        bool returnValue = FLAC__stream_decoder_reset(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_process_single) {
         UNWRAP_FLAC
-
-        flac_decoding_request* req = new flac_decoding_request;
-        req->dec = dec;
-        req->work.data = req;
-        req->cbk.Reset(info[1].As<Function>());
-
-        //uv_queue_work(uv_default_loop(), &req->work, process_single_async, decode_after);
-        process_single_async(&req->work);
-        decode_after(&req->work, 0);
+        bool returnValue = FLAC__stream_decoder_process_single(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_process_until_end_of_metadata) {
         UNWRAP_FLAC
-
-        flac_decoding_request* req = new flac_decoding_request;
-        req->dec = dec;
-        req->work.data = req;
-        req->cbk.Reset(info[1].As<Function>());
-
-        //uv_queue_work(uv_default_loop(), &req->work, process_metadata_async, decode_after);
-        process_metadata_async(&req->work);
-        decode_after(&req->work, 0);
+        bool returnValue = FLAC__stream_decoder_process_until_end_of_metadata(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_process_until_end_of_stream) {
         UNWRAP_FLAC
-
-        flac_decoding_request* req = new flac_decoding_request;
-        req->dec = dec;
-        req->work.data = req;
-        req->cbk.Reset(info[1].As<Function>());
-
-        //uv_queue_work(uv_default_loop(), &req->work, process_eof_async, decode_after);
-        process_eof_async(&req->work);
-        decode_after(&req->work, 0);
+        bool returnValue = FLAC__stream_decoder_process_until_end_of_stream(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_skip_single_frame) {
         UNWRAP_FLAC
-
-        flac_decoding_request* req = new flac_decoding_request;
-        req->dec = dec;
-        req->work.data = req;
-        req->cbk.Reset(info[1].As<Function>());
-
-        //uv_queue_work(uv_default_loop(), &req->work, skip_async, decode_after);
-        skip_async(&req->work);
-        decode_after(&req->work, 0);
+        bool returnValue = FLAC__stream_decoder_skip_single_frame(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_seek_absolute) {
         UNWRAP_FLAC
-
-        flac_decoding_request* req = new flac_decoding_request;
-        req->dec = dec;
-        req->sample = Nan::To<uint32_t>(info[1]).FromJust();
-        req->work.data = req;
-        req->cbk.Reset(info[2].As<Function>());
-
-        //uv_queue_work(uv_default_loop(), &req->work, seek_async, decode_after);
-        seek_async(&req->work);
-        decode_after(&req->work, 0);
+        Local<Number> number = info[1].As<Number>();
+        bool returnValue = FLAC__stream_decoder_seek_absolute(dec, Nan::To<uint32_t>(number).FromJust());
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_set_metadata_respond_application) {
@@ -682,76 +615,14 @@ namespace flac_bindings {
 
 static void no_free(char* data, void* hint) { }
 
-static void terminate_async(uv_work_t* work) {
-    flac_decoding_request* req = (flac_decoding_request*) work->data;
-    req->returnValue = FLAC__stream_decoder_finish(req->dec);
-}
-
-static void flush_async(uv_work_t* work) {
-    flac_decoding_request* req = (flac_decoding_request*) work->data;
-    req->returnValue = FLAC__stream_decoder_flush(req->dec);
-}
-
-static void reset_async(uv_work_t* work) {
-    flac_decoding_request* req = (flac_decoding_request*) work->data;
-    req->returnValue = FLAC__stream_decoder_reset(req->dec);
-}
-
-static void process_single_async(uv_work_t* work) {
-    flac_decoding_request* req = (flac_decoding_request*) work->data;
-    req->returnValue = FLAC__stream_decoder_process_single(req->dec);
-}
-
-static void process_metadata_async(uv_work_t* work) {
-    flac_decoding_request* req = (flac_decoding_request*) work->data;
-    req->returnValue = FLAC__stream_decoder_process_until_end_of_metadata(req->dec);
-}
-
-static void process_eof_async(uv_work_t* work) {
-    flac_decoding_request* req = (flac_decoding_request*) work->data;
-    req->returnValue = FLAC__stream_decoder_process_until_end_of_stream(req->dec);
-}
-
-static void skip_async(uv_work_t* work) {
-    flac_decoding_request* req = (flac_decoding_request*) work->data;
-    req->returnValue = FLAC__stream_decoder_skip_single_frame(req->dec);
-}
-
-static void seek_async(uv_work_t* work) {
-    flac_decoding_request* req = (flac_decoding_request*) work->data;
-    req->returnValue = FLAC__stream_decoder_seek_absolute(req->dec, req->sample);
-}
-
-static void decode_after(uv_work_t* work, int a) {
-    Nan::HandleScope scope;
-    Handle<Value> argv[1];
-    Nan::TryCatch tryCatch;
-    flac_decoding_request* req = (flac_decoding_request*) work->data;
-
-    argv[0] = Nan::New<Boolean>(req->returnValue);
-    if(!req->cbk.IsEmpty()) {
-        Local<Function> f = Nan::New(req->cbk);
-        if(f->IsFunction())
-            f->Call(Nan::GetCurrentContext()->Global(), 1, argv);
-    }
-
-    req->cbk.Reset();
-    delete req;
-
-    if(tryCatch.HasCaught()) {
-        Nan::FatalException(tryCatch);
-    }
-}
-
 static int read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], size_t* bytes, void* data) {
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
     Handle<Value> args[] {
-        WrapPointer((void*) dec).ToLocalChecked(),
         Nan::NewBuffer((char*) buffer, *bytes, no_free, nullptr).ToLocalChecked()
     };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
+    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
     if(!ret.IsEmpty()) {
         Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> bytes2 = Nan::Get(retJust, Nan::New("bytes").ToLocalChecked()).ToLocalChecked();
@@ -768,11 +639,10 @@ static int seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void* 
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
     Handle<Value> args[] {
-        WrapPointer((void*) dec).ToLocalChecked(),
         Nan::New<Number>(offset)
     };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
+    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
     if(ret.IsEmpty()) {
         return 0;
     } else {
@@ -784,11 +654,9 @@ static int seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void* 
 static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void* data) {
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
-    Handle<Value> args[] {
-        WrapPointer((void*) dec).ToLocalChecked()
-    };
+    Handle<Value> args[] { };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
+    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 0, args);
     if(!ret.IsEmpty()) {
         Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> offset2 = Nan::Get(retJust, Nan::New("offset").ToLocalChecked()).ToLocalChecked();
@@ -805,11 +673,9 @@ static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void*
 static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, void* data) {
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
-    Handle<Value> args[] {
-        WrapPointer((void*) dec).ToLocalChecked()
-    };
+    Handle<Value> args[] { };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
+    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 0, args);
     if(!ret.IsEmpty()) {
         Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> length2 = Nan::Get(retJust, Nan::New("length").ToLocalChecked()).ToLocalChecked();
@@ -826,11 +692,9 @@ static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, voi
 static FLAC__bool eof_callback(const FLAC__StreamDecoder* dec, void* data) {
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
-    Handle<Value> args[] {
-        WrapPointer((void*) dec).ToLocalChecked()
-    };
+    Handle<Value> args[] { };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
+    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 0, args);
     if(ret.IsEmpty()) {
         return false;
     } else {
@@ -845,15 +709,14 @@ static int write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* fra
     Local<Array> buffers = Nan::New<Array>();
     unsigned channels = FLAC__stream_decoder_get_channels(dec);
     for(uint32_t i = 0; i < channels; i++)
-        Nan::Set(buffers, i, Nan::NewBuffer((char*) buffer[i], frame->header.blocksize * sizeof(int32_t), no_free, nullptr).ToLocalChecked());
+        Nan::Set(buffers, i, Nan::NewBuffer((char*) buffer[i], frame->header.blocksize * sizeof(int32_t), no_free, NULL).ToLocalChecked());
 
     Handle<Value> args[] {
-        WrapPointer((void*) dec).ToLocalChecked(),
         flac_bindings::structToJs(frame),
         buffers
     };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 3, args);
+    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
     if(ret.IsEmpty()) {
         return 0;
     } else {
@@ -866,20 +729,18 @@ static void metadata_callback(const FLAC__StreamDecoder* dec, const FLAC__Stream
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
     Handle<Value> args[] = {
-        WrapPointer((void*) dec).ToLocalChecked(),
         flac_bindings::structToJs(metadata)
     };
 
-    Nan::New(cbks->metadataCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
+    Nan::New(cbks->metadataCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
 }
 
 static void error_callback(const FLAC__StreamDecoder* dec, int error, void* data) {
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
     Handle<Value> args[] = {
-        WrapPointer((void*) dec).ToLocalChecked(),
         Nan::New(error)
     };
 
-    Nan::New(cbks->errorCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
+    Nan::New(cbks->errorCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
 }

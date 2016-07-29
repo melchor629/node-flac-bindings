@@ -20,20 +20,6 @@ struct flac_encoding_callbacks {
     Nan::Persistent<Function> readCbk, writeCbk, seekCbk, tellCbk, metadataCbk;
 };
 
-struct flac_encoding_request {
-    const int32_t* const* buffer;
-    unsigned samples;
-    FLAC__StreamEncoder* enc;
-    uv_work_t work;
-    FLAC__bool returnValue;
-    Nan::Persistent<Function> cbk;
-};
-
-static void encode_async(uv_work_t*);
-static void encode_interleaved_async(uv_work_t*);
-static void encode_after(uv_work_t*, int);
-static void terminate_async(uv_work_t*);
-
 static int read_callback(const FLAC__StreamEncoder*, char[], size_t*, void*);
 static int write_callback(const FLAC__StreamEncoder*, const char[], size_t, unsigned, unsigned, void*);
 static int seek_callback(const FLAC__StreamEncoder*, uint64_t, void*);
@@ -210,39 +196,24 @@ namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__stream_encoder_finish) {
         UNWRAP_FLAC
-
-        flac_encoding_request* req = new flac_encoding_request;
-        req->enc = enc;
-        req->cbk.Reset(info[1].As<Function>());
-        req->work.data = req;
-
-        uv_queue_work(uv_default_loop(), &req->work, terminate_async, encode_after);
+        FLAC__bool ret = FLAC__stream_encoder_finish(enc);
+        info.GetReturnValue().Set(Nan::New<Boolean>(ret));
     }
 
     NAN_METHOD(node_FLAC__stream_encoder_process) {
         UNWRAP_FLAC
-
-        flac_encoding_request* req = new flac_encoding_request;
-        req->buffer = UnwrapPointer<const int32_t*>(info[1]->ToObject());
-        req->samples = Nan::To<unsigned>(info[2]).FromMaybe(0);
-        req->enc = enc;
-        req->cbk.Reset(info[3].As<Function>());
-        req->work.data = req;
-
-        uv_queue_work(uv_default_loop(), &req->work, encode_async, encode_after);
+        const int32_t* const* buffer = UnwrapPointer<const int32_t* const>(info[1]->ToObject());
+        uint32_t samples = Nan::To<uint32_t>(info[2].As<Number>()).FromJust();
+        FLAC__bool ret = FLAC__stream_encoder_process(enc, buffer, samples);
+        info.GetReturnValue().Set(Nan::New<Boolean>(ret));
     }
 
     NAN_METHOD(node_FLAC__stream_encoder_process_interleaved) {
         UNWRAP_FLAC
-
-        flac_encoding_request* req = new flac_encoding_request;
-        req->buffer = UnwrapPointer<const int32_t*>(info[1]->ToObject());
-        req->samples = Nan::To<unsigned>(info[2]).FromMaybe(0);
-        req->enc = enc;
-        req->cbk.Reset(info[3].As<Function>());
-        req->work.data = req;
-
-        uv_queue_work(uv_default_loop(), &req->work, encode_interleaved_async, encode_after);
+        const int32_t* const* buffer = UnwrapPointer<const int32_t* const>(info[1]->ToObject());
+        uint32_t samples = Nan::To<uint32_t>(info[2].As<Number>()).FromJust();
+        FLAC__bool ret = FLAC__stream_encoder_process(enc, buffer, samples);
+        info.GetReturnValue().Set(Nan::New<Boolean>(ret));
     }
 
     NAN_INDEX_GETTER(node_FLAC__StreamEncoderStateString) {
@@ -526,51 +497,16 @@ namespace flac_bindings {
     }
 };
 
-static void encode_async(uv_work_t* work) {
-    flac_encoding_request* req = (flac_encoding_request*) work->data;
-    req->returnValue = FLAC__stream_encoder_process(req->enc, req->buffer, req->samples);
-}
-
-static void encode_interleaved_async(uv_work_t* work) {
-    flac_encoding_request* req = (flac_encoding_request*) work->data;
-    req->returnValue = FLAC__stream_encoder_process(req->enc, req->buffer, req->samples);
-}
-
-static void encode_after(uv_work_t* work, int status) {
-    Nan::HandleScope scope;
-    flac_encoding_request* req = (flac_encoding_request*) work->data;
-    Handle<Value> argv[1];
-    Nan::TryCatch tryCatch;
-
-    argv[0] = Nan::New<Boolean>(req->returnValue);
-    if(!req->cbk.IsEmpty()) {
-        Nan::New(req->cbk)->Call(Nan::GetCurrentContext()->Global(), 1, argv);
-    }
-
-    req->cbk.Reset();
-    delete req;
-
-    if(tryCatch.HasCaught()) {
-        Nan::FatalException(tryCatch);
-    }
-}
-
-static void terminate_async(uv_work_t* work) {
-    flac_encoding_request* req = (flac_encoding_request*) work->data;
-    req->returnValue = FLAC__stream_encoder_finish(req->enc);
-}
-
 static void no_free(char* data, void* hint) { }
-
 static int read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t* bytes, void* data) {
     Nan::HandleScope scope;
     flac_encoding_callbacks* cbks = (flac_encoding_callbacks*) data;
-    Handle<Value> args[3];
-    args[0] = WrapPointer((void*) enc).ToLocalChecked();
-    args[1] = Nan::NewBuffer(buffer, *bytes, no_free, nullptr).ToLocalChecked();
-    args[2] = Nan::New<Number>(*bytes);
+    Handle<Value> args[] = {
+        Nan::NewBuffer(buffer, *bytes, no_free, nullptr).ToLocalChecked(),
+        Nan::New<Number>(*bytes)
+    };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->readCbk)->Call(Nan::GetCurrentContext()->Global(), 3, args);
+    MaybeLocal<Value> ret = Nan::New(cbks->readCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
     int32_t _b = Nan::To<int32_t>(ret.ToLocalChecked()).FromJust();
     if(_b < 0) {
         *bytes = 0;
@@ -584,14 +520,14 @@ static int read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t* 
 static int write_callback(const FLAC__StreamEncoder* enc, const char buffer[], size_t bytes, unsigned samples, unsigned frame, void* data) {
     Nan::HandleScope scope;
     flac_encoding_callbacks* cbks = (flac_encoding_callbacks*) data;
-    Handle<Value> args[5];
-    args[0] = WrapPointer((void*) enc).ToLocalChecked();
-    args[1] = Nan::NewBuffer((char*) buffer, bytes, no_free, nullptr).ToLocalChecked();
-    args[2] = Nan::New<Number>(bytes);
-    args[3] = Nan::New<Number>(samples);
-    args[4] = Nan::New<Number>(frame);
+    Handle<Value> args[] = {
+        Nan::NewBuffer((char*) buffer, bytes, no_free, nullptr).ToLocalChecked(),
+        Nan::New<Number>(bytes),
+        Nan::New<Number>(samples),
+        Nan::New<Number>(frame)
+    };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 5, args);
+    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 4, args);
     int32_t _b = Nan::To<int32_t>(ret.ToLocalChecked()).FromJust();
     return _b;
 }
@@ -599,22 +535,22 @@ static int write_callback(const FLAC__StreamEncoder* enc, const char buffer[], s
 static int seek_callback(const FLAC__StreamEncoder* enc, uint64_t offset, void* data) {
     Nan::HandleScope scope;
     flac_encoding_callbacks* cbks = (flac_encoding_callbacks*) data;
-    Handle<Value> args[2];
-    args[0] = WrapPointer((void*) enc).ToLocalChecked();
-    args[1] = Nan::New<Number>(offset);
+    Handle<Value> args[] = {
+        Nan::New<Number>(offset)
+    };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->seekCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
+    MaybeLocal<Value> ret = Nan::New(cbks->seekCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
     return Nan::To<int>(ret.ToLocalChecked()).FromJust();
 }
 
 static int tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void* data) {
     Nan::HandleScope scope;
     flac_encoding_callbacks* cbks = (flac_encoding_callbacks*) data;
-    Handle<Value> args[2];
-    args[0] = WrapPointer((void*) enc).ToLocalChecked();
-    args[1] = Nan::New<Number>(*offset);
+    Handle<Value> args[1] = {
+        Nan::New<Number>(*offset)
+    };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->tellCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
+    MaybeLocal<Value> ret = Nan::New(cbks->tellCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
     int32_t _b = Nan::To<int32_t>(ret.ToLocalChecked()).FromJust();
     if(_b < 0) {
         *offset = -1;
@@ -632,12 +568,12 @@ static void metadata_callback(const FLAC__StreamEncoder* enc, const FLAC__Stream
 static void progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_written, uint64_t samples_written, unsigned frames_written, unsigned total_frames_estimate, void* data) {
     Nan::HandleScope scope;
     flac_encoding_callbacks* cbks = (flac_encoding_callbacks*) data;
-    Handle<Value> args[5];
-    args[0] = WrapPointer((void*) enc).ToLocalChecked();
-    args[1] = Nan::New<Number>(bytes_written);
-    args[2] = Nan::New<Number>(samples_written);
-    args[3] = Nan::New<Number>(frames_written);
-    args[4] = Nan::New<Number>(total_frames_estimate);
+    Handle<Value> args[] = {
+        Nan::New<Number>(bytes_written),
+        Nan::New<Number>(samples_written),
+        Nan::New<Number>(frames_written),
+        Nan::New<Number>(total_frames_estimate)
+    };
 
-    Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 5, args);
+    Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 4, args);
 }
