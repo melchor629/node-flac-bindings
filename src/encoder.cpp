@@ -92,7 +92,7 @@ extern "C" {
     FLAC_FUNC(int, init_ogg_file, FLAC__StreamEncoder*, const char*, FLAC__StreamEncoderProgressCallback, void*);
     FLAC_FUNC(FLAC__bool, finish, FLAC__StreamEncoder*);
     FLAC_FUNC(FLAC__bool, process, FLAC__StreamEncoder*, const int32_t* const [], unsigned);
-    FLAC_FUNC(FLAC__bool, process_interleaved, FLAC__StreamEncoder*, const int32_t* const [], unsigned);
+    FLAC_FUNC(FLAC__bool, process_interleaved, FLAC__StreamEncoder*, const int32_t [], unsigned);
     FLAC_FUNC(FLAC__bool, set_apodization, FLAC__StreamEncoder*, const char*);
     FLAC_FUNC(const char*, get_resolved_state_string, const FLAC__StreamEncoder*);
     FLAC_FUNC(void, get_verify_decoder_error_stats, const FLAC__StreamEncoder*, uint64_t*, unsigned*, unsigned*, unsigned*, int32_t*, int32_t*);
@@ -210,9 +210,9 @@ namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__stream_encoder_process_interleaved) {
         UNWRAP_FLAC
-        const int32_t* const* buffer = UnwrapPointer<const int32_t* const>(info[1]->ToObject());
+        const int32_t* buffer = UnwrapPointer<const int32_t>(info[1]->ToObject());
         uint32_t samples = Nan::To<uint32_t>(info[2].As<Number>()).FromJust();
-        FLAC__bool ret = FLAC__stream_encoder_process(enc, buffer, samples);
+        FLAC__bool ret = FLAC__stream_encoder_process_interleaved(enc, buffer, samples);
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
     }
 
@@ -426,6 +426,7 @@ namespace flac_bindings {
         setMethod(set_streamable_subset);
         setMethod(set_channels);
         setMethod(set_bits_per_sample);
+        setMethod(set_sample_rate);
         setMethod(set_compression_level);
         setMethod(set_blocksize);
         setMethod(set_do_mid_side_stereo);
@@ -467,6 +468,8 @@ namespace flac_bindings {
         setMethod(finish);
         setMethod(process);
         setMethod(process_interleaved);
+        setMethod(new);
+        setMethod(delete);
 
         #define indexGetter(func) \
         _JOIN(FLAC__StreamEncoder, func) = (const char* const*) dlsym(libFlacHandle, "FLAC__StreamEncoder" #func); \
@@ -567,7 +570,7 @@ static void metadata_callback(const FLAC__StreamEncoder* enc, const FLAC__Stream
 
 static void progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_written, uint64_t samples_written, unsigned frames_written, unsigned total_frames_estimate, void* data) {
     Nan::HandleScope scope;
-    flac_encoding_callbacks* cbks = (flac_encoding_callbacks*) data;
+    Nan::Persistent<Function>* cbk = (Nan::Persistent<Function>*) data;
     Handle<Value> args[] = {
         Nan::New<Number>(bytes_written),
         Nan::New<Number>(samples_written),
@@ -575,5 +578,8 @@ static void progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_wri
         Nan::New<Number>(total_frames_estimate)
     };
 
-    Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 4, args);
+    Local<Function> func = Nan::New(*cbk);
+    if(func->IsFunction()) {
+        func->Call(Nan::GetCurrentContext()->Global(), 4, args);
+    }
 }

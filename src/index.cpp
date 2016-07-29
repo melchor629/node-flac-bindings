@@ -1,6 +1,5 @@
 #include <nan.h>
 #include <dlfcn.h>
-#include <iostream>
 
 using namespace v8;
 using namespace node;
@@ -36,6 +35,7 @@ namespace flac_bindings {
                 initEncoder(obj);
                 initDecoder(obj);
                 initFormat(obj);
+                Nan::Delete(obj, Nan::New("load").ToLocalChecked());
                 info.GetReturnValue().Set(obj);
             }
         }
@@ -47,7 +47,6 @@ namespace flac_bindings {
 
         if(libFlacHandle == nullptr) {
             isLibFlacLoaded = false;
-            std::cerr << "Could not load flac library. Call load(path)." << std::endl;
             Nan::Set(target, Nan::New("load").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(loadLibFlac)).ToLocalChecked());
             return;
         }
