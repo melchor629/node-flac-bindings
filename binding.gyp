@@ -6,7 +6,6 @@
       "include_dirs": [
         "<!(node -e \"require('nan')\")"
       ],
-      "cflags": [ "-fsanitize=address" ],
       "conditions": [
           [ 'OS=="mac"', {
             "xcode_settings": {
