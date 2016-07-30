@@ -7,7 +7,10 @@ using namespace node;
 namespace flac_bindings {
     NAN_MODULE_INIT(initEncoder);
     NAN_MODULE_INIT(initDecoder);
-    NAN_MODULE_INIT(initMetadata);
+    NAN_MODULE_INIT(initMetadata0);
+    NAN_MODULE_INIT(initMetadata1);
+    NAN_MODULE_INIT(initMetadata2);
+    NAN_MODULE_INIT(initMetadataObjectMethods);
     NAN_MODULE_INIT(initFormat);
 
     bool isLibFlacLoaded = false;
@@ -30,6 +33,8 @@ namespace flac_bindings {
                 initEncoder(obj);
                 initDecoder(obj);
                 initFormat(obj);
+                initMetadata0(obj);
+                initMetadataObjectMethods(obj);
                 Nan::Delete(obj, Nan::New("load").ToLocalChecked());
                 info.GetReturnValue().Set(obj);
             }
@@ -54,7 +59,10 @@ namespace flac_bindings {
 
         initEncoder(target);
         initDecoder(target);
-        //initMetadata(target);
+        initMetadata0(target);
+        //initMetadata1(target);
+        //initMetadata2(target);
+        initMetadataObjectMethods(target);
         initFormat(target);
 
         AtExit(atExit);

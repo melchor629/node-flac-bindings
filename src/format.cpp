@@ -142,6 +142,7 @@ namespace flac_bindings {
     template<typename T> Local<Object> structToJs(const T* i);
     template<typename T> void jsToStruct(const Local<Object> &obj, T* i);
 
+    //            FLAC__StreamMetadata_StreamInfo
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata_StreamInfo* i) {
         Nan::EscapableHandleScope scope;
@@ -179,6 +180,7 @@ namespace flac_bindings {
         }
     }
 
+    //            FLAC__StreamMetadata_Padding
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata_Padding* i) {
         Nan::EscapableHandleScope scope;
@@ -190,6 +192,7 @@ namespace flac_bindings {
         i->dummy = 0;
     }
 
+    //            FLAC__StreamMetadata_Uknown
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata_Unknown* i) {
         Nan::EscapableHandleScope scope;
@@ -201,16 +204,34 @@ namespace flac_bindings {
         i->data = UnwrapPointer<FLAC__byte>(obj);
     }
 
+    //            FLAC__StreamMetadata_SeekPoint
+    template<>
+    Local<Object> structToJs(const FLAC__StreamMetadata_SeekPoint* i) {
+        Nan::EscapableHandleScope scope;
+        Local<Object> obj = Nan::New<Object>();
+        Nan::Set(obj, Nan::New("sample_number").ToLocalChecked(), Nan::New<Number>(i->sample_number));
+        Nan::Set(obj, Nan::New("stream_offset").ToLocalChecked(), Nan::New<Number>(i->stream_offset));
+        Nan::Set(obj, Nan::New("frame_samples").ToLocalChecked(), Nan::New<Number>(i->frame_samples));
+        return scope.Escape(obj);
+    }
+
+    template<>
+    void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_SeekPoint* i) {
+        Nan::MaybeLocal<Number> sample_number = Nan::To<Number>(Nan::Get(obj, Nan::New("sample_number").ToLocalChecked()).ToLocalChecked());
+        Nan::MaybeLocal<Number> stream_offset = Nan::To<Number>(Nan::Get(obj, Nan::New("stream_offset").ToLocalChecked()).ToLocalChecked());
+        Nan::MaybeLocal<Number> frame_samples = Nan::To<Number>(Nan::Get(obj, Nan::New("frame_samples").ToLocalChecked()).ToLocalChecked());
+        i->sample_number = Nan::To<uint32_t>(sample_number.ToLocalChecked()).FromJust();
+        i->stream_offset = Nan::To<uint32_t>(stream_offset.ToLocalChecked()).FromJust();
+        i->frame_samples = Nan::To<uint32_t>(frame_samples.ToLocalChecked()).FromJust();
+    }
+
+    //            FLAC__StreamMetadata_SeekTable
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata_SeekTable* i) {
         Nan::EscapableHandleScope scope;
         Local<Array> arr = Nan::New<Array>();
         for(uint32_t o = 0; o < i->num_points; i++) {
-            Local<Object> obj = Nan::New<Object>();
-            Nan::Set(obj, Nan::New("sample_number").ToLocalChecked(), Nan::New<Number>(i->points[o].sample_number));
-            Nan::Set(obj, Nan::New("stream_offset").ToLocalChecked(), Nan::New<Number>(i->points[o].stream_offset));
-            Nan::Set(obj, Nan::New("frame_samples").ToLocalChecked(), Nan::New<Number>(i->points[o].frame_samples));
-            Nan::Set(arr, o, obj);
+            Nan::Set(arr, o, structToJs(&i->points[o]));
         }
         return scope.Escape(arr);
     }
@@ -222,15 +243,11 @@ namespace flac_bindings {
         i->points = new FLAC__StreamMetadata_SeekPoint[length];
         for(uint32_t o = 0; o < length; o++) {
             Local<Object> obj = Nan::Get(arr, o).ToLocalChecked().As<Object>();
-            MaybeLocal<Number> sample_number = Nan::To<Number>(Nan::Get(obj, Nan::New("sample_number").ToLocalChecked()).ToLocalChecked());
-            MaybeLocal<Number> stream_offset = Nan::To<Number>(Nan::Get(obj, Nan::New("stream_offset").ToLocalChecked()).ToLocalChecked());
-            MaybeLocal<Number> frame_samples = Nan::To<Number>(Nan::Get(obj, Nan::New("frame_samples").ToLocalChecked()).ToLocalChecked());
-            i->points[o].sample_number = Nan::To<uint32_t>(sample_number.ToLocalChecked()).FromJust();
-            i->points[o].stream_offset = Nan::To<uint32_t>(stream_offset.ToLocalChecked()).FromJust();
-            i->points[o].frame_samples = Nan::To<uint32_t>(frame_samples.ToLocalChecked()).FromJust();
+            jsToStruct(obj, &i->points[o]);
         }
     }
 
+    //            FLAC__StreamMetadata_CueSheet
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata_CueSheet* i) {
         Nan::EscapableHandleScope scope;
@@ -311,6 +328,7 @@ namespace flac_bindings {
         }
     }
 
+    //            FLAC__StreamMetadata_Picture
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata_Picture* i) {
         Nan::EscapableHandleScope scope;
@@ -323,7 +341,7 @@ namespace flac_bindings {
         Nan::Set(obj, Nan::New("height").ToLocalChecked(), Nan::New<Number>(i->height));
         Nan::Set(obj, Nan::New("depth").ToLocalChecked(), Nan::New<Number>(i->depth));
         Nan::Set(obj, Nan::New("colors").ToLocalChecked(), Nan::New<Number>(i->colors));
-        MaybeLocal<Object> data = Nan::NewBuffer((char*) i->data, i->data_length, no_free, nullptr);
+        Nan::MaybeLocal<Object> data = Nan::NewBuffer((char*) i->data, i->data_length, no_free, nullptr);
         Nan::Set(obj, Nan::New("data").ToLocalChecked(), data.ToLocalChecked());
 
         return scope.Escape(obj);
@@ -355,6 +373,42 @@ namespace flac_bindings {
         i->mime_type[mime_type->Utf8Length()] = i->description[description->Utf8Length()] = '\0';
     }
 
+    //            FLAC__StreamMetadata_VorbisComment
+    template<>
+    Local<Object> structToJs(const FLAC__StreamMetadata_VorbisComment* i) {
+        Nan::EscapableHandleScope scope;
+        Local<Object> obj = Nan::New<Object>();
+        Local<Array> comments = Nan::New<Array>();
+
+        Nan::Set(obj, Nan::New("vendor_string").ToLocalChecked(), Nan::New((char*) i->vendor_string.entry).ToLocalChecked());
+
+        for(uint32_t o = 0; o < i->num_comments; o++) {
+            Nan::MaybeLocal<String> entry = Nan::New((char*) i->comments[o].entry);
+            Nan::Set(comments, o, entry.ToLocalChecked());
+        }
+
+        Nan::Set(obj, Nan::New("comments").ToLocalChecked(), comments);
+        return scope.Escape(obj);
+    }
+
+    template<>
+    void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_VorbisComment* i) {
+        Nan::Utf8String vendor_string(Nan::Get(obj, Nan::New("vendor_string").ToLocalChecked()).ToLocalChecked());
+        Local<Array> comments = Nan::Get(obj, Nan::New("comments").ToLocalChecked()).ToLocalChecked().As<Array>();
+
+        i->vendor_string.length = vendor_string.length();
+        i->vendor_string.entry = (FLAC__byte*) *vendor_string;
+        i->num_comments = comments->Length();
+
+        i->comments = new FLAC__StreamMetadata_VorbisComment_Entry[i->num_comments];
+        for(uint32_t o = 0; o < i->num_comments; o++) {
+            Nan::Utf8String comment(Nan::Get(comments, o).ToLocalChecked());
+            i->comments[o].entry = (FLAC__byte*) *comment;
+            i->comments[o].length = comment.length();
+        }
+    }
+
+    //            FLAC__StreamMetadata
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata* i) {
         Nan::EscapableHandleScope scope;
@@ -434,13 +488,13 @@ namespace flac_bindings {
                     Nan::Set(subframe, Nan::New("value").ToLocalChecked(), Nan::New(i->subframes[o].data.constant.value));
                     break;
                 case FLAC__SUBFRAME_TYPE_VERBATIM: {
-                    MaybeLocal<Object> data = Nan::NewBuffer((char*) i->subframes[o].data.verbatim.data,
+                    Nan::MaybeLocal<Object> data = Nan::NewBuffer((char*) i->subframes[o].data.verbatim.data,
                         i->header.blocksize * i->header.bits_per_sample * sizeof(int32_t), no_free, nullptr);
                     Nan::Set(subframe, Nan::New("data").ToLocalChecked(), data.ToLocalChecked());
                     break;
                 }
                 case FLAC__SUBFRAME_TYPE_FIXED: {
-                    MaybeLocal<Object> residual = Nan::NewBuffer((char*) i->subframes[o].data.fixed.residual,
+                    Nan::MaybeLocal<Object> residual = Nan::NewBuffer((char*) i->subframes[o].data.fixed.residual,
                         (i->header.blocksize - i->subframes[o].data.fixed.order) * sizeof(int32_t), no_free, nullptr);
                     Local<Array> warmup = Nan::New<Array>();
                     for(uint32_t u = 0; u < i->subframes[o].data.fixed.order; u++)
@@ -452,7 +506,7 @@ namespace flac_bindings {
                     break;
                 }
                 case FLAC__SUBFRAME_TYPE_LPC: {
-                    MaybeLocal<Object> residual = Nan::NewBuffer((char*) i->subframes[o].data.lpc.residual,
+                    Nan::MaybeLocal<Object> residual = Nan::NewBuffer((char*) i->subframes[o].data.lpc.residual,
                         (i->header.blocksize - i->subframes[o].data.lpc.order) * sizeof(int32_t), no_free, nullptr);
                     Local<Array> warmup = Nan::New<Array>(), qlpCoeff = Nan::New<Array>();
                     for(uint32_t u = 0; u < i->subframes[o].data.lpc.order; u++)
@@ -720,7 +774,7 @@ namespace flac_bindings {
         #define propertyGetter(func) \
         Local<ObjectTemplate> _JOIN(func, Var) = Nan::New<ObjectTemplate>(); \
         Nan::SetNamedPropertyHandler(_JOIN(func, Var), func); \
-        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), _JOIN(func, Var)->NewInstance());
+        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, Var)).ToLocalChecked());
 
         propertyGetter(MetadataType);
         propertyGetter(EntropyCodingMethodType);
@@ -733,7 +787,7 @@ namespace flac_bindings {
         _JOIN(FLAC__, func) = (const char* const*) dlsym(libFlacHandle, "FLAC__" #func); \
         Local<ObjectTemplate> _JOIN(func, _template) = Nan::New<ObjectTemplate>(); \
         Nan::SetIndexedPropertyHandler(_JOIN(func, _template), func); \
-        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), _JOIN(func, _template)->NewInstance());
+        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, _template)).ToLocalChecked());
 
         indexGetter(MetadataTypeString);
         indexGetter(EntropyCodingMethodTypeString);

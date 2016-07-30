@@ -196,9 +196,13 @@ namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__stream_encoder_process) {
         UNWRAP_FLAC
-        const int32_t* const* buffer = UnwrapPointer<const int32_t* const>(info[1]->ToObject());
+        Local<Array> buffers = info[1].As<Array>();
+        int32_t** _buffers = new int32_t*[buffers->Length()];
+        for(uint32_t i = 0; i < buffers->Length(); i++) {
+            _buffers[i] = UnwrapPointer<int32_t>(Nan::Get(buffers, i).ToLocalChecked());
+        }
         uint32_t samples = Nan::To<uint32_t>(info[2].As<Number>()).FromJust();
-        FLAC__bool ret = FLAC__stream_encoder_process(enc, buffer, samples);
+        FLAC__bool ret = FLAC__stream_encoder_process(enc, _buffers, samples);
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
     }
 
@@ -447,7 +451,7 @@ namespace flac_bindings {
         _JOIN(FLAC__StreamEncoder, func) = (const char* const*) dlsym(libFlacHandle, "FLAC__StreamEncoder" #func); \
         Local<ObjectTemplate> _JOIN(func, _template) = Nan::New<ObjectTemplate>(); \
         Nan::SetIndexedPropertyHandler(_JOIN(func, _template), _JOIN(node_FLAC__StreamEncoder, func)); \
-        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), _JOIN(func, _template)->NewInstance());
+        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, _template)).ToLocalChecked());
 
         indexGetter(StateString);
         indexGetter(InitStatusString);
@@ -459,7 +463,7 @@ namespace flac_bindings {
         #define propertyGetter(func) \
         Local<ObjectTemplate> _JOIN(func, Var) = Nan::New<ObjectTemplate>(); \
         Nan::SetNamedPropertyHandler(_JOIN(func, Var), func); \
-        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), _JOIN(func, Var)->NewInstance());
+        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, Var)).ToLocalChecked());
 
         propertyGetter(State);
         propertyGetter(InitStatus);
@@ -481,7 +485,7 @@ static int read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t* 
         Nan::New<Number>(*bytes)
     };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->readCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
+    Nan::MaybeLocal<Value> ret = Nan::New(cbks->readCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
     int32_t _b = Nan::To<int32_t>(ret.ToLocalChecked()).FromJust();
     if(_b < 0) {
         *bytes = 0;
@@ -502,7 +506,7 @@ static int write_callback(const FLAC__StreamEncoder* enc, const char buffer[], s
         Nan::New<Number>(frame)
     };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 4, args);
+    Nan::MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 4, args);
     int32_t _b = Nan::To<int32_t>(ret.ToLocalChecked()).FromJust();
     return _b;
 }
@@ -514,7 +518,7 @@ static int seek_callback(const FLAC__StreamEncoder* enc, uint64_t offset, void* 
         Nan::New<Number>(offset)
     };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->seekCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
+    Nan::MaybeLocal<Value> ret = Nan::New(cbks->seekCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
     return Nan::To<int>(ret.ToLocalChecked()).FromJust();
 }
 
@@ -525,8 +529,8 @@ static int tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void*
         Nan::New<Number>(*offset)
     };
 
-    MaybeLocal<Value> ret = Nan::New(cbks->tellCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
-    int32_t _b = Nan::To<int32_t>(ret.ToLocalChecked()).FromJust();
+    Nan::MaybeLocal<Value> ret = Nan::New(cbks->tellCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
+    int64_t _b = Nan::To<int64_t>(ret.ToLocalChecked()).FromJust();
     if(_b < 0) {
         *offset = -1;
         return -_b;

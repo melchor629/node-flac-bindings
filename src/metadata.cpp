@@ -37,9 +37,9 @@ extern "C" {
     metadataFunction(FLAC__bool, object_vorbiscomment_append_comment, FLAC__StreamMetadata *object, FLAC__StreamMetadata_VorbisComment_Entry entry, FLAC__bool copy);
     metadataFunction(FLAC__bool, object_vorbiscomment_replace_comment, FLAC__StreamMetadata *object, FLAC__StreamMetadata_VorbisComment_Entry entry, FLAC__bool all, FLAC__bool copy);
     metadataFunction(FLAC__bool, object_vorbiscomment_delete_comment, FLAC__StreamMetadata *object, unsigned comment_num);
-    metadataFunction(FLAC__bool, object_vorbiscomment_entry_from_name_value_pair, FLAC__StreamMetadata_VorbisComment_Entry *entry, const char *field_name, const char *field_value);
-    metadataFunction(FLAC__bool, object_vorbiscomment_entry_to_name_value_pair, const FLAC__StreamMetadata_VorbisComment_Entry entry, char **field_name, char **field_value);
-    metadataFunction(FLAC__bool, object_vorbiscomment_entry_matches, const FLAC__StreamMetadata_VorbisComment_Entry entry, const char *field_name, unsigned field_name_length);
+    //metadataFunction(FLAC__bool, object_vorbiscomment_entry_from_name_value_pair, FLAC__StreamMetadata_VorbisComment_Entry *entry, const char *field_name, const char *field_value);
+    //metadataFunction(FLAC__bool, object_vorbiscomment_entry_to_name_value_pair, const FLAC__StreamMetadata_VorbisComment_Entry entry, char **field_name, char **field_value);
+    //metadataFunction(FLAC__bool, object_vorbiscomment_entry_matches, const FLAC__StreamMetadata_VorbisComment_Entry entry, const char *field_name, unsigned field_name_length);
     metadataFunction(int, object_vorbiscomment_find_entry_from, const FLAC__StreamMetadata *object, unsigned offset, const char *field_name);
     metadataFunction(int, object_vorbiscomment_remove_entry_matching, FLAC__StreamMetadata *object, const char *field_name);
     metadataFunction(int, object_vorbiscomment_remove_entries_matching, FLAC__StreamMetadata *object, const char *field_name);
@@ -298,73 +298,111 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_new) {
-        FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        FLAC__StreamMetadata_CueSheet_Track* ptr = FLAC__metadata_object_cuesheet_track_new();
+        Nan::MaybeLocal<Object> buff = WrapPointer(ptr, sizeof(FLAC__StreamMetadata_CueSheet_Track));
+        info.GetReturnValue().Set(buff.ToLocalChecked());
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_clone) {
-        FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        FLAC__StreamMetadata_CueSheet_Track* m = UnwrapPointer<FLAC__StreamMetadata_CueSheet_Track>(info[0]);
+        FLAC__StreamMetadata_CueSheet_Track* ptr = FLAC__metadata_object_cuesheet_track_clone(m);
+        Nan::MaybeLocal<Object> buff = WrapPointer(ptr, sizeof(FLAC__StreamMetadata_CueSheet_Track));
+        info.GetReturnValue().Set(buff.ToLocalChecked());
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_delete) {
-        FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        FLAC__StreamMetadata_CueSheet_Track* m = UnwrapPointer<FLAC__StreamMetadata_CueSheet_Track>(info[0]);
+        FLAC__metadata_object_cuesheet_track_delete(m);
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_resize_indices) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
+        unsigned n = Nan::To<unsigned>(info[1]).FromJust();
+        unsigned o = Nan::To<unsigned>(info[2]).FromJust();
+        FLAC__bool r = FLAC__metadata_object_cuesheet_track_resize_indices(m, n, o);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_insert_index) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
+        unsigned n = Nan::To<unsigned>(info[1]).FromJust();
+        unsigned o = Nan::To<unsigned>(info[2]).FromJust();
+        uint64_t p1 = Nan::To<int64_t>(info[3]).FromJust();
+        FLAC__byte p2 = Nan::To<int>(info[4]).FromJust();
+        FLAC__StreamMetadata_CueSheet_Index p = { p1, p2 };
+        FLAC__bool r = FLAC__metadata_object_cuesheet_track_insert_index(m, n, o, p);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_insert_blank_index) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
+        unsigned n = Nan::To<unsigned>(info[1]).FromJust();
+        unsigned o = Nan::To<unsigned>(info[2]).FromJust();
+        FLAC__bool r = FLAC__metadata_object_cuesheet_track_insert_blank_index(m, n, o);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_delete_index) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
+        unsigned n = Nan::To<unsigned>(info[1]).FromJust();
+        unsigned o = Nan::To<unsigned>(info[2]).FromJust();
+        FLAC__bool r = FLAC__metadata_object_cuesheet_track_delete_index(m, n, o);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_resize_tracks) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
+        unsigned n = Nan::To<unsigned>(info[1]).FromJust();
+        FLAC__bool r = FLAC__metadata_object_cuesheet_resize_tracks(m, n);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_set_track) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
+        unsigned n = Nan::To<unsigned>(info[1]).FromJust();
+        FLAC__StreamMetadata_CueSheet_Track* o = UnwrapPointer<FLAC__StreamMetadata_CueSheet_Track>(info[2]);
+        FLAC__bool r = FLAC__metadata_object_cuesheet_set_track(m, n, o, false);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_insert_track) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
+        unsigned n = Nan::To<unsigned>(info[1]).FromJust();
+        FLAC__StreamMetadata_CueSheet_Track* o = UnwrapPointer<FLAC__StreamMetadata_CueSheet_Track>(info[2]);
+        FLAC__bool r = FLAC__metadata_object_cuesheet_insert_track(m, n, o, false);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_insert_blank_track) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
+        unsigned n = Nan::To<unsigned>(info[1]).FromJust();
+        FLAC__bool r = FLAC__metadata_object_cuesheet_insert_blank_track(m, n);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_delete_track) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
+        unsigned n = Nan::To<unsigned>(info[1]).FromJust();
+        FLAC__bool r = FLAC__metadata_object_cuesheet_delete_track(m, n);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_is_legal) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        FLAC__bool n = Nan::To<unsigned>(info[1]).FromJust();
+        const char* o;
+        FLAC__bool r = FLAC__metadata_object_cuesheet_is_legal(m, n, &o);
+        if(r) {
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        } else {
+            info.GetReturnValue().Set(Nan::New(o).ToLocalChecked());
+        }
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_calculate_cddb_id) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        uint32_t r = FLAC__metadata_object_cuesheet_calculate_cddb_id(m);
+        info.GetReturnValue().Set(Nan::New<Number>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_picture_set_mime_type) {
