@@ -580,10 +580,8 @@ namespace flac_bindings {
     }
 
     NAN_PROPERTY_GETTER(EntropyCodingMethodType) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "PARTITIONED_RICE") info.GetReturnValue().Set(Nan::New(FLAC__ENTROPY_CODING_METHOD_PARTITIONED_RICE));
         else if(PropertyName == "PARTITIONED_RICE2") info.GetReturnValue().Set(Nan::New(FLAC__ENTROPY_CODING_METHOD_PARTITIONED_RICE2));
@@ -591,10 +589,8 @@ namespace flac_bindings {
     }
 
     NAN_PROPERTY_GETTER(SubframeType) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "CONSTANT") info.GetReturnValue().Set(Nan::New(FLAC__SUBFRAME_TYPE_CONSTANT));
         else if(PropertyName == "VERBATIM") info.GetReturnValue().Set(Nan::New(FLAC__SUBFRAME_TYPE_VERBATIM));
@@ -604,10 +600,8 @@ namespace flac_bindings {
     }
 
     NAN_PROPERTY_GETTER(ChannelAssignment) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "INDEPENDENT") info.GetReturnValue().Set(Nan::New(FLAC__CHANNEL_ASSIGNMENT_INDEPENDENT));
         else if(PropertyName == "LEFT_SIDE") info.GetReturnValue().Set(Nan::New(FLAC__CHANNEL_ASSIGNMENT_LEFT_SIDE));
@@ -617,10 +611,8 @@ namespace flac_bindings {
     }
 
     NAN_PROPERTY_GETTER(FrameNumberType) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "FRAME_NUMBER") info.GetReturnValue().Set(Nan::New(FLAC__FRAME_NUMBER_TYPE_FRAME_NUMBER));
         else if(PropertyName == "SAMPLE_NUMBER") info.GetReturnValue().Set(Nan::New(FLAC__FRAME_NUMBER_TYPE_SAMPLE_NUMBER));
@@ -628,10 +620,8 @@ namespace flac_bindings {
     }
 
     NAN_PROPERTY_GETTER(StreamMetadata_Picture_Type) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "OTHER") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_OTHER));
         else if(PropertyName == "FILE_ICON_STANDARD") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_FILE_ICON_STANDARD));

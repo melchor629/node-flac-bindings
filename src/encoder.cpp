@@ -167,13 +167,10 @@ namespace flac_bindings {
         }
 
         Nan::Persistent<Function>* progress_callback = new Nan::Persistent<Function>;
-        char* str = new char[info[1]->ToString()->Utf8Length() + 1];
         progress_callback->Reset(info[2].As<Function>());
-        info[1]->ToString()->WriteUtf8(str);
-        str[info[1]->ToString()->Utf8Length()] = '\0';
+        Nan::Utf8String str(info[1]);
 
-        int ret = FLAC__stream_encoder_init_file(enc, str, ::progress_callback, progress_callback);
-        delete[] str;
+        int ret = FLAC__stream_encoder_init_file(enc, *str, ::progress_callback, progress_callback);
         info.GetReturnValue().Set(Nan::New(ret));
     }
 
@@ -184,13 +181,10 @@ namespace flac_bindings {
         }
 
         Nan::Persistent<Function>* progress_callback = new Nan::Persistent<Function>;
-        char* str = new char[info[1]->ToString()->Utf8Length() + 1];
         progress_callback->Reset(info[2].As<Function>());
-        info[1]->ToString()->WriteUtf8(str);
-        str[info[1]->ToString()->Utf8Length()] = '\0';
+        Nan::Utf8String str(info[1]);
 
-        int ret = FLAC__stream_encoder_init_ogg_file(enc, str, ::progress_callback, progress_callback);
-        delete[] str;
+        int ret = FLAC__stream_encoder_init_ogg_file(enc, *str, ::progress_callback, progress_callback);
         info.GetReturnValue().Set(Nan::New(ret));
     }
 
@@ -285,14 +279,10 @@ namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__stream_encoder_set_apodization) {
         UNWRAP_FLAC
-        Local<String> arg = info[1]->ToString();
-        char* str = new char[arg->Utf8Length() + 1];
-        arg->WriteUtf8(str);
-        str[arg->Utf8Length()] = '\0';
+        Nan::Utf8String str(info[1]);
 
-        FLAC__bool ret = FLAC__stream_encoder_set_apodization(enc, str);
+        FLAC__bool ret = FLAC__stream_encoder_set_apodization(enc, *str);
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        delete[] str;
     }
 
     NAN_METHOD(node_FLAC__stream_encoder_get_resolved_state_string) {
@@ -319,10 +309,8 @@ namespace flac_bindings {
     }
 
     NAN_PROPERTY_GETTER(State) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "OK") info.GetReturnValue().Set(Nan::New(0));
         else if(PropertyName == "UNINITIALIZED") info.GetReturnValue().Set(Nan::New(1));
@@ -334,14 +322,11 @@ namespace flac_bindings {
         else if(PropertyName == "FRAMING_ERROR") info.GetReturnValue().Set(Nan::New(7));
         else if(PropertyName == "MEMORY_ALLOCATION_ERROR") info.GetReturnValue().Set(Nan::New(8));
         else info.GetReturnValue().SetUndefined();
-        delete[] propertyName;
     }
 
     NAN_PROPERTY_GETTER(InitStatus) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "OK") info.GetReturnValue().Set(Nan::New(0));
         else if(PropertyName == "ENCODER_ERROR") info.GetReturnValue().Set(Nan::New(1));
@@ -358,59 +343,46 @@ namespace flac_bindings {
         else if(PropertyName == "INVALID_METADATA") info.GetReturnValue().Set(Nan::New(12));
         else if(PropertyName == "ALREADY_INITIALIZED") info.GetReturnValue().Set(Nan::New(13));
         else info.GetReturnValue().SetUndefined();
-        delete[] propertyName;
     }
 
     NAN_PROPERTY_GETTER(ReadStatus) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "CONTINUE") info.GetReturnValue().Set(Nan::New(0));
         else if(PropertyName == "END_OF_STREAM") info.GetReturnValue().Set(Nan::New(1));
         else if(PropertyName == "ABORT") info.GetReturnValue().Set(Nan::New(2));
         else if(PropertyName == "UNSUPPORTED") info.GetReturnValue().Set(Nan::New(3));
         else info.GetReturnValue().SetUndefined();
-        delete[] propertyName;
     }
 
     NAN_PROPERTY_GETTER(WriteStatus) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "CONTINUE") info.GetReturnValue().Set(Nan::New(0));
         else if(PropertyName == "FATAL_ERROR") info.GetReturnValue().Set(Nan::New(1));
         else info.GetReturnValue().SetUndefined();
-        delete[] propertyName;
     }
 
     NAN_PROPERTY_GETTER(SeekStatus) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "OK") info.GetReturnValue().Set(Nan::New(0));
         else if(PropertyName == "ERROR") info.GetReturnValue().Set(Nan::New(1));
         else if(PropertyName == "UNSUPPORTED") info.GetReturnValue().Set(Nan::New(2));
         else info.GetReturnValue().SetUndefined();
-        delete[] propertyName;
     }
 
     NAN_PROPERTY_GETTER(TellStatus) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "OK") info.GetReturnValue().Set(Nan::New(0));
         else if(PropertyName == "ERROR") info.GetReturnValue().Set(Nan::New(1));
         else if(PropertyName == "UNSUPPORTED") info.GetReturnValue().Set(Nan::New(2));
         else info.GetReturnValue().SetUndefined();
-        delete[] propertyName;
     }
 
     NAN_MODULE_INIT(initEncoder) {

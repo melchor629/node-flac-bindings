@@ -20,13 +20,8 @@ namespace flac_bindings {
         } else if(!info[0]->IsString()) {
             Nan::ThrowError("String needed representing the path to flac library");
         } else {
-            Local<String> v8Path = info[0]->ToString();
-            char* path = new char[v8Path->Utf8Length() + 1];
-            v8Path->WriteUtf8(path);
-            path[v8Path->Utf8Length()] = '\0';
-
-            libFlacHandle = dlopen(path, RTLD_LAZY | RTLD_LOCAL);
-                delete[] path;
+            Nan::Utf8String Path(info[0]);
+            libFlacHandle = dlopen(*Path, RTLD_LAZY | RTLD_LOCAL);
             if(libFlacHandle == nullptr) {
                 Nan::ThrowError("Could not load flac library");
             } else {
@@ -39,6 +34,10 @@ namespace flac_bindings {
                 info.GetReturnValue().Set(obj);
             }
         }
+    }
+
+    static void atExit(void*) {
+        if(isLibFlacLoaded) dlclose(libFlacHandle);
     }
 
     NAN_MODULE_INIT(init) {
@@ -55,8 +54,10 @@ namespace flac_bindings {
 
         initEncoder(target);
         initDecoder(target);
-        //initMetadata(exports);
+        //initMetadata(target);
         initFormat(target);
+
+        AtExit(atExit);
     }
 
 };
