@@ -212,7 +212,7 @@ typedef enum {
  *  Using a FLAC__EntropyCodingMethodType as the index to this array will
  *  give the string equivalent.  The contents should not be modified.
  */
-extern const char * const FLAC__EntropyCodingMethodTypeString[];
+extern const char * const* FLAC__EntropyCodingMethodTypeString;
 
 
 /** Contents of a Rice partitioned residual
@@ -282,7 +282,7 @@ typedef enum {
  *  Using a FLAC__SubframeType as the index to this array will
  *  give the string equivalent.  The contents should not be modified.
  */
-extern const char * const FLAC__SubframeTypeString[];
+extern const char * const* FLAC__SubframeTypeString;
 
 
 /** CONSTANT subframe.  (c.f. <A HREF="../format.html#subframe_constant">format specification</A>)
@@ -396,7 +396,7 @@ typedef enum {
  *  Using a FLAC__ChannelAssignment as the index to this array will
  *  give the string equivalent.  The contents should not be modified.
  */
-extern const char * const FLAC__ChannelAssignmentString[];
+extern const char * const* FLAC__ChannelAssignmentString;
 
 /** An enumeration of the possible frame numbering methods. */
 typedef enum {
@@ -409,7 +409,7 @@ typedef enum {
  *  Using a FLAC__FrameNumberType as the index to this array will
  *  give the string equivalent.  The contents should not be modified.
  */
-extern const char * const FLAC__FrameNumberTypeString[];
+extern const char * const* FLAC__FrameNumberTypeString;
 
 
 /** FLAC frame header structure.  (c.f. <A HREF="../format.html#frame_header">format specification</A>)
@@ -527,7 +527,7 @@ typedef enum {
  *  Using a FLAC__MetadataType as the index to this array will
  *  give the string equivalent.  The contents should not be modified.
  */
-extern const char * const FLAC__MetadataTypeString[];
+extern const char * const* FLAC__MetadataTypeString;
 
 
 /** FLAC STREAMINFO structure.  (c.f. <A HREF="../format.html#metadata_block_streaminfo">format specification</A>)
@@ -766,7 +766,7 @@ typedef enum {
  *  will give the string equivalent.  The contents should not be
  *  modified.
  */
-extern const char * const FLAC__StreamMetadata_Picture_TypeString[];
+extern const char * const* FLAC__StreamMetadata_Picture_TypeString;
 
 /** FLAC PICTURE structure.  (See the
  * <A HREF="../format.html#metadata_block_picture">format specification</A>

@@ -6,9 +6,17 @@ namespace flac_bindings {
 extern void* libFlacHandle;
 }
 
+#define _JOIN(a, b) a##b
+
 extern "C" {
     const char *FLAC__VERSION_STRING;
     const char *FLAC__VENDOR_STRING;
+    const char * const* FLAC__EntropyCodingMethodTypeString;
+    const char * const* FLAC__SubframeTypeString;
+    const char * const* FLAC__ChannelAssignmentString;
+    const char * const* FLAC__FrameNumberTypeString;
+    const char * const* FLAC__MetadataTypeString;
+    const char * const* FLAC__StreamMetadata_Picture_TypeString;
 
     FLAC__bool FLAC__format_sample_rate_is_valid(unsigned sample_rate) {
         static FLAC__bool (*func)(unsigned) = NULL;
@@ -129,6 +137,8 @@ using namespace node;
 
 namespace flac_bindings {
 
+    static void no_free(char* a,void* b) { }
+
     template<typename T> Local<Object> structToJs(const T* i);
     template<typename T> void jsToStruct(const Local<Object> &obj, T* i);
 
@@ -222,6 +232,130 @@ namespace flac_bindings {
     }
 
     template<>
+    Local<Object> structToJs(const FLAC__StreamMetadata_CueSheet* i) {
+        Nan::EscapableHandleScope scope;
+        Local<Object> obj = Nan::New<Object>();
+        Local<Array> tracks = Nan::New<Array>();
+
+        Nan::Set(obj, Nan::New("media_catalog_number").ToLocalChecked(), Nan::New(i->media_catalog_number).ToLocalChecked());
+        Nan::Set(obj, Nan::New("lead_in").ToLocalChecked(), Nan::New<Number>(i->lead_in));
+        Nan::Set(obj, Nan::New("is_cd").ToLocalChecked(), Nan::New<Boolean>(i->is_cd));
+
+        for(uint32_t o = 0; o < i->num_tracks; o++) {
+            Local<Object> track = Nan::New<Object>();
+            Local<Array> indices = Nan::New<Array>();
+            char isrc[14];
+            memcpy(isrc, i->tracks[o].isrc, 13);
+            isrc[13] = '\0';
+
+            Nan::Set(track, Nan::New("offset").ToLocalChecked(), Nan::New<Number>(i->tracks[o].offset));
+            Nan::Set(obj, Nan::New("number").ToLocalChecked(), Nan::New(i->tracks[o].number));
+            Nan::Set(obj, Nan::New("type").ToLocalChecked(), Nan::New(i->tracks[o].type));
+            Nan::Set(obj, Nan::New("pre_emphasis").ToLocalChecked(), Nan::New<Boolean>(i->tracks[o].pre_emphasis));
+            Nan::Set(obj, Nan::New("isrc").ToLocalChecked(), Nan::New(isrc).ToLocalChecked());
+
+            for(uint32_t u = 0; u < i->tracks[o].num_indices; u++) {
+                Local<Object> indice = Nan::New<Object>();
+                Nan::Set(indice, Nan::New("offset").ToLocalChecked(), Nan::New<Number>(i->tracks[o].indices[u].offset));
+                Nan::Set(indice, Nan::New("number").ToLocalChecked(), Nan::New(i->tracks[o].indices[u].number));
+                Nan::Set(indices, u, indice);
+            }
+
+            Nan::Set(track, Nan::New("indices").ToLocalChecked(), indices);
+            Nan::Set(tracks, o, track);
+        }
+
+        Nan::Set(obj, Nan::New("tracks").ToLocalChecked(), tracks);
+        return scope.Escape(obj);
+    }
+
+    template<>
+    void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_CueSheet* i) {
+        memset(i->media_catalog_number, 0, 129);
+        Local<String> mediaCatalogNumber = Nan::Get(obj, Nan::New("media_catalog_number").ToLocalChecked()).ToLocalChecked().As<String>();
+        Local<Number> leadIn = Nan::Get(obj, Nan::New("lead_in").ToLocalChecked()).ToLocalChecked().As<Number>();
+        Local<Boolean> isCd = Nan::Get(obj, Nan::New("is_cd").ToLocalChecked()).ToLocalChecked().As<Boolean>();
+        Local<Array> tracks = Nan::Get(obj, Nan::New("tracks").ToLocalChecked()).ToLocalChecked().As<Array>();
+
+        mediaCatalogNumber->WriteUtf8(i->media_catalog_number);
+        i->lead_in = Nan::To<uint32_t>(leadIn).FromJust();
+        i->is_cd = Nan::To<FLAC__bool>(isCd).FromJust();
+        i->num_tracks = tracks->Length();
+
+        i->tracks = new FLAC__StreamMetadata_CueSheet_Track[i->num_tracks];
+        for(unsigned o = 0; o < i->num_tracks; o++) {
+            Local<Object> item = Nan::Get(tracks, o).ToLocalChecked().As<Object>();
+            Local<Number> offset = Nan::Get(item, Nan::New("offset").ToLocalChecked()).ToLocalChecked().As<Number>();
+            Local<Number> number = Nan::Get(item, Nan::New("number").ToLocalChecked()).ToLocalChecked().As<Number>();
+            Local<String> isrc = Nan::Get(item, Nan::New("isrc").ToLocalChecked()).ToLocalChecked().As<String>();
+            Local<Number> type = Nan::Get(item, Nan::New("type").ToLocalChecked()).ToLocalChecked().As<Number>();
+            Local<Boolean> pre_emphasis = Nan::Get(item, Nan::New("pre_emphasis").ToLocalChecked()).ToLocalChecked().As<Boolean>();
+            Local<Array> indices = Nan::Get(item, Nan::New("indices").ToLocalChecked()).ToLocalChecked().As<Array>();
+
+            isrc->WriteUtf8(i->tracks[o].isrc);
+            i->tracks[o].offset = Nan::To<uint32_t>(offset).FromJust();
+            i->tracks[o].number = Nan::To<uint32_t>(number).FromJust();
+            i->tracks[o].type = Nan::To<uint32_t>(type).FromJust();
+            i->tracks[o].pre_emphasis = Nan::To<uint32_t>(pre_emphasis).FromJust();
+            i->tracks[o].num_indices = indices->Length();
+
+            i->tracks[o].indices = new FLAC__StreamMetadata_CueSheet_Index[i->tracks[o].num_indices];
+            for(unsigned u = 0; u < i->tracks[o].num_indices; u++) {
+                Local<Object> index = Nan::Get(indices, u).ToLocalChecked().As<Object>();
+                Local<Number> offset = Nan::Get(index, Nan::New("offset").ToLocalChecked()).ToLocalChecked().As<Number>();
+                Local<Number> number = Nan::Get(index, Nan::New("number").ToLocalChecked()).ToLocalChecked().As<Number>();
+
+                i->tracks[o].indices[u].offset = Nan::To<uint32_t>(offset).FromJust();
+                i->tracks[o].indices[u].number = Nan::To<uint32_t>(number).FromJust();
+            }
+        }
+    }
+
+    template<>
+    Local<Object> structToJs(const FLAC__StreamMetadata_Picture* i) {
+        Nan::EscapableHandleScope scope;
+        Local<Object> obj = Nan::New<Object>();
+
+        Nan::Set(obj, Nan::New("type").ToLocalChecked(), Nan::New<Number>(i->type));
+        Nan::Set(obj, Nan::New("mime_type").ToLocalChecked(), Nan::New(i->mime_type).ToLocalChecked());
+        Nan::Set(obj, Nan::New("description").ToLocalChecked(), Nan::New((char*) i->description).ToLocalChecked());
+        Nan::Set(obj, Nan::New("width").ToLocalChecked(), Nan::New<Number>(i->width));
+        Nan::Set(obj, Nan::New("height").ToLocalChecked(), Nan::New<Number>(i->height));
+        Nan::Set(obj, Nan::New("depth").ToLocalChecked(), Nan::New<Number>(i->depth));
+        Nan::Set(obj, Nan::New("colors").ToLocalChecked(), Nan::New<Number>(i->colors));
+        MaybeLocal<Object> data = Nan::NewBuffer((char*) i->data, i->data_length, no_free, nullptr);
+        Nan::Set(obj, Nan::New("data").ToLocalChecked(), data.ToLocalChecked());
+
+        return scope.Escape(obj);
+    }
+
+    template<>
+    void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_Picture* i) {
+        Local<Number> type = Nan::Get(obj, Nan::New("type").ToLocalChecked()).ToLocalChecked().As<Number>();
+        Local<String> mime_type = Nan::Get(obj, Nan::New("mime_type").ToLocalChecked()).ToLocalChecked().As<String>();
+        Local<String> description = Nan::Get(obj, Nan::New("description").ToLocalChecked()).ToLocalChecked().As<String>();
+        Local<Number> width = Nan::Get(obj, Nan::New("width").ToLocalChecked()).ToLocalChecked().As<Number>();
+        Local<Number> height = Nan::Get(obj, Nan::New("height").ToLocalChecked()).ToLocalChecked().As<Number>();
+        Local<Number> depth = Nan::Get(obj, Nan::New("depth").ToLocalChecked()).ToLocalChecked().As<Number>();
+        Local<Number> colors = Nan::Get(obj, Nan::New("colors").ToLocalChecked()).ToLocalChecked().As<Number>();
+        Local<Object> data = Nan::Get(obj, Nan::New("data").ToLocalChecked()).ToLocalChecked().As<Object>();
+
+        i->type = (FLAC__StreamMetadata_Picture_Type) Nan::To<int>(type).FromJust();
+        i->width = Nan::To<uint32_t>(width).FromJust();
+        i->height = Nan::To<uint32_t>(height).FromJust();
+        i->colors = Nan::To<uint32_t>(colors).FromJust();
+        i->depth = Nan::To<uint32_t>(depth).FromJust();
+        i->data = UnwrapPointer<FLAC__byte>(data);
+        i->data_length = Buffer::Length(data);
+
+        i->mime_type = new char[mime_type->Utf8Length() + 1];
+        i->description = new FLAC__byte[description->Utf8Length() + 1];
+        mime_type->WriteUtf8(i->mime_type);
+        description->WriteUtf8((char*) i->description);
+        i->mime_type[mime_type->Utf8Length()] = i->description[description->Utf8Length()] = '\0';
+    }
+
+    template<>
     Local<Object> structToJs(const FLAC__StreamMetadata* i) {
         Nan::EscapableHandleScope scope;
         Local<Object> obj;
@@ -270,7 +404,6 @@ namespace flac_bindings {
         i->length = length;
     }
 
-    static void no_free(char* a,void* b) { }
     template<>
     Local<Object> structToJs(const FLAC__Frame* i) {
         Nan::EscapableHandleScope scope;
@@ -405,15 +538,28 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__format_cuesheet_is_legal) {
-        //unsigned sampleRate = Nan::To<unsigned>(info[0]->ToNumber()).FromJust();
-        //FLAC__bool ret = FLAC__format_cuesheet_is_legal(); TODO
-        info.GetReturnValue().Set(Nan::New<Boolean>(false));
+        FLAC__StreamMetadata_CueSheet cue;
+        jsToStruct(info[0].As<Object>(), &cue);
+        bool check = Nan::To<int>(info[1].As<Boolean>()).FromJust();
+        const char* violation = NULL;
+        FLAC__bool ret = FLAC__format_cuesheet_is_legal(&cue, check, &violation);
+        if(ret) {
+            info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+        } else {
+            info.GetReturnValue().Set(Nan::New(violation).ToLocalChecked());
+        }
     }
 
     NAN_METHOD(node_FLAC__format_picture_is_legal) {
-        //unsigned sampleRate = Nan::To<unsigned>(info[0]->ToNumber()).FromJust();
-        //FLAC__bool ret = FLAC__format_picture_is_legal(); TODO
-        info.GetReturnValue().Set(Nan::New<Boolean>(false));
+        FLAC__StreamMetadata_Picture picture;
+        jsToStruct(info[0].As<Object>(), &picture);
+        const char* violation = NULL;
+        FLAC__bool ret = FLAC__format_picture_is_legal(&picture, &violation);
+        if(ret) {
+            info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+        } else {
+            info.GetReturnValue().Set(Nan::New(violation).ToLocalChecked());
+        }
     }
 
     NAN_PROPERTY_GETTER(MetadataType) {
@@ -431,6 +577,133 @@ namespace flac_bindings {
         else if(PropertyName == "PICTURE") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_PICTURE));
         else if(PropertyName == "UNDEFINED") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_UNDEFINED));
         else info.GetReturnValue().SetUndefined();
+    }
+
+    NAN_PROPERTY_GETTER(EntropyCodingMethodType) {
+        char* propertyName = new char[property->Utf8Length() + 1];
+        property->WriteUtf8(propertyName);
+        propertyName[property->Utf8Length()] = '\0';
+        std::string PropertyName(propertyName);
+
+        if(PropertyName == "PARTITIONED_RICE") info.GetReturnValue().Set(Nan::New(FLAC__ENTROPY_CODING_METHOD_PARTITIONED_RICE));
+        else if(PropertyName == "PARTITIONED_RICE2") info.GetReturnValue().Set(Nan::New(FLAC__ENTROPY_CODING_METHOD_PARTITIONED_RICE2));
+        else info.GetReturnValue().SetUndefined();
+    }
+
+    NAN_PROPERTY_GETTER(SubframeType) {
+        char* propertyName = new char[property->Utf8Length() + 1];
+        property->WriteUtf8(propertyName);
+        propertyName[property->Utf8Length()] = '\0';
+        std::string PropertyName(propertyName);
+
+        if(PropertyName == "CONSTANT") info.GetReturnValue().Set(Nan::New(FLAC__SUBFRAME_TYPE_CONSTANT));
+        else if(PropertyName == "VERBATIM") info.GetReturnValue().Set(Nan::New(FLAC__SUBFRAME_TYPE_VERBATIM));
+        else if(PropertyName == "FIXED") info.GetReturnValue().Set(Nan::New(FLAC__SUBFRAME_TYPE_FIXED));
+        else if(PropertyName == "LPC") info.GetReturnValue().Set(Nan::New(FLAC__SUBFRAME_TYPE_LPC));
+        else info.GetReturnValue().SetUndefined();
+    }
+
+    NAN_PROPERTY_GETTER(ChannelAssignment) {
+        char* propertyName = new char[property->Utf8Length() + 1];
+        property->WriteUtf8(propertyName);
+        propertyName[property->Utf8Length()] = '\0';
+        std::string PropertyName(propertyName);
+
+        if(PropertyName == "INDEPENDENT") info.GetReturnValue().Set(Nan::New(FLAC__CHANNEL_ASSIGNMENT_INDEPENDENT));
+        else if(PropertyName == "LEFT_SIDE") info.GetReturnValue().Set(Nan::New(FLAC__CHANNEL_ASSIGNMENT_LEFT_SIDE));
+        else if(PropertyName == "RIGHT_SIDE") info.GetReturnValue().Set(Nan::New(FLAC__CHANNEL_ASSIGNMENT_RIGHT_SIDE));
+        else if(PropertyName == "MID_SIDE") info.GetReturnValue().Set(Nan::New(FLAC__CHANNEL_ASSIGNMENT_MID_SIDE));
+        else info.GetReturnValue().SetUndefined();
+    }
+
+    NAN_PROPERTY_GETTER(FrameNumberType) {
+        char* propertyName = new char[property->Utf8Length() + 1];
+        property->WriteUtf8(propertyName);
+        propertyName[property->Utf8Length()] = '\0';
+        std::string PropertyName(propertyName);
+
+        if(PropertyName == "FRAME_NUMBER") info.GetReturnValue().Set(Nan::New(FLAC__FRAME_NUMBER_TYPE_FRAME_NUMBER));
+        else if(PropertyName == "SAMPLE_NUMBER") info.GetReturnValue().Set(Nan::New(FLAC__FRAME_NUMBER_TYPE_SAMPLE_NUMBER));
+        else info.GetReturnValue().SetUndefined();
+    }
+
+    NAN_PROPERTY_GETTER(StreamMetadata_Picture_Type) {
+        char* propertyName = new char[property->Utf8Length() + 1];
+        property->WriteUtf8(propertyName);
+        propertyName[property->Utf8Length()] = '\0';
+        std::string PropertyName(propertyName);
+
+        if(PropertyName == "OTHER") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_OTHER));
+        else if(PropertyName == "FILE_ICON_STANDARD") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_FILE_ICON_STANDARD));
+        else if(PropertyName == "FILE_ICON") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_FILE_ICON));
+        else if(PropertyName == "FRONT_COVER") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_FRONT_COVER));
+        else if(PropertyName == "BACK_COVER") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_BACK_COVER));
+        else if(PropertyName == "LEAFLET_PAGE") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_LEAFLET_PAGE));
+        else if(PropertyName == "MEDIA") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_MEDIA));
+        else if(PropertyName == "LEAD_ARTIST") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_LEAD_ARTIST));
+        else if(PropertyName == "ARTIST") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_ARTIST));
+        else if(PropertyName == "CONDUCTOR") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_CONDUCTOR));
+        else if(PropertyName == "BAND") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_BAND));
+        else if(PropertyName == "COMPOSER") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_COMPOSER));
+        else if(PropertyName == "LYRICIST") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_LYRICIST));
+        else if(PropertyName == "RECORDING_LOCATION") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_RECORDING_LOCATION));
+        else if(PropertyName == "DURING_RECORDING") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_DURING_RECORDING));
+        else if(PropertyName == "DURING_PERFORMANCE") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_DURING_PERFORMANCE));
+        else if(PropertyName == "VIDEO_SCREEN_CAPTURE") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_VIDEO_SCREEN_CAPTURE));
+        else if(PropertyName == "FISH") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_FISH));
+        else if(PropertyName == "ILLUSTRATION") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_ILLUSTRATION));
+        else if(PropertyName == "BAND_LOGOTYPE") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_BAND_LOGOTYPE));
+        else if(PropertyName == "PUBLISHER_LOGOTYPE") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_PUBLISHER_LOGOTYPE));
+        else if(PropertyName == "UNDEFINED") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_UNDEFINED));
+        else info.GetReturnValue().SetUndefined();
+    }
+
+    NAN_INDEX_GETTER(MetadataTypeString) {
+        if(index < 8 || index == FLAC__MAX_METADATA_TYPE_CODE) {
+            info.GetReturnValue().Set(Nan::New(FLAC__MetadataTypeString[index]).ToLocalChecked());
+        } else {
+            info.GetReturnValue().SetNull();
+        }
+    }
+
+    NAN_INDEX_GETTER(EntropyCodingMethodTypeString) {
+        if(index < 2) {
+            info.GetReturnValue().Set(Nan::New(FLAC__EntropyCodingMethodTypeString[index]).ToLocalChecked());
+        } else {
+            info.GetReturnValue().SetNull();
+        }
+    }
+
+    NAN_INDEX_GETTER(SubframeTypeString) {
+        if(index < 4) {
+            info.GetReturnValue().Set(Nan::New(FLAC__SubframeTypeString[index]).ToLocalChecked());
+        } else {
+            info.GetReturnValue().SetNull();
+        }
+    }
+
+    NAN_INDEX_GETTER(ChannelAssignmentString) {
+        if(index < 4) {
+            info.GetReturnValue().Set(Nan::New(FLAC__ChannelAssignmentString[index]).ToLocalChecked());
+        } else {
+            info.GetReturnValue().SetNull();
+        }
+    }
+
+    NAN_INDEX_GETTER(FrameNumberTypeString) {
+        if(index < 2) {
+            info.GetReturnValue().Set(Nan::New(FLAC__FrameNumberTypeString[index]).ToLocalChecked());
+        } else {
+            info.GetReturnValue().SetNull();
+        }
+    }
+
+    NAN_INDEX_GETTER(StreamMetadata_Picture_TypeString) {
+        if(index < 22) {
+            info.GetReturnValue().Set(Nan::New(FLAC__StreamMetadata_Picture_TypeString[index]).ToLocalChecked());
+        } else {
+            info.GetReturnValue().SetNull();
+        }
     }
 
     NAN_MODULE_INIT(initFormat) {
@@ -454,9 +727,30 @@ namespace flac_bindings {
         Nan::SetMethod(obj, "FLAC__format_cuesheet_is_legal", node_FLAC__format_cuesheet_is_legal);
         Nan::SetMethod(obj, "FLAC__format_picture_is_legal", node_FLAC__format_picture_is_legal);
 
-        Local<ObjectTemplate> MetadataTypeVar = Nan::New<ObjectTemplate>();
-        Nan::SetNamedPropertyHandler(MetadataTypeVar, MetadataType);
-        Nan::Set(obj, Nan::New("MetadataType").ToLocalChecked(), MetadataTypeVar->NewInstance());
+        #define propertyGetter(func) \
+        Local<ObjectTemplate> _JOIN(func, Var) = Nan::New<ObjectTemplate>(); \
+        Nan::SetNamedPropertyHandler(_JOIN(func, Var), func); \
+        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), _JOIN(func, Var)->NewInstance());
+
+        propertyGetter(MetadataType);
+        propertyGetter(EntropyCodingMethodType);
+        propertyGetter(SubframeType);
+        propertyGetter(ChannelAssignment);
+        propertyGetter(FrameNumberType);
+        propertyGetter(StreamMetadata_Picture_Type);
+
+        #define indexGetter(func) \
+        _JOIN(FLAC__, func) = (const char* const*) dlsym(libFlacHandle, "FLAC__" #func); \
+        Local<ObjectTemplate> _JOIN(func, _template) = Nan::New<ObjectTemplate>(); \
+        Nan::SetIndexedPropertyHandler(_JOIN(func, _template), func); \
+        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), _JOIN(func, _template)->NewInstance());
+
+        indexGetter(MetadataTypeString);
+        indexGetter(EntropyCodingMethodTypeString);
+        indexGetter(SubframeTypeString);
+        indexGetter(ChannelAssignmentString);
+        indexGetter(FrameNumberTypeString);
+        indexGetter(StreamMetadata_Picture_TypeString);
 
         Nan::Set(target, Nan::New("format").ToLocalChecked(), obj);
     }
