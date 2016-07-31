@@ -7,6 +7,8 @@
             "src/decoder.cpp",
             "src/format.cpp",
             "src/metadata0.cpp",
+            "src/metadata1.cpp",
+            "src/metadata2.cpp",
             "src/metadata.cpp"
         ],
         "include_dirs": [

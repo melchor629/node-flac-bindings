@@ -34,6 +34,8 @@ namespace flac_bindings {
                 initDecoder(obj);
                 initFormat(obj);
                 initMetadata0(obj);
+                initMetadata1(obj);
+                initMetadata2(obj);
                 initMetadataObjectMethods(obj);
                 Nan::Delete(obj, Nan::New("load").ToLocalChecked());
                 info.GetReturnValue().Set(obj);
@@ -59,8 +61,8 @@ namespace flac_bindings {
         initEncoder(target);
         initDecoder(target);
         initMetadata0(target);
-        //initMetadata1(target);
-        //initMetadata2(target);
+        initMetadata1(target);
+        initMetadata2(target);
         initMetadataObjectMethods(target);
         initFormat(target);
 
