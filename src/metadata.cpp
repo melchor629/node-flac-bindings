@@ -1,5 +1,5 @@
 #include <nan.h>
-#include <dlfcn.h>
+#include "dl.hpp"
 
 using namespace v8;
 using namespace node;
@@ -65,7 +65,7 @@ extern "C" {
 
 namespace flac_bindings {
 
-    extern void* libFlacHandle;
+    extern Library* libFlac;
 
     NAN_METHOD(node_FLAC__metadata_object_new) {
         FLAC__MetadataType type = (FLAC__MetadataType) Nan::To<int>(info[0]).FromJust();
@@ -448,8 +448,8 @@ namespace flac_bindings {
         #define setMethod(fn) \
         Nan::SetMethod(obj, #fn, _JOIN(node_FLAC__metadata_object_, fn)); \
         dlerror(); \
-        _JOIN(FLAC__metadata_object_, fn) = (_JOIN2(FLAC__metadata_object_, fn, _t)) dlsym(libFlacHandle, "FLAC__metadata_object_" #fn); \
-        if(_JOIN(FLAC__metadata_object_, fn) == nullptr) printf("%s\n", dlerror());
+        _JOIN(FLAC__metadata_object_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__metadata_object_, fn, _t)>("FLAC__metadata_object_" #fn); \
+        if(_JOIN(FLAC__metadata_object_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
 
         setMethod(new);
         setMethod(clone);

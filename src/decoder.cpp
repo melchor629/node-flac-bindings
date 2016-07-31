@@ -1,5 +1,5 @@
 #include <nan.h>
-#include <dlfcn.h>
+#include "dl.hpp"
 
 using namespace v8;
 using namespace node;
@@ -128,7 +128,7 @@ extern "C" {
 
 namespace flac_bindings {
 
-    extern void* libFlacHandle;
+    extern Library* libFlac;
 
     NAN_METHOD(node_FLAC__stream_decoder_new) {
         FLAC__StreamDecoder* dec = FLAC__stream_decoder_new();
@@ -505,8 +505,8 @@ namespace flac_bindings {
         #define setMethod(fn) \
         Nan::SetMethod(obj, #fn, _JOIN(node_FLAC__stream_decoder_, fn)); \
         dlerror(); \
-        _JOIN(FLAC__stream_decoder_, fn) = (_JOIN2(FLAC__stream_decoder_, fn, _t)) dlsym(libFlacHandle, "FLAC__stream_decoder_" #fn); \
-        if(_JOIN(FLAC__stream_decoder_, fn) == nullptr) printf("%s\n", dlerror());
+        _JOIN(FLAC__stream_decoder_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__stream_decoder_, fn, _t)>("FLAC__stream_decoder_" #fn); \
+        if(_JOIN(FLAC__stream_decoder_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
 
         setMethod(new);
         setMethod(delete);
@@ -556,7 +556,7 @@ namespace flac_bindings {
         propertyGetter(ErrorStatus);
 
         #define indexGetter(func) \
-        _JOIN(FLAC__StreamDecoder, func) = (const char* const*) dlsym(libFlacHandle, "FLAC__StreamDecoder" #func); \
+        _JOIN(FLAC__StreamDecoder, func) = libFlac->getSymbolAddress<const char* const*>("FLAC__StreamDecoder" #func); \
         Local<ObjectTemplate> _JOIN(func, _template) = Nan::New<ObjectTemplate>(); \
         Nan::SetIndexedPropertyHandler(_JOIN(func, _template), _JOIN(node_FLAC__StreamDecoder, func)); \
         Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, _template)).ToLocalChecked());

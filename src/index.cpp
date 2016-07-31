@@ -1,5 +1,5 @@
 #include <nan.h>
-#include <dlfcn.h>
+#include "dl.hpp"
 
 using namespace v8;
 using namespace node;
@@ -14,7 +14,7 @@ namespace flac_bindings {
     NAN_MODULE_INIT(initFormat);
 
     bool isLibFlacLoaded = false;
-    void* libFlacHandle;
+    Library* libFlac;
     Nan::Persistent<Object> module;
 
     NAN_METHOD(loadLibFlac) {
@@ -24,9 +24,9 @@ namespace flac_bindings {
             Nan::ThrowError("String needed representing the path to flac library");
         } else {
             Nan::Utf8String Path(info[0]);
-            libFlacHandle = dlopen(*Path, RTLD_LAZY | RTLD_LOCAL);
-            if(libFlacHandle == nullptr) {
-                Nan::ThrowError("Could not load flac library");
+            libFlac = Library::load(*Path);
+            if(libFlac == nullptr) {
+                Nan::ThrowError("Could not load library: check path");
             } else {
                 isLibFlacLoaded = true;
                 Handle<Object> obj = Nan::New(module);
@@ -42,14 +42,13 @@ namespace flac_bindings {
     }
 
     static void atExit(void*) {
-        if(isLibFlacLoaded) dlclose(libFlacHandle);
+        if(isLibFlacLoaded) delete libFlac;
     }
 
     NAN_MODULE_INIT(init) {
         module.Reset(target);
-        libFlacHandle = dlopen("flac", RTLD_LOCAL | RTLD_LAZY);
-
-        if(libFlacHandle == nullptr) {
+        libFlac = Library::load("libFLAC");
+        if(libFlac == nullptr) {
             isLibFlacLoaded = false;
             Nan::Set(target, Nan::New("load").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(loadLibFlac)).ToLocalChecked());
             return;
