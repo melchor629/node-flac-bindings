@@ -13,9 +13,20 @@ namespace flac_bindings {
     NAN_MODULE_INIT(initMetadataObjectMethods);
     NAN_MODULE_INIT(initFormat);
 
+    void atExitEncoder();
+    void atExitDecoder();
+
     bool isLibFlacLoaded = false;
     Library* libFlac;
     Nan::Persistent<Object> module;
+
+    static void atExit(void*) {
+        if(isLibFlacLoaded) {
+            atExitDecoder();
+            atExitEncoder();
+            delete libFlac;
+        }
+    }
 
     NAN_METHOD(loadLibFlac) {
         if(info[0]->IsUndefined()) {
@@ -39,12 +50,9 @@ namespace flac_bindings {
                 initMetadataObjectMethods(obj);
                 Nan::Delete(obj, Nan::New("load").ToLocalChecked());
                 info.GetReturnValue().Set(obj);
+                AtExit(atExit);
             }
         }
-    }
-
-    static void atExit(void*) {
-        if(isLibFlacLoaded) delete libFlac;
     }
 
     NAN_MODULE_INIT(init) {

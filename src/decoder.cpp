@@ -1,3 +1,4 @@
+#include <vector>
 #include <nan.h>
 #include "dl.hpp"
 
@@ -11,14 +12,6 @@ using namespace node;
 
 struct flac_decoding_callbacks {
     Nan::Persistent<Function> readCbk, seekCbk, tellCbk, lengthCbk, eofCbk, writeCbk, metadataCbk, errorCbk;
-};
-
-struct flac_decoding_request {
-    FLAC__StreamDecoder* dec;
-    uv_work_t work;
-    FLAC__bool returnValue;
-    uint64_t sample;
-    Nan::Persistent<Function> cbk;
 };
 
 typedef int(*FLAC__StreamDecoderReadCallback)(const FLAC__StreamDecoder*, FLAC__byte [], size_t*, void*);
@@ -129,6 +122,7 @@ extern "C" {
 namespace flac_bindings {
 
     extern Library* libFlac;
+    static std::vector<flac_decoding_callbacks*> objectsToDelete;
 
     NAN_METHOD(node_FLAC__stream_decoder_new) {
         FLAC__StreamDecoder* dec = FLAC__stream_decoder_new();
@@ -169,6 +163,7 @@ namespace flac_bindings {
             cbks
         );
         info.GetReturnValue().Set(Nan::New(ret));
+        objectsToDelete.push_back(cbks);
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_init_ogg_stream) {
@@ -196,6 +191,7 @@ namespace flac_bindings {
             cbks
         );
         info.GetReturnValue().Set(Nan::New(ret));
+        objectsToDelete.push_back(cbks);
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_init_file) {
@@ -214,6 +210,7 @@ namespace flac_bindings {
             cbks->errorCbk.IsEmpty() ? nullptr : error_callback,
             cbks);
         info.GetReturnValue().Set(Nan::New(ret));
+        objectsToDelete.push_back(cbks);
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_init_ogg_file) {
@@ -232,6 +229,7 @@ namespace flac_bindings {
             cbks->errorCbk.IsEmpty() ? nullptr : error_callback,
             cbks);
         info.GetReturnValue().Set(Nan::New(ret));
+        objectsToDelete.push_back(cbks);
     }
 
     NAN_METHOD(node_FLAC__stream_decoder_finish) {
@@ -571,6 +569,21 @@ namespace flac_bindings {
         indexGetter(ErrorStatusString);
 
         Nan::Set(target, Nan::New("decoder").ToLocalChecked(), obj);
+    }
+
+    void atExitDecoder() {
+        for(auto it = objectsToDelete.begin(); it != objectsToDelete.end(); it++) {
+            (*it)->readCbk.Reset();
+            (*it)->writeCbk.Reset();
+            (*it)->seekCbk.Reset();
+            (*it)->tellCbk.Reset();
+            (*it)->lengthCbk.Reset();
+            (*it)->eofCbk.Reset();
+            (*it)->metadataCbk.Reset();
+            (*it)->errorCbk.Reset();
+            delete (*it);
+        }
+        objectsToDelete.clear();
     }
 }
 

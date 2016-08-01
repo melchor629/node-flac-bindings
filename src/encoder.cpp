@@ -17,7 +17,7 @@ typedef void(*FLAC__StreamEncoderMetadataCallback)(const FLAC__StreamEncoder *en
 typedef void(*FLAC__StreamEncoderProgressCallback)(const FLAC__StreamEncoder *encoder, uint64_t bytes_written, uint64_t samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data);
 
 struct flac_encoding_callbacks {
-    Nan::Persistent<Function> readCbk, writeCbk, seekCbk, tellCbk, metadataCbk;
+    Nan::Persistent<Function> readCbk, writeCbk, seekCbk, tellCbk, metadataCbk, progressCbk;
 };
 
 static int read_callback(const FLAC__StreamEncoder*, char[], size_t*, void*);
@@ -108,6 +108,7 @@ extern "C" {
 namespace flac_bindings {
 
     extern Library* libFlac;
+    static std::vector<flac_encoding_callbacks*> objectsToDelete;
 
     NAN_METHOD(node_FLAC__stream_encoder_new) {
         FLAC__StreamEncoder* enc = FLAC__stream_encoder_new();
@@ -139,6 +140,7 @@ namespace flac_bindings {
             req);
 
         info.GetReturnValue().Set(Nan::New(ret));
+        objectsToDelete.push_back(req);
     }
 
     NAN_METHOD(node_FLAC__stream_encoder_init_ogg_stream) {
@@ -158,6 +160,7 @@ namespace flac_bindings {
             req);
 
         info.GetReturnValue().Set(Nan::New(ret));
+        objectsToDelete.push_back(req);
     }
 
     NAN_METHOD(node_FLAC__stream_encoder_init_file) {
@@ -166,12 +169,13 @@ namespace flac_bindings {
             Nan::ThrowError("Second argument has to be a String");
         }
 
-        Nan::Persistent<Function>* progress_callback = new Nan::Persistent<Function>;
-        if(info[2]->IsFunction()) progress_callback->Reset(info[2].As<Function>());
+        flac_encoding_callbacks* req = new flac_encoding_callbacks;
+        if(info[2]->IsFunction()) req->progressCbk.Reset(info[2].As<Function>());
         Nan::Utf8String str(info[1]);
 
-        int ret = FLAC__stream_encoder_init_file(enc, *str, ::progress_callback, progress_callback);
+        int ret = FLAC__stream_encoder_init_file(enc, *str, info[2]->IsFunction() ? progress_callback : nullptr, req);
         info.GetReturnValue().Set(Nan::New(ret));
+        objectsToDelete.push_back(req);
     }
 
     NAN_METHOD(node_FLAC__stream_encoder_init_ogg_file) {
@@ -180,12 +184,13 @@ namespace flac_bindings {
             Nan::ThrowError("Second argument has to be a String");
         }
 
-        Nan::Persistent<Function>* progress_callback = new Nan::Persistent<Function>;
-        if(info[2]->IsFunction()) progress_callback->Reset(info[2].As<Function>());
+        flac_encoding_callbacks* req = new flac_encoding_callbacks;
+        if(info[2]->IsFunction()) req->progressCbk.Reset(info[2].As<Function>());
         Nan::Utf8String str(info[1]);
 
-        int ret = FLAC__stream_encoder_init_ogg_file(enc, *str, ::progress_callback, progress_callback);
+        int ret = FLAC__stream_encoder_init_ogg_file(enc, *str, info[2]->IsFunction() ? progress_callback : nullptr, req);
         info.GetReturnValue().Set(Nan::New(ret));
+        objectsToDelete.push_back(req);
     }
 
     NAN_METHOD(node_FLAC__stream_encoder_finish) {
@@ -474,6 +479,19 @@ namespace flac_bindings {
 
         Nan::Set(target, Nan::New("encoder").ToLocalChecked(), obj);
     }
+
+    void atExitEncoder() {
+        for(auto it = objectsToDelete.begin(); it != objectsToDelete.end(); it++) {
+            (*it)->readCbk.Reset();
+            (*it)->writeCbk.Reset();
+            (*it)->seekCbk.Reset();
+            (*it)->tellCbk.Reset();
+            (*it)->progressCbk.Reset();
+            (*it)->metadataCbk.Reset();
+            delete (*it);
+        }
+        objectsToDelete.clear();
+    }
 };
 
 static void no_free(char* data, void* hint) { }
@@ -569,12 +587,20 @@ static int tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void*
 }
 
 static void metadata_callback(const FLAC__StreamEncoder* enc, const FLAC__StreamMetadata* metadata, void* data) {
-    //TODO
+    Nan::HandleScope scope;
+    flac_encoding_callbacks* cbks = (flac_encoding_callbacks*) data;
+    Handle<Value> args[] = {
+        flac_bindings::structToJs(metadata)
+    };
+
+    Nan::TryCatch tc;tc.SetVerbose(true);
+    Local<Function> func = Nan::New(cbks->metadataCbk);
+    Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
 }
 
 static void progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_written, uint64_t samples_written, unsigned frames_written, unsigned total_frames_estimate, void* data) {
     Nan::HandleScope scope;
-    Nan::Persistent<Function>* cbk = (Nan::Persistent<Function>*) data;
+    flac_encoding_callbacks* cbks = (flac_encoding_callbacks*) data;
     Handle<Value> args[] = {
         Nan::New<Number>(bytes_written),
         Nan::New<Number>(samples_written),
@@ -583,11 +609,9 @@ static void progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_wri
     };
 
     Nan::TryCatch tc;tc.SetVerbose(true);
-    Local<Function> func = Nan::New(*cbk);
-    if(func->IsFunction()) {
-        Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 4, args);
-        if(tc.HasCaught()) {
-            tc.ReThrow();
-        }
+    Local<Function> func = Nan::New(cbks->progressCbk);
+    Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 4, args);
+    if(tc.HasCaught()) {
+        tc.ReThrow();
     }
 }
