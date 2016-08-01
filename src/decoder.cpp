@@ -148,14 +148,14 @@ namespace flac_bindings {
         UNWRAP_FLAC
 
         flac_decoding_callbacks* cbks = new flac_decoding_callbacks;
-        cbks->readCbk.Reset(info[1].As<Function>());
-        cbks->seekCbk.Reset(info[2].As<Function>());
-        cbks->tellCbk.Reset(info[3].As<Function>());
-        cbks->lengthCbk.Reset(info[4].As<Function>());
-        cbks->eofCbk.Reset(info[5].As<Function>());
-        cbks->writeCbk.Reset(info[6].As<Function>());
-        cbks->metadataCbk.Reset(info[7].As<Function>());
-        cbks->errorCbk.Reset(info[8].As<Function>());
+        if(info[1]->IsFunction()) cbks->readCbk.Reset(info[1].As<Function>());
+        if(info[2]->IsFunction()) cbks->seekCbk.Reset(info[2].As<Function>());
+        if(info[3]->IsFunction()) cbks->tellCbk.Reset(info[3].As<Function>());
+        if(info[4]->IsFunction()) cbks->lengthCbk.Reset(info[4].As<Function>());
+        if(info[5]->IsFunction()) cbks->eofCbk.Reset(info[5].As<Function>());
+        if(info[6]->IsFunction()) cbks->writeCbk.Reset(info[6].As<Function>());
+        if(info[7]->IsFunction()) cbks->metadataCbk.Reset(info[7].As<Function>());
+        if(info[8]->IsFunction()) cbks->errorCbk.Reset(info[8].As<Function>());
 
         int ret = FLAC__stream_decoder_init_stream(dec,
             cbks->readCbk.IsEmpty() ? nullptr : read_callback,
@@ -175,14 +175,14 @@ namespace flac_bindings {
         UNWRAP_FLAC
 
         flac_decoding_callbacks* cbks = new flac_decoding_callbacks;
-        cbks->readCbk.Reset(info[1].As<Function>());
-        cbks->seekCbk.Reset(info[2].As<Function>());
-        cbks->tellCbk.Reset(info[3].As<Function>());
-        cbks->lengthCbk.Reset(info[4].As<Function>());
-        cbks->eofCbk.Reset(info[5].As<Function>());
-        cbks->writeCbk.Reset(info[6].As<Function>());
-        cbks->metadataCbk.Reset(info[7].As<Function>());
-        cbks->errorCbk.Reset(info[8].As<Function>());
+        if(info[1]->IsFunction()) cbks->readCbk.Reset(info[1].As<Function>());
+        if(info[2]->IsFunction()) cbks->seekCbk.Reset(info[2].As<Function>());
+        if(info[3]->IsFunction()) cbks->tellCbk.Reset(info[3].As<Function>());
+        if(info[4]->IsFunction()) cbks->lengthCbk.Reset(info[4].As<Function>());
+        if(info[5]->IsFunction()) cbks->eofCbk.Reset(info[5].As<Function>());
+        if(info[6]->IsFunction()) cbks->writeCbk.Reset(info[6].As<Function>());
+        if(info[7]->IsFunction()) cbks->metadataCbk.Reset(info[7].As<Function>());
+        if(info[8]->IsFunction()) cbks->errorCbk.Reset(info[8].As<Function>());
 
         int ret = FLAC__stream_decoder_init_ogg_stream(dec,
             cbks->readCbk.IsEmpty() ? nullptr : read_callback,
@@ -203,9 +203,9 @@ namespace flac_bindings {
 
         flac_decoding_callbacks* cbks = new flac_decoding_callbacks;
         Local<String> fileNameJs = info[1].As<String>();
-        cbks->writeCbk.Reset(info[2].As<Function>());
-        cbks->metadataCbk.Reset(info[3].As<Function>());
-        cbks->errorCbk.Reset(info[4].As<Function>());
+        if(info[2]->IsFunction()) cbks->writeCbk.Reset(info[2].As<Function>());
+        if(info[3]->IsFunction()) cbks->metadataCbk.Reset(info[3].As<Function>());
+        if(info[4]->IsFunction()) cbks->errorCbk.Reset(info[4].As<Function>());
         Nan::Utf8String fileName(fileNameJs);
 
         int ret = FLAC__stream_decoder_init_file(dec, *fileName,
@@ -221,9 +221,9 @@ namespace flac_bindings {
 
         flac_decoding_callbacks* cbks = new flac_decoding_callbacks;
         Local<String> fileNameJs = info[1].As<String>();
-        cbks->writeCbk.Reset(info[2].As<Function>());
-        cbks->metadataCbk.Reset(info[3].As<Function>());
-        cbks->errorCbk.Reset(info[4].As<Function>());
+        if(info[2]->IsFunction()) cbks->writeCbk.Reset(info[2].As<Function>());
+        if(info[3]->IsFunction()) cbks->metadataCbk.Reset(info[3].As<Function>());
+        if(info[4]->IsFunction()) cbks->errorCbk.Reset(info[4].As<Function>());
         Nan::Utf8String fileName(fileNameJs);
 
         int ret = FLAC__stream_decoder_init_ogg_file(dec, *fileName,
@@ -584,9 +584,15 @@ static int read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], si
         Nan::NewBuffer((char*) buffer, *bytes, no_free, nullptr).ToLocalChecked()
     };
 
-    Nan::MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
+    Nan::TryCatch tc; tc.SetVerbose(true);
+    Local<Function> func = Nan::New(cbks->readCbk);
+    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    if(tc.HasCaught()) {
+        tc.ReThrow();
+        return 1;
+    }
     if(!ret.IsEmpty()) {
-        Local<Object> retJust = ret.ToLocalChecked().As<Object>();
+        Local<Object> retJust = ret.As<Object>();
         Local<Value> bytes2 = Nan::Get(retJust, Nan::New("bytes").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
         *bytes = (size_t) Nan::To<int32_t>(bytes2).FromJust();
@@ -604,12 +610,17 @@ static int seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void* 
         Nan::New<Number>(offset)
     };
 
-    Nan::MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
+    Nan::TryCatch tc; tc.SetVerbose(true);
+    Local<Function> func = Nan::New(cbks->seekCbk);
+    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    if(tc.HasCaught()) {
+        tc.ReThrow();
+        return 0;
+    }
     if(ret.IsEmpty()) {
         return 0;
     } else {
-        Local<Value> retJust = ret.ToLocalChecked().As<Object>();
-        return Nan::To<int32_t>(retJust).FromJust();
+        return Nan::To<int32_t>(ret).FromJust();
     }
 }
 
@@ -618,9 +629,15 @@ static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void*
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
     Handle<Value> args[] { };
 
-    Nan::MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 0, args);
+    Nan::TryCatch tc; tc.SetVerbose(true);
+    Local<Function> func = Nan::New(cbks->tellCbk);
+    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 0, args);
+    if(tc.HasCaught()) {
+        tc.ReThrow();
+        return 1;
+    }
     if(!ret.IsEmpty()) {
-        Local<Object> retJust = ret.ToLocalChecked().As<Object>();
+        Local<Object> retJust = ret.As<Object>();
         Local<Value> offset2 = Nan::Get(retJust, Nan::New("offset").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
         *offset = (size_t) Nan::To<int64_t>(offset2).FromJust();
@@ -637,9 +654,15 @@ static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, voi
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
     Handle<Value> args[] { };
 
-    Nan::MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 0, args);
+    Nan::TryCatch tc; tc.SetVerbose(true);
+    Local<Function> func = Nan::New(cbks->lengthCbk);
+    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 0, args);
+    if(tc.HasCaught()) {
+        tc.ReThrow();
+        return 1;
+    }
     if(!ret.IsEmpty()) {
-        Local<Object> retJust = ret.ToLocalChecked().As<Object>();
+        Local<Object> retJust = ret.As<Object>();
         Local<Value> length2 = Nan::Get(retJust, Nan::New("length").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
         *length = (size_t) Nan::To<int64_t>(length2).FromJust();
@@ -656,12 +679,17 @@ static FLAC__bool eof_callback(const FLAC__StreamDecoder* dec, void* data) {
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
     Handle<Value> args[] { };
 
-    Nan::MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 0, args);
+    Nan::TryCatch tc; tc.SetVerbose(true);
+    Local<Function> func = Nan::New(cbks->eofCbk);
+    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 0, args);
+    if(tc.HasCaught()) {
+        tc.ReThrow();
+        return false;
+    }
     if(ret.IsEmpty()) {
         return false;
     } else {
-        Local<Value> retJust = ret.ToLocalChecked().As<Object>();
-        return Nan::To<bool>(retJust).FromJust();
+        return Nan::To<bool>(ret).FromMaybe(0);
     }
 }
 
@@ -678,12 +706,17 @@ static int write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* fra
         buffers
     };
 
-    Nan::MaybeLocal<Value> ret = Nan::New(cbks->writeCbk)->Call(Nan::GetCurrentContext()->Global(), 2, args);
+    Nan::TryCatch tc; tc.SetVerbose(true);
+    Local<Function> func = Nan::New(cbks->writeCbk);
+    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 2, args);
+    if(tc.HasCaught()) {
+        tc.ReThrow();
+        return 2;
+    }
     if(ret.IsEmpty()) {
         return 0;
     } else {
-        Local<Value> retJust = ret.ToLocalChecked().As<Object>();
-        return Nan::To<int32_t>(retJust).FromJust();
+        return Nan::To<int32_t>(ret).FromMaybe(0);
     }
 }
 
@@ -694,7 +727,12 @@ static void metadata_callback(const FLAC__StreamDecoder* dec, const FLAC__Stream
         flac_bindings::structToJs(metadata)
     };
 
-    Nan::New(cbks->metadataCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
+    Nan::TryCatch tc; tc.SetVerbose(true);
+    Local<Function> func = Nan::New(cbks->metadataCbk);
+    Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    if(tc.HasCaught()) {
+        tc.ReThrow();
+    }
 }
 
 static void error_callback(const FLAC__StreamDecoder* dec, int error, void* data) {
@@ -704,5 +742,10 @@ static void error_callback(const FLAC__StreamDecoder* dec, int error, void* data
         Nan::New(error)
     };
 
-    Nan::New(cbks->errorCbk)->Call(Nan::GetCurrentContext()->Global(), 1, args);
+    Nan::TryCatch tc; tc.SetVerbose(true);
+    Local<Function> func = Nan::New(cbks->errorCbk);
+    Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    if(tc.HasCaught()) {
+        tc.ReThrow();
+    }
 }

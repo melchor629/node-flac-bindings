@@ -3,7 +3,6 @@ const flapa = require('./index');
 const fs = require('fs');
 const Buffer = require('buffer').Buffer;
 
-flapa.bindings.load('/usr/local/lib/libFLAC.dylib');
 let dec = new flapa.FileDecoder({file: '/Volumes/OSX/Música/Floating Points/Nuits Sonores - Nectarines/01 - Floating Points - Nuits Sonores.flac'});
 let enc = new flapa.FileEncoder({
     file: 'out.flac',

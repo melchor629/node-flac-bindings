@@ -10,3 +10,10 @@ module.exports = {
     StreamDecoder: decoders.StreamDecoder,
     FileDecoder: decoders.FileDecoder
 };
+
+if('function' === typeof flac_bindings.load && process.platform === 'darwin') {
+    //Try to load libFLAC installed by Homebrew on macOS
+    try {
+        flac_bindings.load('/usr/local/lib/libFLAC.dylib');
+    } catch(e) {}
+}
