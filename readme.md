@@ -50,11 +50,21 @@ All [`FLAC__stream_decoder_...`](https://xiph.org/flac/api/group__flac__stream__
 
 _In this sections will only show the functions that have some changes from the original API and is not denoted before._
 
+ - The `read_callback` from the Stream initialization **must** return an object like this `{bytes: SomeNumber, returnValue: AnotherNumber}`, corresponding to the `bytes` value that expect to be changed in the C callback, and `returnValue` is the value that will be returned with a `return;` statement.
+
+ - The `tell_callback` from the Stream initialization **must** return an object like this `{length: SomeNumber, returnValue: AnotherNumber}`, corresponding to the `length` value that expect to be changed in the C callback, and `returnValue` is the value that will be returned with a `return;` statement.
+
+ - The `length_callback` from the Stream initialization **must** return an object like this `{length: SomeNumber, returnValue: AnotherNumber}`, corresponding to the `length` value that expect to be changed in the C callback, and `returnValue` is the value that will be returned with a `return;` statement.
+
 ### bindings.encoder
 All [`FLAC__stream_encoder_...`](https://xiph.org/flac/api/group__flac__stream__encoder.html) API is here.
 
  - `flac_bindings.encoder.process(enc, buffers, samples)`
 A thing to remark is that `buffers` is an Array of node Buffers.
+
+ - The `read_callback` from the OGG Stream initialization **must** return an object like this `{bytes: SomeNumber, returnValue: AnotherNumber}`, corresponding to the `bytes` value that expect to be changed in the C callback, and `returnValue` is the value that will be returned with a `return;` statement.
+
+ - The `tell_callback` from the Stream initialization **must** return an object like this `{length: SomeNumber, returnValue: AnotherNumber}`, corresponding to the `length` value that expect to be changed in the C callback, and `returnValue` is the value that will be returned with a `return;` statement.
 
 ### bindings.format
 A big part of [FLAC format](https://xiph.org/flac/api/group__flac__format.html) API is here. _Has more internal code that external._ The macros are not exported. Variables are only exported the 6 ones that are an array of C strings and `FLAC_VENDOR_STRING` and `FLAC_VERSION_STRING`.
@@ -173,3 +183,6 @@ You can pass all the options that can expect the [Readable](https://nodejs.org/d
 Event `metadata`
 
 When some metadata has been read, is emitted in a event and it passes an JS representation of it.
+
+### Want more?
+The text above is only a kind of short description. See the [wiki](https://github.com/melchor629/node-flac-bindings/wiki) for a more accurated documentation.

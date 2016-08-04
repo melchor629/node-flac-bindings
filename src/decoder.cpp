@@ -537,7 +537,7 @@ namespace flac_bindings {
         setMethod(process_until_end_of_stream);
         setMethod(process_until_end_of_metadata);
         setMethod(skip_single_frame);
-        setMethod(skip_single_frame);
+        setMethod(seek_absolute);
 
         #define propertyGetter(func) \
         Local<ObjectTemplate> _JOIN(func, Var) = Nan::New<ObjectTemplate>(); \
