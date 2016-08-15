@@ -8,8 +8,11 @@ using namespace v8;
 using namespace node;
 #endif
 
-inline static Nan::MaybeLocal<Object> WrapPointer(void* ptr, size_t length = 0) {
-    return Nan::NewBuffer((char*) ptr, length, nullptr, nullptr);
+inline void nop(char*,void*) { ; }
+
+template<typename Type = void>
+inline static Nan::MaybeLocal<Object> WrapPointer(Type* ptr, size_t length = 0) {
+    return Nan::NewBuffer((char*) (void*) ptr, length, nop, nullptr);
 }
 
 template<typename Type = void>

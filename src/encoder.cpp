@@ -494,12 +494,11 @@ namespace flac_bindings {
     }
 };
 
-static void no_free(char* data, void* hint) { }
 static int read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t* bytes, void* data) {
     Nan::HandleScope scope;
     flac_encoding_callbacks* cbks = (flac_encoding_callbacks*) data;
     Handle<Value> args[] = {
-        Nan::NewBuffer(buffer, *bytes, no_free, nullptr).ToLocalChecked(),
+        WrapPointer(buffer, *bytes).ToLocalChecked(),
         Nan::New<Number>(*bytes)
     };
 
@@ -526,7 +525,7 @@ static int write_callback(const FLAC__StreamEncoder* enc, const char buffer[], s
     Nan::HandleScope scope;
     flac_encoding_callbacks* cbks = (flac_encoding_callbacks*) data;
     Handle<Value> args[] = {
-        Nan::NewBuffer((char*) buffer, bytes, no_free, nullptr).ToLocalChecked(),
+        WrapPointer(buffer, bytes).ToLocalChecked(),
         Nan::New<Number>(bytes),
         Nan::New<Number>(samples),
         Nan::New<Number>(frame)

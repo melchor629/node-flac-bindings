@@ -588,13 +588,11 @@ namespace flac_bindings {
 }
 
 
-static void no_free(char* data, void* hint) { }
-
 static int read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], size_t* bytes, void* data) {
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
     Handle<Value> args[] {
-        Nan::NewBuffer((char*) buffer, *bytes, no_free, nullptr).ToLocalChecked()
+        WrapPointer(buffer, *bytes).ToLocalChecked()
     };
 
     Nan::TryCatch tc; tc.SetVerbose(true);
@@ -712,7 +710,7 @@ static int write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* fra
     Local<Array> buffers = Nan::New<Array>();
     unsigned channels = FLAC__stream_decoder_get_channels(dec);
     for(uint32_t i = 0; i < channels; i++)
-        Nan::Set(buffers, i, Nan::NewBuffer((char*) buffer[i], frame->header.blocksize * sizeof(int32_t), no_free, NULL).ToLocalChecked());
+        Nan::Set(buffers, i, WrapPointer(buffer[i], frame->header.blocksize * sizeof(int32_t)).ToLocalChecked());
 
     Handle<Value> args[] {
         flac_bindings::structToJs(frame),

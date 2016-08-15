@@ -127,8 +127,6 @@ using namespace node;
 
 namespace flac_bindings {
 
-    static void no_free(char* a,void* b) { }
-
     template<typename T> Local<Object> structToJs(const T* i);
     template<typename T> void jsToStruct(const Local<Object> &obj, T* i);
 
@@ -331,7 +329,7 @@ namespace flac_bindings {
         Nan::Set(obj, Nan::New("height").ToLocalChecked(), Nan::New<Number>(i->height));
         Nan::Set(obj, Nan::New("depth").ToLocalChecked(), Nan::New<Number>(i->depth));
         Nan::Set(obj, Nan::New("colors").ToLocalChecked(), Nan::New<Number>(i->colors));
-        Nan::MaybeLocal<Object> data = Nan::NewBuffer((char*) i->data, i->data_length, no_free, nullptr);
+        Nan::MaybeLocal<Object> data = WrapPointer(i->data, i->data_length);
         Nan::Set(obj, Nan::New("data").ToLocalChecked(), data.ToLocalChecked());
 
         return scope.Escape(obj);
@@ -478,14 +476,14 @@ namespace flac_bindings {
                     Nan::Set(subframe, Nan::New("value").ToLocalChecked(), Nan::New(i->subframes[o].data.constant.value));
                     break;
                 case FLAC__SUBFRAME_TYPE_VERBATIM: {
-                    Nan::MaybeLocal<Object> data = Nan::NewBuffer((char*) i->subframes[o].data.verbatim.data,
-                        i->header.blocksize * i->header.bits_per_sample * sizeof(int32_t), no_free, nullptr);
+                    Nan::MaybeLocal<Object> data = WrapPointer(i->subframes[o].data.verbatim.data,
+                        i->header.blocksize * i->header.bits_per_sample * sizeof(int32_t));
                     Nan::Set(subframe, Nan::New("data").ToLocalChecked(), data.ToLocalChecked());
                     break;
                 }
                 case FLAC__SUBFRAME_TYPE_FIXED: {
-                    Nan::MaybeLocal<Object> residual = Nan::NewBuffer((char*) i->subframes[o].data.fixed.residual,
-                        (i->header.blocksize - i->subframes[o].data.fixed.order) * sizeof(int32_t), no_free, nullptr);
+                    Nan::MaybeLocal<Object> residual = WrapPointer(i->subframes[o].data.fixed.residual,
+                        (i->header.blocksize - i->subframes[o].data.fixed.order) * sizeof(int32_t));
                     Local<Array> warmup = Nan::New<Array>();
                     for(uint32_t u = 0; u < i->subframes[o].data.fixed.order; u++)
                         Nan::Set(warmup, u, Nan::New(i->subframes[o].data.fixed.warmup[u]));
@@ -496,8 +494,8 @@ namespace flac_bindings {
                     break;
                 }
                 case FLAC__SUBFRAME_TYPE_LPC: {
-                    Nan::MaybeLocal<Object> residual = Nan::NewBuffer((char*) i->subframes[o].data.lpc.residual,
-                        (i->header.blocksize - i->subframes[o].data.lpc.order) * sizeof(int32_t), no_free, nullptr);
+                    Nan::MaybeLocal<Object> residual = WrapPointer(i->subframes[o].data.lpc.residual,
+                        (i->header.blocksize - i->subframes[o].data.lpc.order) * sizeof(int32_t));
                     Local<Array> warmup = Nan::New<Array>(), qlpCoeff = Nan::New<Array>();
                     for(uint32_t u = 0; u < i->subframes[o].data.lpc.order; u++)
                         Nan::Set(warmup, u, Nan::New(i->subframes[o].data.lpc.warmup[u]));
