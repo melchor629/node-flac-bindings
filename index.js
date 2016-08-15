@@ -17,3 +17,10 @@ if('function' === typeof flac_bindings.load && process.platform === 'darwin') {
         flac_bindings.load('/usr/local/lib/libFLAC.dylib');
     } catch(e) {}
 }
+
+if('function' === typeof flac_bindings.load && process.env.FLAC_LIBRARY !== undefined) {
+    //Try to load libFLAC from environment variable
+    try {
+        flac_bindings.load(process.env.FLAC_LIBRARY);
+    } catch(e) {}
+}
