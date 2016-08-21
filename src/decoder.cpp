@@ -36,8 +36,8 @@ static void error_callback(const FLAC__StreamDecoder*, int, void*);
     if(info[0]->IsUndefined() || info[0]->IsNull()) Nan::ThrowError("Calling FLAC function without the decoder object"); \
     FLAC__StreamDecoder* dec = UnwrapPointer<FLAC__StreamDecoder>(info[0]);
 
-#define FLAC_FUNC(returnType, fn, args...) \
-    typedef returnType (*_JOIN2(FLAC__stream_decoder_, fn, _t))(args); \
+#define FLAC_FUNC(returnType, fn, ...) \
+    typedef returnType (*_JOIN2(FLAC__stream_decoder_, fn, _t))(__VA_ARGS__); \
     static _JOIN2(FLAC__stream_decoder_, fn, _t) _JOIN(FLAC__stream_decoder_, fn);
 
 #define FLAC_GETTER(type, v8Type, fn) \
@@ -67,8 +67,13 @@ FLAC_SETTER(type, v8Type, fn);
 
 FLAC_SETTER(long, Number, ogg_serial_number);
 FLAC_GETTER_SETTER(FLAC__bool, Boolean, md5_checking);
+#ifndef _MSC_VER
 FLAC_SETTER(FLAC__MetadataType, Number, metadata_respond);
 FLAC_SETTER(FLAC__MetadataType, Number, metadata_ignore);
+#else
+FLAC_SETTER(int, Number, metadata_respond);
+FLAC_SETTER(int, Number, metadata_ignore);
+#endif
 FLAC_GETTER(uint64_t, Number, total_samples);
 FLAC_GETTER(unsigned, Number, channels);
 FLAC_GETTER(FLAC__ChannelAssignment, Number, channel_assignment);
@@ -502,7 +507,6 @@ namespace flac_bindings {
         Local<Object> obj = Nan::New<Object>();
         #define setMethod(fn) \
         Nan::SetMethod(obj, #fn, _JOIN(node_FLAC__stream_decoder_, fn)); \
-        dlerror(); \
         _JOIN(FLAC__stream_decoder_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__stream_decoder_, fn, _t)>("FLAC__stream_decoder_" #fn); \
         if(_JOIN(FLAC__stream_decoder_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
 
@@ -638,7 +642,7 @@ static int seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void* 
 static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void* data) {
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
-    Handle<Value> args[] { };
+    Handle<Value> args[] { Nan::Null() };
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->tellCbk);
@@ -663,7 +667,7 @@ static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void*
 static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, void* data) {
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
-    Handle<Value> args[] { };
+    Handle<Value> args[] { Nan::Null() };
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->lengthCbk);
@@ -688,7 +692,7 @@ static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, voi
 static FLAC__bool eof_callback(const FLAC__StreamDecoder* dec, void* data) {
     Nan::HandleScope scope;
     flac_decoding_callbacks* cbks = (flac_decoding_callbacks*) data;
-    Handle<Value> args[] { };
+    Handle<Value> args[] { Nan::Null() };
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->eofCbk);

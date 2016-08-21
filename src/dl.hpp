@@ -2,6 +2,7 @@
 #define DL
 
 #ifdef WIN32
+#define WIN32_MEAN_AND_LEAN
 #include <windows.h>
 #define LIBRARY_EXTENSION "dll"
 #else
@@ -72,8 +73,10 @@ public:
     Type getSymbolAddress(const char* symbol) {
         void* ptr;
 #ifdef WIN32
+        GetLastError();
         ptr = GetProcAddress(lib, symbol);
 #else
+        dlerror();
         ptr = dlsym(lib, symbol);
 #endif
         return reinterpret_cast<Type>(ptr);
@@ -84,13 +87,13 @@ public:
 #ifdef WIN32
         // http://stackoverflow.com/questions/3006229/get-a-text-from-the-error-code-returns-from-the-getlasterror-function
         DWORD   dwLastError = GetLastError();
-        TCHAR   lpBuffer[256] = _T("?");
+        TCHAR   lpBuffer[256] = "?";
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
                      NULL,
                      dwLastError,
                      MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
                      lpBuffer,
-                     STR_ELEMS(lpBuffer)-1,
+                     DWORD(strlen(lpBuffer)-1),
                      NULL);
         error = lpBuffer;
 #else

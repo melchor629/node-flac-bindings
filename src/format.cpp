@@ -352,7 +352,7 @@ namespace flac_bindings {
         i->colors = Nan::To<uint32_t>(colors).FromJust();
         i->depth = Nan::To<uint32_t>(depth).FromJust();
         i->data = UnwrapPointer<FLAC__byte>(data);
-        i->data_length = Buffer::Length(data);
+        i->data_length = uint32_t(Buffer::Length(data));
 
         i->mime_type = new char[mime_type->Utf8Length() + 1];
         i->description = new FLAC__byte[description->Utf8Length() + 1];
@@ -394,6 +394,27 @@ namespace flac_bindings {
             i->comments[o].entry = (FLAC__byte*) *comment;
             i->comments[o].length = comment.length();
         }
+    }
+
+    //            FLAC__StreamMetadata_Application
+    template<>
+    Local<Object> structToJs(const FLAC__StreamMetadata_Application* i) {
+        Nan::EscapableHandleScope scope;
+        Local<Object> obj = Nan::New<Object>();
+
+        Local<Object> id = Nan::CopyBuffer((const char*) i->id, 4).ToLocalChecked();
+        Local<Object> data = WrapPointer(i->data).ToLocalChecked();
+        Nan::Set(obj, Nan::New("id").ToLocalChecked(), id);
+        Nan::Set(obj, Nan::New("data").ToLocalChecked(), data);
+
+        return scope.Escape(obj);
+    }
+
+    template<>
+    void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_Application* i) {
+        const FLAC__byte* id = UnwrapPointer<FLAC__byte>(Nan::Get(obj, Nan::New("id").ToLocalChecked()).ToLocalChecked());
+        i->id[0] = id[0]; i->id[1] = id[1]; i->id[2] = id[2]; i->id[3] = id[3];
+        i->data = UnwrapPointer<FLAC__byte>(Nan::Get(obj, Nan::New("data").ToLocalChecked()).ToLocalChecked());
     }
 
     //            FLAC__StreamMetadata
@@ -742,9 +763,9 @@ namespace flac_bindings {
         Local<Object> obj = Nan::New<Object>();
 
         FLAC__VERSION_STRING = *libFlac->getSymbolAddress<const char**>("FLAC__VERSION_STRING");
-        if(FLAC__VERSION_STRING == nullptr) printf("%s\n", dlerror());
+        if(FLAC__VERSION_STRING == nullptr) printf("%s\n", libFlac->getLastError().c_str());
         FLAC__VENDOR_STRING = *libFlac->getSymbolAddress<const char**>("FLAC__VENDOR_STRING");
-        if(FLAC__VENDOR_STRING == nullptr) printf("%s\n", dlerror());
+        if(FLAC__VENDOR_STRING == nullptr) printf("%s\n", libFlac->getLastError().c_str());
 
         Nan::Set(obj, Nan::New("FLAC__VERSION_STRING").ToLocalChecked(), Nan::New<String>(FLAC__VERSION_STRING).ToLocalChecked());
         Nan::Set(obj, Nan::New("FLAC__VENDOR_STRING").ToLocalChecked(), Nan::New<String>(FLAC__VENDOR_STRING).ToLocalChecked());

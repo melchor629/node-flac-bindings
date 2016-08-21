@@ -9,8 +9,8 @@ using namespace node;
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
 
-#define metadataFunction(ret, name, args...) \
-typedef ret (*_JOIN2(FLAC__metadata_, name, _t))(args); \
+#define metadataFunction(ret, name, ...) \
+typedef ret (*_JOIN2(FLAC__metadata_, name, _t))(__VA_ARGS__); \
 static _JOIN2(FLAC__metadata_, name, _t) _JOIN(FLAC__metadata_, name);
 
 extern "C" {
@@ -115,7 +115,7 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__metadata_object_application_set_data) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
         FLAC__byte* data = UnwrapPointer<FLAC__byte>(info[1]);
-        uint32_t length = Buffer::Length(info[1]);
+        uint32_t length = uint32_t(Buffer::Length(info[1]));
         FLAC__bool r = FLAC__metadata_object_application_set_data(m, data, length, true);
         //To avoid strange problems with pointer owners between node::Buffer and
         //FLAC API, will FLAC ALWAYS copy the contents of the pointer
@@ -422,7 +422,7 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__metadata_object_picture_set_data) {
         FLAC__StreamMetadata* m = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
         FLAC__byte* n = UnwrapPointer<FLAC__byte>(info[1]);
-        uint32_t o = Buffer::Length(info[1]);
+        uint32_t o = uint32_t(Buffer::Length(info[1]));
         FLAC__bool r = FLAC__metadata_object_picture_set_data(m, n, o, true);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
@@ -447,7 +447,6 @@ namespace flac_bindings {
         Local<Object> obj = Nan::New<Object>();
         #define setMethod(fn) \
         Nan::SetMethod(obj, #fn, _JOIN(node_FLAC__metadata_object_, fn)); \
-        dlerror(); \
         _JOIN(FLAC__metadata_object_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__metadata_object_, fn, _t)>("FLAC__metadata_object_" #fn); \
         if(_JOIN(FLAC__metadata_object_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
 

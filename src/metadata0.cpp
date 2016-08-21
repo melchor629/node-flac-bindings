@@ -9,8 +9,8 @@ using namespace node;
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
 
-#define metadataFunction(ret, name, args...) \
-typedef ret (*_JOIN2(FLAC__metadata_, name, _t))(args); \
+#define metadataFunction(ret, name, ...) \
+typedef ret (*_JOIN2(FLAC__metadata_, name, _t))(__VA_ARGS__); \
 static _JOIN2(FLAC__metadata_, name, _t) _JOIN(FLAC__metadata_, name);
 
 extern "C" {

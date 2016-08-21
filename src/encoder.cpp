@@ -31,8 +31,8 @@ static void progress_callback(const FLAC__StreamEncoder*, uint64_t, uint64_t, un
     if(info[0]->IsUndefined() || info[0]->IsNull()) Nan::ThrowError("Calling FLAC function without the encoder object"); \
     FLAC__StreamEncoder* enc = UnwrapPointer<FLAC__StreamEncoder>(info[0]);
 
-#define FLAC_FUNC(returnType, fn, args...) \
-    typedef returnType (*_JOIN2(FLAC__stream_encoder_, fn, _t))(args); \
+#define FLAC_FUNC(returnType, fn, ...) \
+    typedef returnType (*_JOIN2(FLAC__stream_encoder_, fn, _t))(__VA_ARGS__); \
     static _JOIN2(FLAC__stream_encoder_, fn, _t) _JOIN(FLAC__stream_encoder_, fn);
 
 #define FLAC_GETTER(type, v8Type, fn) \
@@ -398,7 +398,6 @@ namespace flac_bindings {
         Local<Object> obj = Nan::New<Object>();
         #define setMethod(fn) \
         Nan::SetMethod(obj, #fn, _JOIN(node_FLAC__stream_encoder_, fn)); \
-        dlerror(); \
         _JOIN(FLAC__stream_encoder_, fn) =  libFlac->getSymbolAddress<_JOIN2(FLAC__stream_encoder_, fn, _t)>("FLAC__stream_encoder_" #fn); \
         if(_JOIN(FLAC__stream_encoder_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
 
