@@ -1,6 +1,6 @@
 {
   "name": "flac-bindings",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "libflac bindings to node.js with easy to use API",
   "repository": "https://github.com/melchor629/node-flac-bindings/",
   "main": "index.js",
