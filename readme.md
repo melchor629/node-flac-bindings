@@ -17,11 +17,11 @@ First, tries to open the library with the usual paths in the system. If it fails
 Every one will contain functions of every FLAC module and its constants and enums. A FLAC encoder function have the form of `FLAC__stream_encoder_new()`, with this binding you will call `flac_bindings.encoder.new()`: _you don't need to write all the function native name_. This (I think) simplifies the way you write the code. Same in constants and enums.
 
 ## What is the bad part?
-Yes, it has. Almost every function expects his parameters and in the write type. If it not, the binding will just crash. So, pay attention on the types of the functions.
+Yes, it has. Almost every function expects his parameters in his right type. If it not, the binding will just crash. So, pay attention on the types of the functions.
 
 Callbacks don't follow exactly the signature that shows in Encoder and Decoder sections: the **first** and **last** parameters are **not sent** to Javascript callbacks. The first, basically because causes random crashes if the object is passed (caused by the GC). The second, because I see it unnecessary and difficult to use this private data in Javascript. Remember not to pass a private data argument in `init` functions!
 
-Too, if you expect an async API, I have no idea how to implement all in async mode: _you need to call sometimes JS functions when the C code would be running in a background thread but you need it now_.
+Also, if you expect an async API, I have no idea how to implement all in async mode: _you need to call sometimes JS functions when the C code would be running in a background thread but you need it now_.
 
 ## Let's dance!
 Download now with
@@ -36,7 +36,7 @@ For use it, include with
 const flac = require('flag-bindings');
 ```
 
-`flac` will be an object with `{bindings: [Bindings API], StreamEncoder: ..., StreamDecoder: ..., FileEncoder: ..., FileDecoder: ...}`. If the `libFLAC` library is not in the loader's path, you will get an object with a load function (`{load: [Function load]}`). You must call `load()` with as first argument the **full** path to the `libFLAC` dynamic library, and then `flac` (the object) will have all objects.
+`flac` will be an object with `{bindings: [Bindings API], StreamEncoder: ..., StreamDecoder: ..., FileEncoder: ..., FileDecoder: ...}`. If the `libFLAC` library is not in the loader's path, you will get an object with a load function (`{load: [Function load]}`). You must call `load()` with the first argument as the **full** path to the `libFLAC` dynamic library, and then `flac` (the object) will have all objects.
 
 ## Binding API
 ### bindings
@@ -80,7 +80,7 @@ A big part of [FLAC format](https://xiph.org/flac/api/group__flac__format.html) 
 ### bindings.metadata0
 All the enormous code from [metadata level 0 interface](https://xiph.org/flac/api/group__flac__metadata__level0.html).
 
- - All the functions return JS Objects. But you should call `flac_bindings.bindings.metadata.delete(obj)` with any of the objects returned in get_tags, get_cuesheet and get_picture.
+ - All the functions return JS Objects. But you should call `flac_bindings.bindings.metadata.delete(obj)` with any of the objects returned in `get_tags`, `get_cuesheet` and `get_picture`.
 
 ### bindings.metadata1
 All from [metadata level 1 interface](https://xiph.org/flac/api/group__flac__metadata__level1.html).
@@ -148,7 +148,7 @@ You can pass all the options that can expect the [Transform](https://nodejs.org/
 	 - Optional
  - **compressionLevel**: Number
     - Sets the compression level for the decoder, changing the parameters below this one for you
-    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#gae49cf32f5256cb47eecd33779493ac85](See what are the parameters changed)
+    - [See what are the parameters changed](https://xiph.org/flac/api/group__flac__stream__encoder.html#gae49cf32f5256cb47eecd33779493ac85)
     - Optional
  - **doMidSideStereo**: Boolean
     - When `true`, encodes stereo streams using mid-side encoding.
@@ -157,7 +157,7 @@ You can pass all the options that can expect the [Transform](https://nodejs.org/
     - When `true` and `doMidSideStereo` set to `true`, enables adaptative switching between mid-side and left-right encoding
     - Optional
  - **apodization**: String
-    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#ga6598f09ac782a1f2a5743ddf247c81c8](See this link)
+    - [See  this link](https://xiph.org/flac/api/group__flac__stream__encoder.html#ga6598f09ac782a1f2a5743ddf247c81c8)
     - Optional
  - **maxLpcOrder**: Number
     - Set the maximum LPC Order, or set to 0 to use fixed predictors
@@ -166,19 +166,19 @@ You can pass all the options that can expect the [Transform](https://nodejs.org/
     - Set the precision of the QLP coefficients, or 0 to let the encoder select it for you
     - Optional
  - **doQlpCoeffPrecSearch**: Boolean
-    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#ga495890067203958e5d67a641f8757b1c](See this link)
+    - [See  this link](https://xiph.org/flac/api/group__flac__stream__encoder.html#ga495890067203958e5d67a641f8757b1c)
     - Optional
  - **doExhaustiveModelSearch**: Boolean
-    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#ga054313e7f6eaf5c6122d82c6a8b3b808](See this link)
+    - [See  this link](https://xiph.org/flac/api/group__flac__stream__encoder.html#ga054313e7f6eaf5c6122d82c6a8b3b808)
     - Optional
  - **minResidualPartitionOrder**: Number
-    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#ga31867a9cf8bc7276942381e4a8145969](See this link)
+    - [See  this link](https://xiph.org/flac/api/group__flac__stream__encoder.html#ga31867a9cf8bc7276942381e4a8145969)
     - Optional
  - **maxResidualPartitionOrder**: Number
-    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#gac2e2147be6e4edf68e02d011349fa08c](See this link)
+    - [See  this link](https://xiph.org/flac/api/group__flac__stream__encoder.html#gac2e2147be6e4edf68e02d011349fa08c)
     - Optional
  - **riceParameterSearchDist**: Number
-    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#ga11f0c589113b17507c0a620b7872036c](See this link)
+    - [See  this link](https://xiph.org/flac/api/group__flac__stream__encoder.html#ga11f0c589113b17507c0a620b7872036c)
     - Optional
 
 ## FileEncoder
