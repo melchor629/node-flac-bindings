@@ -5,7 +5,10 @@
   "repository": "https://github.com/melchor629/node-flac-bindings/",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "prebuild --install",
+    "prebuild": "prebuild -b 4.6.1 -b 6.9.1 -b 7.2.0",
+    "prebuildUpload": "prebuild --upload"
   },
   "keywords": [
     "flac",
@@ -17,7 +20,8 @@
   "license": "ISC",
   "dependencies": {
     "bindings": "^1.2.1",
-    "nan": "^2.4.0"
+    "nan": "^2.4.0",
+    "prebuild": "^4.0.0"
   },
   "gypfile": true
 }
