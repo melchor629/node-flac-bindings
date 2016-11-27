@@ -166,6 +166,16 @@ You can pass all the options that can expect the [Transform](https://nodejs.org/
  - **oggStream**: Boolean
 	 - Determines if the Input data is an OGG Stream
 	 - Defaults to false
+ - **metadata**: Array or Boolean
+    - If is an array, tells the decoder to emit `metadata` when metadata blocks of the types passed are found
+    - If is `true`, tells the decoder to emit `metadata` on all metadata blocks found
+    - Defaults to `STREAMINFO` only
+
+Extra operations available are `getTotalSamples()`, `getChannels()`, `getChannelAssignment()` and `getBitsPerSample()`.
+
+#### Event `metadata`
+
+When some metadata has been read, is emitted in a event and it passes an JS representation of it.
 
 ### FileDecoder
 A [Readable](https://nodejs.org/dist/latest-v6.x/docs/api/stream.html#stream_class_stream_readable) type class that gives you (_integer typed_) interleaved PCM from a file.
@@ -179,8 +189,14 @@ You can pass all the options that can expect the [Readable](https://nodejs.org/d
  - **file**: String
 	 - The file with the FLAC stream and where it will be read
 	 - **You must** provide this value
+ - **metadata**: Array or Boolean
+    - If is an array, tells the decoder to emit `metadata` when metadata blocks of the types passed are found
+    - If is `true`, tells the decoder to emit `metadata` on all metadata blocks found
+    - Defaults to `STREAMINFO` only
 
-Event `metadata`
+Extra operations available are `getTotalSamples()`, `getChannels()`, `getChannelAssignment()` and `getBitsPerSample()`.
+
+#### Event `metadata`
 
 When some metadata has been read, is emitted in a event and it passes an JS representation of it.
 
