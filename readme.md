@@ -146,6 +146,40 @@ You can pass all the options that can expect the [Transform](https://nodejs.org/
  - **totalSamplesEstimate**: Number
 	 - An estimation of the total samples of the PCM stream
 	 - Optional
+ - **compressionLevel**: Number
+    - Sets the compression level for the decoder, changing the parameters below this one for you
+    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#gae49cf32f5256cb47eecd33779493ac85](See what are the parameters changed)
+    - Optional
+ - **doMidSideStereo**: Boolean
+    - When `true`, encodes stereo streams using mid-side encoding.
+    - Optional
+ - **looseMidSideStereo**: Number
+    - When `true` and `doMidSideStereo` set to `true`, enables adaptative switching between mid-side and left-right encoding
+    - Optional
+ - **apodization**: String
+    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#ga6598f09ac782a1f2a5743ddf247c81c8](See this link)
+    - Optional
+ - **maxLpcOrder**: Number
+    - Set the maximum LPC Order, or set to 0 to use fixed predictors
+    - Optional
+ - **qlpCoeffPrecision**: Number
+    - Set the precision of the QLP coefficients, or 0 to let the encoder select it for you
+    - Optional
+ - **doQlpCoeffPrecSearch**: Boolean
+    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#ga495890067203958e5d67a641f8757b1c](See this link)
+    - Optional
+ - **doExhaustiveModelSearch**: Boolean
+    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#ga054313e7f6eaf5c6122d82c6a8b3b808](See this link)
+    - Optional
+ - **minResidualPartitionOrder**: Number
+    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#ga31867a9cf8bc7276942381e4a8145969](See this link)
+    - Optional
+ - **maxResidualPartitionOrder**: Number
+    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#gac2e2147be6e4edf68e02d011349fa08c](See this link)
+    - Optional
+ - **riceParameterSearchDist**: Number
+    - [https://xiph.org/flac/api/group__flac__stream__encoder.html#ga11f0c589113b17507c0a620b7872036c](See this link)
+    - Optional
 
 ## FileEncoder
 A [Writable](https://nodejs.org/dist/latest-v6.x/docs/api/stream.html#stream_writable_streams) type class that writes a PCM stream to a file.
@@ -181,18 +215,11 @@ When some metadata has been read, is emitted in a event and it passes an JS repr
 A [Readable](https://nodejs.org/dist/latest-v6.x/docs/api/stream.html#stream_class_stream_readable) type class that gives you (_integer typed_) interleaved PCM from a file.
 
 `flac_bindings.FileDecoder`
-You can pass all the options that can expect the [Readable](https://nodejs.org/dist/latest-v6.x/docs/api/stream.html#stream_class_stream_readable) object, but also you can pass:
+You can pass all the options that can expect the [Readable](https://nodejs.org/dist/latest-v6.x/docs/api/stream.html#stream_class_stream_readable) and StreamDecoder objects, but also you can pass:
 
- - **oggStream**: Boolean
-	 - Determines if the file is an OGG Stream or not
-	 - Defaults to false
  - **file**: String
 	 - The file with the FLAC stream and where it will be read
 	 - **You must** provide this value
- - **metadata**: Array or Boolean
-    - If is an array, tells the decoder to emit `metadata` when metadata blocks of the types passed are found
-    - If is `true`, tells the decoder to emit `metadata` on all metadata blocks found
-    - Defaults to `STREAMINFO` only
 
 Extra operations available are `getTotalSamples()`, `getChannels()`, `getChannelAssignment()` and `getBitsPerSample()`.
 
