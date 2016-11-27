@@ -38,6 +38,11 @@ const flac = require('flag-bindings');
 
 `flac` will be an object with `{bindings: [Bindings API], StreamEncoder: ..., StreamDecoder: ..., FileEncoder: ..., FileDecoder: ...}`. If the `libFLAC` library is not in the loader's path, you will get an object with a load function (`{load: [Function load]}`). You must call `load()` with the first argument as the **full** path to the `libFLAC` dynamic library, and then `flac` (the object) will have all objects.
 
+## What I need to compile the bindings?
+Well, if you are on Linux x64 or on macOS and have 4.6.x LTS, 6.9.x LTS or latest node version, you don't need to compile anything, I provide the binding binaries for you. You only need to provide the FLAC library binary.
+
+In other cases, you will need to install the development version of FLAC (those which includes the headers and the library binary).
+
 ## Binding API
 ### bindings
 Here is where all exposed before is located.
