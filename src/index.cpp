@@ -57,11 +57,19 @@ namespace flac_bindings {
 
     NAN_MODULE_INIT(init) {
         module.Reset(target);
-        libFlac = Library::load("libFLAC");
+        libFlac = Library::load("libFLAC", "so.8");
         if(libFlac == nullptr) {
+#ifdef __linux__
+            //Workaround for some Linux distros
+            libFlac = Library::load("libFLAC", "so.8");
+            if(libFlac == nullptr) {
+#endif
             isLibFlacLoaded = false;
             Nan::Set(target, Nan::New("load").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(loadLibFlac)).ToLocalChecked());
             return;
+#ifdef __linux__
+            }
+#endif
         }
 
         isLibFlacLoaded = true;

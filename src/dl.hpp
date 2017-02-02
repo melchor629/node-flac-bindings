@@ -37,9 +37,13 @@ private:
 
 public:
     static Library* load(const std::string &filename) {
+        return Library::load(filename, LIBRARY_EXTENSION);
+    }
+
+    static Library* load(const std::string &filename, const std::string &ext) {
         std::string f(filename);
         if(f[0] != '/') {
-            f += LIBRARY_EXTENSION;
+            f += "." + ext;
         }
 
 #ifdef WIN32
