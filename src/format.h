@@ -1031,6 +1031,19 @@ FLAC__bool FLAC__format_picture_is_legal(const FLAC__StreamMetadata_Picture *pic
 namespace flac_bindings {
     template<typename T> Local<Object> structToJs(const T* i);
     template<typename T> void jsToStruct(const Local<Object> &obj, T* i);
+    #define tojs(m) structToJs(m)
+    template<typename T>
+    static T* fromjs(const Local<Value> &m) {
+        if(!m->IsObject()) Nan::ThrowError(Nan::Error("Only objects accepted in metadata APIs"));
+        MaybeLocal<Value> ptr = Nan::Get(m.As<Object>(), Nan::New("_ptr").ToLocalChecked());
+        if(ptr.IsEmpty()) Nan::ThrowError(Nan::Error("This object was not created by the FLAC API"));
+        if(!m->IsObject()) Nan::ThrowError(Nan::Error("This object was not created by the API or was modified incorrecty"));
+        Local<Object> ptr2 = m.As<Object>();
+        if(!Buffer::HasInstance(ptr2)) Nan::ThrowError(Nan::Error("This object was modified incorrectly"));
+        T* p = UnwrapPointer<T>(ptr2);
+        jsToStruct(m.As<Object>(), p);
+        return p;
+    }
 };
 #endif
 #endif

@@ -146,12 +146,12 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__metadata_iterator_get_block) {
         FLAC__Metadata_Iterator* m = UnwrapPointer(info[0]);
         FLAC__StreamMetadata* r = FLAC__metadata_iterator_get_block(m);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        info.GetReturnValue().Set(tojs(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_iterator_set_block) {
         FLAC__Metadata_Iterator* m = UnwrapPointer(info[0]);
-        FLAC__StreamMetadata* n = UnwrapPointer<FLAC__StreamMetadata>(info[1]);
+        FLAC__StreamMetadata* n = fromjs<FLAC__StreamMetadata>(info[1]);
         FLAC__bool r = FLAC__metadata_iterator_set_block(m, n);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
@@ -165,14 +165,14 @@ namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__metadata_iterator_insert_block_before) {
         FLAC__Metadata_Iterator* m = UnwrapPointer(info[0]);
-        FLAC__StreamMetadata* n = UnwrapPointer<FLAC__StreamMetadata>(info[1]);
+        FLAC__StreamMetadata* n = fromjs<FLAC__StreamMetadata>(info[1]);
         FLAC__bool r = FLAC__metadata_iterator_insert_block_before(m, n);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_iterator_insert_block_after) {
         FLAC__Metadata_Iterator* m = UnwrapPointer(info[0]);
-        FLAC__StreamMetadata* n = UnwrapPointer<FLAC__StreamMetadata>(info[1]);
+        FLAC__StreamMetadata* n = fromjs<FLAC__StreamMetadata>(info[1]);
         FLAC__bool r = FLAC__metadata_iterator_insert_block_after(m, n);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }

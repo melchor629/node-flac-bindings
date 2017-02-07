@@ -437,6 +437,7 @@ namespace flac_bindings {
         Nan::Set(obj, Nan::New("type").ToLocalChecked(), Nan::New(i->type));
         Nan::Set(obj, Nan::New("isLast").ToLocalChecked(), Nan::New<Boolean>(i->is_last));
         Nan::Set(obj, Nan::New("length").ToLocalChecked(), Nan::New(i->length));
+        Nan::Set(obj, Nan::New("_ptr").ToLocalChecked(), WrapPointer(i, sizeof(FLAC__StreamMetadata)).ToLocalChecked());
         return scope.Escape(obj);
     }
 

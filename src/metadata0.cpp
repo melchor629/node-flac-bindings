@@ -40,9 +40,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata* metadatas;
         FLAC__bool ret = FLAC__metadata_get_tags(*filename, &metadatas);
         if(ret) {
-            Local<Object> m = structToJs(metadatas);
-            Nan::Set(m, Nan::New("_m").ToLocalChecked(), WrapPointer(metadatas).ToLocalChecked());
-            info.GetReturnValue().Set(m);
+            info.GetReturnValue().Set(tojs(metadatas));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
@@ -53,9 +51,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata* metadatas;
         FLAC__bool ret = FLAC__metadata_get_cuesheet(*filename, &metadatas);
         if(ret) {
-            Local<Object> m = structToJs(metadatas);
-            Nan::Set(m, Nan::New("_m").ToLocalChecked(), WrapPointer(metadatas).ToLocalChecked());
-            info.GetReturnValue().Set(m);
+            info.GetReturnValue().Set(tojs(metadatas));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
@@ -74,9 +70,7 @@ namespace flac_bindings {
         FLAC__bool ret = FLAC__metadata_get_picture(*filename, &picture, type, *mime_type, (FLAC__byte*) *description, max_width, max_height, max_depth, max_colors);
 
         if(ret) {
-            Local<Object> m = structToJs(picture);
-            Nan::Set(m, Nan::New("_m").ToLocalChecked(), WrapPointer(picture).ToLocalChecked());
-            info.GetReturnValue().Set(m);
+            info.GetReturnValue().Set(tojs(picture));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
