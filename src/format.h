@@ -1029,7 +1029,13 @@ FLAC__bool FLAC__format_picture_is_legal(const FLAC__StreamMetadata_Picture *pic
 
 #ifdef NODE_MODULE
 namespace flac_bindings {
-    template<typename T> Local<Object> structToJs(const T* i);
+    template<typename T> void structToJs(const T* i, Local<Object> &obj);
+    template<typename T> Local<Object> structToJs(const T* i) {
+        Nan::EscapableHandleScope scope;
+        Local<Object> obj = Nan::New<Object>();
+        structToJs(i, obj);
+        return scope.Escape(obj);
+    }
     template<typename T> void jsToStruct(const Local<Object> &obj, T* i);
     #define tojs(m) structToJs(m)
     template<typename T>

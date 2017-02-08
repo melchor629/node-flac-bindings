@@ -127,9 +127,6 @@ extern "C" {
 
 namespace flac_bindings {
 
-    template<typename T> Local<Object> structToJs(const T* i);
-    template<typename T> void jsToStruct(const Local<Object> &obj, T* i);
-
     template<typename T> static inline void checkForRealloc(T* &obj, size_t length) {
         if(obj != nullptr) free(obj);
         obj = (T*) malloc(sizeof(T) * length);
@@ -137,9 +134,7 @@ namespace flac_bindings {
 
     //            FLAC__StreamMetadata_StreamInfo
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_StreamInfo* i) {
-        Nan::EscapableHandleScope scope;
-        Local<Object> obj = Nan::New<Object>();
+    void structToJs(const FLAC__StreamMetadata_StreamInfo* i, Local<Object> &obj) {
         Nan::Set(obj, Nan::New("min_blocksize").ToLocalChecked(), Nan::New(i->min_blocksize));
         Nan::Set(obj, Nan::New("max_blocksize").ToLocalChecked(), Nan::New(i->max_blocksize));
         Nan::Set(obj, Nan::New("min_framesize").ToLocalChecked(), Nan::New(i->min_framesize));
@@ -154,7 +149,6 @@ namespace flac_bindings {
             Nan::Set(md5sum, o, Nan::New(i->md5sum[o]));
         }
         Nan::Set(obj, Nan::New("md5sum").ToLocalChecked(), md5sum);
-        return scope.Escape(obj);
     }
 
     template<>
@@ -175,10 +169,7 @@ namespace flac_bindings {
 
     //            FLAC__StreamMetadata_Padding
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_Padding* i) {
-        Nan::EscapableHandleScope scope;
-        return scope.Escape(Nan::New<Object>());
-    }
+    void structToJs(const FLAC__StreamMetadata_Padding* i, Local<Object> &obj) {}
 
     template<>
     void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_Padding* i) {
@@ -187,11 +178,8 @@ namespace flac_bindings {
 
     //            FLAC__StreamMetadata_Unknown
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_Unknown* i) {
-        Nan::EscapableHandleScope scope;
-        Local<Object> obj = Nan::New<Object>();
+    void structToJs(const FLAC__StreamMetadata_Unknown* i, Local<Object> &obj) {
         Nan::Set(obj, Nan::New("data").ToLocalChecked(), WrapPointer(i->data).ToLocalChecked());
-        return scope.Escape(obj);
     }
 
     template<>
@@ -202,13 +190,10 @@ namespace flac_bindings {
 
     //            FLAC__StreamMetadata_SeekPoint
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_SeekPoint* i) {
-        Nan::EscapableHandleScope scope;
-        Local<Object> obj = Nan::New<Object>();
+    void structToJs(const FLAC__StreamMetadata_SeekPoint* i, Local<Object> &obj) {
         Nan::Set(obj, Nan::New("sample_number").ToLocalChecked(), Nan::New<Number>(i->sample_number));
         Nan::Set(obj, Nan::New("stream_offset").ToLocalChecked(), Nan::New<Number>(i->stream_offset));
         Nan::Set(obj, Nan::New("frame_samples").ToLocalChecked(), Nan::New<Number>(i->frame_samples));
-        return scope.Escape(obj);
     }
 
     template<>
@@ -223,15 +208,12 @@ namespace flac_bindings {
 
     //            FLAC__StreamMetadata_SeekTable
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_SeekTable* i) {
-        Nan::EscapableHandleScope scope;
-        Local<Object> obj = Nan::New<Object>();
+    void structToJs(const FLAC__StreamMetadata_SeekTable* i, Local<Object> &obj) {
         Local<Array> arr = Nan::New<Array>();
         for(uint32_t o = 0; o < i->num_points; i++) {
             Nan::Set(arr, o, structToJs(&i->points[o]));
         }
         Nan::Set(obj, Nan::New("points").ToLocalChecked(), arr);
-        return scope.Escape(obj);
     }
 
     template<>
@@ -246,9 +228,7 @@ namespace flac_bindings {
 
     //            FLAC__StreamMetadata_CueSheet
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_CueSheet* i) {
-        Nan::EscapableHandleScope scope;
-        Local<Object> obj = Nan::New<Object>();
+    void structToJs(const FLAC__StreamMetadata_CueSheet* i, Local<Object> &obj) {
         Local<Array> tracks = Nan::New<Array>();
 
         Nan::Set(obj, Nan::New("media_catalog_number").ToLocalChecked(), Nan::New(i->media_catalog_number).ToLocalChecked());
@@ -279,7 +259,6 @@ namespace flac_bindings {
         }
 
         Nan::Set(obj, Nan::New("tracks").ToLocalChecked(), tracks);
-        return scope.Escape(obj);
     }
 
     template<>
@@ -322,10 +301,7 @@ namespace flac_bindings {
 
     //            FLAC__StreamMetadata_Picture
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_Picture* i) {
-        Nan::EscapableHandleScope scope;
-        Local<Object> obj = Nan::New<Object>();
-
+    void structToJs(const FLAC__StreamMetadata_Picture* i, Local<Object> &obj) {
         Nan::Set(obj, Nan::New("type").ToLocalChecked(), Nan::New<Number>(i->type));
         Nan::Set(obj, Nan::New("mime_type").ToLocalChecked(), Nan::New(i->mime_type).ToLocalChecked());
         Nan::Set(obj, Nan::New("description").ToLocalChecked(), Nan::New((char*) i->description).ToLocalChecked());
@@ -335,8 +311,6 @@ namespace flac_bindings {
         Nan::Set(obj, Nan::New("colors").ToLocalChecked(), Nan::New<Number>(i->colors));
         Nan::MaybeLocal<Object> data = WrapPointer(i->data, i->data_length);
         Nan::Set(obj, Nan::New("data").ToLocalChecked(), data.ToLocalChecked());
-
-        return scope.Escape(obj);
     }
 
     template<>
@@ -367,9 +341,7 @@ namespace flac_bindings {
 
     //            FLAC__StreamMetadata_VorbisComment
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_VorbisComment* i) {
-        Nan::EscapableHandleScope scope;
-        Local<Object> obj = Nan::New<Object>();
+    void structToJs(const FLAC__StreamMetadata_VorbisComment* i, Local<Object> &obj) {
         Local<Array> comments = Nan::New<Array>();
 
         Nan::Set(obj, Nan::New("vendor_string").ToLocalChecked(), Nan::New((char*) i->vendor_string.entry).ToLocalChecked());
@@ -380,7 +352,6 @@ namespace flac_bindings {
         }
 
         Nan::Set(obj, Nan::New("comments").ToLocalChecked(), comments);
-        return scope.Escape(obj);
     }
 
     template<>
@@ -388,16 +359,11 @@ namespace flac_bindings {
 
     //            FLAC__StreamMetadata_Application
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_Application* i) {
-        Nan::EscapableHandleScope scope;
-        Local<Object> obj = Nan::New<Object>();
-
+    void structToJs(const FLAC__StreamMetadata_Application* i, Local<Object> &obj) {
         Local<Object> id = WrapPointer(i->id).ToLocalChecked();
         Local<Object> data = WrapPointer(i->data).ToLocalChecked();
         Nan::Set(obj, Nan::New("id").ToLocalChecked(), id);
         Nan::Set(obj, Nan::New("data").ToLocalChecked(), data);
-
-        return scope.Escape(obj);
     }
 
     template<>
@@ -407,9 +373,7 @@ namespace flac_bindings {
 
     //            FLAC__StreamMetadata
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata* i) {
-        Nan::EscapableHandleScope scope;
-        Local<Object> obj;
+    void structToJs(const FLAC__StreamMetadata* i, Local<Object> &obj) {
         switch(i->type) {
             case FLAC__METADATA_TYPE_STREAMINFO: obj = structToJs(&i->data.stream_info); break;
             case FLAC__METADATA_TYPE_PADDING: obj = structToJs(&i->data.padding); break;
@@ -426,7 +390,6 @@ namespace flac_bindings {
         Nan::Set(obj, Nan::New("isLast").ToLocalChecked(), Nan::New<Boolean>(i->is_last));
         Nan::Set(obj, Nan::New("length").ToLocalChecked(), Nan::New(i->length));
         Nan::Set(obj, Nan::New("_ptr").ToLocalChecked(), WrapPointer(i, sizeof(FLAC__StreamMetadata)).ToLocalChecked());
-        return scope.Escape(obj);
     }
 
     template<>
@@ -457,9 +420,7 @@ namespace flac_bindings {
     }
 
     template<>
-    Local<Object> structToJs(const FLAC__Frame* i) {
-        Nan::EscapableHandleScope scope;
-        Local<Object> obj = Nan::New<Object>();
+    void structToJs(const FLAC__Frame* i, Local<Object> &obj) {
         Local<Object> header = Nan::New<Object>();
         Local<Array> subframes = Nan::New<Array>();
         Local<Object> footer = Nan::New<Object>();
@@ -529,7 +490,6 @@ namespace flac_bindings {
         Nan::Set(obj, Nan::New("header").ToLocalChecked(), header);
         Nan::Set(obj, Nan::New("subframes").ToLocalChecked(), subframes);
         Nan::Set(obj, Nan::New("footer").ToLocalChecked(), footer);
-        return scope.Escape(obj);
     }
 
     NAN_METHOD(node_FLAC__format_sample_rate_is_valid) {
