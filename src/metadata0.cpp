@@ -26,8 +26,8 @@ namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__metadata_get_streaminfo) {
         Nan::Utf8String filename(info[0]);
-        FLAC__StreamMetadata metadata;
-        FLAC__bool ret = FLAC__metadata_get_streaminfo(*filename, &metadata);
+        FLAC__StreamMetadata* metadata = (FLAC__StreamMetadata*) malloc(sizeof(FLAC__StreamMetadata*));
+        FLAC__bool ret = FLAC__metadata_get_streaminfo(*filename, metadata);
         if(ret) {
             info.GetReturnValue().Set(structToJs(&metadata));
         } else {
