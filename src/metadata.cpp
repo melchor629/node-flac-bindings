@@ -289,20 +289,22 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_new) {
-        FLAC__StreamMetadata_CueSheet_Track* ptr = FLAC__metadata_object_cuesheet_track_new(); //TODO
-        Nan::MaybeLocal<Object> buff = WrapPointer(ptr, sizeof(FLAC__StreamMetadata_CueSheet_Track));
-        info.GetReturnValue().Set(buff.ToLocalChecked());
+        FLAC__StreamMetadata_CueSheet_Track* ptr = FLAC__metadata_object_cuesheet_track_new();
+        Local<Object> buff = structToJs(ptr);
+        Nan::Set(buff, Nan::New("_ptr").ToLocalChecked(), WrapPointer(ptr, sizeof(FLAC__StreamMetadata_CueSheet_Track)).ToLocalChecked());
+        info.GetReturnValue().Set(buff);
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_clone) {
-        FLAC__StreamMetadata_CueSheet_Track* m = UnwrapPointer<FLAC__StreamMetadata_CueSheet_Track>(info[0]); //TODO
+        FLAC__StreamMetadata_CueSheet_Track* m = fromjs<FLAC__StreamMetadata_CueSheet_Track>(info[0]);
         FLAC__StreamMetadata_CueSheet_Track* ptr = FLAC__metadata_object_cuesheet_track_clone(m);
-        Nan::MaybeLocal<Object> buff = WrapPointer(ptr, sizeof(FLAC__StreamMetadata_CueSheet_Track));
-        info.GetReturnValue().Set(buff.ToLocalChecked());
+        Local<Object> buff = structToJs(ptr);
+        Nan::Set(buff, Nan::New("_ptr").ToLocalChecked(), WrapPointer(ptr, sizeof(FLAC__StreamMetadata_CueSheet_Track)).ToLocalChecked());
+        info.GetReturnValue().Set(buff);
     }
 
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_delete) {
-        FLAC__StreamMetadata_CueSheet_Track* m = UnwrapPointer<FLAC__StreamMetadata_CueSheet_Track>(info[0]); //TODO
+        FLAC__StreamMetadata_CueSheet_Track* m = fromjs<FLAC__StreamMetadata_CueSheet_Track>(info[0]);
         FLAC__metadata_object_cuesheet_track_delete(m);
     }
 
@@ -351,7 +353,7 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_set_track) {
         FLAC__StreamMetadata* m = fromjs<FLAC__StreamMetadata>(info[0]);
         unsigned n = Nan::To<unsigned>(info[1]).FromJust();
-        FLAC__StreamMetadata_CueSheet_Track* o = UnwrapPointer<FLAC__StreamMetadata_CueSheet_Track>(info[2]); //TODO
+        FLAC__StreamMetadata_CueSheet_Track* o = fromjs<FLAC__StreamMetadata_CueSheet_Track>(info[2]);
         FLAC__bool r = FLAC__metadata_object_cuesheet_set_track(m, n, o, false);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
@@ -359,7 +361,7 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_insert_track) {
         FLAC__StreamMetadata* m = fromjs<FLAC__StreamMetadata>(info[0]);
         unsigned n = Nan::To<unsigned>(info[1]).FromJust();
-        FLAC__StreamMetadata_CueSheet_Track* o = UnwrapPointer<FLAC__StreamMetadata_CueSheet_Track>(info[2]); //TODO
+        FLAC__StreamMetadata_CueSheet_Track* o = fromjs<FLAC__StreamMetadata_CueSheet_Track>(info[2]);
         FLAC__bool r = FLAC__metadata_object_cuesheet_insert_track(m, n, o, false);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
