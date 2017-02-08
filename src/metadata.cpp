@@ -169,7 +169,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata* m = fromjs<FLAC__StreamMetadata>(info[0]);
         if(m == nullptr) return;
         unsigned n = Nan::To<unsigned>(info[1]).FromJust();
-        FLAC__bool r = FLAC__metadata_object_seektable_template_append_placeholders(m, n);
+        FLAC__bool r = FLAC__metadata_object_seektable_template_append_point(m, n);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
