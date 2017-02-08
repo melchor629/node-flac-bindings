@@ -1,6 +1,10 @@
-#include "format.h"
 #include "nan.h"
 #include "dl.hpp"
+
+using namespace v8;
+using namespace node;
+#include "pointer.hpp"
+#include "format.h"
 
 namespace flac_bindings {
     extern Library* libFlac;
@@ -121,10 +125,6 @@ extern "C" {
 }
 
 
-using namespace v8;
-using namespace node;
-#include "pointer.hpp"
-
 namespace flac_bindings {
 
     template<typename T> Local<Object> structToJs(const T* i);
@@ -180,15 +180,18 @@ namespace flac_bindings {
         i->dummy = 0;
     }
 
-    //            FLAC__StreamMetadata_Uknown
+    //            FLAC__StreamMetadata_Unknown
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata_Unknown* i) {
         Nan::EscapableHandleScope scope;
-        return scope.Escape(WrapPointer(i->data).ToLocalChecked());
+        Local<Object> obj = Nan::New<Object>();
+        Nan::Set(obj, Nan::New("data").ToLocalChecked(), WrapPointer(i->data).ToLocalChecked());
+        return scope.Escape(obj);
     }
 
     template<>
-    void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_Unknown* i) {
+    void jsToStruct(const Local<Object> &ii, FLAC__StreamMetadata_Unknown* i) {
+        Local<Object> obj = Nan::Get(ii, Nan::New("data").ToLocalChecked()).ToLocalChecked().As<Object>();
         i->data = UnwrapPointer<FLAC__byte>(obj);
     }
 
@@ -217,17 +220,21 @@ namespace flac_bindings {
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata_SeekTable* i) {
         Nan::EscapableHandleScope scope;
+        Local<Object> obj = Nan::New<Object>();
         Local<Array> arr = Nan::New<Array>();
         for(uint32_t o = 0; o < i->num_points; i++) {
             Nan::Set(arr, o, structToJs(&i->points[o]));
         }
-        return scope.Escape(arr);
+        Nan::Set(obj, Nan::New("points").ToLocalChecked(), arr);
+        return scope.Escape(obj);
     }
 
     template<>
-    void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_SeekTable* i) {
+    void jsToStruct(const Local<Object> &stru, FLAC__StreamMetadata_SeekTable* i) {
+        Local<Object> obj = Nan::Get(stru, Nan::New("points").ToLocalChecked()).ToLocalChecked().As<Object>();
         Local<Array> arr = Local<Array>::Cast(obj);
         uint32_t length = arr->Length();
+        i->num_points = length;
         i->points = new FLAC__StreamMetadata_SeekPoint[length];
         for(uint32_t o = 0; o < length; o++) {
             Local<Object> obj = Nan::Get(arr, o).ToLocalChecked().As<Object>();
@@ -249,15 +256,14 @@ namespace flac_bindings {
         for(uint32_t o = 0; o < i->num_tracks; o++) {
             Local<Object> track = Nan::New<Object>();
             Local<Array> indices = Nan::New<Array>();
-            char isrc[14];
+            char isrc[13];
             memcpy(isrc, i->tracks[o].isrc, 13);
-            isrc[13] = '\0';
 
             Nan::Set(track, Nan::New("offset").ToLocalChecked(), Nan::New<Number>(i->tracks[o].offset));
-            Nan::Set(obj, Nan::New("number").ToLocalChecked(), Nan::New(i->tracks[o].number));
-            Nan::Set(obj, Nan::New("type").ToLocalChecked(), Nan::New(i->tracks[o].type));
-            Nan::Set(obj, Nan::New("pre_emphasis").ToLocalChecked(), Nan::New<Boolean>(i->tracks[o].pre_emphasis));
-            Nan::Set(obj, Nan::New("isrc").ToLocalChecked(), Nan::New(isrc).ToLocalChecked());
+            Nan::Set(track, Nan::New("number").ToLocalChecked(), Nan::New(i->tracks[o].number));
+            Nan::Set(track, Nan::New("type").ToLocalChecked(), Nan::New(i->tracks[o].type));
+            Nan::Set(track, Nan::New("pre_emphasis").ToLocalChecked(), Nan::New<Boolean>(i->tracks[o].pre_emphasis));
+            Nan::Set(track, Nan::New("isrc").ToLocalChecked(), Nan::New(isrc).ToLocalChecked());
 
             for(uint32_t u = 0; u < i->tracks[o].num_indices; u++) {
                 Local<Object> indice = Nan::New<Object>();
@@ -283,7 +289,7 @@ namespace flac_bindings {
         Local<Array> tracks = Nan::Get(obj, Nan::New("tracks").ToLocalChecked()).ToLocalChecked().As<Array>();
 
         mediaCatalogNumber->WriteUtf8(i->media_catalog_number);
-        i->lead_in = Nan::To<uint32_t>(leadIn).FromJust();
+        i->lead_in = Nan::To<int64_t>(leadIn).FromJust();
         i->is_cd = Nan::To<FLAC__bool>(isCd).FromJust();
         i->num_tracks = tracks->Length();
 
@@ -310,7 +316,7 @@ namespace flac_bindings {
                 Local<Number> offset = Nan::Get(index, Nan::New("offset").ToLocalChecked()).ToLocalChecked().As<Number>();
                 Local<Number> number = Nan::Get(index, Nan::New("number").ToLocalChecked()).ToLocalChecked().As<Number>();
 
-                i->tracks[o].indices[u].offset = Nan::To<uint32_t>(offset).FromJust();
+                i->tracks[o].indices[u].offset = Nan::To<int64_t>(offset).FromJust();
                 i->tracks[o].indices[u].number = Nan::To<uint32_t>(number).FromJust();
             }
         }
@@ -574,39 +580,42 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__format_vorbiscomment_entry_value_is_legal) {
-        unsigned length = Nan::To<unsigned>(info[1]).FromJust();//TODO
-        FLAC__bool ret = FLAC__format_vorbiscomment_entry_value_is_legal(NULL, length);
+        Local<String> jsStr = Nan::To<String>(info[0]).ToLocalChecked();
+        char* str = new char[jsStr->Utf8Length() + 1];
+        jsStr->WriteUtf8(str);
+        str[jsStr->Utf8Length()] = '\0';
+        FLAC__bool ret = FLAC__format_vorbiscomment_entry_value_is_legal((uint8_t*) str, jsStr->Utf8Length());
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+        delete[] str;
     }
 
     NAN_METHOD(node_FLAC__format_vorbiscomment_entry_is_legal) {
-        unsigned length = Nan::To<unsigned>(info[1]).FromJust();//TODO
-        FLAC__bool ret = FLAC__format_vorbiscomment_entry_is_legal(NULL, length);
+        Local<String> jsStr = Nan::To<String>(info[0]).ToLocalChecked();
+        char* str = new char[jsStr->Utf8Length() + 1];
+        jsStr->WriteUtf8(str);
+        str[jsStr->Utf8Length()] = '\0';
+        FLAC__bool ret = FLAC__format_vorbiscomment_entry_is_legal((uint8_t*) str, jsStr->Utf8Length());
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+        delete[] str;
     }
 
     NAN_METHOD(node_FLAC__format_seektable_is_legal) {
-        FLAC__StreamMetadata_SeekTable table;
-        jsToStruct(info[0].As<Array>(), &table);
-        FLAC__bool ret = FLAC__format_seektable_is_legal(&table);
+        FLAC__StreamMetadata_SeekTable* table = fromjs<FLAC__StreamMetadata_SeekTable>(info[0]);
+        FLAC__bool ret = FLAC__format_seektable_is_legal(table);
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        delete[] table.points;
     }
 
     NAN_METHOD(node_FLAC__format_seektable_sort) {
-        FLAC__StreamMetadata_SeekTable table;
-        jsToStruct(info[0].As<Array>(), &table);
-        FLAC__format_seektable_sort(&table);
+        FLAC__StreamMetadata_SeekTable* table = fromjs<FLAC__StreamMetadata_SeekTable>(info[0]);
+        FLAC__format_seektable_sort(table);
         info.GetReturnValue().Set(structToJs(&table));
-        delete[] table.points;
     }
 
     NAN_METHOD(node_FLAC__format_cuesheet_is_legal) {
-        FLAC__StreamMetadata_CueSheet cue;
-        jsToStruct(info[0].As<Object>(), &cue);
+        FLAC__StreamMetadata_CueSheet* cue = fromjs<FLAC__StreamMetadata_CueSheet>(info[0]);
         bool check = Nan::To<int>(info[1].As<Boolean>()).FromJust();
         const char* violation = NULL;
-        FLAC__bool ret = FLAC__format_cuesheet_is_legal(&cue, check, &violation);
+        FLAC__bool ret = FLAC__format_cuesheet_is_legal(cue, check, &violation);
         if(ret) {
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         } else {
@@ -615,10 +624,9 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__format_picture_is_legal) {
-        FLAC__StreamMetadata_Picture picture;
-        jsToStruct(info[0].As<Object>(), &picture);
+        FLAC__StreamMetadata_Picture* picture = fromjs<FLAC__StreamMetadata_Picture>(info[0]);
         const char* violation = NULL;
-        FLAC__bool ret = FLAC__format_picture_is_legal(&picture, &violation);
+        FLAC__bool ret = FLAC__format_picture_is_legal(picture, &violation);
         if(ret) {
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         } else {
@@ -770,16 +778,16 @@ namespace flac_bindings {
 
         Nan::Set(obj, Nan::New("FLAC__VERSION_STRING").ToLocalChecked(), Nan::New<String>(FLAC__VERSION_STRING).ToLocalChecked());
         Nan::Set(obj, Nan::New("FLAC__VENDOR_STRING").ToLocalChecked(), Nan::New<String>(FLAC__VENDOR_STRING).ToLocalChecked());
-        Nan::SetMethod(obj, "FLAC__format_sample_rate_is_valid", node_FLAC__format_sample_rate_is_valid);
-        Nan::SetMethod(obj, "FLAC__format_blocksize_is_subset", node_FLAC__format_blocksize_is_subset);
-        Nan::SetMethod(obj, "FLAC__format_sample_rate_is_subset", node_FLAC__format_sample_rate_is_subset);
-        Nan::SetMethod(obj, "FLAC__format_vorbiscomment_entry_name_is_legal", node_FLAC__format_vorbiscomment_entry_name_is_legal);
-        Nan::SetMethod(obj, "FLAC__format_vorbiscomment_entry_value_is_legal", node_FLAC__format_vorbiscomment_entry_value_is_legal);
-        Nan::SetMethod(obj, "FLAC__format_vorbiscomment_entry_is_legal", node_FLAC__format_vorbiscomment_entry_is_legal);
-        Nan::SetMethod(obj, "FLAC__format_seektable_is_legal", node_FLAC__format_seektable_is_legal);
-        Nan::SetMethod(obj, "FLAC__format_seektable_sort", node_FLAC__format_seektable_sort);
-        Nan::SetMethod(obj, "FLAC__format_cuesheet_is_legal", node_FLAC__format_cuesheet_is_legal);
-        Nan::SetMethod(obj, "FLAC__format_picture_is_legal", node_FLAC__format_picture_is_legal);
+        Nan::SetMethod(obj, "sample_rate_is_valid", node_FLAC__format_sample_rate_is_valid);
+        Nan::SetMethod(obj, "blocksize_is_subset", node_FLAC__format_blocksize_is_subset);
+        Nan::SetMethod(obj, "sample_rate_is_subset", node_FLAC__format_sample_rate_is_subset);
+        Nan::SetMethod(obj, "vorbiscomment_entry_name_is_legal", node_FLAC__format_vorbiscomment_entry_name_is_legal);
+        Nan::SetMethod(obj, "vorbiscomment_entry_value_is_legal", node_FLAC__format_vorbiscomment_entry_value_is_legal);
+        Nan::SetMethod(obj, "vorbiscomment_entry_is_legal", node_FLAC__format_vorbiscomment_entry_is_legal);
+        Nan::SetMethod(obj, "seektable_is_legal", node_FLAC__format_seektable_is_legal);
+        Nan::SetMethod(obj, "seektable_sort", node_FLAC__format_seektable_sort);
+        Nan::SetMethod(obj, "cuesheet_is_legal", node_FLAC__format_cuesheet_is_legal);
+        Nan::SetMethod(obj, "picture_is_legal", node_FLAC__format_picture_is_legal);
 
         #define propertyGetter(func) \
         Local<ObjectTemplate> _JOIN(func, Var) = Nan::New<ObjectTemplate>(); \
