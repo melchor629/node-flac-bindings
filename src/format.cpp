@@ -130,6 +130,11 @@ namespace flac_bindings {
     template<typename T> Local<Object> structToJs(const T* i);
     template<typename T> void jsToStruct(const Local<Object> &obj, T* i);
 
+    template<typename T> static inline void checkForRealloc(T* &obj, size_t length) {
+        if(obj != nullptr) free(obj);
+        obj = (T*) malloc(sizeof(T) * length);
+    }
+
     //            FLAC__StreamMetadata_StreamInfo
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata_StreamInfo* i) {
@@ -233,10 +238,7 @@ namespace flac_bindings {
     void jsToStruct(const Local<Object> &stru, FLAC__StreamMetadata_SeekTable* i) {
         Local<Object> obj = Nan::Get(stru, Nan::New("points").ToLocalChecked()).ToLocalChecked().As<Object>();
         Local<Array> arr = Local<Array>::Cast(obj);
-        uint32_t length = arr->Length();
-        i->num_points = length;
-        i->points = new FLAC__StreamMetadata_SeekPoint[length];
-        for(uint32_t o = 0; o < length; o++) {
+        for(uint32_t o = 0; o < i->num_points; o++) {
             Local<Object> obj = Nan::Get(arr, o).ToLocalChecked().As<Object>();
             jsToStruct(obj, &i->points[o]);
         }
@@ -291,9 +293,7 @@ namespace flac_bindings {
         mediaCatalogNumber->WriteUtf8(i->media_catalog_number);
         i->lead_in = Nan::To<int64_t>(leadIn).FromJust();
         i->is_cd = Nan::To<FLAC__bool>(isCd).FromJust();
-        i->num_tracks = tracks->Length();
 
-        i->tracks = new FLAC__StreamMetadata_CueSheet_Track[i->num_tracks];
         for(unsigned o = 0; o < i->num_tracks; o++) {
             Local<Object> item = Nan::Get(tracks, o).ToLocalChecked().As<Object>();
             Local<Number> offset = Nan::Get(item, Nan::New("offset").ToLocalChecked()).ToLocalChecked().As<Number>();
@@ -308,9 +308,7 @@ namespace flac_bindings {
             i->tracks[o].number = Nan::To<uint32_t>(number).FromJust();
             i->tracks[o].type = Nan::To<uint32_t>(type).FromJust();
             i->tracks[o].pre_emphasis = Nan::To<uint32_t>(pre_emphasis).FromJust();
-            i->tracks[o].num_indices = indices->Length();
 
-            i->tracks[o].indices = new FLAC__StreamMetadata_CueSheet_Index[i->tracks[o].num_indices];
             for(unsigned u = 0; u < i->tracks[o].num_indices; u++) {
                 Local<Object> index = Nan::Get(indices, u).ToLocalChecked().As<Object>();
                 Local<Number> offset = Nan::Get(index, Nan::New("offset").ToLocalChecked()).ToLocalChecked().As<Number>();
@@ -360,8 +358,8 @@ namespace flac_bindings {
         i->data = UnwrapPointer<FLAC__byte>(data);
         i->data_length = uint32_t(Buffer::Length(data));
 
-        i->mime_type = new char[mime_type->Utf8Length() + 1];
-        i->description = new FLAC__byte[description->Utf8Length() + 1];
+        checkForRealloc(i->mime_type, mime_type->Utf8Length() + 1);
+        checkForRealloc(i->description, description->Utf8Length() + 1);
         mime_type->WriteUtf8(i->mime_type);
         description->WriteUtf8((char*) i->description);
         i->mime_type[mime_type->Utf8Length()] = i->description[description->Utf8Length()] = '\0';
@@ -392,9 +390,7 @@ namespace flac_bindings {
 
         i->vendor_string.length = vendor_string.length();
         i->vendor_string.entry = (FLAC__byte*) *vendor_string;
-        i->num_comments = comments->Length();
 
-        i->comments = new FLAC__StreamMetadata_VorbisComment_Entry[i->num_comments];
         for(uint32_t o = 0; o < i->num_comments; o++) {
             Nan::Utf8String comment(Nan::Get(comments, o).ToLocalChecked());
             i->comments[o].entry = (FLAC__byte*) *comment;
@@ -408,7 +404,7 @@ namespace flac_bindings {
         Nan::EscapableHandleScope scope;
         Local<Object> obj = Nan::New<Object>();
 
-        Local<Object> id = Nan::CopyBuffer((const char*) i->id, 4).ToLocalChecked();
+        Local<Object> id = WrapPointer(i->id).ToLocalChecked();
         Local<Object> data = WrapPointer(i->data).ToLocalChecked();
         Nan::Set(obj, Nan::New("id").ToLocalChecked(), id);
         Nan::Set(obj, Nan::New("data").ToLocalChecked(), data);
@@ -418,8 +414,6 @@ namespace flac_bindings {
 
     template<>
     void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_Application* i) {
-        const FLAC__byte* id = UnwrapPointer<FLAC__byte>(Nan::Get(obj, Nan::New("id").ToLocalChecked()).ToLocalChecked());
-        i->id[0] = id[0]; i->id[1] = id[1]; i->id[2] = id[2]; i->id[3] = id[3];
         i->data = UnwrapPointer<FLAC__byte>(Nan::Get(obj, Nan::New("data").ToLocalChecked()).ToLocalChecked());
     }
 
