@@ -40,7 +40,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata* metadatas;
         FLAC__bool ret = FLAC__metadata_get_tags(*filename, &metadatas);
         if(ret) {
-            info.GetReturnValue().Set(tojs(metadatas));
+            info.GetReturnValue().Set(structToJs(metadatas));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
@@ -51,7 +51,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata* metadatas;
         FLAC__bool ret = FLAC__metadata_get_cuesheet(*filename, &metadatas);
         if(ret) {
-            info.GetReturnValue().Set(tojs(metadatas));
+            info.GetReturnValue().Set(structToJs(metadatas));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
@@ -60,7 +60,7 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__metadata_get_picture) {
         FLAC__StreamMetadata* picture;
         Nan::Utf8String filename(info[0]);
-        FLAC__StreamMetadata_Picture_Type type = (FLAC__StreamMetadata_Picture_Type) Nan::To<unsigned>(info[1]).FromJust();
+        FLAC__StreamMetadata_Picture_Type type = (FLAC__StreamMetadata_Picture_Type) Nan::To<int>(info[1]).FromJust();
         Nan::Utf8String mime_type(info[2]);
         Nan::Utf8String description(info[3]);
         unsigned max_width = Nan::To<unsigned>(info[4]).FromJust();
@@ -70,7 +70,7 @@ namespace flac_bindings {
         FLAC__bool ret = FLAC__metadata_get_picture(*filename, &picture, type, *mime_type, (FLAC__byte*) *description, max_width, max_height, max_depth, max_colors);
 
         if(ret) {
-            info.GetReturnValue().Set(tojs(picture));
+            info.GetReturnValue().Set(structToJs(picture));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }

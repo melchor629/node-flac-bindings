@@ -1036,8 +1036,6 @@ namespace flac_bindings {
         structToJs(i, obj);
         return scope.Escape(obj);
     }
-    template<typename T> void jsToStruct(const Local<Object> &obj, T* i);
-    #define tojs(m) structToJs(m)
     template<typename T>
     static T* fromjs(const Local<Value> &m) {
         Nan::HandleScope scope;
@@ -1047,9 +1045,7 @@ namespace flac_bindings {
         if(!m->IsObject()) { Nan::ThrowError(Nan::Error("This object was not created by the API or was modified incorrecty")); return nullptr; }
         Local<Value> ptr2 = ptr.ToLocalChecked();
         if(!Buffer::HasInstance(ptr2)) { Nan::ThrowError(Nan::Error("This object was modified incorrectly")); return nullptr; }
-        T* p = UnwrapPointer<T>(ptr2);
-        jsToStruct(m.As<Object>(), p);
-        return p;
+        return UnwrapPointer<T>(ptr2);
     }
 };
 #endif

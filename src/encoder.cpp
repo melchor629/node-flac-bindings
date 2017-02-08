@@ -274,15 +274,11 @@ namespace flac_bindings {
         FLAC__StreamMetadata** metadatas = new FLAC__StreamMetadata*[num_blocks];
 
         for(uint32_t i = 0; i < num_blocks; i++) {
-            metadatas[i] = new FLAC__StreamMetadata;
-            jsToStruct(Nan::Get(metadata, i).ToLocalChecked()->ToObject(), metadatas[i]);
+            metadatas[i] = fromjs<FLAC__StreamMetadata>(Nan::Get(metadata, i).ToLocalChecked().As<Object>());
         }
 
         FLAC__bool ret = FLAC__stream_encoder_set_metadata(enc, metadatas, num_blocks);
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        for(uint32_t i = 0; i < num_blocks; i++) {
-            delete metadatas[i];
-        }
         delete[] metadatas;
     }
 

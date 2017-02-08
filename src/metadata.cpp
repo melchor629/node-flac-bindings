@@ -73,7 +73,7 @@ namespace flac_bindings {
         if(m == nullptr) {
             info.GetReturnValue().SetNull();
         } else {
-            info.GetReturnValue().Set(tojs(m));
+            info.GetReturnValue().Set(structToJs(m));
         }
     }
 
@@ -84,7 +84,7 @@ namespace flac_bindings {
         } else {
             FLAC__StreamMetadata* n = FLAC__metadata_object_clone(m);
             if(n != nullptr) {
-                info.GetReturnValue().Set(tojs(m));
+                info.GetReturnValue().Set(structToJs(m));
             } else {
                 info.GetReturnValue().SetNull();
             }
@@ -123,12 +123,35 @@ namespace flac_bindings {
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
+    static inline bool getSeekPoint(const Local<Object> &obj, FLAC__StreamMetadata_SeekPoint &point) {
+        MaybeLocal<Value> sampleNumber = Nan::Get(obj, Nan::New("sample_number").ToLocalChecked());
+        MaybeLocal<Value> streamOffset = Nan::Get(obj, Nan::New("stream_offset").ToLocalChecked());
+        MaybeLocal<Value> frameSamples = Nan::Get(obj, Nan::New("frame_samples").ToLocalChecked());
+        if(sampleNumber.IsEmpty() || streamOffset.IsEmpty() || frameSamples.IsEmpty()) {
+            Nan::ThrowError(Nan::Error("Invalid SeekPoint: is incomplete"));
+            return false;
+        } else {
+            Maybe<uint32_t> sample_number = Nan::To<uint32_t>(sampleNumber.ToLocalChecked());
+            Maybe<uint32_t> stream_offset = Nan::To<uint32_t>(streamOffset.ToLocalChecked());
+            Maybe<uint32_t> frame_samples = Nan::To<uint32_t>(frameSamples.ToLocalChecked());
+            if(!sample_number.IsJust() || !stream_offset.IsJust() || !frame_samples.IsJust()) {
+                Nan::ThrowError(Nan::Error("Invalid SeekPoint: some values are not Numbers"));
+                return false;
+            } else {
+                point.sample_number = sample_number.FromJust();
+                point.stream_offset = stream_offset.FromJust();
+                point.frame_samples = frame_samples.FromJust();
+                return true;
+            }
+        }
+    }
+
     NAN_METHOD(node_FLAC__metadata_object_seektable_set_point) {
         FLAC__StreamMetadata* m = fromjs<FLAC__StreamMetadata>(info[0]);
         if(m == nullptr) return;
         unsigned n = Nan::To<unsigned>(info[1]).FromJust();
         FLAC__StreamMetadata_SeekPoint point;
-        jsToStruct(info[2].As<Object>(), &point);
+        if(getSeekPoint(info[2].As<Object>(), point))
         FLAC__metadata_object_seektable_set_point(m, n, point);
     }
 
@@ -137,9 +160,10 @@ namespace flac_bindings {
         if(m == nullptr) return;
         unsigned n = Nan::To<unsigned>(info[1]).FromJust();
         FLAC__StreamMetadata_SeekPoint point;
-        jsToStruct(info[2].As<Object>(), &point);
-        FLAC__bool r = FLAC__metadata_object_seektable_insert_point(m, n, point);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        if(getSeekPoint(info[2].As<Object>(), point)) {
+            FLAC__bool r = FLAC__metadata_object_seektable_insert_point(m, n, point);
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        }
     }
 
     NAN_METHOD(node_FLAC__metadata_object_seektable_delete_point) {

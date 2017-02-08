@@ -134,7 +134,7 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block) {
         FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
         FLAC__StreamMetadata* r = FLAC__metadata_simple_iterator_get_block(it);
-        info.GetReturnValue().Set(tojs(r));
+        info.GetReturnValue().Set(structToJs(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_simple_iterator_set_block) {
