@@ -236,9 +236,9 @@ namespace flac_bindings {
         if(m == nullptr) return;
         unsigned n = Nan::To<unsigned>(info[1]).FromJust();
         FLAC__StreamMetadata_VorbisComment_Entry o;
-        Nan::Utf8String vs(info[1]);
+        Nan::Utf8String vs(info[2]);
         o.entry = (FLAC__byte*) *vs;
-        o.length = vs.length();
+        o.length = vs.length() + 1;
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_set_comment(m, n, o, true);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
@@ -248,9 +248,9 @@ namespace flac_bindings {
         if(m == nullptr) return;
         unsigned n = Nan::To<unsigned>(info[1]).FromJust();
         FLAC__StreamMetadata_VorbisComment_Entry o;
-        Nan::Utf8String vs(info[1]);
+        Nan::Utf8String vs(info[2]);
         o.entry = (FLAC__byte*) *vs;
-        o.length = vs.length();
+        o.length = vs.length() + 1;
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_insert_comment(m, n, o, true);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
@@ -261,7 +261,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata_VorbisComment_Entry n;
         Nan::Utf8String vs(info[1]);
         n.entry = (FLAC__byte*) *vs;
-        n.length = vs.length();
+        n.length = vs.length() + 1;
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_append_comment(m, n, true);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
@@ -272,7 +272,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata_VorbisComment_Entry n;
         Nan::Utf8String vs(info[1]);
         n.entry = (FLAC__byte*) *vs;
-        n.length = vs.length();
+        n.length = vs.length() + 1;
         FLAC__bool o = Nan::To<FLAC__bool>(info[2]).FromMaybe(0);
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_replace_comment(m, n, o, true);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
@@ -281,7 +281,7 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__metadata_object_vorbiscomment_delete_comment) {
         FLAC__StreamMetadata* m = fromjs<FLAC__StreamMetadata>(info[0]);
         if(m == nullptr) return;
-        FLAC__bool n = Nan::To<FLAC__bool>(info[1]).FromJust();
+        unsigned n = Nan::To<unsigned>(info[1]).FromJust();
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_delete_comment(m, n);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }

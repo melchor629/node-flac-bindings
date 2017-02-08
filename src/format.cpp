@@ -384,19 +384,7 @@ namespace flac_bindings {
     }
 
     template<>
-    void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_VorbisComment* i) {
-        Nan::Utf8String vendor_string(Nan::Get(obj, Nan::New("vendor_string").ToLocalChecked()).ToLocalChecked());
-        Local<Array> comments = Nan::Get(obj, Nan::New("comments").ToLocalChecked()).ToLocalChecked().As<Array>();
-
-        i->vendor_string.length = vendor_string.length();
-        i->vendor_string.entry = (FLAC__byte*) *vendor_string;
-
-        for(uint32_t o = 0; o < i->num_comments; o++) {
-            Nan::Utf8String comment(Nan::Get(comments, o).ToLocalChecked());
-            i->comments[o].entry = (FLAC__byte*) *comment;
-            i->comments[o].length = comment.length();
-        }
-    }
+    void jsToStruct(const Local<Object> &obj, FLAC__StreamMetadata_VorbisComment* i) {}
 
     //            FLAC__StreamMetadata_Application
     template<>
