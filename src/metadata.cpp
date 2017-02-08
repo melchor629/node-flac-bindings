@@ -315,16 +315,16 @@ namespace flac_bindings {
         if(m == nullptr) return;
         unsigned n = Nan::To<unsigned>(info[1]).FromJust();
         Nan::Utf8String o(info[2]);
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_find_entry_from(m, n, *o);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        int r = FLAC__metadata_object_vorbiscomment_find_entry_from(m, n, *o);
+        info.GetReturnValue().Set(Nan::New<Number>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_vorbiscomment_remove_entry_matching) {
         FLAC__StreamMetadata* m = fromjs<FLAC__StreamMetadata>(info[0]);
         if(m == nullptr) return;
         Nan::Utf8String n(info[1]);
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_remove_entry_matching(m, *n);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        int r = FLAC__metadata_object_vorbiscomment_remove_entry_matching(m, *n);
+        info.GetReturnValue().Set(Nan::New<Number>(r));
     }
 
     NAN_METHOD(node_FLAC__metadata_object_vorbiscomment_remove_entries_matching) {
@@ -338,7 +338,6 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__metadata_object_cuesheet_track_new) {
         FLAC__StreamMetadata_CueSheet_Track* ptr = FLAC__metadata_object_cuesheet_track_new();
         Local<Object> buff = structToJs(ptr);
-        Nan::Set(buff, Nan::New("_ptr").ToLocalChecked(), WrapPointer(ptr, sizeof(FLAC__StreamMetadata_CueSheet_Track)).ToLocalChecked());
         info.GetReturnValue().Set(buff);
     }
 
@@ -347,7 +346,6 @@ namespace flac_bindings {
         if(m == nullptr) return;
         FLAC__StreamMetadata_CueSheet_Track* ptr = FLAC__metadata_object_cuesheet_track_clone(m);
         Local<Object> buff = structToJs(ptr);
-        Nan::Set(buff, Nan::New("_ptr").ToLocalChecked(), WrapPointer(ptr, sizeof(FLAC__StreamMetadata_CueSheet_Track)).ToLocalChecked());
         info.GetReturnValue().Set(buff);
     }
 
