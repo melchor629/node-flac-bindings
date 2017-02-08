@@ -1034,12 +1034,13 @@ namespace flac_bindings {
     #define tojs(m) structToJs(m)
     template<typename T>
     static T* fromjs(const Local<Value> &m) {
-        if(!m->IsObject()) Nan::ThrowError(Nan::Error("Only objects accepted in metadata APIs"));
+        Nan::HandleScope scope;
+        if(!m->IsObject()) { Nan::ThrowError(Nan::Error("Only objects accepted in metadata APIs")); return nullptr; }
         MaybeLocal<Value> ptr = Nan::Get(m.As<Object>(), Nan::New("_ptr").ToLocalChecked());
-        if(ptr.IsEmpty()) Nan::ThrowError(Nan::Error("This object was not created by the FLAC API"));
-        if(!m->IsObject()) Nan::ThrowError(Nan::Error("This object was not created by the API or was modified incorrecty"));
-        Local<Object> ptr2 = m.As<Object>();
-        if(!Buffer::HasInstance(ptr2)) Nan::ThrowError(Nan::Error("This object was modified incorrectly"));
+        if(ptr.IsEmpty()) { Nan::ThrowError(Nan::Error("This object was not created by the FLAC API")); return nullptr; }
+        if(!m->IsObject()) { Nan::ThrowError(Nan::Error("This object was not created by the API or was modified incorrecty")); return nullptr; }
+        Local<Value> ptr2 = ptr.ToLocalChecked();
+        if(!Buffer::HasInstance(ptr2)) { Nan::ThrowError(Nan::Error("This object was modified incorrectly")); return nullptr; }
         T* p = UnwrapPointer<T>(ptr2);
         jsToStruct(m.As<Object>(), p);
         return p;
