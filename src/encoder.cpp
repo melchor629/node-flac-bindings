@@ -426,11 +426,13 @@ namespace flac_bindings {
         setMethod(get_streamable_subset);
         setMethod(get_channels);
         setMethod(get_bits_per_sample);
+        setMethod(get_sample_rate);
         setMethod(get_blocksize);
         setMethod(get_do_mid_side_stereo);
         setMethod(get_loose_mid_side_stereo);
         setMethod(get_max_lpc_order);
         setMethod(get_qlp_coeff_precision);
+        setMethod(get_do_qlp_coeff_prec_search);
         setMethod(get_do_escape_coding);
         setMethod(get_do_exhaustive_model_search);
         setMethod(get_min_residual_partition_order);
