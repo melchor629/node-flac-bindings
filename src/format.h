@@ -1040,7 +1040,7 @@ namespace flac_bindings {
     static T* fromjs(const Local<Value> &m) {
         Nan::HandleScope scope;
         if(!m->IsObject()) { Nan::ThrowError(Nan::Error("Only objects accepted in metadata APIs")); return nullptr; }
-        MaybeLocal<Value> ptr = Nan::Get(m.As<Object>(), Nan::New("_ptr").ToLocalChecked());
+        MaybeLocal<Value> ptr = Nan::Get(Nan::To<Object>(m).ToLocalChecked(), Nan::New("_ptr").ToLocalChecked());
         if(ptr.IsEmpty()) { Nan::ThrowError(Nan::Error("This object was not created by the FLAC API")); return nullptr; }
         if(!m->IsObject()) { Nan::ThrowError(Nan::Error("This object was not created by the API or was modified incorrecty")); return nullptr; }
         Local<Value> ptr2 = ptr.ToLocalChecked();
