@@ -2,7 +2,7 @@
 Nodejs bindings to [libFLAC](https://xiph.org/flac/download.html)
 
 ## What can this binding do for me?
-You can use all the functions from encoder and decoder modules inside Javascript with struct-to-js (and viceversa) conversions. You don't need to have installed (or `LD_PATH`-visible) libFLAC to compile the binding, it will load dynamically on runtime or you can tell where is the library. Also, any chunk of data that the FLAC API needs is solved by a simple node Buffer.
+You can use all the functions from encoder and decoder modules inside Javascript with struct-to-js (and viceversa) conversions. The FLAC library will load dynamically on runtime or with some help, you can tell where the library is. Also, any chunk of data that the FLAC API needs is solved by a simple node Buffer. And it has some beautiful js classes for encoder and decoder too.
 
 See the [FLAC API](https://xiph.org/flac/api/group__flac.html)? You can use it with a very intuitive form: almost equal.
 
@@ -12,7 +12,10 @@ First, tries to open the library with the usual paths in the system. If it fails
  - [format](https://xiph.org/flac/api/group__flac__format.html)
  - [encoder](https://xiph.org/flac/api/group__flac__encoder.html)
  - [decoder](https://xiph.org/flac/api/group__flac__decoder.html)
- - [metadata](https://xiph.org/flac/api/group__flac__metadata.html)
+ - [metadata](https://xiph.org/flac/api/group__flac__metadata__object.html)
+ - [metadata0](https://xiph.org/flac/api/group__flac__metadata__level0.html)
+ - [metadata1](https://xiph.org/flac/api/group__flac__metadata__level1.html)
+ - [metadata2](https://xiph.org/flac/api/group__flac__metadata__level2.html)
 
 Every one will contain functions of every FLAC module and its constants and enums. A FLAC encoder function have the form of `FLAC__stream_encoder_new()`, with this binding you will call `flac.bindings.encoder.new()`: _you don't need to write all the function native name_. This (I think) simplifies the way you write the code. Same in constants and enums.
 
@@ -43,12 +46,5 @@ Well, if you are on Linux x64 or on macOS and have 4.6.x LTS, 6.9.x LTS or lates
 
 In other cases, you will need to install the development version of FLAC (those which includes the headers and the library binary).
 
-## Binding API
-### bindings
-Here is where all exposed before is located.
-
-`flac.bindings.load(String)`
-Loads the FLAC library or throws. When the library is loaded, `flac_bindings.bindings` object is changed completely with the bindings.
-
-### Want more?
-See the [wiki](https://github.com/melchor629/node-flac-bindings/wiki) for a more accurated documentation.
+## The API
+See the [wiki](https://github.com/melchor629/node-flac-bindings/wiki) for the documentation.
