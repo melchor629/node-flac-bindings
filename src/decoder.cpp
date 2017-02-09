@@ -447,12 +447,24 @@ namespace flac_bindings {
         }
     }
 
+    NAN_INDEX_ENUMERATOR(node_FLAC__StreamDecoderStateString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 10; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
+    }
+
     NAN_INDEX_GETTER(node_FLAC__StreamDecoderInitStatusString) {
         if(index < 6) {
             info.GetReturnValue().Set(Nan::New(FLAC__StreamDecoderInitStatusString[index]).ToLocalChecked());
         } else {
             info.GetReturnValue().SetNull();
         }
+    }
+
+    NAN_INDEX_ENUMERATOR(node_FLAC__StreamDecoderInitStatusString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 6; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
     }
 
     NAN_INDEX_GETTER(node_FLAC__StreamDecoderReadStatusString) {
@@ -463,12 +475,24 @@ namespace flac_bindings {
         }
     }
 
+    NAN_INDEX_ENUMERATOR(node_FLAC__StreamDecoderReadStatusString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 3; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
+    }
+
     NAN_INDEX_GETTER(node_FLAC__StreamDecoderSeekStatusString) {
         if(index < 3) {
             info.GetReturnValue().Set(Nan::New(FLAC__StreamDecoderSeekStatusString[index]).ToLocalChecked());
         } else {
             info.GetReturnValue().SetNull();
         }
+    }
+
+    NAN_INDEX_ENUMERATOR(node_FLAC__StreamDecoderSeekStatusString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 3; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
     }
 
     NAN_INDEX_GETTER(node_FLAC__StreamDecoderTellStatusString) {
@@ -479,12 +503,24 @@ namespace flac_bindings {
         }
     }
 
+    NAN_INDEX_ENUMERATOR(node_FLAC__StreamDecoderTellStatusString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 3; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
+    }
+
     NAN_INDEX_GETTER(node_FLAC__StreamDecoderLengthStatusString) {
         if(index < 3) {
             info.GetReturnValue().Set(Nan::New(FLAC__StreamDecoderLengthStatusString[index]).ToLocalChecked());
         } else {
             info.GetReturnValue().SetNull();
         }
+    }
+
+    NAN_INDEX_ENUMERATOR(node_FLAC__StreamDecoderLengthStatusString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 3; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
     }
 
     NAN_INDEX_GETTER(node_FLAC__StreamDecoderWriteStatusString) {
@@ -495,12 +531,24 @@ namespace flac_bindings {
         }
     }
 
+    NAN_INDEX_ENUMERATOR(node_FLAC__StreamDecoderWriteStatusString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 2; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
+    }
+
     NAN_INDEX_GETTER(node_FLAC__StreamDecoderErrorStatusString) {
         if(index < 4) {
             info.GetReturnValue().Set(Nan::New(FLAC__StreamDecoderErrorStatusString[index]).ToLocalChecked());
         } else {
             info.GetReturnValue().SetNull();
         }
+    }
+
+    NAN_INDEX_ENUMERATOR(node_FLAC__StreamDecoderErrorStatusString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 4; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
     }
 
     NAN_MODULE_INIT(initDecoder) {
@@ -560,7 +608,8 @@ namespace flac_bindings {
         #define indexGetter(func) \
         _JOIN(FLAC__StreamDecoder, func) = libFlac->getSymbolAddress<const char* const*>("FLAC__StreamDecoder" #func); \
         Local<ObjectTemplate> _JOIN(func, _template) = Nan::New<ObjectTemplate>(); \
-        Nan::SetIndexedPropertyHandler(_JOIN(func, _template), _JOIN(node_FLAC__StreamDecoder, func)); \
+        Nan::SetIndexedPropertyHandler(_JOIN(func, _template), _JOIN(node_FLAC__StreamDecoder, func), nullptr, nullptr, nullptr, \
+            _JOIN(node_FLAC__StreamDecoder, func)); \
         Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, _template)).ToLocalChecked());
 
         indexGetter(StateString);

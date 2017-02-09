@@ -211,6 +211,12 @@ namespace flac_bindings {
         }
     }
 
+    NAN_INDEX_ENUMERATOR(ChainStatusString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 16; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
+    }
+
 
     NAN_MODULE_INIT(initMetadata2) {
         Local<Object> obj = Nan::New<Object>();
@@ -246,7 +252,7 @@ namespace flac_bindings {
         #define indexGetter(func) \
         _JOIN(FLAC__Metadata_, func) = libFlac->getSymbolAddress<const char* const*>("FLAC__Metadata_" #func); \
         Local<ObjectTemplate> _JOIN(func, _template) = Nan::New<ObjectTemplate>(); \
-        Nan::SetIndexedPropertyHandler(_JOIN(func, _template), func); \
+        Nan::SetIndexedPropertyHandler(_JOIN(func, _template), func, nullptr, nullptr, nullptr, func); \
         Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, _template)).ToLocalChecked());
 
         propertyGetter(ChainStatus);

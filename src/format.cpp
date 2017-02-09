@@ -305,12 +305,24 @@ namespace flac_bindings {
         }
     }
 
+    NAN_INDEX_ENUMERATOR(MetadataTypeString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 8; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
+    }
+
     NAN_INDEX_GETTER(EntropyCodingMethodTypeString) {
         if(index < 2) {
             info.GetReturnValue().Set(Nan::New(FLAC__EntropyCodingMethodTypeString[index]).ToLocalChecked());
         } else {
             info.GetReturnValue().SetNull();
         }
+    }
+
+    NAN_INDEX_ENUMERATOR(EntropyCodingMethodTypeString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 2; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
     }
 
     NAN_INDEX_GETTER(SubframeTypeString) {
@@ -321,12 +333,24 @@ namespace flac_bindings {
         }
     }
 
+    NAN_INDEX_ENUMERATOR(SubframeTypeString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 4; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
+    }
+
     NAN_INDEX_GETTER(ChannelAssignmentString) {
         if(index < 4) {
             info.GetReturnValue().Set(Nan::New(FLAC__ChannelAssignmentString[index]).ToLocalChecked());
         } else {
             info.GetReturnValue().SetNull();
         }
+    }
+
+    NAN_INDEX_ENUMERATOR(ChannelAssignmentString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 94; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
     }
 
     NAN_INDEX_GETTER(FrameNumberTypeString) {
@@ -337,12 +361,24 @@ namespace flac_bindings {
         }
     }
 
+    NAN_INDEX_ENUMERATOR(FrameNumberTypeString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 2; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
+    }
+
     NAN_INDEX_GETTER(StreamMetadata_Picture_TypeString) {
         if(index < 22) {
             info.GetReturnValue().Set(Nan::New(FLAC__StreamMetadata_Picture_TypeString[index]).ToLocalChecked());
         } else {
             info.GetReturnValue().SetNull();
         }
+    }
+
+    NAN_INDEX_ENUMERATOR(StreamMetadata_Picture_TypeString) {
+        Local<Array> array = Nan::New<Array>();
+        for(int i = 0; i < 22; i++) Nan::Set(array, i, Nan::New(i));
+        info.GetReturnValue().Set(array);
     }
 
     NAN_MODULE_INIT(initFormat) {
@@ -381,7 +417,7 @@ namespace flac_bindings {
         #define indexGetter(func) \
         _JOIN(FLAC__, func) = libFlac->getSymbolAddress<const char* const*>("FLAC__" #func); \
         Local<ObjectTemplate> _JOIN(func, _template) = Nan::New<ObjectTemplate>(); \
-        Nan::SetIndexedPropertyHandler(_JOIN(func, _template), func); \
+        Nan::SetIndexedPropertyHandler(_JOIN(func, _template), func, nullptr, nullptr, nullptr, func); \
         Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, _template)).ToLocalChecked());
 
         indexGetter(MetadataTypeString);
