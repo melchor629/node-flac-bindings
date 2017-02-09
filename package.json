@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "install": "prebuild-install || node-gyp rebuild",
-    "prebuild": "prebuild -b 4.6.1 -b 6.9.1 -b 7.2.0 --strip"
+    "prebuild": "prebuild -t 4.7.3 -t 6.9.5 -t 7.5.0 --strip"
   },
   "keywords": [
     "flac",
@@ -23,7 +23,7 @@
     "prebuild-install": "^2.0.0"
   },
   "devDependencies": {
-    "prebuild": "^4.0.0"
+    "prebuild": "^6.0.0"
   },
   "gypfile": true
 }
