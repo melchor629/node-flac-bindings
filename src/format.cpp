@@ -185,7 +185,7 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__format_seektable_sort) {
         FLAC__StreamMetadata_SeekTable* table = fromjs<FLAC__StreamMetadata_SeekTable>(info[0]);
         FLAC__format_seektable_sort(table);
-        info.GetReturnValue().Set(structToJs(&table));
+        info.GetReturnValue().Set(structToJs(table));
     }
 
     NAN_METHOD(node_FLAC__format_cuesheet_is_legal) {

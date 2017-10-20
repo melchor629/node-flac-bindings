@@ -29,7 +29,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata* metadata = (FLAC__StreamMetadata*) malloc(sizeof(FLAC__StreamMetadata*));
         FLAC__bool ret = FLAC__metadata_get_streaminfo(*filename, metadata);
         if(ret) {
-            info.GetReturnValue().Set(structToJs(&metadata));
+            info.GetReturnValue().Set(structToJs(metadata));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
