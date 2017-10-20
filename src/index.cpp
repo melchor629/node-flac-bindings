@@ -64,10 +64,14 @@ namespace flac_bindings {
             libFlac = Library::load("libFLAC", "so.8");
             if(libFlac == nullptr) {
 #endif
+#ifdef WIN32
+            libFlac = Library::load("FLAC", "dll");
+            if(libFlac == nullptr) {
+#endif
             isLibFlacLoaded = false;
             Nan::Set(target, Nan::New("load").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(loadLibFlac)).ToLocalChecked());
             return;
-#ifdef __linux__
+#if defined(__linux__) || defined(WIN32)
             }
 #endif
         }

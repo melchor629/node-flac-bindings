@@ -89,17 +89,20 @@ public:
     std::string getLastError() {
         std::string error;
 #ifdef WIN32
-        // http://stackoverflow.com/questions/3006229/get-a-text-from-the-error-code-returns-from-the-getlasterror-function
-        DWORD   dwLastError = GetLastError();
-        TCHAR   lpBuffer[256] = "?";
-        FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
-                     NULL,
-                     dwLastError,
-                     MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
-                     lpBuffer,
-                     DWORD(strlen(lpBuffer)-1),
-                     NULL);
-        error = lpBuffer;
+        LPVOID lpMsgBuf;
+        DWORD dw = GetLastError(); 
+
+        FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            dw,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPTSTR) &lpMsgBuf,
+            0, NULL );
+        error = (char*) lpMsgBuf;
+        LocalFree(lpMsgBuf);
 #else
         error = dlerror();
 #endif
