@@ -18,6 +18,9 @@ typedef void(*FLAC__StreamEncoderProgressCallback)(const FLAC__StreamEncoder *en
 
 struct flac_encoding_callbacks {
     Nan::Persistent<Function> readCbk, writeCbk, seekCbk, tellCbk, metadataCbk, progressCbk;
+    Nan::AsyncResource async;
+
+    flac_encoding_callbacks(): async("flac:encoder") {}
 };
 
 static int read_callback(const FLAC__StreamEncoder*, char[], size_t*, void*);
@@ -538,7 +541,7 @@ static int read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t* 
 
     Nan::TryCatch tc;tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->readCbk);
-    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 2, args);
+    Local<Value> ret = cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 2, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 2;
@@ -567,7 +570,7 @@ static int write_callback(const FLAC__StreamEncoder* enc, const char buffer[], s
 
     Nan::TryCatch tc;tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->writeCbk);
-    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 4, args);
+    Local<Value> ret = cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 4, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 2;
@@ -585,7 +588,7 @@ static int seek_callback(const FLAC__StreamEncoder* enc, uint64_t offset, void* 
 
     Nan::TryCatch tc;tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->seekCbk);
-    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    Local<Value> ret = cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
@@ -602,7 +605,7 @@ static int tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void*
 
     Nan::TryCatch tc;tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->tellCbk);
-    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    Local<Value> ret = cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
@@ -628,7 +631,7 @@ static void metadata_callback(const FLAC__StreamEncoder* enc, const FLAC__Stream
 
     Nan::TryCatch tc;tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->metadataCbk);
-    Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args);
 }
 
 static void progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_written, uint64_t samples_written, unsigned frames_written, unsigned total_frames_estimate, void* data) {
@@ -643,7 +646,7 @@ static void progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_wri
 
     Nan::TryCatch tc;tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->progressCbk);
-    Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 4, args);
+    cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 4, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
     }

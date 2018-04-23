@@ -12,6 +12,9 @@ using namespace node;
 
 struct flac_decoding_callbacks {
     Nan::Persistent<Function> readCbk, seekCbk, tellCbk, lengthCbk, eofCbk, writeCbk, metadataCbk, errorCbk;
+    Nan::AsyncResource async;
+
+    flac_decoding_callbacks(): async("flac:decoding") {}
 };
 
 typedef int(*FLAC__StreamDecoderReadCallback)(const FLAC__StreamDecoder*, FLAC__byte [], size_t*, void*);
@@ -650,7 +653,7 @@ static int read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], si
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->readCbk);
-    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    Local<Value> ret = cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
@@ -676,7 +679,7 @@ static int seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void* 
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->seekCbk);
-    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    Local<Value> ret = cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 0;
@@ -695,7 +698,7 @@ static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void*
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->tellCbk);
-    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 0, args);
+    Local<Value> ret = cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 0, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
@@ -720,7 +723,7 @@ static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, voi
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->lengthCbk);
-    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 0, args);
+    Local<Value> ret = cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 0, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
@@ -745,7 +748,7 @@ static FLAC__bool eof_callback(const FLAC__StreamDecoder* dec, void* data) {
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->eofCbk);
-    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 0, args);
+    Local<Value> ret = cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 0, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return false;
@@ -772,7 +775,7 @@ static int write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* fra
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->writeCbk);
-    Local<Value> ret = Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 2, args);
+    Local<Value> ret = cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 2, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 2;
@@ -793,7 +796,7 @@ static void metadata_callback(const FLAC__StreamDecoder* dec, const FLAC__Stream
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->metadataCbk);
-    Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
     }
@@ -808,7 +811,7 @@ static void error_callback(const FLAC__StreamDecoder* dec, int error, void* data
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->errorCbk);
-    Nan::MakeCallback(Nan::GetCurrentContext()->Global(), func, 1, args);
+    cbks->async.runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
     }
