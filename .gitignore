@@ -41,3 +41,4 @@ jspm_packages
 test.js
 *.flac
 upload.sh
+.vscode
