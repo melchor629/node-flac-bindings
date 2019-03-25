@@ -5,6 +5,7 @@ using namespace v8;
 using namespace node;
 #include "pointer.hpp"
 #include "format.h"
+#include "extra_defs.hpp"
 
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
@@ -54,7 +55,12 @@ extern "C" { \
 } \
 NAN_METHOD(_JOIN(node_FLAC__stream_encoder_set_, fn)) { \
     UNWRAP_FLAC \
-    type input = (type) info[1]->_JOIN(v8Type, Value)(); \
+    Nan::Maybe<type> inputMaybe = Nan::To<type>(info[1]); \
+    if(inputMaybe.IsNothing()) { \
+        Nan::ThrowTypeError("Unexpected type"); \
+        return; \
+    } \
+    type input = (type) inputMaybe.FromJust(); \
     FLAC__bool output = _JOIN(FLAC__stream_encoder_set_, fn)(enc, input); \
     info.GetReturnValue().Set(Nan::New(bool(output))); \
 }
@@ -216,7 +222,7 @@ namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__stream_encoder_process_interleaved) {
         UNWRAP_FLAC
-        const int32_t* buffer = UnwrapPointer<const int32_t>(info[1]->ToObject());
+        const int32_t* buffer = UnwrapPointer<const int32_t>(info[1]);
         uint32_t samples = Nan::To<uint32_t>(info[2].As<Number>()).FromJust();
         FLAC__bool ret = FLAC__stream_encoder_process_interleaved(enc, buffer, samples);
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));

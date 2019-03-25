@@ -11,12 +11,12 @@ namespace flac_bindings {
     static NAN_SETTER(media_catalog_number) {
         getPointer(FLAC__StreamMetadata) {
             checkValue(String) {
-                Local<String> str = _newValue.ToLocalChecked().As<String>();
-                if(str->Utf8Length() >= 129) {
+                Nan::Utf8String str(_newValue.ToLocalChecked());
+                if(str.length() >= 129) {
                     Nan::ThrowError(Nan::Error("String is too large, max 128 simple characters (128 bytes)"));
                 } else {
-                    str->WriteUtf8(m->data.cue_sheet.media_catalog_number);
-                    info.GetReturnValue().Set(str);
+                    strcpy(m->data.cue_sheet.media_catalog_number, *str);
+                    info.GetReturnValue().Set(_newValue.ToLocalChecked());
                 }
             }
         }

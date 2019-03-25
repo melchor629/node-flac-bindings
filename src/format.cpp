@@ -147,33 +147,33 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__format_vorbiscomment_entry_name_is_legal) {
-        Local<String> jsStr = info[0]->ToString();
-        char* str = new char[jsStr->Utf8Length() + 1];
-        jsStr->WriteUtf8(str);
-        str[jsStr->Utf8Length()] = '\0';
-        FLAC__bool ret = FLAC__format_vorbiscomment_entry_name_is_legal(str);
+        MaybeLocal<String> jsStrMaybe = Nan::To<v8::String>(info[0]);
+        if(jsStrMaybe.IsEmpty()) return;
+
+        Local<String> jsStr = jsStrMaybe.ToLocalChecked();
+        Nan::Utf8String str(jsStr);
+        FLAC__bool ret = FLAC__format_vorbiscomment_entry_name_is_legal(*str);
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        delete[] str;
     }
 
     NAN_METHOD(node_FLAC__format_vorbiscomment_entry_value_is_legal) {
-        Local<String> jsStr = Nan::To<String>(info[0]).ToLocalChecked();
-        char* str = new char[jsStr->Utf8Length() + 1];
-        jsStr->WriteUtf8(str);
-        str[jsStr->Utf8Length()] = '\0';
-        FLAC__bool ret = FLAC__format_vorbiscomment_entry_value_is_legal((uint8_t*) str, jsStr->Utf8Length());
+        MaybeLocal<String> jsStrMaybe = Nan::To<v8::String>(info[0]);
+        if(jsStrMaybe.IsEmpty()) return;
+
+        Local<String> jsStr = jsStrMaybe.ToLocalChecked();
+        Nan::Utf8String str(jsStr);
+        FLAC__bool ret = FLAC__format_vorbiscomment_entry_value_is_legal((uint8_t*) *str, str.length());
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        delete[] str;
     }
 
     NAN_METHOD(node_FLAC__format_vorbiscomment_entry_is_legal) {
-        Local<String> jsStr = Nan::To<String>(info[0]).ToLocalChecked();
-        char* str = new char[jsStr->Utf8Length() + 1];
-        jsStr->WriteUtf8(str);
-        str[jsStr->Utf8Length()] = '\0';
-        FLAC__bool ret = FLAC__format_vorbiscomment_entry_is_legal((uint8_t*) str, jsStr->Utf8Length());
+        MaybeLocal<String> jsStrMaybe = Nan::To<v8::String>(info[0]);
+        if(jsStrMaybe.IsEmpty()) return;
+
+        Local<String> jsStr = jsStrMaybe.ToLocalChecked();
+        Nan::Utf8String str(jsStr);
+        FLAC__bool ret = FLAC__format_vorbiscomment_entry_is_legal((uint8_t*) *str, str.length());
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        delete[] str;
     }
 
     NAN_METHOD(node_FLAC__format_seektable_is_legal) {
@@ -212,10 +212,8 @@ namespace flac_bindings {
     }
 
     NAN_PROPERTY_GETTER(MetadataType) {
-        char* propertyName = new char[property->Utf8Length() + 1];
-        property->WriteUtf8(propertyName);
-        propertyName[property->Utf8Length()] = '\0';
-        std::string PropertyName(propertyName);
+        Nan::Utf8String propertyName(property);
+        std::string PropertyName(*propertyName);
 
         if(PropertyName == "STREAMINFO") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_STREAMINFO));
         else if(PropertyName == "PADDING") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_PADDING));

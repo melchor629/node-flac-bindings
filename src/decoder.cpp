@@ -6,6 +6,7 @@ using namespace v8;
 using namespace node;
 #include "pointer.hpp"
 #include "format.h"
+#include "extra_defs.hpp"
 
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
@@ -59,7 +60,12 @@ extern "C" { \
 } \
 NAN_METHOD(_JOIN(node_FLAC__stream_decoder_set_, fn)) { \
     UNWRAP_FLAC \
-    type input = (type) info[1]->_JOIN(v8Type, Value)(); \
+    Nan::Maybe<type> inputMaybe = Nan::To<type>(info[1]); \
+    if(inputMaybe.IsNothing()) { \
+        Nan::ThrowTypeError("Unexpected type"); \
+        return; \
+    } \
+    type input = (type) inputMaybe.FromJust(); \
     FLAC__bool output = _JOIN(FLAC__stream_decoder_set_, fn)(dec, input); \
     info.GetReturnValue().Set(Nan::New(bool(output))); \
 }

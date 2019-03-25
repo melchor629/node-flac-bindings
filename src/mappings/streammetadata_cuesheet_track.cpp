@@ -41,10 +41,10 @@ namespace flac_bindings {
     static NAN_SETTER(isrc) {
         getPointer(FLAC__StreamMetadata_CueSheet_Track) {
             checkValue(String) {
-                Local<String> isrc = _newValue.ToLocalChecked().As<String>();
-                if(isrc->Utf8Length() == 12) {
-                    isrc->WriteUtf8(m->isrc);
-                    info.GetReturnValue().Set(Nan::New(m->isrc).ToLocalChecked());
+                Nan::Utf8String isrc(_newValue.ToLocalChecked());
+                if(isrc.length() == 12) {
+                    strcpy(m->isrc, *isrc);
+                    info.GetReturnValue().Set(_newValue.ToLocalChecked());
                 } else {
                     Nan::ThrowError(Nan::Error("ISRC string must have 12 alphanumeric characters"));
                 }
