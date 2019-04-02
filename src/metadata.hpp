@@ -1,18 +1,13 @@
-#include <nan.h>
-#include "dl.hpp"
+#ifndef METADATA_HPP
+#define METADATA_HPP
 
-using namespace v8;
-using namespace node;
-#include "pointer.hpp"
 #include "format.h"
-#include "mappings/mappings.hpp"
 
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
 
 #define metadataFunction(ret, name, ...) \
-typedef ret (*_JOIN2(FLAC__metadata_, name, _t))(__VA_ARGS__); \
-_JOIN2(FLAC__metadata_, name, _t) _JOIN(FLAC__metadata_, name);
+extern ret (* _JOIN(FLAC__metadata_, name))(__VA_ARGS__);
 
 extern "C" {
     metadataFunction(FLAC__StreamMetadata*, object_new, FLAC__MetadataType type);
@@ -64,78 +59,8 @@ extern "C" {
     metadataFunction(FLAC__bool, object_picture_is_legal, const FLAC__StreamMetadata *object, const char **violation);
 }
 
-namespace flac_bindings {
+#undef _JOIN
+#undef _JOIN2
+#undef metadataFunction
 
-    extern Library* libFlac;
-
-    NAN_MODULE_INIT(initMetadataObjectMethods) {
-        Local<Object> obj = Nan::New<Object>();
-        #define loadFunction(fn) \
-        _JOIN(FLAC__metadata_object_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__metadata_object_, fn, _t)>("FLAC__metadata_object_" #fn); \
-        if(_JOIN(FLAC__metadata_object_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
-
-        #define setMethod(fn) \
-        Nan::SetMethod(obj, #fn, _JOIN(node_FLAC__metadata_object_, fn)); \
-        loadFunction(fn)
-
-        loadFunction(new);
-        loadFunction(clone);
-        loadFunction(delete);
-        loadFunction(is_equal);
-        loadFunction(application_set_data);
-        loadFunction(seektable_resize_points);
-        loadFunction(seektable_set_point);
-        loadFunction(seektable_insert_point);
-        loadFunction(seektable_delete_point);
-        loadFunction(seektable_is_legal);
-        loadFunction(seektable_template_append_placeholders);
-        loadFunction(seektable_template_append_point);
-        loadFunction(seektable_template_append_points);
-        loadFunction(seektable_template_append_spaced_points);
-        loadFunction(seektable_template_append_spaced_points_by_samples);
-        loadFunction(seektable_template_sort);
-        loadFunction(vorbiscomment_set_vendor_string);
-        loadFunction(vorbiscomment_resize_comments);
-        loadFunction(vorbiscomment_set_comment);
-        loadFunction(vorbiscomment_insert_comment);
-        loadFunction(vorbiscomment_append_comment);
-        loadFunction(vorbiscomment_replace_comment);
-        loadFunction(vorbiscomment_delete_comment);
-        loadFunction(vorbiscomment_find_entry_from);
-        loadFunction(vorbiscomment_remove_entry_matching);
-        loadFunction(vorbiscomment_remove_entries_matching);
-        loadFunction(cuesheet_track_new);
-        loadFunction(cuesheet_track_clone);
-        loadFunction(cuesheet_track_delete);
-        loadFunction(cuesheet_track_resize_indices);
-        loadFunction(cuesheet_track_insert_index);
-        loadFunction(cuesheet_track_insert_blank_index);
-        loadFunction(cuesheet_track_delete_index);
-        loadFunction(cuesheet_resize_tracks);
-        loadFunction(cuesheet_set_track);
-        loadFunction(cuesheet_insert_track);
-        loadFunction(cuesheet_insert_blank_track);
-        loadFunction(cuesheet_delete_track);
-        loadFunction(cuesheet_is_legal);
-        loadFunction(cuesheet_calculate_cddb_id);
-        loadFunction(picture_set_mime_type);
-        loadFunction(picture_set_description);
-        loadFunction(picture_set_data);
-        loadFunction(picture_is_legal);
-
-        Metadata::init(obj);
-        StreamInfoMetadata::init(obj);
-        PaddingMetadata::init(obj);
-        ApplicationMetadata::init(obj);
-        SeekTableMetadata::init(obj);
-        SeekPoint::init(obj);
-        VorbisCommentMetadata::init(obj);
-        CueSheetMetadata::init(obj);
-        CueSheetIndex::init(obj);
-        CueSheetTrack::init(obj);
-        PictureMetadata::init(obj);
-        UnknownMetadata::init(obj);
-
-        Nan::Set(target, Nan::New("metadata").ToLocalChecked(), obj);
-    }
-}
+#endif // METADATA_HPP

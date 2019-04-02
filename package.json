@@ -3,7 +3,7 @@
   "version": "1.2.3",
   "description": "libflac bindings to node.js with easy to use API",
   "repository": "https://github.com/melchor629/node-flac-bindings/",
-  "main": "index.js",
+  "main": "./lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "install": "prebuild-install || node-gyp rebuild",
@@ -20,11 +20,13 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "nan": "^2.13.2",
-    "prebuild-install": "^2.5.3"
+    "prebuild-install": "^5.2.5"
   },
   "devDependencies": {
+    "@types/node": "^11.13.0",
     "jshint": "^2.10.2",
-    "prebuild": "^6.2.2"
+    "prebuild": "^8.2.1"
   },
-  "gypfile": true
+  "gypfile": true,
+  "types": "lib/flac.d.ts"
 }

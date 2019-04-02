@@ -1,48 +1,76 @@
-#include "defs.hpp"
+#include "mappings.hpp"
+#include "../metadata.hpp"
 
 namespace flac_bindings {
 
-    static NAN_GETTER(id) {
-        getPointer(FLAC__StreamMetadata) {
-            Local<Array> array = Nan::New<Array>();
-            for(int i = 0; i < 4; i++) {
-                Nan::Set(array, i, Nan::New(m->data.application.id[i]));
-            }
-            info.GetReturnValue().Set(array);
-        }
+    V8_GETTER(ApplicationMetadata::id) {
+        unwrap(ApplicationMetadata);
+        info.GetReturnValue().Set(WrapPointer(self->metadata->data.application.id, 4).ToLocalChecked());
     }
 
-    static NAN_SETTER(id) {
-        getPointer(FLAC__StreamMetadata) {
-            checkValue(Object) {
-                Local<Array> array = _newValue.ToLocalChecked().As<Array>();
-                if(array->Length() != 4) {
-                    Nan::ThrowError(Nan::Error("Array must have 4 bytes"));
-                } else {
-                    for(int i = 0; i < 4; i++) {
-                        Local<Value> val = Nan::Get(array, i).ToLocalChecked();
-                        if(val->IsNumber()) {
-                            m->data.application.id[i] = Nan::To<uint32_t>(val).FromJust() & 0xFF;
-                        } else {
-                            m->data.application.id[i] = 0;
-                        }
-                    }
-                    info.GetReturnValue().Set(array);
+    V8_SETTER(ApplicationMetadata::id) {
+        unwrap(ApplicationMetadata);
+        checkValueIsBuffer() {
+            char* buffer = Buffer::Data(value);
+            size_t bufferLength = Buffer::Length(value);
+            if(bufferLength < 4) {
+                Nan::ThrowError(Nan::Error("Buffer must have at least 4 bytes length"));
+            } else {
+                for(int i = 0; i < 4; i++) {
+                    self->metadata->data.application.id[i] = buffer[i];
                 }
             }
         }
     }
 
-    static NAN_GETTER(data) {
-        getPointer(FLAC__StreamMetadata) {
-            info.GetReturnValue().Set(WrapPointer(m->data.application.data, m->length - 4).ToLocalChecked());
+    V8_GETTER(ApplicationMetadata::data) {
+        unwrap(ApplicationMetadata);
+        info.GetReturnValue().Set(WrapPointer(self->metadata->data.application.data, self->metadata->length - 4).ToLocalChecked());
+    }
+
+    V8_SETTER(ApplicationMetadata::data) {
+        unwrap(ApplicationMetadata);
+        auto o1 = info.Data();
+        Nan::Utf8String str(Nan::ToDetailString(o1).ToLocalChecked());
+        printf("%s\n", *str);
+        checkValueIsBuffer() {
+            FLAC__byte* buffer = (FLAC__byte*) Buffer::Data(value);
+            size_t bufferLength = Buffer::Length(value);
+            bool res = FLAC__metadata_object_application_set_data(self->metadata, buffer, bufferLength, true);
+            if(!res) {
+                Nan::ThrowError("Could not allocate memory for copy");
+            }
         }
     }
 
-    template<>
-    void structToJs(const FLAC__StreamMetadata_Application* i, Local<Object> &obj) {
-        SetGetterSetter(id);
-        SetGetter(data);
+    NAN_METHOD(ApplicationMetadata::create) {
+        ApplicationMetadata* self = new ApplicationMetadata;
+        self->Wrap(info.This());
+
+        if(info.Length() > 0 && Buffer::HasInstance(info[0])) {
+            Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
+            if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
+        } else {
+            Local<Value> args[] = { Nan::New<Number>(FLAC__MetadataType::FLAC__METADATA_TYPE_APPLICATION) };
+            if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
+        }
+
+        nativeProperty(info.This(), "id", id);
+        nativeProperty(info.This(), "data", data);
+
+        info.GetReturnValue().Set(info.This());
+    }
+
+    Nan::Persistent<Function> ApplicationMetadata::applicationMetadataJs;
+    NAN_MODULE_INIT(ApplicationMetadata::init) {
+        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
+        tpl->SetClassName(Nan::New("ApplicationMetadata").ToLocalChecked());
+        tpl->InstanceTemplate()->SetInternalFieldCount(1);
+        tpl->Inherit(Metadata::getProto());
+
+        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
+        applicationMetadataJs.Reset(metadata);
+        Nan::Set(target, Nan::New("ApplicationMetadata").ToLocalChecked(), metadata);
     }
 
 }

@@ -7,30 +7,33 @@ You can use all the functions from encoder and decoder modules inside Javascript
 See the [FLAC API](https://xiph.org/flac/api/group__flac.html)? You can use it with a very intuitive form: almost equal.
 
 ## How it works?
-First, tries to open the library with the usual paths in the system. If it fails, the module will provide you a `load` function, pass to it a **full** path to the library and it will load. If it success, your module will be divided in various sections:
+First, tries to open the library with the usual paths in the system. If it fails, the module will provide you a `load` function, pass to it a **full** path to the library and it will load. The module will be divided in various sections:
 
- - [format](https://xiph.org/flac/api/group__flac__format.html)
- - [encoder](https://xiph.org/flac/api/group__flac__encoder.html)
- - [decoder](https://xiph.org/flac/api/group__flac__decoder.html)
- - [metadata](https://xiph.org/flac/api/group__flac__metadata__object.html)
+ - [format](https://xiph.org/flac/api/group__flac__format.html) - includes only the functions and some types
+ - [Encoder](https://xiph.org/flac/api/group__flac__encoder.html)
+ - [Decoder](https://xiph.org/flac/api/group__flac__decoder.html)
+ - [metadata](https://xiph.org/flac/api/group__flac__metadata__object.html) - includes the `StreamMetadata` structs and their methods.
  - [metadata0](https://xiph.org/flac/api/group__flac__metadata__level0.html)
- - [metadata1](https://xiph.org/flac/api/group__flac__metadata__level1.html)
- - [metadata2](https://xiph.org/flac/api/group__flac__metadata__level2.html)
+ - [SimpleIterator](https://xiph.org/flac/api/group__flac__metadata__level1.html)
+ - [Chain](https://xiph.org/flac/api/group__flac__metadata__level2.html)
+ - [Iterator](https://xiph.org/flac/api/group__flac__metadata__level2.html)
 
-Every one will contain functions of every FLAC module and its constants and enums. A FLAC encoder function have the form of `FLAC__stream_encoder_new()`, with this binding you will call `flac.bindings.encoder.new()`: _you don't need to write all the function native name_. This (I think) simplifies the way you write the code. Same in constants and enums.
+The package includes [typings](https://github.com/melchor629/node-flac-bindings/blob/master/lib/index.d.ts) that could help you :)
 
-## What is the bad part?
-Yes, it has. Almost every function expects his parameters in his right type. If it not, node will just crash. So, pay attention on the types of the functions.
+The Encoder, Decoder, the metadata level 1 `SimpleIterator`, the metadata level 2 `Chain`  and `Iterator` and `StreamMetadata` structs are classes that can be instantiated like usual JS classes. The constructor will create the underlying pointer to the object un the C API, and when the GC cleans up the objects, the pointer will be free'd as well.
 
-Callbacks don't follow exactly the signature that shows in Encoder and Decoder sections: the **first** and **last** parameters are **not sent** to Javascript callbacks. The first, basically because causes random crashes if the object is passed (caused by the GC). The second, because I see it unnecessary and difficult to use this private data in Javascript. Remember not to pass a private data argument in `init` functions!
+## Things to take into account
+Almost every function/method expects his parameters in his right type. If it not, node will crash or an JS exception will be thrown. So, pay attention on the types of the functions (the typings are just to help you 😀).
 
-Also, if you expect an async API, I have no idea how to implement all in async mode: _you need to call sometimes JS functions when the C code would be running in a background thread but you need it now_.
+Callbacks don't follow exactly the signature that shows in Encoder and Decoder sections, they don't need some of the parameters as in JS there are other ways to get the encoder/decoder instance and some context. The init functions don't receive any private data.
 
-## Let's dance!
-Download now with
+You need node 8 or higher. Recommended to have 10.x series with `BigInt` support to have the number represented the right way (without truncation - `Number` only stores 48 bit integers! 🤨).
 
+## How to install
 ```
 $ npm install flac-bindings
+
+$ yarn add flac-bindings
 ```
 
 For use it, include with
@@ -39,14 +42,14 @@ For use it, include with
 const flac = require('flag-bindings');
 ```
 
-`flac` will be an object with `{bindings: [Bindings API], StreamEncoder: ..., StreamDecoder: ..., FileEncoder: ..., FileDecoder: ...}`. If the `libFLAC` library is not in the loader's path, you will get an object with a load function (`{load: [Function load]}`). You must call `load()` with the first argument as the **full** path to the `libFLAC` dynamic library, and then `flac` (the object) will have all objects.
+`flac` will be an object with `{ api: [Bindings API], StreamEncoder: ..., StreamDecoder: ..., FileEncoder: ..., FileDecoder: ... }`. If the `libFLAC` library is not in the loader's path, you will get an object with a load function (`{ load: [Function load] }`). You must call `load()` with the first argument as the **full** path to the `libFLAC` dynamic library, and then `flac` (the object) will have all objects. You can also use the environment variable `FLAC_LIBRARY` to set a path to the library (it won't throw any exception if it fails).
 
 ## What I need to compile the bindings?
-Well, if you are on Linux x64 or on macOS and have 4.6.x LTS, 6.9.x LTS or latest node version, you don't need to compile anything, I provide the binding binaries for you. You only need to provide the FLAC library binary.
+Well, if you are on Linux x64 or on macOS and have node 8 LTS, 10 LTS or 11, you don't need to compile anything, I provide the binding binaries for you. You only need to provide the FLAC library binary.
 
 In other cases, you will need to install the development version of FLAC (those which includes the headers and the library binary).
 
-If you are using Windows, you will need to install the build tools first:
+If you are using Windows, and there's no binaries compiled for you, then you will need to install the build tools first:
 
 ```
 npm install --global --production windows-build-tools

@@ -5,6 +5,9 @@ using namespace v8;
 using namespace node;
 #include "pointer.hpp"
 #include "format.h"
+#include "extra_defs.hpp"
+#include "mappings/mappings.hpp"
+#include "mappings/defs.hpp"
 
 namespace flac_bindings {
     extern Library* libFlac;
@@ -128,27 +131,46 @@ extern "C" {
 namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__format_sample_rate_is_valid) {
-        unsigned sampleRate = Nan::To<unsigned>(info[0]).FromJust();
-        FLAC__bool ret = FLAC__format_sample_rate_is_valid(sampleRate);
-        info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+        auto maybeSampleRate = numberFromJs<unsigned>(info[0]);
+        if(maybeSampleRate.IsJust()) {
+            unsigned sampleRate = maybeSampleRate.FromJust();
+            FLAC__bool ret = FLAC__format_sample_rate_is_valid(sampleRate);
+            info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+        } else {
+            info.GetReturnValue().Set(Nan::False());
+        }
     }
 
     NAN_METHOD(node_FLAC__format_blocksize_is_subset) {
-        unsigned blocksize = Nan::To<unsigned>(info[1]).FromJust();
-        unsigned sampleRate = Nan::To<unsigned>(info[1]).FromJust();
-        FLAC__bool ret = FLAC__format_blocksize_is_subset(blocksize, sampleRate);
-        info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+        auto maybeBlockSize = numberFromJs<unsigned>(info[0]);
+        auto maybeSampleRate = numberFromJs<unsigned>(info[1]);
+        if(maybeSampleRate.IsJust() && maybeBlockSize.IsJust()) {
+            unsigned blocksize = maybeBlockSize.FromJust();
+            unsigned sampleRate = maybeSampleRate.FromJust();
+            FLAC__bool ret = FLAC__format_blocksize_is_subset(blocksize, sampleRate);
+            info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+        } else {
+            info.GetReturnValue().Set(Nan::False());
+        }
     }
 
     NAN_METHOD(node_FLAC__format_sample_rate_is_subset) {
-        unsigned sampleRate = Nan::To<unsigned>(info[0]).FromJust();
-        FLAC__bool ret = FLAC__format_sample_rate_is_subset(sampleRate);
-        info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+        auto maybeSampleRate = numberFromJs<unsigned>(info[0]);
+        if(maybeSampleRate.IsJust()) {
+            unsigned sampleRate = maybeSampleRate.FromJust();
+            FLAC__bool ret = FLAC__format_sample_rate_is_subset(sampleRate);
+            info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+        } else {
+            info.GetReturnValue().Set(Nan::False());
+        }
     }
 
     NAN_METHOD(node_FLAC__format_vorbiscomment_entry_name_is_legal) {
         MaybeLocal<String> jsStrMaybe = Nan::To<v8::String>(info[0]);
-        if(jsStrMaybe.IsEmpty()) return;
+        if(jsStrMaybe.IsEmpty() || !info[0]->IsString()) {
+            info.GetReturnValue().Set(Nan::False());
+            return;
+        }
 
         Local<String> jsStr = jsStrMaybe.ToLocalChecked();
         Nan::Utf8String str(jsStr);
@@ -158,7 +180,10 @@ namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__format_vorbiscomment_entry_value_is_legal) {
         MaybeLocal<String> jsStrMaybe = Nan::To<v8::String>(info[0]);
-        if(jsStrMaybe.IsEmpty()) return;
+        if(jsStrMaybe.IsEmpty() || !info[0]->IsString()) {
+            info.GetReturnValue().Set(Nan::False());
+            return;
+        }
 
         Local<String> jsStr = jsStrMaybe.ToLocalChecked();
         Nan::Utf8String str(jsStr);
@@ -168,7 +193,10 @@ namespace flac_bindings {
 
     NAN_METHOD(node_FLAC__format_vorbiscomment_entry_is_legal) {
         MaybeLocal<String> jsStrMaybe = Nan::To<v8::String>(info[0]);
-        if(jsStrMaybe.IsEmpty()) return;
+        if(jsStrMaybe.IsEmpty() || !info[0]->IsString()) {
+            info.GetReturnValue().Set(Nan::False());
+            return;
+        }
 
         Local<String> jsStr = jsStrMaybe.ToLocalChecked();
         Nan::Utf8String str(jsStr);
@@ -177,19 +205,22 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__format_seektable_is_legal) {
-        FLAC__StreamMetadata_SeekTable* table = fromjs<FLAC__StreamMetadata_SeekTable>(info[0]);
+        FLAC__StreamMetadata_SeekTable* table = jsToStruct<FLAC__StreamMetadata_SeekTable>(info[0]);
+        if(table == nullptr) return;
         FLAC__bool ret = FLAC__format_seektable_is_legal(table);
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
     }
 
     NAN_METHOD(node_FLAC__format_seektable_sort) {
-        FLAC__StreamMetadata_SeekTable* table = fromjs<FLAC__StreamMetadata_SeekTable>(info[0]);
-        FLAC__format_seektable_sort(table);
-        info.GetReturnValue().Set(structToJs(table));
+        FLAC__StreamMetadata_SeekTable* table = jsToStruct<FLAC__StreamMetadata_SeekTable>(info[0]);
+        if(table == nullptr) return;
+        unsigned numberOfPlaceholdersConvertedToTemplates = FLAC__format_seektable_sort(table);
+        info.GetReturnValue().Set(Nan::New<Number>(numberOfPlaceholdersConvertedToTemplates));
     }
 
     NAN_METHOD(node_FLAC__format_cuesheet_is_legal) {
-        FLAC__StreamMetadata_CueSheet* cue = fromjs<FLAC__StreamMetadata_CueSheet>(info[0]);
+        FLAC__StreamMetadata_CueSheet* cue = jsToStruct<FLAC__StreamMetadata_CueSheet>(info[0]);
+        if(cue == nullptr) return;
         bool check = Nan::To<int>(info[1].As<Boolean>()).FromJust();
         const char* violation = NULL;
         FLAC__bool ret = FLAC__format_cuesheet_is_legal(cue, check, &violation);
@@ -201,7 +232,8 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__format_picture_is_legal) {
-        FLAC__StreamMetadata_Picture* picture = fromjs<FLAC__StreamMetadata_Picture>(info[0]);
+        FLAC__StreamMetadata_Picture* picture = jsToStruct<FLAC__StreamMetadata_Picture>(info[0]);
+        if(picture == nullptr) return;
         const char* violation = NULL;
         FLAC__bool ret = FLAC__format_picture_is_legal(picture, &violation);
         if(ret) {
@@ -211,172 +243,82 @@ namespace flac_bindings {
         }
     }
 
-    NAN_PROPERTY_GETTER(MetadataType) {
-        Nan::Utf8String propertyName(property);
-        std::string PropertyName(*propertyName);
-
-        if(PropertyName == "STREAMINFO") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_STREAMINFO));
-        else if(PropertyName == "PADDING") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_PADDING));
-        else if(PropertyName == "APPLICATION") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_APPLICATION));
-        else if(PropertyName == "SEEKTABLE") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_SEEKTABLE));
-        else if(PropertyName == "VORBIS_COMMENT") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_VORBIS_COMMENT));
-        else if(PropertyName == "CUESHEET") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_CUESHEET));
-        else if(PropertyName == "PICTURE") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_PICTURE));
-        else if(PropertyName == "UNDEFINED") info.GetReturnValue().Set(Nan::New(FLAC__METADATA_TYPE_UNDEFINED));
-        else info.GetReturnValue().SetUndefined();
+    FlacEnumDefineReturnType createMetadataTypeEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "STREAMINFO", FLAC__METADATA_TYPE_STREAMINFO);
+        flacEnum_defineValue(obj1, obj2, "PADDING", FLAC__METADATA_TYPE_PADDING);
+        flacEnum_defineValue(obj1, obj2, "APPLICATION", FLAC__METADATA_TYPE_APPLICATION);
+        flacEnum_defineValue(obj1, obj2, "SEEKTABLE", FLAC__METADATA_TYPE_SEEKTABLE);
+        flacEnum_defineValue(obj1, obj2, "VORBIS_COMMENT", FLAC__METADATA_TYPE_VORBIS_COMMENT);
+        flacEnum_defineValue(obj1, obj2, "CUESHEET", FLAC__METADATA_TYPE_CUESHEET);
+        flacEnum_defineValue(obj1, obj2, "PICTURE", FLAC__METADATA_TYPE_PICTURE);
+        flacEnum_defineValue(obj1, obj2, "UNDEFINED", FLAC__METADATA_TYPE_UNDEFINED);
+        return std::make_tuple(obj1, obj2);
     }
 
-    NAN_PROPERTY_GETTER(EntropyCodingMethodType) {
-        Nan::Utf8String propertyName(property);
-        std::string PropertyName(*propertyName);
-
-        if(PropertyName == "PARTITIONED_RICE") info.GetReturnValue().Set(Nan::New(FLAC__ENTROPY_CODING_METHOD_PARTITIONED_RICE));
-        else if(PropertyName == "PARTITIONED_RICE2") info.GetReturnValue().Set(Nan::New(FLAC__ENTROPY_CODING_METHOD_PARTITIONED_RICE2));
-        else info.GetReturnValue().SetUndefined();
+    FlacEnumDefineReturnType createEntropyCodingMethodTypeEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "PARTITIONED_RICE", FLAC__ENTROPY_CODING_METHOD_PARTITIONED_RICE);
+        flacEnum_defineValue(obj1, obj2, "PARTITIONED_RICE2", FLAC__ENTROPY_CODING_METHOD_PARTITIONED_RICE2);
+        return std::make_tuple(obj1, obj2);
     }
 
-    NAN_PROPERTY_GETTER(SubframeType) {
-        Nan::Utf8String propertyName(property);
-        std::string PropertyName(*propertyName);
-
-        if(PropertyName == "CONSTANT") info.GetReturnValue().Set(Nan::New(FLAC__SUBFRAME_TYPE_CONSTANT));
-        else if(PropertyName == "VERBATIM") info.GetReturnValue().Set(Nan::New(FLAC__SUBFRAME_TYPE_VERBATIM));
-        else if(PropertyName == "FIXED") info.GetReturnValue().Set(Nan::New(FLAC__SUBFRAME_TYPE_FIXED));
-        else if(PropertyName == "LPC") info.GetReturnValue().Set(Nan::New(FLAC__SUBFRAME_TYPE_LPC));
-        else info.GetReturnValue().SetUndefined();
+    FlacEnumDefineReturnType createSubframeTypeEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "CONSTANT", FLAC__SUBFRAME_TYPE_CONSTANT);
+        flacEnum_defineValue(obj1, obj2, "VERBATIM", FLAC__SUBFRAME_TYPE_VERBATIM);
+        flacEnum_defineValue(obj1, obj2, "FIXED", FLAC__SUBFRAME_TYPE_FIXED);
+        flacEnum_defineValue(obj1, obj2, "LPC", FLAC__SUBFRAME_TYPE_LPC);
+        return std::make_tuple(obj1, obj2);
     }
 
-    NAN_PROPERTY_GETTER(ChannelAssignment) {
-        Nan::Utf8String propertyName(property);
-        std::string PropertyName(*propertyName);
-
-        if(PropertyName == "INDEPENDENT") info.GetReturnValue().Set(Nan::New(FLAC__CHANNEL_ASSIGNMENT_INDEPENDENT));
-        else if(PropertyName == "LEFT_SIDE") info.GetReturnValue().Set(Nan::New(FLAC__CHANNEL_ASSIGNMENT_LEFT_SIDE));
-        else if(PropertyName == "RIGHT_SIDE") info.GetReturnValue().Set(Nan::New(FLAC__CHANNEL_ASSIGNMENT_RIGHT_SIDE));
-        else if(PropertyName == "MID_SIDE") info.GetReturnValue().Set(Nan::New(FLAC__CHANNEL_ASSIGNMENT_MID_SIDE));
-        else info.GetReturnValue().SetUndefined();
+    FlacEnumDefineReturnType createChannelAssignmentEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "INDEPENDENT", FLAC__CHANNEL_ASSIGNMENT_INDEPENDENT);
+        flacEnum_defineValue(obj1, obj2, "LEFT_SIDE", FLAC__CHANNEL_ASSIGNMENT_LEFT_SIDE);
+        flacEnum_defineValue(obj1, obj2, "RIGHT_SIDE", FLAC__CHANNEL_ASSIGNMENT_RIGHT_SIDE);
+        flacEnum_defineValue(obj1, obj2, "MID_SIDE", FLAC__CHANNEL_ASSIGNMENT_MID_SIDE);
+        return std::make_tuple(obj1, obj2);
     }
 
-    NAN_PROPERTY_GETTER(FrameNumberType) {
-        Nan::Utf8String propertyName(property);
-        std::string PropertyName(*propertyName);
-
-        if(PropertyName == "FRAME_NUMBER") info.GetReturnValue().Set(Nan::New(FLAC__FRAME_NUMBER_TYPE_FRAME_NUMBER));
-        else if(PropertyName == "SAMPLE_NUMBER") info.GetReturnValue().Set(Nan::New(FLAC__FRAME_NUMBER_TYPE_SAMPLE_NUMBER));
-        else info.GetReturnValue().SetUndefined();
+    FlacEnumDefineReturnType createFrameNumberTypeEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "FRAME_NUMBER", FLAC__FRAME_NUMBER_TYPE_FRAME_NUMBER);
+        flacEnum_defineValue(obj1, obj2, "SAMPLE_NUMBER", FLAC__FRAME_NUMBER_TYPE_SAMPLE_NUMBER);
+        return std::make_tuple(obj1, obj2);
     }
 
-    NAN_PROPERTY_GETTER(StreamMetadata_Picture_Type) {
-        Nan::Utf8String propertyName(property);
-        std::string PropertyName(*propertyName);
-
-        if(PropertyName == "OTHER") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_OTHER));
-        else if(PropertyName == "FILE_ICON_STANDARD") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_FILE_ICON_STANDARD));
-        else if(PropertyName == "FILE_ICON") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_FILE_ICON));
-        else if(PropertyName == "FRONT_COVER") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_FRONT_COVER));
-        else if(PropertyName == "BACK_COVER") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_BACK_COVER));
-        else if(PropertyName == "LEAFLET_PAGE") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_LEAFLET_PAGE));
-        else if(PropertyName == "MEDIA") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_MEDIA));
-        else if(PropertyName == "LEAD_ARTIST") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_LEAD_ARTIST));
-        else if(PropertyName == "ARTIST") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_ARTIST));
-        else if(PropertyName == "CONDUCTOR") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_CONDUCTOR));
-        else if(PropertyName == "BAND") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_BAND));
-        else if(PropertyName == "COMPOSER") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_COMPOSER));
-        else if(PropertyName == "LYRICIST") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_LYRICIST));
-        else if(PropertyName == "RECORDING_LOCATION") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_RECORDING_LOCATION));
-        else if(PropertyName == "DURING_RECORDING") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_DURING_RECORDING));
-        else if(PropertyName == "DURING_PERFORMANCE") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_DURING_PERFORMANCE));
-        else if(PropertyName == "VIDEO_SCREEN_CAPTURE") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_VIDEO_SCREEN_CAPTURE));
-        else if(PropertyName == "FISH") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_FISH));
-        else if(PropertyName == "ILLUSTRATION") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_ILLUSTRATION));
-        else if(PropertyName == "BAND_LOGOTYPE") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_BAND_LOGOTYPE));
-        else if(PropertyName == "PUBLISHER_LOGOTYPE") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_PUBLISHER_LOGOTYPE));
-        else if(PropertyName == "UNDEFINED") info.GetReturnValue().Set(Nan::New(FLAC__STREAM_METADATA_PICTURE_TYPE_UNDEFINED));
-        else info.GetReturnValue().SetUndefined();
-    }
-
-    NAN_INDEX_GETTER(MetadataTypeString) {
-        if(index < 8 || index == FLAC__MAX_METADATA_TYPE_CODE) {
-            info.GetReturnValue().Set(Nan::New(FLAC__MetadataTypeString[index]).ToLocalChecked());
-        } else {
-            info.GetReturnValue().SetNull();
-        }
-    }
-
-    NAN_INDEX_ENUMERATOR(MetadataTypeString) {
-        Local<Array> array = Nan::New<Array>();
-        for(int i = 0; i < 8; i++) Nan::Set(array, i, Nan::New(i));
-        info.GetReturnValue().Set(array);
-    }
-
-    NAN_INDEX_GETTER(EntropyCodingMethodTypeString) {
-        if(index < 2) {
-            info.GetReturnValue().Set(Nan::New(FLAC__EntropyCodingMethodTypeString[index]).ToLocalChecked());
-        } else {
-            info.GetReturnValue().SetNull();
-        }
-    }
-
-    NAN_INDEX_ENUMERATOR(EntropyCodingMethodTypeString) {
-        Local<Array> array = Nan::New<Array>();
-        for(int i = 0; i < 2; i++) Nan::Set(array, i, Nan::New(i));
-        info.GetReturnValue().Set(array);
-    }
-
-    NAN_INDEX_GETTER(SubframeTypeString) {
-        if(index < 4) {
-            info.GetReturnValue().Set(Nan::New(FLAC__SubframeTypeString[index]).ToLocalChecked());
-        } else {
-            info.GetReturnValue().SetNull();
-        }
-    }
-
-    NAN_INDEX_ENUMERATOR(SubframeTypeString) {
-        Local<Array> array = Nan::New<Array>();
-        for(int i = 0; i < 4; i++) Nan::Set(array, i, Nan::New(i));
-        info.GetReturnValue().Set(array);
-    }
-
-    NAN_INDEX_GETTER(ChannelAssignmentString) {
-        if(index < 4) {
-            info.GetReturnValue().Set(Nan::New(FLAC__ChannelAssignmentString[index]).ToLocalChecked());
-        } else {
-            info.GetReturnValue().SetNull();
-        }
-    }
-
-    NAN_INDEX_ENUMERATOR(ChannelAssignmentString) {
-        Local<Array> array = Nan::New<Array>();
-        for(int i = 0; i < 94; i++) Nan::Set(array, i, Nan::New(i));
-        info.GetReturnValue().Set(array);
-    }
-
-    NAN_INDEX_GETTER(FrameNumberTypeString) {
-        if(index < 2) {
-            info.GetReturnValue().Set(Nan::New(FLAC__FrameNumberTypeString[index]).ToLocalChecked());
-        } else {
-            info.GetReturnValue().SetNull();
-        }
-    }
-
-    NAN_INDEX_ENUMERATOR(FrameNumberTypeString) {
-        Local<Array> array = Nan::New<Array>();
-        for(int i = 0; i < 2; i++) Nan::Set(array, i, Nan::New(i));
-        info.GetReturnValue().Set(array);
-    }
-
-    NAN_INDEX_GETTER(StreamMetadata_Picture_TypeString) {
-        if(index < 22) {
-            info.GetReturnValue().Set(Nan::New(FLAC__StreamMetadata_Picture_TypeString[index]).ToLocalChecked());
-        } else {
-            info.GetReturnValue().SetNull();
-        }
-    }
-
-    NAN_INDEX_ENUMERATOR(StreamMetadata_Picture_TypeString) {
-        Local<Array> array = Nan::New<Array>();
-        for(int i = 0; i < 22; i++) Nan::Set(array, i, Nan::New(i));
-        info.GetReturnValue().Set(array);
+    FlacEnumDefineReturnType createPictureTypeEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "OTHER", FLAC__STREAM_METADATA_PICTURE_TYPE_OTHER);
+        flacEnum_defineValue(obj1, obj2, "FILE_ICON_STANDARD", FLAC__STREAM_METADATA_PICTURE_TYPE_FILE_ICON_STANDARD);
+        flacEnum_defineValue(obj1, obj2, "FILE_ICON", FLAC__STREAM_METADATA_PICTURE_TYPE_FILE_ICON);
+        flacEnum_defineValue(obj1, obj2, "FRONT_COVER", FLAC__STREAM_METADATA_PICTURE_TYPE_FRONT_COVER);
+        flacEnum_defineValue(obj1, obj2, "BACK_COVER", FLAC__STREAM_METADATA_PICTURE_TYPE_BACK_COVER);
+        flacEnum_defineValue(obj1, obj2, "LEAFLET_PAGE", FLAC__STREAM_METADATA_PICTURE_TYPE_LEAFLET_PAGE);
+        flacEnum_defineValue(obj1, obj2, "MEDIA", FLAC__STREAM_METADATA_PICTURE_TYPE_MEDIA);
+        flacEnum_defineValue(obj1, obj2, "LEAD_ARTIST", FLAC__STREAM_METADATA_PICTURE_TYPE_LEAD_ARTIST);
+        flacEnum_defineValue(obj1, obj2, "ARTIST", FLAC__STREAM_METADATA_PICTURE_TYPE_ARTIST);
+        flacEnum_defineValue(obj1, obj2, "CONDUCTOR", FLAC__STREAM_METADATA_PICTURE_TYPE_CONDUCTOR);
+        flacEnum_defineValue(obj1, obj2, "BAND", FLAC__STREAM_METADATA_PICTURE_TYPE_BAND);
+        flacEnum_defineValue(obj1, obj2, "COMPOSER", FLAC__STREAM_METADATA_PICTURE_TYPE_COMPOSER);
+        flacEnum_defineValue(obj1, obj2, "LYRICIST", FLAC__STREAM_METADATA_PICTURE_TYPE_LYRICIST);
+        flacEnum_defineValue(obj1, obj2, "RECORDING_LOCATION", FLAC__STREAM_METADATA_PICTURE_TYPE_RECORDING_LOCATION);
+        flacEnum_defineValue(obj1, obj2, "DURING_RECORDING", FLAC__STREAM_METADATA_PICTURE_TYPE_DURING_RECORDING);
+        flacEnum_defineValue(obj1, obj2, "DURING_PERFORMANCE", FLAC__STREAM_METADATA_PICTURE_TYPE_DURING_PERFORMANCE);
+        flacEnum_defineValue(obj1, obj2, "VIDEO_SCREEN_CAPTURE", FLAC__STREAM_METADATA_PICTURE_TYPE_VIDEO_SCREEN_CAPTURE);
+        flacEnum_defineValue(obj1, obj2, "FISH", FLAC__STREAM_METADATA_PICTURE_TYPE_FISH);
+        flacEnum_defineValue(obj1, obj2, "ILLUSTRATION", FLAC__STREAM_METADATA_PICTURE_TYPE_ILLUSTRATION);
+        flacEnum_defineValue(obj1, obj2, "BAND_LOGOTYPE", FLAC__STREAM_METADATA_PICTURE_TYPE_BAND_LOGOTYPE);
+        flacEnum_defineValue(obj1, obj2, "PUBLISHER_LOGOTYPE", FLAC__STREAM_METADATA_PICTURE_TYPE_PUBLISHER_LOGOTYPE);
+        flacEnum_defineValue(obj1, obj2, "UNDEFINED", FLAC__STREAM_METADATA_PICTURE_TYPE_UNDEFINED);
+        return std::make_tuple(obj1, obj2);
     }
 
     NAN_MODULE_INIT(initFormat) {
@@ -389,41 +331,23 @@ namespace flac_bindings {
 
         Nan::Set(obj, Nan::New("FLAC__VERSION_STRING").ToLocalChecked(), Nan::New<String>(FLAC__VERSION_STRING).ToLocalChecked());
         Nan::Set(obj, Nan::New("FLAC__VENDOR_STRING").ToLocalChecked(), Nan::New<String>(FLAC__VENDOR_STRING).ToLocalChecked());
-        Nan::SetMethod(obj, "sample_rate_is_valid", node_FLAC__format_sample_rate_is_valid);
-        Nan::SetMethod(obj, "blocksize_is_subset", node_FLAC__format_blocksize_is_subset);
-        Nan::SetMethod(obj, "sample_rate_is_subset", node_FLAC__format_sample_rate_is_subset);
-        Nan::SetMethod(obj, "vorbiscomment_entry_name_is_legal", node_FLAC__format_vorbiscomment_entry_name_is_legal);
-        Nan::SetMethod(obj, "vorbiscomment_entry_value_is_legal", node_FLAC__format_vorbiscomment_entry_value_is_legal);
-        Nan::SetMethod(obj, "vorbiscomment_entry_is_legal", node_FLAC__format_vorbiscomment_entry_is_legal);
-        Nan::SetMethod(obj, "seektable_is_legal", node_FLAC__format_seektable_is_legal);
-        Nan::SetMethod(obj, "seektable_sort", node_FLAC__format_seektable_sort);
-        Nan::SetMethod(obj, "cuesheet_is_legal", node_FLAC__format_cuesheet_is_legal);
-        Nan::SetMethod(obj, "picture_is_legal", node_FLAC__format_picture_is_legal);
+        Nan::SetMethod(obj, "sampleRateIsValid", node_FLAC__format_sample_rate_is_valid);
+        Nan::SetMethod(obj, "blocksizeIsSubset", node_FLAC__format_blocksize_is_subset);
+        Nan::SetMethod(obj, "sampleRateIsSubset", node_FLAC__format_sample_rate_is_subset);
+        Nan::SetMethod(obj, "vorbiscommentEntryNameIsLegal", node_FLAC__format_vorbiscomment_entry_name_is_legal);
+        Nan::SetMethod(obj, "vorbiscommentEntryValueIsLegal", node_FLAC__format_vorbiscomment_entry_value_is_legal);
+        Nan::SetMethod(obj, "vorbiscommentEntryIsLegal", node_FLAC__format_vorbiscomment_entry_is_legal);
+        Nan::SetMethod(obj, "seektableIsLegal", node_FLAC__format_seektable_is_legal);
+        Nan::SetMethod(obj, "seektableSort", node_FLAC__format_seektable_sort);
+        Nan::SetMethod(obj, "cuesheetIsLegal", node_FLAC__format_cuesheet_is_legal);
+        Nan::SetMethod(obj, "pictureIsLegal", node_FLAC__format_picture_is_legal);
 
-        #define propertyGetter(func) \
-        Local<ObjectTemplate> _JOIN(func, Var) = Nan::New<ObjectTemplate>(); \
-        Nan::SetNamedPropertyHandler(_JOIN(func, Var), func); \
-        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, Var)).ToLocalChecked());
-
-        propertyGetter(MetadataType);
-        propertyGetter(EntropyCodingMethodType);
-        propertyGetter(SubframeType);
-        propertyGetter(ChannelAssignment);
-        propertyGetter(FrameNumberType);
-        propertyGetter(StreamMetadata_Picture_Type);
-
-        #define indexGetter(func) \
-        _JOIN(FLAC__, func) = libFlac->getSymbolAddress<const char* const*>("FLAC__" #func); \
-        Local<ObjectTemplate> _JOIN(func, _template) = Nan::New<ObjectTemplate>(); \
-        Nan::SetIndexedPropertyHandler(_JOIN(func, _template), func, nullptr, nullptr, nullptr, func); \
-        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, _template)).ToLocalChecked());
-
-        indexGetter(MetadataTypeString);
-        indexGetter(EntropyCodingMethodTypeString);
-        indexGetter(SubframeTypeString);
-        indexGetter(ChannelAssignmentString);
-        indexGetter(FrameNumberTypeString);
-        indexGetter(StreamMetadata_Picture_TypeString);
+        flacEnum_declareInObject(obj, MetadataType, createMetadataTypeEnum());
+        flacEnum_declareInObject(obj, EntropyCodingMethodType, createEntropyCodingMethodTypeEnum());
+        flacEnum_declareInObject(obj, SubframeType, createSubframeTypeEnum());
+        flacEnum_declareInObject(obj, ChannelAssignment, createChannelAssignmentEnum());
+        flacEnum_declareInObject(obj, FrameNumberType, createFrameNumberTypeEnum());
+        flacEnum_declareInObject(obj, PictureType, createPictureTypeEnum());
 
         Nan::Set(target, Nan::New("format").ToLocalChecked(), obj);
     }

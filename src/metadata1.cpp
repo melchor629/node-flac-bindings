@@ -5,6 +5,8 @@ using namespace v8;
 using namespace node;
 #include "pointer.hpp"
 #include "format.h"
+#include "extra_defs.hpp"
+#include "mappings/mappings.hpp"
 
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
@@ -37,203 +39,241 @@ extern "C" {
     metadataFunction(FLAC__bool, set_block, FLAC__Metadata_SimpleIterator *iterator, FLAC__StreamMetadata *block, FLAC__bool use_padding);
     metadataFunction(FLAC__bool, insert_block_after, FLAC__Metadata_SimpleIterator *iterator, FLAC__StreamMetadata *block, FLAC__bool use_padding);
     metadataFunction(FLAC__bool, delete_block, FLAC__Metadata_SimpleIterator *iterator, FLAC__bool use_padding);
-    const char *const* FLAC__Metadata_SimpleIteratorStatusString;
 }
+
+#define UNWRAP_IT \
+SimpleIterator* self = Nan::ObjectWrap::Unwrap<SimpleIterator>(info.Holder()); \
+FLAC__Metadata_SimpleIterator* it = self->it;
 
 namespace flac_bindings {
 
     extern Library* libFlac;
 
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_new) {
-        FLAC__Metadata_SimpleIterator* it = FLAC__metadata_simple_iterator_new();
-        if(it != nullptr) {
-            info.GetReturnValue().Set(WrapPointer(it).ToLocalChecked());
-        } else {
-            info.GetReturnValue().SetNull();
-        }
-    }
+    class SimpleIterator: public Nan::ObjectWrap {
 
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_delete) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
+        FLAC__Metadata_SimpleIterator* it;
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_new) {
+            if(throwIfNotConstructorCall(info)) return;
+            FLAC__Metadata_SimpleIterator* it = FLAC__metadata_simple_iterator_new();
+            if(it != nullptr) {
+                SimpleIterator* si = new SimpleIterator;
+                si->it = it;
+                si->Wrap(info.This());
+                Nan::Set(info.This(), Symbol::GetIterator(info.GetIsolate()), Nan::New<Function>(jsIterator));
+                info.GetReturnValue().Set(info.This());
+            } else {
+                Nan::ThrowError("Could not allocate memory");
+            }
+        }
+
+        static NAN_METHOD(jsIterator) {
+            UNWRAP_IT
+            Local<Object> obj = Nan::New<Object>();
+            Nan::Set(obj, Nan::New("it").ToLocalChecked(), WrapPointer(it).ToLocalChecked());
+            Nan::SetMethod(obj, "next", [] (Nan::NAN_METHOD_ARGS_TYPE info) -> void {
+                MaybeLocal<Value> parent = Nan::Get(info.This(), Nan::New("it").ToLocalChecked());
+                if(parent.IsEmpty() || !parent.ToLocalChecked()->IsObject()) {
+                    Nan::ThrowTypeError("Unexpected this type for iterator");
+                    return;
+                }
+
+                FLAC__Metadata_SimpleIterator* it = UnwrapPointer<FLAC__Metadata_SimpleIterator>(parent.ToLocalChecked());
+                Local<Object> ret = Nan::New<Object>();
+                if(FLAC__metadata_simple_iterator_is_last(it)) {
+                    Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
+                } else {
+                    FLAC__metadata_simple_iterator_next(it);
+                    FLAC__StreamMetadata* metadata = FLAC__metadata_simple_iterator_get_block(it);
+                    Nan::Set(ret, Nan::New("value").ToLocalChecked(), structToJs(metadata));
+                    Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::False());
+                }
+                info.GetReturnValue().Set(ret);
+            });
+
+            while(FLAC__metadata_simple_iterator_prev(it));
+            info.GetReturnValue().Set(obj);
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_delete) {
+            UNWRAP_IT
+            FLAC__metadata_simple_iterator_delete(it);
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_status) {
+            UNWRAP_IT
+            FLAC__Metadata_SimpleIteratorStatus s = FLAC__metadata_simple_iterator_status(it);
+            info.GetReturnValue().Set(Nan::New<Number>(s));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_init) {
+            UNWRAP_IT
+            Nan::Utf8String filename(info[0]);
+            FLAC__bool read_only = Nan::To<int>(info[1]).FromMaybe(0);
+            FLAC__bool preserve = Nan::To<int>(info[2]).FromMaybe(0);
+            FLAC__bool r = FLAC__metadata_simple_iterator_init(it, *filename, read_only, preserve);
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_is_writable) {
+            UNWRAP_IT
+            FLAC__bool r = FLAC__metadata_simple_iterator_is_writable(it);
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_next) {
+            UNWRAP_IT
+            FLAC__bool r = FLAC__metadata_simple_iterator_next(it);
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_prev) {
+            UNWRAP_IT
+            FLAC__bool r = FLAC__metadata_simple_iterator_prev(it);
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_is_last) {
+            UNWRAP_IT
+            FLAC__bool r = FLAC__metadata_simple_iterator_is_last(it);
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block_offset) {
+            UNWRAP_IT
+            off_t r = FLAC__metadata_simple_iterator_get_block_offset(it);
+            info.GetReturnValue().Set(numberToJs(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block_type) {
+            UNWRAP_IT
+            FLAC__MetadataType r = FLAC__metadata_simple_iterator_get_block_type(it);
+            info.GetReturnValue().Set(Nan::New<Number>(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block_length) {
+            UNWRAP_IT
+            unsigned r = FLAC__metadata_simple_iterator_get_block_length(it);
+            info.GetReturnValue().Set(Nan::New<Number>(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_get_application_id) {
+            UNWRAP_IT
+            FLAC__byte id[4];
+            FLAC__bool r = FLAC__metadata_simple_iterator_get_application_id(it, id);
+            if(r) {
+                Local<Array> arr = Nan::New<Array>();
+                Nan::Set(arr, 0, Nan::New<Number>(id[0]));
+                Nan::Set(arr, 1, Nan::New<Number>(id[1]));
+                Nan::Set(arr, 2, Nan::New<Number>(id[2]));
+                Nan::Set(arr, 3, Nan::New<Number>(id[3]));
+                info.GetReturnValue().Set(arr);
+            } else {
+                info.GetReturnValue().Set(Nan::New<Boolean>(false));
+            }
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block) {
+            UNWRAP_IT
+            FLAC__StreamMetadata* r = FLAC__metadata_simple_iterator_get_block(it);
+            info.GetReturnValue().Set(structToJs(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_set_block) {
+            UNWRAP_IT
+            FLAC__StreamMetadata* m = jsToStruct<FLAC__StreamMetadata>(info[0]);
+            if(m == nullptr) {
+                Nan::ThrowTypeError("Unknown metadata object");
+                return;
+            }
+            FLAC__bool pad = Nan::To<int>(info[1]).FromMaybe(1);
+            FLAC__bool r = FLAC__metadata_simple_iterator_set_block(it, m, pad);
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_insert_block_after) {
+            UNWRAP_IT
+            FLAC__StreamMetadata* m = jsToStruct<FLAC__StreamMetadata>(info[0]);
+            if(m == nullptr) {
+                Nan::ThrowTypeError("Unknown metadata object");
+                return;
+            }
+            FLAC__bool pad = Nan::To<int>(info[1]).FromMaybe(1);
+            FLAC__bool r = FLAC__metadata_simple_iterator_insert_block_after(it, m, pad);
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        }
+
+        static NAN_METHOD(node_FLAC__metadata_simple_iterator_delete_block) {
+            UNWRAP_IT
+            FLAC__bool pad = Nan::To<int>(info[0]).FromMaybe(1);
+            FLAC__bool r = FLAC__metadata_simple_iterator_delete_block(it, pad);
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        }
+
+        static FlacEnumDefineReturnType createStatusEnum() {
+            Local<Object> obj1 = Nan::New<Object>();
+            Local<Object> obj2 = Nan::New<Object>();
+            flacEnum_defineValue(obj1, obj2, "OK", 0);
+            flacEnum_defineValue(obj1, obj2, "ILLEGAL_INPUT", 1);
+            flacEnum_defineValue(obj1, obj2, "ERROR_OPENING_FILE", 2);
+            flacEnum_defineValue(obj1, obj2, "NOT_A_FLAC_FILE", 3);
+            flacEnum_defineValue(obj1, obj2, "NOT_WRITABLE", 4);
+            flacEnum_defineValue(obj1, obj2, "BAD_METADATA", 5);
+            flacEnum_defineValue(obj1, obj2, "READ_ERROR", 6);
+            flacEnum_defineValue(obj1, obj2, "SEEK_ERROR", 7);
+            flacEnum_defineValue(obj1, obj2, "WRITE_ERROR", 8);
+            flacEnum_defineValue(obj1, obj2, "RENAME_ERROR", 9);
+            flacEnum_defineValue(obj1, obj2, "UNLINK_ERROR", 10);
+            flacEnum_defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", 11);
+            flacEnum_defineValue(obj1, obj2, "INTERNAL_ERROR", 12);
+            return std::make_tuple(obj1, obj2);
+        }
+
+    public:
+
+        static NAN_MODULE_INIT(initMetadata1);
+        ~SimpleIterator();
+
+    };
+
+    SimpleIterator::~SimpleIterator() {
         FLAC__metadata_simple_iterator_delete(it);
     }
 
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_status) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__Metadata_SimpleIteratorStatus s = FLAC__metadata_simple_iterator_status(it);
-        info.GetReturnValue().Set(Nan::New<Number>(s));
-    }
+    NAN_MODULE_INIT(SimpleIterator::initMetadata1) {
+        Local<FunctionTemplate> classFunction = Nan::New<FunctionTemplate>(node_FLAC__metadata_simple_iterator_new);
+        classFunction->SetClassName(Nan::New("SimpleIterator").ToLocalChecked());
+        classFunction->InstanceTemplate()->SetInternalFieldCount(1);
 
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_init) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        Nan::Utf8String filename(info[1]);
-        FLAC__bool read_only = Nan::To<int>(info[2]).FromMaybe(0);
-        FLAC__bool preserve = Nan::To<int>(info[3]).FromMaybe(0);
-        FLAC__bool r = FLAC__metadata_simple_iterator_init(it, *filename, read_only, preserve);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_is_writable) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__bool r = FLAC__metadata_simple_iterator_is_writable(it);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_next) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__bool r = FLAC__metadata_simple_iterator_next(it);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_prev) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__bool r = FLAC__metadata_simple_iterator_prev(it);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_is_last) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__bool r = FLAC__metadata_simple_iterator_is_last(it);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block_offset) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        off_t r = FLAC__metadata_simple_iterator_get_block_offset(it);
-        info.GetReturnValue().Set(Nan::New<Number>(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block_type) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__MetadataType r = FLAC__metadata_simple_iterator_get_block_type(it);
-        info.GetReturnValue().Set(Nan::New<Number>(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block_length) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        unsigned r = FLAC__metadata_simple_iterator_get_block_length(it);
-        info.GetReturnValue().Set(Nan::New<Number>(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_get_application_id) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__byte id[4];
-        FLAC__bool r = FLAC__metadata_simple_iterator_get_application_id(it, id);
-        if(r) {
-            Local<Array> arr = Nan::New<Array>();
-            Nan::Set(arr, 0, Nan::New<Number>(id[0]));
-            Nan::Set(arr, 1, Nan::New<Number>(id[1]));
-            Nan::Set(arr, 2, Nan::New<Number>(id[2]));
-            Nan::Set(arr, 3, Nan::New<Number>(id[3]));
-            info.GetReturnValue().Set(arr);
-        } else {
-            info.GetReturnValue().Set(Nan::New<Boolean>(false));
-        }
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__StreamMetadata* r = FLAC__metadata_simple_iterator_get_block(it);
-        info.GetReturnValue().Set(structToJs(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_set_block) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__StreamMetadata* m = fromjs<FLAC__StreamMetadata>(info[1]);
-        if(m == nullptr) return;
-        FLAC__bool pad = Nan::To<int>(info[2]).FromMaybe(1);
-        FLAC__bool r = FLAC__metadata_simple_iterator_set_block(it, m, pad);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_insert_block_after) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__StreamMetadata* m = fromjs<FLAC__StreamMetadata>(info[1]);
-        if(m == nullptr) return;
-        FLAC__bool pad = Nan::To<int>(info[2]).FromMaybe(1);
-        FLAC__bool r = FLAC__metadata_simple_iterator_insert_block_after(it, m, pad);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
-    }
-
-    NAN_METHOD(node_FLAC__metadata_simple_iterator_delete_block) {
-        FLAC__Metadata_SimpleIterator* it = UnwrapPointer(info[0]);
-        FLAC__bool pad = Nan::To<int>(info[1]).FromMaybe(1);
-        FLAC__bool r = FLAC__metadata_simple_iterator_delete_block(it, pad);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
-    }
-
-    NAN_PROPERTY_GETTER(SimpleIteratorStatus) {
-        Nan::Utf8String p(property);
-        std::string PropertyName(*p);
-
-        if(PropertyName == "OK") info.GetReturnValue().Set(0);
-        else if(PropertyName == "ILLEGAL_INPUT") info.GetReturnValue().Set(1);
-        else if(PropertyName == "ERROR_OPENING_FILE") info.GetReturnValue().Set(2);
-        else if(PropertyName == "NOT_A_FLAC_FILE") info.GetReturnValue().Set(3);
-        else if(PropertyName == "NOT_WRITABLE") info.GetReturnValue().Set(4);
-        else if(PropertyName == "BAD_METADATA") info.GetReturnValue().Set(5);
-        else if(PropertyName == "READ_ERROR") info.GetReturnValue().Set(6);
-        else if(PropertyName == "SEEK_ERROR") info.GetReturnValue().Set(7);
-        else if(PropertyName == "WRITE_ERROR") info.GetReturnValue().Set(8);
-        else if(PropertyName == "RENAME_ERROR") info.GetReturnValue().Set(9);
-        else if(PropertyName == "UNLINK_ERROR") info.GetReturnValue().Set(10);
-        else if(PropertyName == "MEMORY_ALLOCATION_ERROR") info.GetReturnValue().Set(11);
-        else if(PropertyName == "INTERNAL_ERROR") info.GetReturnValue().Set(12);
-        else info.GetReturnValue().SetUndefined();
-    }
-
-    NAN_INDEX_GETTER(SimpleIteratorStatusString) {
-        if(index < 13) {
-            info.GetReturnValue().Set(Nan::New(FLAC__Metadata_SimpleIteratorStatusString[index]).ToLocalChecked());
-        } else {
-            info.GetReturnValue().SetUndefined();
-        }
-    }
-
-    NAN_INDEX_ENUMERATOR(SimpleIteratorStatusString) {
-        Local<Array> array = Nan::New<Array>();
-        for(int i = 0; i < 13; i++) Nan::Set(array, i, Nan::New(i));
-        info.GetReturnValue().Set(array);
-    }
-
-    NAN_MODULE_INIT(initMetadata1) {
-        Local<Object> obj = Nan::New<Object>();
-        #define setMethod(fn) \
-        Nan::SetMethod(obj, #fn, _JOIN(node_FLAC__metadata_simple_iterator_, fn)); \
+        #define loadFunction(fn) \
         _JOIN(FLAC__metadata_simple_iterator_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__metadata_simple_iterator_, fn, _t)>("FLAC__metadata_simple_iterator_" #fn); \
         if(_JOIN(FLAC__metadata_simple_iterator_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
+        #define setMethod(fn, jsFn) \
+        Nan::SetPrototypeMethod(classFunction, #jsFn, _JOIN(node_FLAC__metadata_simple_iterator_, fn)); \
+        loadFunction(fn)
 
-        setMethod(new);
-        setMethod(delete);
-        setMethod(status);
-        setMethod(init);
-        setMethod(is_writable);
-        setMethod(next);
-        setMethod(prev);
-        setMethod(is_last);
-        setMethod(get_block_offset);
-        setMethod(get_block_type);
-        setMethod(get_block_length);
-        setMethod(get_application_id);
-        setMethod(get_block);
-        setMethod(set_block);
-        setMethod(insert_block_after);
-        setMethod(delete_block);
+        loadFunction(new);
+        loadFunction(delete);
+        setMethod(status, status);
+        setMethod(init, init);
+        setMethod(is_writable, isWritable);
+        setMethod(next, next);
+        setMethod(prev, prev);
+        setMethod(is_last, isLast);
+        setMethod(get_block_offset, getBlockOffset);
+        setMethod(get_block_type, getBlockType);
+        setMethod(get_block_length, getBlockLength);
+        setMethod(get_application_id, getApplicationId);
+        setMethod(get_block, getBlock);
+        setMethod(set_block, setBlock);
+        setMethod(insert_block_after, insertBlockAfter);
+        setMethod(delete_block, deleteBlock);
 
-        #define propertyGetter(func) \
-        Local<ObjectTemplate> _JOIN(func, Var) = Nan::New<ObjectTemplate>(); \
-        Nan::SetNamedPropertyHandler(_JOIN(func, Var), func); \
-        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, Var)).ToLocalChecked());
-        #define indexGetter(func) \
-        _JOIN(FLAC__Metadata_, func) = libFlac->getSymbolAddress<const char* const*>("FLAC__Metadata_" #func); \
-        Local<ObjectTemplate> _JOIN(func, _template) = Nan::New<ObjectTemplate>(); \
-        Nan::SetIndexedPropertyHandler(_JOIN(func, _template), func, nullptr, nullptr, nullptr, func); \
-        Nan::Set(obj, Nan::New(#func).ToLocalChecked(), Nan::NewInstance(_JOIN(func, _template)).ToLocalChecked());
+        Local<Object> obj = Nan::GetFunction(classFunction).ToLocalChecked();
 
-        propertyGetter(SimpleIteratorStatus);
-        indexGetter(SimpleIteratorStatusString);
+        flacEnum_declareInObject(obj, Status, createStatusEnum());
 
 
-        Nan::Set(target, Nan::New("metadata1").ToLocalChecked(), obj);
+        Nan::Set(target, Nan::New("SimpleIterator").ToLocalChecked(), obj);
     }
 }

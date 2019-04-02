@@ -7,41 +7,97 @@ using namespace v8;
 using namespace node;
 #include "../pointer.hpp"
 #include "../format.h"
+#include "../extra_defs.hpp"
 
-#define getPointer(type) type* m = _getPointer<type>(info.This());\
-if(m != nullptr)
 
-#define checkValue(type) MaybeLocal<type> _newValue = Nan::To<type>(info.Data());\
-if(_newValue.IsEmpty()) {\
-    Nan::ThrowError(Nan::Error("Invalid value: Has to be a " #type));\
+#define checkValue(type) MaybeLocal<type> _newValue = Nan::To<type>(value); \
+if(_newValue.IsEmpty() || !_newValue.ToLocalChecked()->Is##type ()) { \
+    Nan::ThrowError(Nan::Error("Invalid value: Has to be a " #type)); \
 } else
+
+#define checkValueIsBuffer() \
+    if(!Buffer::HasInstance(value)) { \
+        Nan::ThrowTypeError("Expected argument to be Buffer"); \
+    } else
 
 #define getValue(type) Nan::To<type>(_newValue.ToLocalChecked()).FromJust()
 
 #define SetGetter(name) Nan::SetAccessor(obj, Nan::New( #name ).ToLocalChecked(), name)
 #define SetGetterSetter(name) Nan::SetAccessor(obj, Nan::New( #name ).ToLocalChecked(), name, name)
 
-namespace flac_bindings {
-    template<typename T>
-    static T* _getPointer(const Local<Object> &thiz) {
-        Nan::MaybeLocal<Value> maybeLocal = Nan::Get(thiz, Nan::New("_ptr").ToLocalChecked());
-        if(maybeLocal.IsEmpty()) {
-            Nan::ThrowError(Nan::Error("Object is not a Metadata Object"));
-        } else {
-            Local<Value> val = maybeLocal.ToLocalChecked();
-            if(!val->IsObject()) {
-                Nan::ThrowError(Nan::Error("Corrupted Metadata object: Pointer is not an object"));
-            } else {
-                Local<Object> obj = val.As<Object>();
-                if(!Buffer::HasInstance(obj)) {
-                    Nan::ThrowError(Nan::Error("Corrupted Metadata object: Pointer is invalid"));
-                } else {
-                    return UnwrapPointer<T>(obj);
-                }
-            }
-        }
-        return nullptr;
+#define V8_GETTER(methodName) void methodName(Local<Name> property, const PropertyCallbackInfo<Value> &info)
+#define V8_SETTER(methodName) void methodName(Local<Name> property, Local<Value> value, const PropertyCallbackInfo<void>& info)
+
+#define unwrap(type) if(info.This()->InternalFieldCount() == 0) return; \
+type* self = Nan::ObjectWrap::Unwrap<type>(info.This());
+
+#define nativeReadOnlyProperty(obj, name, fnName) \
+(void) obj->SetNativeDataProperty(info.GetIsolate()->GetCurrentContext(), Nan::New(name).ToLocalChecked(), fnName, 0, Local<Value>(), (PropertyAttribute) (PropertyAttribute::ReadOnly | PropertyAttribute::DontDelete))
+
+#define nativeProperty(obj, name, fnName) \
+(void) obj->SetNativeDataProperty(info.GetIsolate()->GetCurrentContext(), Nan::New(name).ToLocalChecked(), fnName, fnName, Local<Value>(), PropertyAttribute::DontDelete)
+
+#if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
+template<typename T,
+         typename std::enable_if_t<std::is_signed<T>::value, int> = 0>
+static inline Nan::Maybe<T> numberFromJs(Local<BigInt> bigNum) {
+    if(bigNum->WordCount() > 1) return Nan::Nothing<T>();
+    return Nan::Just((T) bigNum->Int64Value());
+}
+
+template<typename T,
+         typename std::enable_if_t<std::is_unsigned<T>::value, unsigned> = 0>
+static inline Nan::Maybe<T> numberFromJs(Local<BigInt> bigNum) {
+    if(bigNum->WordCount() > 1) return Nan::Nothing<T>();
+    return Nan::Just((T) bigNum->Uint64Value());
+}
+#endif
+
+template<typename T>
+static inline Nan::Maybe<T> numberFromJs(Local<Value> num) {
+    if(num.IsEmpty()) return Nan::Nothing<T>();
+    if(num->IsNumber()) {
+        return Nan::To<T>(num);
     }
-};
+#if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
+    else if(num->IsBigInt()) {
+        Local<BigInt> bigNum = num.As<BigInt>();
+        return numberFromJs<T>(bigNum);
+    }
+#endif
+    return Nan::Nothing<T>();
+}
+
+template<typename T>
+static inline Nan::Maybe<T> numberFromJs(MaybeLocal<Value> maybeNum) {
+    if(maybeNum.IsEmpty()) return Nan::Nothing<T>();
+    else return numberFromJs<T>(maybeNum.ToLocalChecked());
+}
+
+template<typename T,
+         typename std::enable_if_t<std::is_unsigned<T>::value, unsigned> = 0>
+static inline Local<Value> numberToJs(T number, bool forceBigInt = false) {
+#if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
+    if(!forceBigInt && number <= 9007199254740991) {
+        return Nan::New<Number>(number);
+    }
+    return BigInt::NewFromUnsigned(Isolate::GetCurrent(), number);
+#else
+    return Nan::New<Number>((int64_t) number);
+#endif
+}
+
+template<typename T,
+         typename std::enable_if_t<std::is_signed<T>::value, int> = 0>
+static inline Local<Value> numberToJs(T number, bool forceBigInt = false) {
+#if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
+    if(!forceBigInt && -9007199254740991 <= number && number <= 9007199254740991) {
+        return Nan::New<Number>(number);
+    }
+    return BigInt::New(Isolate::GetCurrent(), number);
+#else
+    return Nan::New<Number>((int64_t) number);
+#endif
+}
 
 #endif

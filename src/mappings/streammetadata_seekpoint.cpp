@@ -1,59 +1,85 @@
-#include "defs.hpp"
+#include "mappings.hpp"
 
 namespace flac_bindings {
 
-    static NAN_GETTER(sample_number) {
-        getPointer(FLAC__StreamMetadata_SeekPoint) {
-            info.GetReturnValue().Set(Nan::New<Number>(m->sample_number));
+    V8_GETTER(SeekPoint::sampleNumber) {
+        unwrap(SeekPoint);
+        info.GetReturnValue().Set(numberToJs(self->point.sample_number));
+    }
+
+    V8_SETTER(SeekPoint::sampleNumber) {
+        unwrap(SeekPoint);
+        Maybe<uint64_t> maybeNumber = numberFromJs<uint64_t>(value);
+        if(maybeNumber.IsJust()) {
+            self->point.sample_number = maybeNumber.FromJust();
+        } else {
+            Nan::ThrowTypeError("Expected type to be number or BigInt");
         }
     }
 
-    static NAN_SETTER(sample_number) {
-        getPointer(FLAC__StreamMetadata_SeekPoint) {
-            checkValue(Number) {
-                m->sample_number = getValue(int64_t);
-                info.GetReturnValue().Set(Nan::New<Number>(m->sample_number));
-            }
+    V8_GETTER(SeekPoint::streamOffset) {
+        unwrap(SeekPoint);
+        info.GetReturnValue().Set(numberToJs(self->point.stream_offset));
+    }
+
+    V8_SETTER(SeekPoint::streamOffset) {
+        unwrap(SeekPoint);
+        Maybe<uint64_t> maybeNumber = numberFromJs<uint64_t>(value);
+        if(maybeNumber.IsJust()) {
+            self->point.stream_offset = maybeNumber.FromJust();
+        } else {
+            Nan::ThrowTypeError("Expected type to be number or BigInt");
         }
     }
 
-    static NAN_GETTER(stream_offset) {
-        getPointer(FLAC__StreamMetadata_SeekPoint) {
-            info.GetReturnValue().Set(Nan::New<Number>(m->stream_offset));
+    V8_GETTER(SeekPoint::frameSamples) {
+        unwrap(SeekPoint);
+        info.GetReturnValue().Set(numberToJs(self->point.frame_samples));
+    }
+
+    V8_SETTER(SeekPoint::frameSamples) {
+        unwrap(SeekPoint);
+        checkValue(Number) {
+            self->point.frame_samples = getValue(uint32_t);
         }
     }
 
-    static NAN_SETTER(stream_offset) {
-        getPointer(FLAC__StreamMetadata_SeekPoint) {
-            checkValue(Number) {
-                m->stream_offset = getValue(uint32_t);
-                info.GetReturnValue().Set(Nan::New<Number>(m->stream_offset));
-            }
+    NAN_METHOD(SeekPoint::create) {
+        if(throwIfNotConstructorCall(info)) return;
+        SeekPoint* seekPoint = new SeekPoint;
+        seekPoint->Wrap(info.This());
+
+        if(!info[0].IsEmpty() && info[0]->IsObject() && Buffer::HasInstance(info[0].As<Object>())) {
+            memcpy(
+                &seekPoint->point,
+                UnwrapPointer<FLAC__StreamMetadata_SeekPoint>(info[0]),
+                sizeof(FLAC__StreamMetadata_SeekPoint)
+            );
         }
+
+        nativeProperty(info.This(), "sampleNumber", sampleNumber);
+        nativeProperty(info.This(), "streamOffset", streamOffset);
+        nativeProperty(info.This(), "frameSamples", frameSamples);
+
+        info.GetReturnValue().Set(info.This());
     }
 
-    static NAN_GETTER(frame_samples) {
-        getPointer(FLAC__StreamMetadata_SeekPoint) {
-            info.GetReturnValue().Set(Nan::New(m->frame_samples));
-        }
-    }
+    Nan::Persistent<Function> SeekPoint::jsFunction;
+    NAN_MODULE_INIT(SeekPoint::init) {
+        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
+        tpl->SetClassName(Nan::New("SeekPoint").ToLocalChecked());
+        tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-    static NAN_SETTER(frame_samples) {
-        getPointer(FLAC__StreamMetadata_SeekPoint) {
-            checkValue(Number) {
-                m->frame_samples = getValue(uint32_t);
-                info.GetReturnValue().Set(Nan::New(m->frame_samples));
-            }
-        }
+        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
+        jsFunction.Reset(metadata);
+        Nan::Set(target, Nan::New("SeekPoint").ToLocalChecked(), metadata);
     }
 
     template<>
-    void structToJs(const FLAC__StreamMetadata_SeekPoint* i, Local<Object> &obj) {
-        SetGetterSetter(sample_number);
-        SetGetterSetter(stream_offset);
-        SetGetterSetter(frame_samples);
-
-        Nan::Set(obj, Nan::New("_ptr").ToLocalChecked(), WrapPointer(i, sizeof(FLAC__StreamMetadata_SeekPoint)).ToLocalChecked());
+    Local<Object> structToJs(const FLAC__StreamMetadata_SeekPoint* point) {
+        Local<Value> args[] = { WrapPointer(point).ToLocalChecked(), Nan::False() };
+        auto metadata = Nan::NewInstance(SeekPoint::getFunction(), 2, args);
+        return metadata.ToLocalChecked();
     }
 
 }

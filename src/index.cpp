@@ -5,16 +5,14 @@ using namespace v8;
 using namespace node;
 
 namespace flac_bindings {
-    NAN_MODULE_INIT(initEncoder);
-    NAN_MODULE_INIT(initDecoder);
+    class StreamEncoder { public: static NAN_MODULE_INIT(initEncoder); };
+    class StreamDecoder { public: static NAN_MODULE_INIT(initDecoder); };
     NAN_MODULE_INIT(initMetadata0);
-    NAN_MODULE_INIT(initMetadata1);
-    NAN_MODULE_INIT(initMetadata2);
+    class SimpleIterator { public: static NAN_MODULE_INIT(initMetadata1); };
+    class Chain { public: static NAN_MODULE_INIT(initMetadata2); };
+    class Iterator { public: static NAN_MODULE_INIT(initMetadata2); };
     NAN_MODULE_INIT(initMetadataObjectMethods);
     NAN_MODULE_INIT(initFormat);
-
-    void atExitEncoder();
-    void atExitDecoder();
 
     bool isLibFlacLoaded = false;
     Library* libFlac;
@@ -22,8 +20,6 @@ namespace flac_bindings {
 
     static void atExit(void*) {
         if(isLibFlacLoaded) {
-            atExitDecoder();
-            atExitEncoder();
             delete libFlac;
         }
     }
@@ -41,12 +37,13 @@ namespace flac_bindings {
             } else {
                 isLibFlacLoaded = true;
                 Handle<Object> obj = Nan::New(module);
-                initEncoder(obj);
-                initDecoder(obj);
+                StreamEncoder::initEncoder(obj);
+                StreamDecoder::initDecoder(obj);
                 initFormat(obj);
                 initMetadata0(obj);
-                initMetadata1(obj);
-                initMetadata2(obj);
+                SimpleIterator::initMetadata1(obj);
+                Chain::initMetadata2(obj);
+                Iterator::initMetadata2(obj);
                 initMetadataObjectMethods(obj);
                 Nan::Delete(obj, Nan::New("load").ToLocalChecked());
                 info.GetReturnValue().Set(obj);
@@ -78,11 +75,12 @@ namespace flac_bindings {
 
         isLibFlacLoaded = true;
 
-        initEncoder(target);
-        initDecoder(target);
+        StreamEncoder::initEncoder(target);
+        StreamDecoder::initDecoder(target);
         initMetadata0(target);
-        initMetadata1(target);
-        initMetadata2(target);
+        SimpleIterator::initMetadata1(target);
+        Chain::initMetadata2(target);
+        Iterator::initMetadata2(target);
         initMetadataObjectMethods(target);
         initFormat(target);
 

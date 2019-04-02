@@ -38,7 +38,7 @@ jspm_packages
 .node_repl_history
 
 .clang_complete
-test.js
+test*.js
 *.flac
 upload.sh
 .vscode

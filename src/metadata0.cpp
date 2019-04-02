@@ -5,6 +5,7 @@ using namespace v8;
 using namespace node;
 #include "pointer.hpp"
 #include "format.h"
+#include "mappings/mappings.hpp"
 
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
@@ -25,6 +26,7 @@ namespace flac_bindings {
     extern Library* libFlac;
 
     NAN_METHOD(node_FLAC__metadata_get_streaminfo) {
+        if(info[0].IsEmpty() || !info[0]->IsString()) return;
         Nan::Utf8String filename(info[0]);
         FLAC__StreamMetadata* metadata = (FLAC__StreamMetadata*) malloc(sizeof(FLAC__StreamMetadata*));
         FLAC__bool ret = FLAC__metadata_get_streaminfo(*filename, metadata);
@@ -36,6 +38,7 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__metadata_get_tags) {
+        if(info[0].IsEmpty() || !info[0]->IsString()) return;
         Nan::Utf8String filename(info[0]);
         FLAC__StreamMetadata* metadatas;
         FLAC__bool ret = FLAC__metadata_get_tags(*filename, &metadatas);
@@ -47,6 +50,7 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__metadata_get_cuesheet) {
+        if(info[0].IsEmpty() || !info[0]->IsString()) return;
         Nan::Utf8String filename(info[0]);
         FLAC__StreamMetadata* metadatas;
         FLAC__bool ret = FLAC__metadata_get_cuesheet(*filename, &metadatas);
@@ -58,15 +62,16 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__metadata_get_picture) {
+        if(info[0].IsEmpty() || !info[0]->IsString()) return;
         FLAC__StreamMetadata* picture;
         Nan::Utf8String filename(info[0]);
         FLAC__StreamMetadata_Picture_Type type = (FLAC__StreamMetadata_Picture_Type) Nan::To<int>(info[1]).FromJust();
         Nan::Utf8String mime_type(info[2]);
         Nan::Utf8String description(info[3]);
-        unsigned max_width = Nan::To<unsigned>(info[4]).FromJust();
-        unsigned max_height = Nan::To<unsigned>(info[5]).FromJust();
-        unsigned max_depth = Nan::To<unsigned>(info[6]).FromJust();
-        unsigned max_colors = Nan::To<unsigned>(info[7]).FromJust();
+        unsigned max_width = Nan::To<unsigned>(info[4]).FromMaybe(-1);
+        unsigned max_height = Nan::To<unsigned>(info[5]).FromMaybe(-1);
+        unsigned max_depth = Nan::To<unsigned>(info[6]).FromMaybe(-1);
+        unsigned max_colors = Nan::To<unsigned>(info[7]).FromMaybe(-1);
         FLAC__bool ret = FLAC__metadata_get_picture(*filename, &picture, type, *mime_type, (FLAC__byte*) *description, max_width, max_height, max_depth, max_colors);
 
         if(ret) {
@@ -78,15 +83,15 @@ namespace flac_bindings {
 
     NAN_MODULE_INIT(initMetadata0) {
         Local<Object> obj = Nan::New<Object>();
-        #define setMethod(fn) \
-        Nan::SetMethod(obj, #fn, _JOIN(node_FLAC__metadata_, fn)); \
+        #define setMethod(fn, jsFunction) \
+        Nan::SetMethod(obj, #jsFunction, _JOIN(node_FLAC__metadata_, fn)); \
         _JOIN(FLAC__metadata_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__metadata_, fn, _t)>("FLAC__metadata_" #fn); \
         if(_JOIN(FLAC__metadata_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
 
-        setMethod(get_streaminfo);
-        setMethod(get_tags);
-        setMethod(get_cuesheet);
-        setMethod(get_picture);
+        setMethod(get_streaminfo, getStreaminfo);
+        setMethod(get_tags, getTags);
+        setMethod(get_cuesheet, getCuesheet);
+        setMethod(get_picture, getPicture);
 
         Nan::Set(target, Nan::New("metadata0").ToLocalChecked(), obj);
     }
