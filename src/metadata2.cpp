@@ -5,7 +5,7 @@ using namespace v8;
 using namespace node;
 #include "pointer.hpp"
 #include "format.h"
-#include "extra_defs.hpp"
+#include "defs.hpp"
 #include "mappings/mappings.hpp"
 
 #define _JOIN(a, b) a##b
@@ -236,7 +236,7 @@ namespace flac_bindings {
             }
             FLAC__bool r = FLAC__metadata_iterator_set_block(m, n);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
-            Nan::ObjectWrap::Unwrap<Metadata>(info[0])->hasToBeDeleted = false;
+            Nan::ObjectWrap::Unwrap<Metadata>(info[0].As<Object>())->hasToBeDeleted = false;
         }
 
         static NAN_METHOD(node_FLAC__metadata_iterator_delete_block) {
@@ -255,7 +255,7 @@ namespace flac_bindings {
             }
             FLAC__bool r = FLAC__metadata_iterator_insert_block_before(m, n);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
-            Nan::ObjectWrap::Unwrap<Metadata>(info[0])->hasToBeDeleted = false;
+            Nan::ObjectWrap::Unwrap<Metadata>(info[0].As<Object>())->hasToBeDeleted = false;
         }
 
         static NAN_METHOD(node_FLAC__metadata_iterator_insert_block_after) {
@@ -267,7 +267,7 @@ namespace flac_bindings {
             }
             FLAC__bool r = FLAC__metadata_iterator_insert_block_after(m, n);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
-            Nan::ObjectWrap::Unwrap<Metadata>(info[0])->hasToBeDeleted = false;
+            Nan::ObjectWrap::Unwrap<Metadata>(info[0].As<Object>())->hasToBeDeleted = false;
         }
 
     public:

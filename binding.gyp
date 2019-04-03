@@ -30,9 +30,20 @@
         "conditions": [
             [ 'OS=="mac"', {
                 "xcode_settings": {
-                    "MACOSX_DEPLOYMENT_TARGET": "10.9"
+                    "MACOSX_DEPLOYMENT_TARGET": "10.9",
+                    'OTHER_CPLUSPLUSFLAGS': [ '-std=c++14', '-stdlib=libc++' ]
                 },
-            }]
+            } ],
+            [ 'OS=="linux"', {
+                "cflags_cc": [
+                    "-std=c++14"
+                ]
+            } ],
+            [ 'OS=="win"', {
+                "cflags_cc": [
+                    "/std:c++14"
+                ]
+            } ]
         ]
     }
 ]}

@@ -1,4 +1,3 @@
-#include "defs.hpp"
 #include "mappings.hpp"
 
 namespace flac_bindings {

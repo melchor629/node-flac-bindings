@@ -5,7 +5,7 @@ using namespace v8;
 using namespace node;
 #include "pointer.hpp"
 #include "format.h"
-#include "extra_defs.hpp"
+#include "defs.hpp"
 #include "mappings/mappings.hpp"
 
 #define _JOIN(a, b) a##b

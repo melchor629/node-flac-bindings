@@ -1,13 +1,14 @@
 #ifndef _MAPPINGS_DEFS_
 #define _MAPPINGS_DEFS_
 
+#include <tuple>
+#include <type_traits>
 #include "nan.h"
 
 using namespace v8;
 using namespace node;
-#include "../pointer.hpp"
-#include "../format.h"
-#include "../extra_defs.hpp"
+#include "./pointer.hpp"
+#include "./format.h"
 
 
 #define checkValue(type) MaybeLocal<type> _newValue = Nan::To<type>(value); \
@@ -36,6 +37,7 @@ type* self = Nan::ObjectWrap::Unwrap<type>(info.This());
 
 #define nativeProperty(obj, name, fnName) \
 (void) obj->SetNativeDataProperty(info.GetIsolate()->GetCurrentContext(), Nan::New(name).ToLocalChecked(), fnName, fnName, Local<Value>(), PropertyAttribute::DontDelete)
+
 
 #if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
 template<typename T,
@@ -98,6 +100,78 @@ static inline Local<Value> numberToJs(T number, bool forceBigInt = false) {
 #else
     return Nan::New<Number>((int64_t) number);
 #endif
+}
+
+
+
+namespace Nan {
+
+#define X(type) \
+    template<> \
+    struct ToFactory< type > : ValueFactoryBase< type > { \
+        static inline return_t convert(v8::Local<v8::Value> val); \
+    }; \
+
+    namespace imp {
+
+#if defined(__clang__)
+        X(long)
+#endif
+        X(uint64_t)
+        X(FLAC__MetadataType)
+
+    }
+
+#undef X
+
+#define X(type) \
+    template<> \
+    inline typename imp::ToFactory< type >::return_t To< type >(v8::Local<v8::Value> val) { \
+        auto convVal = To<int64_t>(val); \
+        if(convVal.IsJust()) { \
+            return Just(( type ) convVal.FromJust()); \
+        } else { \
+            return Nothing< type >(); \
+        } \
+    }
+
+#if defined(__clang__)
+    X(long)
+#endif
+    X(uint64_t)
+    X(FLAC__MetadataType)
+
+#undef X
+
+}
+
+
+typedef std::tuple<Local<Object>, Local<Object>> FlacEnumDefineReturnType;
+
+#define flacEnum_defineValue(enumObject, reverseEnumObject, name, value) \
+Nan::DefineOwnProperty(\
+    enumObject, \
+    Nan::New(name).ToLocalChecked(), \
+    Nan::New<Number>(value), \
+    (PropertyAttribute) (PropertyAttribute::ReadOnly | PropertyAttribute::DontDelete) \
+); \
+Nan::DefineOwnProperty(\
+    reverseEnumObject, \
+    Nan::To<String>(Nan::New<Number>(value)).ToLocalChecked(), \
+    Nan::New(name).ToLocalChecked(), \
+    (PropertyAttribute) (PropertyAttribute::ReadOnly | PropertyAttribute::DontDelete) \
+);
+
+#define flacEnum_declareInObject(obj, name, tuple) {\
+auto impl = tuple; \
+Nan::Set(obj, Nan::New(#name).ToLocalChecked(), std::get<0>(impl)); \
+Nan::Set(obj, Nan::New(#name "String").ToLocalChecked(), std::get<1>(impl)); \
+}
+
+static inline bool throwIfNotConstructorCall(Nan::NAN_METHOD_ARGS_TYPE info) {
+    if(info.IsConstructCall()) return false;
+    Nan::ThrowError("Illegal invocation: use new to create a new object");
+    return true;
 }
 
 #endif
