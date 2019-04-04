@@ -49,11 +49,10 @@ Well, if you are on Linux x64 or on macOS and have node 8 LTS, 10 LTS or 11, you
 
 In other cases, you will need to install the development version of FLAC (those which includes the headers and the library binary).
 
-If you are using Windows, and there's no binaries compiled for you, then you will need to install the build tools first:
+If you are using Windows, and there's no binaries compiled for you, then you will need to install the build tools first (with **admin privileges**):
 
 ```
 npm install --global --production windows-build-tools
-npm config set msvs_version 2015 --global
 ```
 
 After that, you need to compile (or obtain from elsewhere) the `libFLAC.dll`. If you compile it, you need also libogg (see README from flac). Ensure that the library is compiled/downloaded for 64bit because node uses 64bit for Windows in 64 bit. If you try to use 32bit library on 64bit node, loading will fail.
