@@ -1,5 +1,8 @@
 #include "mappings.hpp"
 
+#undef min
+#undef max
+
 namespace flac_bindings {
 
     V8_GETTER(UnknownMetadata::data) {
@@ -17,7 +20,11 @@ namespace flac_bindings {
         } else {
             FLAC__MetadataType undefinedNum = std::min(FLAC__MetadataType::FLAC__MAX_METADATA_TYPE, std::max(
                 FLAC__MetadataType::FLAC__METADATA_TYPE_UNDEFINED,
+#if defined(_MSC_VER)
+                (FLAC__MetadataType) numberFromJs<uint32_t>(info[0]).FromMaybe(FLAC__MetadataType::FLAC__METADATA_TYPE_UNDEFINED)
+#else
                 numberFromJs<FLAC__MetadataType>(info[0]).FromMaybe(FLAC__MetadataType::FLAC__METADATA_TYPE_UNDEFINED)
+#endif
             ));
             Local<Value> args[] = { Nan::New<Number>(undefinedNum) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;

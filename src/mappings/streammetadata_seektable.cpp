@@ -143,7 +143,7 @@ namespace flac_bindings {
             Nan::ThrowTypeError("Expected first argument to be an Array");
         } else {
             Local<Array> points = info[0].As<Array>();
-            uint64_t nums[points->Length()];
+            uint64_t* nums = new uint64_t[points->Length()];
             for(size_t i = 0; i < points->Length(); i++) {
                 Nan::Maybe<uint64_t> maybeNum = numberFromJs<uint64_t>(Nan::Get(points, i));
                 if(maybeNum.IsNothing()) {
@@ -155,6 +155,7 @@ namespace flac_bindings {
             }
             bool res = FLAC__metadata_object_seektable_template_append_points(self->metadata, nums, points->Length());
             info.GetReturnValue().Set(Nan::New<Boolean>(res));
+            delete[] nums;
         }
     }
 

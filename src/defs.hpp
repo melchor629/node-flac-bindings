@@ -114,7 +114,7 @@ namespace Nan {
 
     namespace imp {
 
-#if defined(__clang__)
+#if !defined(__GNUC__)
         X(long)
 #endif
         X(uint64_t)
@@ -135,7 +135,7 @@ namespace Nan {
         } \
     }
 
-#if defined(__clang__)
+#if !defined(__GNUC__)
     X(long)
 #endif
     X(uint64_t)

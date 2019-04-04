@@ -478,6 +478,8 @@ namespace flac_bindings {
             return std::make_tuple(obj1, obj2);
         }
 
+    public:
+
         static NAN_MODULE_INIT(initDecoder);
 
     };
