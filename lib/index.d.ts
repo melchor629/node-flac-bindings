@@ -517,7 +517,7 @@ declare namespace api {
         /** @see https://xiph.org/flac/api/group__flac__format.html#gae5fb55cd5977ebf178c5b38da831c057 */
         function vorbiscommentEntryNameIsLegal(key: string): boolean;
         /** @see https://xiph.org/flac/api/group__flac__format.html#gad4509984c8a8a0b926a4fb1ba25ec449 */
-        function vorbiscomment_entry_valueIsLegal(value: string): boolean;
+        function vorbiscommentEntryValueIsLegal(value: string): boolean;
         /** @see https://xiph.org/flac/api/group__flac__format.html#gab98da8754f99fdf7ba0583275b200de3 */
         function vorbiscommentEntryIsLegal(entry: string): boolean;
         /** @see https://xiph.org/flac/api/group__flac__format.html#ga02ed0843553fb8f718fe8e7c54d12244 */
@@ -668,7 +668,13 @@ declare namespace api {
         }
 
         /** @see https://xiph.org/flac/api/structFLAC____StreamMetadata__Padding.html */
-        class PaddingMetadata extends Metadata<1> {}
+        class PaddingMetadata extends Metadata<1> {
+            /**
+             * Creates a new Padding block and, optionally, define the size of it
+             * @param size Size of the Padding block
+             */
+            constructor(size?: number);
+        }
 
         /** @see https://xiph.org/flac/api/structFLAC____StreamMetadata__Picture.html */
         class PictureMetadata extends Metadata<6> {
@@ -785,6 +791,12 @@ declare namespace api {
             removeEntryMatching(key: string): -1 | 0 | 1;
             /** @see https://xiph.org/flac/api/group__flac__metadata__object.html#ga5a3ff5856098c449622ba850684aec75 */
             removeEntriesMatching(key: string): number;
+            /**
+             * Easy way to get the value of a tag. It returns only the value of the tag.
+             * @param key Tag key to find and retrieve
+             * @returns The value of the entry if found, or `null` otherwise.
+             */
+            get(key: string): string | null;
 
             /**
              * Returns an iterator that will iterate over the {@link comments} list.
@@ -802,7 +814,7 @@ declare namespace api {
         /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga0f47949dca514506718276205a4fae0b */
         function getCuesheet(path: string): metadata.CueSheetMetadata | false;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga0c9cd22296400c8ce16ee1db011342cb */
-        function getPicture(path: string, maxWidth?: number, maxHeight?: number, maxDepth?: number, maxColors?: number): metadata.PictureMetadata | false;
+        function getPicture(path: string, type: number, maxWidth?: number, maxHeight?: number, maxDepth?: number, maxColors?: number): metadata.PictureMetadata | false;
     }
 
 

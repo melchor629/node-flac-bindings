@@ -5,7 +5,7 @@
   "repository": "https://github.com/melchor629/node-flac-bindings/",
   "main": "./lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha",
     "install": "prebuild-install || node-gyp rebuild",
     "prebuild": "prebuild -t 8.15.1 -t 10.15.3 -t 11.12.0 --strip"
   },
@@ -23,9 +23,14 @@
     "prebuild-install": "^5.2.5"
   },
   "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.6",
     "@types/node": "^11.13.0",
+    "chai": "^4.2.0",
     "jshint": "^2.10.2",
-    "prebuild": "^8.2.1"
+    "mocha": "^6.0.2",
+    "prebuild": "^8.2.1",
+    "temp": "^0.9.0"
   },
   "gypfile": true,
   "types": "lib/flac.d.ts"

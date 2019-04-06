@@ -6,6 +6,7 @@ using namespace node;
 #include "pointer.hpp"
 #include "format.h"
 #include "mappings/mappings.hpp"
+#include "metadata.hpp"
 
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
@@ -28,10 +29,10 @@ namespace flac_bindings {
     NAN_METHOD(node_FLAC__metadata_get_streaminfo) {
         if(info[0].IsEmpty() || !info[0]->IsString()) return;
         Nan::Utf8String filename(info[0]);
-        FLAC__StreamMetadata* metadata = (FLAC__StreamMetadata*) malloc(sizeof(FLAC__StreamMetadata*));
-        FLAC__bool ret = FLAC__metadata_get_streaminfo(*filename, metadata);
+        FLAC__StreamMetadata metadata;
+        FLAC__bool ret = FLAC__metadata_get_streaminfo(*filename, &metadata);
         if(ret) {
-            info.GetReturnValue().Set(structToJs(metadata));
+            info.GetReturnValue().Set(structToJs(FLAC__metadata_object_clone(&metadata)));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
@@ -65,14 +66,24 @@ namespace flac_bindings {
         if(info[0].IsEmpty() || !info[0]->IsString()) return;
         FLAC__StreamMetadata* picture;
         Nan::Utf8String filename(info[0]);
-        FLAC__StreamMetadata_Picture_Type type = (FLAC__StreamMetadata_Picture_Type) Nan::To<int>(info[1]).FromJust();
+        FLAC__StreamMetadata_Picture_Type type = (FLAC__StreamMetadata_Picture_Type) numberFromJs<int>(info[1]).FromMaybe(-1);
         Nan::Utf8String mime_type(info[2]);
         Nan::Utf8String description(info[3]);
-        unsigned max_width = Nan::To<unsigned>(info[4]).FromMaybe(-1);
-        unsigned max_height = Nan::To<unsigned>(info[5]).FromMaybe(-1);
-        unsigned max_depth = Nan::To<unsigned>(info[6]).FromMaybe(-1);
-        unsigned max_colors = Nan::To<unsigned>(info[7]).FromMaybe(-1);
-        FLAC__bool ret = FLAC__metadata_get_picture(*filename, &picture, type, *mime_type, (FLAC__byte*) *description, max_width, max_height, max_depth, max_colors);
+        unsigned max_width = numberFromJs<unsigned>(info[4]).FromMaybe(-1);
+        unsigned max_height = numberFromJs<unsigned>(info[5]).FromMaybe(-1);
+        unsigned max_depth = numberFromJs<unsigned>(info[6]).FromMaybe(-1);
+        unsigned max_colors = numberFromJs<unsigned>(info[7]).FromMaybe(-1);
+        FLAC__bool ret = FLAC__metadata_get_picture(
+            *filename,
+            &picture,
+            type,
+            info[2].IsEmpty() || !info[2]->IsString() ? nullptr : *mime_type,
+            info[3].IsEmpty() || !info[3]->IsString() ? nullptr : (FLAC__byte*) *description,
+            max_width,
+            max_height,
+            max_depth,
+            max_colors
+        );
 
         if(ret) {
             info.GetReturnValue().Set(structToJs(picture));

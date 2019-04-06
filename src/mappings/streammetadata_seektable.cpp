@@ -161,7 +161,7 @@ namespace flac_bindings {
 
     NAN_METHOD(SeekTableMetadata::templateAppendSpacedPoints) {
         unwrap(SeekTableMetadata);
-        Nan::Maybe<unsigned> maybeNum = Nan::To<unsigned>(info[0]);
+        Nan::Maybe<unsigned> maybeNum = numberFromJs<unsigned>(info[0]);
         Nan::Maybe<uint64_t> maybeSamples = numberFromJs<uint64_t>(info[1]);
         if(info[0].IsEmpty() || maybeNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
@@ -177,7 +177,7 @@ namespace flac_bindings {
 
     NAN_METHOD(SeekTableMetadata::templateAppendSpacedPointsBySamples) {
         unwrap(SeekTableMetadata);
-        Nan::Maybe<unsigned> maybeNum = Nan::To<unsigned>(info[0]);
+        Nan::Maybe<unsigned> maybeNum = numberFromJs<unsigned>(info[0]);
         Nan::Maybe<uint64_t> maybeSamples = numberFromJs<uint64_t>(info[1]);
         if(info[0].IsEmpty() || maybeNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");

@@ -157,6 +157,7 @@ namespace flac_bindings {
         static NAN_METHOD(findEntryFrom);
         static NAN_METHOD(removeEntryMatching);
         static NAN_METHOD(removeEntriesMatching);
+        static NAN_METHOD(get);
         static Nan::Persistent<Function> jsFunction;
 
     public:

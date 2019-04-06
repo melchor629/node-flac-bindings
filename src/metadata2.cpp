@@ -99,8 +99,8 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__metadata_chain_write) {
             UNWRAP_CHAIN
-            FLAC__bool padding = Nan::To<int>(info[0]).FromMaybe(1);
-            FLAC__bool preserve = Nan::To<int>(info[1]).FromMaybe(0);
+            FLAC__bool padding = numberFromJs<int>(info[0]).FromMaybe(1);
+            FLAC__bool preserve = numberFromJs<int>(info[1]).FromMaybe(0);
             FLAC__bool r = FLAC__metadata_chain_write(m, padding, preserve);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
         }
@@ -168,22 +168,27 @@ namespace flac_bindings {
             UNWRAP_IT
             Local<Object> obj = Nan::New<Object>();
             Nan::Set(obj, Nan::New("it").ToLocalChecked(), WrapPointer(m).ToLocalChecked());
+            Nan::Set(obj, Nan::New("rt").ToLocalChecked(), Nan::True());
             Nan::SetMethod(obj, "next", [] (Nan::NAN_METHOD_ARGS_TYPE info) -> void {
                 MaybeLocal<Value> parent = Nan::Get(info.This(), Nan::New("it").ToLocalChecked());
+                MaybeLocal<Value> rt = Nan::Get(info.This(), Nan::New("rt").ToLocalChecked());
                 if(parent.IsEmpty() || !parent.ToLocalChecked()->IsObject()) {
                     Nan::ThrowTypeError("Unexpected this type for iterator");
                     return;
                 }
 
                 FLAC__Metadata_Iterator* it = UnwrapPointer<FLAC__Metadata_Iterator>(parent.ToLocalChecked());
+                bool prevReturn = rt.ToLocalChecked()->BooleanValue();
                 Local<Object> ret = Nan::New<Object>();
-                if(!FLAC__metadata_iterator_next(it)) {
+                if(!prevReturn) {
                     Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
                 } else {
                     FLAC__StreamMetadata* metadata = FLAC__metadata_iterator_get_block(it);
                     Nan::Set(ret, Nan::New("value").ToLocalChecked(), structToJs(metadata));
                     Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::False());
+                    prevReturn = FLAC__metadata_iterator_next(it);
                 }
+                Nan::Set(info.This(), Nan::New("rt").ToLocalChecked(), Nan::New<Boolean>(prevReturn));
                 info.GetReturnValue().Set(ret);
             });
 
@@ -241,7 +246,7 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__metadata_iterator_delete_block) {
             UNWRAP_IT
-            FLAC__bool padding = Nan::To<int>(info[0]).FromMaybe(1);
+            FLAC__bool padding = numberFromJs<int>(info[0]).FromMaybe(1);
             FLAC__bool r = FLAC__metadata_iterator_delete_block(m, padding);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
         }

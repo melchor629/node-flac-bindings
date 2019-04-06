@@ -71,6 +71,7 @@ namespace flac_bindings {
         }
 
         nativeProperty(info.This(), "vendorString", vendorString);
+        nativeReadOnlyProperty(info.This(), "comments", comments);
         info.This()->Set(Symbol::GetIterator(info.GetIsolate()), Nan::GetFunction(Nan::New<FunctionTemplate>(commentsIterator)).ToLocalChecked());
 
         info.GetReturnValue().Set(info.This());
@@ -198,21 +199,21 @@ namespace flac_bindings {
         }
 
         MaybeLocal<String> maybeKey = Nan::To<String>(info[1]);
-        if(maybeKey.IsEmpty()) {
+        if(maybeKey.IsEmpty() || !info[0]->IsString()) {
             Nan::ThrowTypeError("Expected second argument to be string");
             return;
         }
 
         uint32_t pos = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
         Nan::Utf8String key(maybeKey.ToLocalChecked());
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_find_entry_from(self->metadata, pos, *key);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        int r = FLAC__metadata_object_vorbiscomment_find_entry_from(self->metadata, pos, *key);
+        info.GetReturnValue().Set(Nan::New<Number>(r));
     }
 
     NAN_METHOD(VorbisCommentMetadata::removeEntryMatching) {
         unwrap(VorbisCommentMetadata);
         MaybeLocal<String> maybeKey = Nan::To<String>(info[0]);
-        if(maybeKey.IsEmpty()) {
+        if(maybeKey.IsEmpty() || !info[0]->IsString()) {
             Nan::ThrowTypeError("Expected first argument to be string");
             return;
         }
@@ -225,7 +226,7 @@ namespace flac_bindings {
     NAN_METHOD(VorbisCommentMetadata::removeEntriesMatching) {
         unwrap(VorbisCommentMetadata);
         MaybeLocal<String> maybeKey = Nan::To<String>(info[0]);
-        if(maybeKey.IsEmpty()) {
+        if(maybeKey.IsEmpty() || !info[0]->IsString()) {
             Nan::ThrowTypeError("Expected first argument to be string");
             return;
         }
@@ -233,6 +234,25 @@ namespace flac_bindings {
         Nan::Utf8String key(maybeKey.ToLocalChecked());
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_remove_entries_matching(self->metadata, *key);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
+    }
+
+    NAN_METHOD(VorbisCommentMetadata::get) {
+        unwrap(VorbisCommentMetadata);
+        MaybeLocal<String> maybeKey = Nan::To<String>(info[0]);
+        if(maybeKey.IsEmpty() || !info[0]->IsString()) {
+            Nan::ThrowTypeError("Expected first argument to be string");
+            return;
+        }
+
+        Nan::Utf8String key(maybeKey.ToLocalChecked());
+        int pos = FLAC__metadata_object_vorbiscomment_find_entry_from(self->metadata, 0, *key);
+        if(pos == -1) {
+            info.GetReturnValue().SetNull();
+        } else {
+            const char* entry = (const char*) self->metadata->data.vorbis_comment.comments[pos].entry;
+            const char* equalPosEntry = strchr(entry, '=');
+            info.GetReturnValue().Set(Nan::New(equalPosEntry != nullptr ? equalPosEntry + 1 : entry).ToLocalChecked());
+        }
     }
 
 
@@ -252,6 +272,7 @@ namespace flac_bindings {
         Nan::SetPrototypeMethod(tpl, "findEntryFrom", findEntryFrom);
         Nan::SetPrototypeMethod(tpl, "removeEntryMatching", removeEntryMatching);
         Nan::SetPrototypeMethod(tpl, "removeEntriesMatching", removeEntriesMatching);
+        Nan::SetPrototypeMethod(tpl, "get", get);
 
         Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
         jsFunction.Reset(metadata);
