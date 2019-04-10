@@ -18,7 +18,7 @@ describe('format', function() {
         assert.isFalse(format.sampleRateIsSubset(9123812830192));
     });
 
-    it('vorbiscommentEntryNameIsLegal() should work', function() {
+    it('vorbiscommentEntryIsLegal() should work', function() {
         assert.isTrue(format.vorbiscommentEntryIsLegal('KEY=VALUE'));
         assert.isFalse(format.vorbiscommentEntryIsLegal('KEY VALUE'));
     });

@@ -1132,6 +1132,46 @@ describe('metadata', function() {
 
     });
 
+    describe('Metadata', function() {
+
+        it('create metadata object should throw', function() {
+            assert.throws(() => new Metadata(1));
+        });
+
+        it('isEqual() returns true if the objects are similar', function() {
+            const am1 = new ApplicationMetadata();
+            const am2 = new ApplicationMetadata();
+            am1.data = am2.data = Buffer.from('no');
+            am1.id = am2.id = Buffer.from('node');
+
+            assert.isTrue(am1.isEqual(am2));
+            assert.isTrue(am2.isEqual(am1));
+        });
+
+        it('isEqual() returns false if the objects are different', function() {
+            const am1 = new ApplicationMetadata();
+            const am2 = new ApplicationMetadata();
+            am1.data = am2.id = Buffer.from('nodo');
+            am1.id = am2.data = Buffer.from('node');
+
+            assert.isFalse(am1.isEqual(am2));
+            assert.isFalse(am2.isEqual(am1));
+        });
+
+        it('clone() should create a different object but equal', function() {
+            const am1 = new ApplicationMetadata();
+            am1.data = Buffer.from('nodo');
+            am1.id = Buffer.from('node');
+
+            const am2 = am1.clone();
+
+            assert.isTrue(am1.isEqual(am2));
+            assert.isTrue(am2.isEqual(am1));
+            assert.isFalse(Object.is(am1, am2));
+        });
+
+    });
+
     describe('gc', function() {
         it('gc should work', function() {
             require('./gc')();

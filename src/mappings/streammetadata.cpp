@@ -3,6 +3,9 @@
 
 namespace flac_bindings {
 
+    template<>
+    Local<Object> structToJs(const FLAC__StreamMetadata* i);
+
     V8_GETTER(Metadata::type) {
         unwrap(Metadata);
         info.GetReturnValue().Set(Nan::New(self->metadata->type));
@@ -19,8 +22,13 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(Metadata::create) {
+        if(info.IsConstructCall()) {
+            Nan::ThrowError("The Metadata class is abstract and cannot be instantiated");
+            return;
+        }
+
         if(info.Length() >= 1) {
-            Metadata* metadata = info.IsConstructCall() ? new Metadata : Nan::ObjectWrap::Unwrap<Metadata>(info.This());
+            Metadata* metadata = Nan::ObjectWrap::Unwrap<Metadata>(info.This());
             if(Buffer::HasInstance(info[0])) {
                 metadata->metadata = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
                 metadata->hasToBeDeleted = Nan::To<bool>(info[1]).FromMaybe(false);
@@ -33,10 +41,6 @@ namespace flac_bindings {
                 delete metadata;
                 Nan::ThrowTypeError("Expected number of Buffer as parameter");
                 return;
-            }
-
-            if(info.IsConstructCall()) {
-                metadata->Wrap(info.This());
             }
 
             nativeReadOnlyProperty(info.This(), "type", type);
@@ -56,8 +60,9 @@ namespace flac_bindings {
         if(newMetadata == nullptr) {
             Nan::ThrowError("Could not clone: no enough memory");
         } else {
-            Local<Value> args[] = { WrapPointer(newMetadata).ToLocalChecked(), Nan::True() };
-            Local<Object> newMetadataJs = Nan::NewInstance(metadataJs.Get(v8::Isolate::GetCurrent()), 2, args).ToLocalChecked();
+            auto newMetadataJs = structToJs(newMetadata);
+            auto metadataImpl = Nan::ObjectWrap::Unwrap<Metadata>(newMetadataJs);
+            metadataImpl->hasToBeDeleted = true;
             info.GetReturnValue().Set(newMetadataJs);
         }
     }
