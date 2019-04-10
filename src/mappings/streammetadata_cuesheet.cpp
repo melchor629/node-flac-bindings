@@ -119,6 +119,7 @@ namespace flac_bindings {
         } else {
             uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
             uint32_t newNumberIndices = Nan::To<uint32_t>(maybeNewNumberIndices.ToLocalChecked()).FromJust();
+            assertThrowing(self->metadata->data.cue_sheet.num_tracks > trackNum, "Invalid track position");
             bool ret = FLAC__metadata_object_cuesheet_track_resize_indices(self->metadata, trackNum, newNumberIndices);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         }
@@ -138,6 +139,8 @@ namespace flac_bindings {
         } else {
             uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
             uint32_t indexNum = Nan::To<uint32_t>(maybeIndexNum.ToLocalChecked()).FromJust();
+            assertThrowing(self->metadata->data.cue_sheet.num_tracks > trackNum, "Invalid track position");
+            assertThrowing(self->metadata->data.cue_sheet.tracks[trackNum].num_indices >= indexNum, "Invalid index position");
             CueSheetIndex* index = Nan::ObjectWrap::Unwrap<CueSheetIndex>(maybeTrack.ToLocalChecked());
             bool ret = FLAC__metadata_object_cuesheet_track_insert_index(self->metadata, trackNum, indexNum, index->index);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
@@ -155,6 +158,8 @@ namespace flac_bindings {
         } else {
             uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
             uint32_t indexNum = Nan::To<uint32_t>(maybeIndexNum.ToLocalChecked()).FromJust();
+            assertThrowing(self->metadata->data.cue_sheet.num_tracks > trackNum, "Invalid track position");
+            assertThrowing(self->metadata->data.cue_sheet.tracks[trackNum].num_indices >= indexNum, "Invalid index position");
             bool ret = FLAC__metadata_object_cuesheet_track_insert_blank_index(self->metadata, trackNum, indexNum);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         }
@@ -171,6 +176,8 @@ namespace flac_bindings {
         } else {
             uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
             uint32_t indexNum = Nan::To<uint32_t>(maybeIndexNum.ToLocalChecked()).FromJust();
+            assertThrowing(self->metadata->data.cue_sheet.num_tracks > trackNum, "Invalid track position");
+            assertThrowing(self->metadata->data.cue_sheet.tracks[trackNum].num_indices > indexNum, "Invalid index position");
             bool ret = FLAC__metadata_object_cuesheet_track_delete_index(self->metadata, trackNum, indexNum);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         }
@@ -199,6 +206,7 @@ namespace flac_bindings {
         } else {
             uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
             CueSheetTrack* track = Nan::ObjectWrap::Unwrap<CueSheetTrack>(maybeTrack.ToLocalChecked());
+            assertThrowing(trackNum < self->metadata->data.cue_sheet.num_tracks, "Invalid index");
             //In this case, prefer to copy the whole object, just in case
             bool ret = FLAC__metadata_object_cuesheet_set_track(self->metadata, trackNum, track->track, true);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
@@ -216,6 +224,7 @@ namespace flac_bindings {
         } else {
             uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
             CueSheetTrack* track = Nan::ObjectWrap::Unwrap<CueSheetTrack>(maybeTrack.ToLocalChecked());
+            assertThrowing(self->metadata->data.cue_sheet.num_tracks >= trackNum, "Invalid index");
             bool ret = FLAC__metadata_object_cuesheet_insert_track(self->metadata, trackNum, track->track, true);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         }
@@ -228,6 +237,7 @@ namespace flac_bindings {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else {
             uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
+            assertThrowing(self->metadata->data.cue_sheet.num_tracks >= trackNum, "Invalid index");
             bool ret = FLAC__metadata_object_cuesheet_insert_blank_track(self->metadata, trackNum);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         }
@@ -240,6 +250,7 @@ namespace flac_bindings {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else {
             uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
+            assertThrowing(self->metadata->data.cue_sheet.num_tracks > trackNum, "Invalid index");
             bool ret = FLAC__metadata_object_cuesheet_delete_track(self->metadata, trackNum);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         }

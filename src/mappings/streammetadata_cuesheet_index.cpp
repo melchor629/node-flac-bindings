@@ -42,7 +42,7 @@ namespace flac_bindings {
             );
         } else {
             memset(&cueSheetIndex->index, 0, sizeof(FLAC__StreamMetadata_CueSheet_Index));
-            if(!info[0].IsEmpty()) {
+            if(!info[0].IsEmpty() && !info[0]->IsUndefined()) {
                 auto maybeOffset = numberFromJs<uint64_t>(info[0]);
                 if(maybeOffset.IsJust()) {
                     cueSheetIndex->index.offset = maybeOffset.FromJust();
@@ -52,7 +52,7 @@ namespace flac_bindings {
                 }
             }
 
-            if(!info[1].IsEmpty()) {
+            if(!info[1].IsEmpty() && !info[1]->IsUndefined()) {
                 auto maybeNumber = numberFromJs<uint32_t>(info[1]);
                 if(maybeNumber.IsJust()) {
                     cueSheetIndex->index.number = maybeNumber.FromJust() & 0xFF;

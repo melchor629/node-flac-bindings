@@ -253,6 +253,7 @@ namespace flac_bindings {
         flacEnum_defineValue(obj1, obj2, "CUESHEET", FLAC__METADATA_TYPE_CUESHEET);
         flacEnum_defineValue(obj1, obj2, "PICTURE", FLAC__METADATA_TYPE_PICTURE);
         flacEnum_defineValue(obj1, obj2, "UNDEFINED", FLAC__METADATA_TYPE_UNDEFINED);
+        flacEnum_defineValue(obj1, obj2, "MAX_METADATA_TYPE", FLAC__MAX_METADATA_TYPE);
         return std::make_tuple(obj1, obj2);
     }
 

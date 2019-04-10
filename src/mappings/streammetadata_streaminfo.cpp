@@ -88,13 +88,16 @@ namespace flac_bindings {
 
     V8_GETTER(StreamInfoMetadata::totalSamples) {
         unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(Nan::New<Number>(self->metadata->data.stream_info.total_samples));
+        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.total_samples));
     }
 
     V8_SETTER(StreamInfoMetadata::totalSamples) {
         unwrap(StreamInfoMetadata);
-        checkValue(Number) {
-            self->metadata->data.stream_info.total_samples = getValue(int64_t);
+        auto maybeTotalSamples = numberFromJs<uint64_t>(value);
+        if(maybeTotalSamples.IsJust()) {
+            self->metadata->data.stream_info.total_samples = maybeTotalSamples.FromJust();
+        } else {
+            Nan::ThrowTypeError("Expected number or bigint as value");
         }
     }
 

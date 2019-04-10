@@ -78,9 +78,10 @@ namespace flac_bindings {
         } else if(info[1].IsEmpty() || !info[1]->IsObject()) {
             Nan::ThrowTypeError("Expected second argument to be a SeekTableMetadata");
         } else {
-            unsigned pos = Nan::To<unsigned>(info[0]).FromJust();
+            unsigned pointNum = Nan::To<unsigned>(info[0]).FromJust();
+            assertThrowing(self->metadata->data.seek_table.num_points > pointNum, "Point position is invalid");
             SeekPoint* seekPoint = Nan::ObjectWrap::Unwrap<SeekPoint>(Nan::To<Object>(info[1]).ToLocalChecked());
-            FLAC__metadata_object_seektable_set_point(self->metadata, pos, seekPoint->point);
+            FLAC__metadata_object_seektable_set_point(self->metadata, pointNum, seekPoint->point);
         }
     }
 
@@ -91,9 +92,11 @@ namespace flac_bindings {
         } else if(info[1].IsEmpty() || !info[1]->IsObject()) {
             Nan::ThrowTypeError("Expected second argument to be a SeekTableMetadata");
         } else {
-            unsigned pos = Nan::To<unsigned>(info[0]).FromJust();
+            unsigned pointNum = Nan::To<unsigned>(info[0]).FromJust();
+            assertThrowing(self->metadata->data.seek_table.num_points >= pointNum, "Point position is invalid");
             SeekPoint* seekPoint = Nan::ObjectWrap::Unwrap<SeekPoint>(Nan::To<Object>(info[1]).ToLocalChecked());
-            FLAC__metadata_object_seektable_insert_point(self->metadata, pos, seekPoint->point);
+            bool r = FLAC__metadata_object_seektable_insert_point(self->metadata, pointNum, seekPoint->point);
+            info.GetReturnValue().Set(Nan::New<Boolean>(r));
         }
     }
 
@@ -102,8 +105,9 @@ namespace flac_bindings {
         if(info[0].IsEmpty() || !info[0]->IsNumber()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else {
-            unsigned pos = Nan::To<unsigned>(info[0]).FromJust();
-            bool res = FLAC__metadata_object_seektable_delete_point(self->metadata, pos);
+            unsigned pointNum = Nan::To<unsigned>(info[0]).FromJust();
+            assertThrowing(self->metadata->data.seek_table.num_points > pointNum, "Point position is invalid");
+            bool res = FLAC__metadata_object_seektable_delete_point(self->metadata, pointNum);
             info.GetReturnValue().Set(Nan::New<Boolean>(res));
         }
     }
@@ -170,6 +174,7 @@ namespace flac_bindings {
         } else {
             unsigned num = maybeNum.FromJust();
             uint64_t samples = maybeSamples.FromJust();
+            assertThrowing(samples > 0, "Total samples is 0");
             bool res = FLAC__metadata_object_seektable_template_append_spaced_points(self->metadata, num, samples);
             info.GetReturnValue().Set(Nan::New<Boolean>(res));
         }
@@ -184,9 +189,11 @@ namespace flac_bindings {
         } else if(info[1].IsEmpty() || maybeSamples.IsNothing()) {
             Nan::ThrowTypeError("Expected second argument to be number or BigInt");
         } else {
-            unsigned num = maybeNum.FromJust();
-            uint64_t samples = maybeSamples.FromJust();
-            bool res = FLAC__metadata_object_seektable_template_append_spaced_points_by_samples(self->metadata, num, samples);
+            unsigned samples = maybeNum.FromJust();
+            uint64_t totalSamples = maybeSamples.FromJust();
+            assertThrowing(samples > 0, "samples is 0");
+            assertThrowing(totalSamples > 0, "totalSamples is 0");
+            bool res = FLAC__metadata_object_seektable_template_append_spaced_points_by_samples(self->metadata, samples, totalSamples);
             info.GetReturnValue().Set(Nan::New<Boolean>(res));
         }
     }

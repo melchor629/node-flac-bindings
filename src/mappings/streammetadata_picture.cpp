@@ -105,7 +105,11 @@ namespace flac_bindings {
         checkValueIsBuffer() {
             FLAC__byte* data = (FLAC__byte*) node::Buffer::Data(value);
             size_t dataLength = node::Buffer::Length(value);
-            FLAC__metadata_object_picture_set_data(self->metadata, data, dataLength, true);
+            if(dataLength == 0) {
+                FLAC__metadata_object_picture_set_data(self->metadata, NULL, 0, false);
+            } else {
+                FLAC__metadata_object_picture_set_data(self->metadata, data, dataLength, true);
+            }
         }
     }
 

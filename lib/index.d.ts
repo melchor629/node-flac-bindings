@@ -452,6 +452,7 @@ declare namespace api {
             CUESHEET: 5;
             PICTURE: 6;
             UNDEFINED: 7;
+            MAX_METADATA_TYPE: 126;
         }
 
         interface EntropyCodingMethodType {
@@ -593,9 +594,9 @@ declare namespace api {
         /** @see https://xiph.org/flac/api/structFLAC____StreamMetadata__CueSheet__Index.html */
         class CueSheetIndex {
             offset: number | bigint;
-            index: number;
+            number: number;
 
-            constructor(offset?: number | bigint, index?: number);
+            constructor(offset?: number | bigint, number?: number);
         }
 
         /** @see https://xiph.org/flac/api/structFLAC____StreamMetadata__CueSheet__Track.html */
@@ -621,7 +622,7 @@ declare namespace api {
 
         /** @see https://xiph.org/flac/api/structFLAC____StreamMetadata__CueSheet.html */
         class CueSheetMetadata extends Metadata<5> implements Iterable<CueSheetTrack> {
-            mediaCatalogNumber: number;
+            mediaCatalogNumber: string;
             leadIn: number | bigint;
             isCd: boolean;
             readonly tracks: CueSheetTrack[];
@@ -629,7 +630,7 @@ declare namespace api {
             /** @see https://xiph.org/flac/api/group__flac__metadata__object.html#ga484f21de7d533e4825cf807d29ef0204 */
             trackResizeIndices(trackNum: number, newIndicesSize: number): boolean;
             /** @see https://xiph.org/flac/api/group__flac__metadata__object.html#gae8be6ad7b27a18c91eb0b91dc305e433 */
-            trackInsertIndex(trackNum: number, indexNum: number, offset: number | bigint, index: number): boolean;
+            trackInsertIndex(trackNum: number, indexNum: number, index: CueSheetIndex): boolean;
             /** @see https://xiph.org/flac/api/group__flac__metadata__object.html#gafd40ef6dcc277f99934deee5367cc627 */
             trackInsertBlankIndex(trackNum: number, indexNum: number): boolean;
             /** @see https://xiph.org/flac/api/group__flac__metadata__object.html#ga84584f2244b7d8597b8fec1d81ea5fb8 */
@@ -701,6 +702,8 @@ declare namespace api {
             sampleNumber: number | bigint;
             streamOffset: number | bigint;
             frameSamples: number;
+
+            constructor(sampleNumber?: number | bigint, streamOffset?: number | bigint, frameSamples?: number | bigint);
         }
 
         /** @see https://xiph.org/flac/api/structFLAC____StreamMetadata__SeekTable.html */
@@ -745,7 +748,7 @@ declare namespace api {
             channels: number;
             bitsPerSample: number;
             sampleRate: number;
-            totalSamples: number;
+            totalSamples: number | bigint;
             md5sum: Buffer;
         }
 
@@ -851,6 +854,7 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga1b7374cafd886ceb880b050dfa1e387a
          */
         getBlock(): metadata.Metadata;
+        getBlock<T extends metadata.MetadataTypes, MT extends metadata.Metadata<T>>(): MT;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gae1dd863561606658f88c492682de7b80 */
         setBlock(metadata: metadata.Metadata, pad?: boolean): boolean;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga7a0c00e93bb37324a20926e92e604102 */
@@ -942,6 +946,7 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gad3e7fbc3b3d9c192a3ac425c7b263641
          **/
         getBlock(): metadata.Metadata;
+        getBlock<T extends metadata.MetadataTypes, MT extends metadata.Metadata<T>>(): MT;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gaf61795b21300a2b0c9940c11974aab53 */
         setBlock(metadata: metadata.Metadata): boolean;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gadf860af967d2ee483be01fc0ed8767a9 */

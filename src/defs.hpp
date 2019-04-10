@@ -10,6 +10,8 @@ using namespace node;
 #include "./pointer.hpp"
 #include "./format.h"
 
+#define __stringify__(f) #f
+#define _stringify(f) __stringify__(f)
 
 #define checkValue(type) MaybeLocal<type> _newValue = Nan::To<type>(value); \
 if(_newValue.IsEmpty() || !_newValue.ToLocalChecked()->Is##type ()) { \
@@ -22,6 +24,12 @@ if(_newValue.IsEmpty() || !_newValue.ToLocalChecked()->Is##type ()) { \
     } else
 
 #define getValue(type) Nan::To<type>(_newValue.ToLocalChecked()).FromJust()
+
+#define assertThrowing(cond, msg) \
+    if(!(cond)) { \
+        Nan::ThrowError(msg " - the following condition was not meet: " #cond " at " __FILE__ ":" _stringify(__LINE__)); \
+        return; \
+    }
 
 #define SetGetter(name) Nan::SetAccessor(obj, Nan::New( #name ).ToLocalChecked(), name)
 #define SetGetterSetter(name) Nan::SetAccessor(obj, Nan::New( #name ).ToLocalChecked(), name, name)

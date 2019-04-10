@@ -55,6 +55,13 @@ namespace flac_bindings {
                 UnwrapPointer<FLAC__StreamMetadata_SeekPoint>(info[0]),
                 sizeof(FLAC__StreamMetadata_SeekPoint)
             );
+        } else if(!info[0].IsEmpty()) {
+            auto maybeSampleNumber = numberFromJs<uint64_t>(info[0]);
+            auto maybeStreamoffset = numberFromJs<uint64_t>(info[1]);
+            auto maybeframeSamples = numberFromJs<uint32_t>(info[2]);
+            seekPoint->point.sample_number = maybeSampleNumber.FromMaybe(0ul);
+            seekPoint->point.stream_offset = maybeStreamoffset.FromMaybe(0ul);
+            seekPoint->point.frame_samples = maybeframeSamples.FromMaybe(0u);
         }
 
         nativeProperty(info.This(), "sampleNumber", sampleNumber);

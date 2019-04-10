@@ -40,5 +40,6 @@ jspm_packages
 .clang_complete
 test*.js
 *.flac
+!test/data/**/*.flac
 upload.sh
 .vscode

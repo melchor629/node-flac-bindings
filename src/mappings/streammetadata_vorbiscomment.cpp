@@ -79,20 +79,26 @@ namespace flac_bindings {
 
     static bool convertStringToEntry(const Local<Value> &obj, FLAC__StreamMetadata_VorbisComment_Entry &entry) {
         if(obj.IsEmpty()) return false;
-        if(!obj->IsString()) return false;
+        if(!obj->IsString()) {
+            Nan::ThrowTypeError("Expected comment entry argument to be string");
+            return false;
+        }
         Nan::Utf8String vs(obj);
         entry.entry = (FLAC__byte*) strdup(*vs);
         entry.length = vs.length();
+
+        /*if(!FLAC__format_vorbiscomment_entry_value_is_legal(entry.entry, (unsigned) -1)) {
+            Nan::ThrowError("The comment entry is not valid");
+            return false;
+        }*/
+
         return true;
     }
 
     V8_SETTER(VorbisCommentMetadata::vendorString) {
         unwrap(VorbisCommentMetadata);
         FLAC__StreamMetadata_VorbisComment_Entry n;
-        if(!convertStringToEntry(value, n)) {
-            Nan::ThrowTypeError("Expected first argument to be string");
-            return;
-        }
+        if(!convertStringToEntry(value, n)) return;
 
         //Tell FLAC API that the string we created is now under its ownership (false)
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_set_vendor_string(self->metadata, n, false);
@@ -123,13 +129,11 @@ namespace flac_bindings {
         }
 
         FLAC__StreamMetadata_VorbisComment_Entry n;
-        if(!convertStringToEntry(info[1], n)) {
-            Nan::ThrowTypeError("Expected first argument to be string");
-            return;
-        }
+        if(!convertStringToEntry(info[1], n)) return;
 
-        uint32_t pos = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_set_comment(self->metadata, pos, n, false);
+        uint32_t commentNum = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
+        assertThrowing(self->metadata->data.vorbis_comment.num_comments > commentNum, "Invalid comment number");
+        FLAC__bool r = FLAC__metadata_object_vorbiscomment_set_comment(self->metadata, commentNum, n, false);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
@@ -142,23 +146,18 @@ namespace flac_bindings {
         }
 
         FLAC__StreamMetadata_VorbisComment_Entry n;
-        if(!convertStringToEntry(info[1], n)) {
-            Nan::ThrowTypeError("Expected first argument to be string");
-            return;
-        }
+        if(!convertStringToEntry(info[1], n)) return;
 
-        uint32_t pos = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_insert_comment(self->metadata, pos, n, false);
+        uint32_t commentNum = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
+        assertThrowing(self->metadata->data.vorbis_comment.num_comments >= commentNum, "Invalid comment number");
+        FLAC__bool r = FLAC__metadata_object_vorbiscomment_insert_comment(self->metadata, commentNum, n, false);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(VorbisCommentMetadata::appendComment) {
         unwrap(VorbisCommentMetadata);
         FLAC__StreamMetadata_VorbisComment_Entry n;
-        if(!convertStringToEntry(info[0], n)) {
-            Nan::ThrowTypeError("Expected first argument to be string");
-            return;
-        }
+        if(!convertStringToEntry(info[0], n)) return;
 
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_append_comment(self->metadata, n, false);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
@@ -167,10 +166,7 @@ namespace flac_bindings {
     NAN_METHOD(VorbisCommentMetadata::replaceComment) {
         unwrap(VorbisCommentMetadata);
         FLAC__StreamMetadata_VorbisComment_Entry n;
-        if(!convertStringToEntry(info[0], n)) {
-            Nan::ThrowTypeError("Expected first argument to be string");
-            return;
-        }
+        if(!convertStringToEntry(info[0], n)) return;
 
         bool all = Nan::To<bool>(info[1]).FromMaybe(false);
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_replace_comment(self->metadata, n, all, false);
@@ -185,8 +181,9 @@ namespace flac_bindings {
             return;
         }
 
-        uint32_t pos = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_delete_comment(self->metadata, pos);
+        uint32_t commentNum = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
+        assertThrowing(self->metadata->data.vorbis_comment.num_comments > commentNum, "Invalid comment number");
+        FLAC__bool r = FLAC__metadata_object_vorbiscomment_delete_comment(self->metadata, commentNum);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
@@ -199,7 +196,7 @@ namespace flac_bindings {
         }
 
         MaybeLocal<String> maybeKey = Nan::To<String>(info[1]);
-        if(maybeKey.IsEmpty() || !info[0]->IsString()) {
+        if(maybeKey.IsEmpty() || !info[1]->IsString()) {
             Nan::ThrowTypeError("Expected second argument to be string");
             return;
         }
@@ -219,8 +216,8 @@ namespace flac_bindings {
         }
 
         Nan::Utf8String key(maybeKey.ToLocalChecked());
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_remove_entry_matching(self->metadata, *key);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        int r = FLAC__metadata_object_vorbiscomment_remove_entry_matching(self->metadata, *key);
+        info.GetReturnValue().Set(Nan::New<Number>(r));
     }
 
     NAN_METHOD(VorbisCommentMetadata::removeEntriesMatching) {
@@ -232,8 +229,8 @@ namespace flac_bindings {
         }
 
         Nan::Utf8String key(maybeKey.ToLocalChecked());
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_remove_entries_matching(self->metadata, *key);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        int r = FLAC__metadata_object_vorbiscomment_remove_entries_matching(self->metadata, *key);
+        info.GetReturnValue().Set(Nan::New<Number>(r));
     }
 
     NAN_METHOD(VorbisCommentMetadata::get) {
