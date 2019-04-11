@@ -214,7 +214,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata_SeekTable* table = jsToStruct<FLAC__StreamMetadata_SeekTable>(info[0]);
         if(table == nullptr) return;
         unsigned numberOfPlaceholdersConvertedToTemplates = FLAC__format_seektable_sort(table);
-        info.GetReturnValue().Set(Nan::New<Number>(numberOfPlaceholdersConvertedToTemplates));
+        info.GetReturnValue().Set(numberToJs(numberOfPlaceholdersConvertedToTemplates));
     }
 
     NAN_METHOD(node_FLAC__format_cuesheet_is_legal) {

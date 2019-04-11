@@ -81,7 +81,7 @@ namespace flac_bindings {
                 }
 
                 FLAC__Metadata_SimpleIterator* it = UnwrapPointer<FLAC__Metadata_SimpleIterator>(parent.ToLocalChecked());
-                bool prevReturn = rt.ToLocalChecked()->BooleanValue();
+                bool prevReturn = rt.ToLocalChecked()->BooleanValue(Isolate::GetCurrent()->GetCurrentContext()).FromJust();
                 Local<Object> ret = Nan::New<Object>();
                 if(!prevReturn) {
                     Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
@@ -107,7 +107,7 @@ namespace flac_bindings {
         static NAN_METHOD(node_FLAC__metadata_simple_iterator_status) {
             UNWRAP_IT
             FLAC__Metadata_SimpleIteratorStatus s = FLAC__metadata_simple_iterator_status(it);
-            info.GetReturnValue().Set(Nan::New<Number>(s));
+            info.GetReturnValue().Set(numberToJs<int>(s));
         }
 
         static NAN_METHOD(node_FLAC__metadata_simple_iterator_init) {
@@ -152,13 +152,13 @@ namespace flac_bindings {
         static NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block_type) {
             UNWRAP_IT
             FLAC__MetadataType r = FLAC__metadata_simple_iterator_get_block_type(it);
-            info.GetReturnValue().Set(Nan::New<Number>(r));
+            info.GetReturnValue().Set(numberToJs<int>(r));
         }
 
         static NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block_length) {
             UNWRAP_IT
             unsigned r = FLAC__metadata_simple_iterator_get_block_length(it);
-            info.GetReturnValue().Set(Nan::New<Number>(r));
+            info.GetReturnValue().Set(numberToJs(r));
         }
 
         static NAN_METHOD(node_FLAC__metadata_simple_iterator_get_application_id) {
@@ -167,10 +167,10 @@ namespace flac_bindings {
             FLAC__bool r = FLAC__metadata_simple_iterator_get_application_id(it, id);
             if(r) {
                 Local<Array> arr = Nan::New<Array>();
-                Nan::Set(arr, 0, Nan::New<Number>(id[0]));
-                Nan::Set(arr, 1, Nan::New<Number>(id[1]));
-                Nan::Set(arr, 2, Nan::New<Number>(id[2]));
-                Nan::Set(arr, 3, Nan::New<Number>(id[3]));
+                Nan::Set(arr, 0, numberToJs(id[0]));
+                Nan::Set(arr, 1, numberToJs(id[1]));
+                Nan::Set(arr, 2, numberToJs(id[2]));
+                Nan::Set(arr, 3, numberToJs(id[3]));
                 info.GetReturnValue().Set(arr);
             } else {
                 info.GetReturnValue().Set(Nan::New<Boolean>(false));

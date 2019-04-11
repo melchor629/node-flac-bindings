@@ -4,85 +4,85 @@ namespace flac_bindings {
 
     V8_GETTER(StreamInfoMetadata::minBlocksize) {
         unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(Nan::New<Number>(self->metadata->data.stream_info.min_blocksize));
+        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.min_blocksize));
     }
 
     V8_SETTER(StreamInfoMetadata::minBlocksize) {
         unwrap(StreamInfoMetadata);
-        checkValue(Number) {
-            self->metadata->data.stream_info.min_blocksize = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.stream_info.min_blocksize = newValue;
         }
     }
 
     V8_GETTER(StreamInfoMetadata::maxBlocksize) {
         unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.stream_info.max_blocksize));
+        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.max_blocksize));
     }
 
     V8_SETTER(StreamInfoMetadata::maxBlocksize) {
         unwrap(StreamInfoMetadata);
-        checkValue(Number) {
-            self->metadata->data.stream_info.max_blocksize = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.stream_info.max_blocksize = newValue;
         }
     }
 
     V8_GETTER(StreamInfoMetadata::minFramesize) {
         unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.stream_info.min_framesize));
+        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.min_framesize));
     }
 
     V8_SETTER(StreamInfoMetadata::minFramesize) {
         unwrap(StreamInfoMetadata);
-        checkValue(Number) {
-            self->metadata->data.stream_info.min_framesize = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.stream_info.min_framesize = newValue;
         }
     }
 
     V8_GETTER(StreamInfoMetadata::maxFramesize) {
         unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.stream_info.max_framesize));
+        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.max_framesize));
     }
 
     V8_SETTER(StreamInfoMetadata::maxFramesize) {
         unwrap(StreamInfoMetadata);
-        checkValue(Number) {
-            self->metadata->data.stream_info.max_framesize = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.stream_info.max_framesize = newValue;
         }
     }
 
     V8_GETTER(StreamInfoMetadata::channels) {
         unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.stream_info.channels));
+        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.channels));
     }
 
     V8_SETTER(StreamInfoMetadata::channels) {
         unwrap(StreamInfoMetadata);
-        checkValue(Number) {
-            self->metadata->data.stream_info.channels = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.stream_info.channels = newValue;
         }
     }
 
     V8_GETTER(StreamInfoMetadata::bitsPerSample) {
         unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.stream_info.bits_per_sample));
+        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.bits_per_sample));
     }
 
     V8_SETTER(StreamInfoMetadata::bitsPerSample) {
         unwrap(StreamInfoMetadata);
-        checkValue(Number) {
-            self->metadata->data.stream_info.bits_per_sample = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.stream_info.bits_per_sample = newValue;
         }
     }
 
     V8_GETTER(StreamInfoMetadata::sampleRate) {
         unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.stream_info.sample_rate));
+        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.sample_rate));
     }
 
     V8_SETTER(StreamInfoMetadata::sampleRate) {
         unwrap(StreamInfoMetadata);
-        checkValue(Number) {
-            self->metadata->data.stream_info.sample_rate = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.stream_info.sample_rate = newValue;
         }
     }
 
@@ -93,11 +93,8 @@ namespace flac_bindings {
 
     V8_SETTER(StreamInfoMetadata::totalSamples) {
         unwrap(StreamInfoMetadata);
-        auto maybeTotalSamples = numberFromJs<uint64_t>(value);
-        if(maybeTotalSamples.IsJust()) {
-            self->metadata->data.stream_info.total_samples = maybeTotalSamples.FromJust();
-        } else {
-            Nan::ThrowTypeError("Expected number or bigint as value");
+        checkValueIsNumber(uint64_t) {
+            self->metadata->data.stream_info.total_samples = newValue;
         }
     }
 
@@ -127,7 +124,7 @@ namespace flac_bindings {
             Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
         } else {
-            Local<Value> args[] = { Nan::New<Number>(FLAC__MetadataType::FLAC__METADATA_TYPE_STREAMINFO) };
+            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_STREAMINFO) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
         }
 

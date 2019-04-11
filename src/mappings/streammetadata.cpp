@@ -33,7 +33,7 @@ namespace flac_bindings {
                 metadata->metadata = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
                 metadata->hasToBeDeleted = Nan::To<bool>(info[1]).FromMaybe(false);
             } else if(info[0]->IsNumber()) {
-                int number = Nan::To<int>(info[0]).FromJust();
+                int number = numberFromJs<int>(info[0]).FromJust();
                 FLAC__MetadataType type = (FLAC__MetadataType) number;
                 metadata->metadata = FLAC__metadata_object_new(type);
                 metadata->hasToBeDeleted = true;

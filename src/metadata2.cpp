@@ -178,7 +178,7 @@ namespace flac_bindings {
                 }
 
                 FLAC__Metadata_Iterator* it = UnwrapPointer<FLAC__Metadata_Iterator>(parent.ToLocalChecked());
-                bool prevReturn = rt.ToLocalChecked()->BooleanValue();
+                bool prevReturn = rt.ToLocalChecked()->BooleanValue(Isolate::GetCurrent()->GetCurrentContext()).FromJust();
                 Local<Object> ret = Nan::New<Object>();
                 if(!prevReturn) {
                     Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
@@ -223,7 +223,7 @@ namespace flac_bindings {
         static NAN_METHOD(node_FLAC__metadata_iterator_get_block_type) {
             UNWRAP_IT
             FLAC__MetadataType r = FLAC__metadata_iterator_get_block_type(m);
-            info.GetReturnValue().Set(Nan::New<Number>(r));
+            info.GetReturnValue().Set(numberToJs<int>(r));
         }
 
         static NAN_METHOD(node_FLAC__metadata_iterator_get_block) {

@@ -71,7 +71,7 @@ namespace flac_bindings {
             Local<String> posKey = Nan::New("pos").ToLocalChecked();
             CueSheetMetadata* self = Nan::ObjectWrap::Unwrap<CueSheetMetadata>(parent.ToLocalChecked().As<Object>());
             Local<Number> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked().As<Number>();
-            uint32_t pos = Nan::To<uint32_t>(jsPos).FromJust();
+            uint32_t pos = numberFromJs<uint32_t>(jsPos).FromJust();
             Local<Object> ret = Nan::New<Object>();
             if(pos >= self->metadata->data.cue_sheet.num_tracks) {
                 Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
@@ -95,7 +95,7 @@ namespace flac_bindings {
             Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
         } else {
-            Local<Value> args[] = { Nan::New<Number>(FLAC__MetadataType::FLAC__METADATA_TYPE_CUESHEET) };
+            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_CUESHEET) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
         }
 
@@ -110,15 +110,15 @@ namespace flac_bindings {
 
     NAN_METHOD(CueSheetMetadata::trackResizeIndices) {
         unwrap(CueSheetMetadata);
-        MaybeLocal<Number> maybeTrackNum = Nan::To<Number>(info[0]);
-        MaybeLocal<Number> maybeNewNumberIndices = Nan::To<Number>(info[1]);
-        if(maybeTrackNum.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeTrackNum = numberFromJs<uint32_t>(info[0]);
+        auto maybeNewNumberIndices = numberFromJs<uint32_t>(info[1]);
+        if(maybeTrackNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
-        } else if(maybeNewNumberIndices.IsEmpty() || !info[1]->IsNumber()) {
+        } else if(maybeNewNumberIndices.IsNothing()) {
             Nan::ThrowTypeError("Expected second argument to be number");
         } else {
-            uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
-            uint32_t newNumberIndices = Nan::To<uint32_t>(maybeNewNumberIndices.ToLocalChecked()).FromJust();
+            uint32_t trackNum = maybeTrackNum.FromJust();
+            uint32_t newNumberIndices = maybeNewNumberIndices.FromJust();
             assertThrowing(self->metadata->data.cue_sheet.num_tracks > trackNum, "Invalid track position");
             bool ret = FLAC__metadata_object_cuesheet_track_resize_indices(self->metadata, trackNum, newNumberIndices);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
@@ -127,18 +127,18 @@ namespace flac_bindings {
 
     NAN_METHOD(CueSheetMetadata::trackInsertIndex) {
         unwrap(CueSheetMetadata);
-        MaybeLocal<Number> maybeTrackNum = Nan::To<Number>(info[0]);
-        MaybeLocal<Number> maybeIndexNum = Nan::To<Number>(info[1]);
+        auto maybeTrackNum = numberFromJs<uint32_t>(info[0]);
+        auto maybeIndexNum = numberFromJs<uint32_t>(info[1]);
         MaybeLocal<Object> maybeTrack = Nan::To<Object>(info[2]);
-        if(maybeTrackNum.IsEmpty() || !info[0]->IsNumber()) {
+        if(maybeTrackNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
-        } else if(maybeIndexNum.IsEmpty() || !info[1]->IsNumber()) {
+        } else if(maybeIndexNum.IsNothing()) {
             Nan::ThrowTypeError("Expected second argument to be number");
         } else if(maybeTrack.IsEmpty() || !info[2]->IsObject()) {
             Nan::ThrowTypeError("Expected third argument to be CueSheetIndex");
         } else {
-            uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
-            uint32_t indexNum = Nan::To<uint32_t>(maybeIndexNum.ToLocalChecked()).FromJust();
+            uint32_t trackNum = maybeTrackNum.FromJust();
+            uint32_t indexNum = maybeIndexNum.FromJust();
             assertThrowing(self->metadata->data.cue_sheet.num_tracks > trackNum, "Invalid track position");
             assertThrowing(self->metadata->data.cue_sheet.tracks[trackNum].num_indices >= indexNum, "Invalid index position");
             CueSheetIndex* index = Nan::ObjectWrap::Unwrap<CueSheetIndex>(maybeTrack.ToLocalChecked());
@@ -149,15 +149,15 @@ namespace flac_bindings {
 
     NAN_METHOD(CueSheetMetadata::trackInsertBlankIndex) {
         unwrap(CueSheetMetadata);
-        MaybeLocal<Number> maybeTrackNum = Nan::To<Number>(info[0]);
-        MaybeLocal<Number> maybeIndexNum = Nan::To<Number>(info[1]);
-        if(maybeTrackNum.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeTrackNum = numberFromJs<uint32_t>(info[0]);
+        auto maybeIndexNum = numberFromJs<uint32_t>(info[1]);
+        if(maybeTrackNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
-        } else if(maybeIndexNum.IsEmpty() || !info[1]->IsNumber()) {
+        } else if(maybeIndexNum.IsNothing()) {
             Nan::ThrowTypeError("Expected second argument to be number");
         } else {
-            uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
-            uint32_t indexNum = Nan::To<uint32_t>(maybeIndexNum.ToLocalChecked()).FromJust();
+            uint32_t trackNum = maybeTrackNum.FromJust();
+            uint32_t indexNum = maybeIndexNum.FromJust();
             assertThrowing(self->metadata->data.cue_sheet.num_tracks > trackNum, "Invalid track position");
             assertThrowing(self->metadata->data.cue_sheet.tracks[trackNum].num_indices >= indexNum, "Invalid index position");
             bool ret = FLAC__metadata_object_cuesheet_track_insert_blank_index(self->metadata, trackNum, indexNum);
@@ -167,15 +167,15 @@ namespace flac_bindings {
 
     NAN_METHOD(CueSheetMetadata::trackDeleteIndex) {
         unwrap(CueSheetMetadata);
-        MaybeLocal<Number> maybeTrackNum = Nan::To<Number>(info[0]);
-        MaybeLocal<Number> maybeIndexNum = Nan::To<Number>(info[1]);
-        if(maybeTrackNum.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeTrackNum = numberFromJs<uint32_t>(info[0]);
+        auto maybeIndexNum = numberFromJs<uint32_t>(info[1]);
+        if(maybeTrackNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
-        } else if(maybeIndexNum.IsEmpty() || !info[1]->IsNumber()) {
+        } else if(maybeIndexNum.IsNothing()) {
             Nan::ThrowTypeError("Expected second argument to be number");
         } else {
-            uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
-            uint32_t indexNum = Nan::To<uint32_t>(maybeIndexNum.ToLocalChecked()).FromJust();
+            uint32_t trackNum = maybeTrackNum.FromJust();
+            uint32_t indexNum = maybeIndexNum.FromJust();
             assertThrowing(self->metadata->data.cue_sheet.num_tracks > trackNum, "Invalid track position");
             assertThrowing(self->metadata->data.cue_sheet.tracks[trackNum].num_indices > indexNum, "Invalid index position");
             bool ret = FLAC__metadata_object_cuesheet_track_delete_index(self->metadata, trackNum, indexNum);
@@ -185,11 +185,11 @@ namespace flac_bindings {
 
     NAN_METHOD(CueSheetMetadata::resizeTracks) {
         unwrap(CueSheetMetadata);
-        MaybeLocal<Number> maybeNewTrackSize = Nan::To<Number>(info[0]);
-        if(maybeNewTrackSize.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeNewTrackSize = numberFromJs<uint32_t>(info[0]);
+        if(maybeNewTrackSize.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else {
-            uint32_t newTrackSize = Nan::To<uint32_t>(maybeNewTrackSize.ToLocalChecked()).FromJust();
+            uint32_t newTrackSize = maybeNewTrackSize.FromJust();
             bool ret = FLAC__metadata_object_cuesheet_resize_tracks(self->metadata, newTrackSize);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         }
@@ -197,14 +197,14 @@ namespace flac_bindings {
 
     NAN_METHOD(CueSheetMetadata::setTrack) {
         unwrap(CueSheetMetadata);
-        MaybeLocal<Number> maybeTrackNum = Nan::To<Number>(info[0]);
+        auto maybeTrackNum = numberFromJs<uint32_t>(info[0]);
         MaybeLocal<Object> maybeTrack = Nan::To<Object>(info[1]);
-        if(maybeTrackNum.IsEmpty() || !info[0]->IsNumber()) {
+        if(maybeTrackNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else if(maybeTrack.IsEmpty() || !info[1]->IsObject()) {
             Nan::ThrowTypeError("Expected second argument to be CueSheetTrack");
         } else {
-            uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
+            uint32_t trackNum = maybeTrackNum.FromJust();
             CueSheetTrack* track = Nan::ObjectWrap::Unwrap<CueSheetTrack>(maybeTrack.ToLocalChecked());
             assertThrowing(trackNum < self->metadata->data.cue_sheet.num_tracks, "Invalid index");
             //In this case, prefer to copy the whole object, just in case
@@ -215,14 +215,14 @@ namespace flac_bindings {
 
     NAN_METHOD(CueSheetMetadata::insertTrack) {
         unwrap(CueSheetMetadata);
-        MaybeLocal<Number> maybeTrackNum = Nan::To<Number>(info[0]);
+        auto maybeTrackNum = numberFromJs<uint32_t>(info[0]);
         MaybeLocal<Object> maybeTrack = Nan::To<Object>(info[1]);
-        if(maybeTrackNum.IsEmpty() || !info[0]->IsNumber()) {
+        if(maybeTrackNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else if(maybeTrack.IsEmpty() || !info[1]->IsObject()) {
             Nan::ThrowTypeError("Expected second argument to be CueSheetTrack");
         } else {
-            uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
+            uint32_t trackNum = maybeTrackNum.FromJust();
             CueSheetTrack* track = Nan::ObjectWrap::Unwrap<CueSheetTrack>(maybeTrack.ToLocalChecked());
             assertThrowing(self->metadata->data.cue_sheet.num_tracks >= trackNum, "Invalid index");
             bool ret = FLAC__metadata_object_cuesheet_insert_track(self->metadata, trackNum, track->track, true);
@@ -232,11 +232,11 @@ namespace flac_bindings {
 
     NAN_METHOD(CueSheetMetadata::insertBlankTrack) {
         unwrap(CueSheetMetadata);
-        MaybeLocal<Number> maybeTrackNum = Nan::To<Number>(info[0]);
-        if(maybeTrackNum.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeTrackNum = numberFromJs<uint32_t>(info[0]);
+        if(maybeTrackNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else {
-            uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
+            uint32_t trackNum = maybeTrackNum.FromJust();
             assertThrowing(self->metadata->data.cue_sheet.num_tracks >= trackNum, "Invalid index");
             bool ret = FLAC__metadata_object_cuesheet_insert_blank_track(self->metadata, trackNum);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
@@ -245,11 +245,11 @@ namespace flac_bindings {
 
     NAN_METHOD(CueSheetMetadata::deleteTrack) {
         unwrap(CueSheetMetadata);
-        MaybeLocal<Number> maybeTrackNum = Nan::To<Number>(info[0]);
-        if(maybeTrackNum.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeTrackNum = numberFromJs<uint32_t>(info[0]);
+        if(maybeTrackNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else {
-            uint32_t trackNum = Nan::To<uint32_t>(maybeTrackNum.ToLocalChecked()).FromJust();
+            uint32_t trackNum = maybeTrackNum.FromJust();
             assertThrowing(self->metadata->data.cue_sheet.num_tracks > trackNum, "Invalid index");
             bool ret = FLAC__metadata_object_cuesheet_delete_track(self->metadata, trackNum);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
@@ -274,7 +274,7 @@ namespace flac_bindings {
             Nan::ThrowError("Cannot calculate CDDB ID if CueSheet is not a CD - can lead to undefined behaviour");
         } else {
             uint32_t id = FLAC__metadata_object_cuesheet_calculate_cddb_id(self->metadata);
-            info.GetReturnValue().Set(Nan::New<Number>(id));
+            info.GetReturnValue().Set(numberToJs(id));
         }
     }
 

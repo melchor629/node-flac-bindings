@@ -20,7 +20,7 @@ namespace flac_bindings {
         > = 0
     >
     static inline void defineOwnProperty(const Local<Object> &obj, const char* name, T value) {
-        defineOwnProperty(obj, name, Nan::New<Number>(value));
+        defineOwnProperty(obj, name, numberToJs(value));
     }
 
     template<typename T>
@@ -51,7 +51,7 @@ namespace flac_bindings {
         defineOwnProperty(header, "blocksize", i->header.blocksize);
         defineOwnProperty(header, "sampleRate", i->header.sample_rate);
         defineOwnProperty(header, "channels", i->header.channels);
-        defineOwnProperty(header, "channelAssignment", i->header.channel_assignment);
+        defineOwnProperty<int>(header, "channelAssignment", i->header.channel_assignment);
         defineOwnProperty(header, "bitsPerSample", i->header.bits_per_sample);
         defineOwnProperty(header, "crc", i->header.crc);
         if(i->header.number_type == FLAC__FRAME_NUMBER_TYPE_FRAME_NUMBER) {
@@ -62,7 +62,7 @@ namespace flac_bindings {
 
         for(uint32_t o = 0; o < FLAC__MAX_CHANNELS; o++) {
             Local<Object> subframe = Nan::New<Object>();
-            defineOwnProperty(subframe, "type", i->subframes[o].type);
+            defineOwnProperty<int>(subframe, "type", i->subframes[o].type);
             defineOwnProperty(subframe, "wastedBits", i->subframes[o].wasted_bits);
             switch(i->subframes[o].type) {
                 case FLAC__SUBFRAME_TYPE_CONSTANT:

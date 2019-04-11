@@ -10,7 +10,7 @@ namespace flac_bindings {
             Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
         } else {
-            Local<Value> args[] = { Nan::New<Number>(FLAC__MetadataType::FLAC__METADATA_TYPE_PADDING) };
+            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_PADDING) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
             if(info.Length() > 0 && info[0]->IsNumber()) self->metadata->length += numberFromJs<uint32_t>(info[0]).FromMaybe(0);
         }

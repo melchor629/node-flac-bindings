@@ -10,23 +10,20 @@ namespace flac_bindings {
 
     V8_SETTER(CueSheetTrack::offset) {
         unwrap(CueSheetTrack);
-        auto maybeValue = numberFromJs<uint64_t>(value);
-        if(maybeValue.IsNothing()) {
-            Nan::ThrowTypeError("Value is not a number or bigint");
-        } else {
-            self->track->offset = maybeValue.FromJust();
+        checkValueIsNumber(uint64_t) {
+            self->track->offset = newValue;
         }
     }
 
     V8_GETTER(CueSheetTrack::number) {
         unwrap(CueSheetTrack);
-        info.GetReturnValue().Set(Nan::New(self->track->number));
+        info.GetReturnValue().Set(numberToJs(self->track->number));
     }
 
     V8_SETTER(CueSheetTrack::number) {
         unwrap(CueSheetTrack);
-        checkValue(Number) {
-            self->track->number = getValue(uint32_t) & 0xFF;
+        checkValueIsNumber(uint32_t) {
+            self->track->number = newValue & 0xFF;
         }
     }
 
@@ -49,13 +46,13 @@ namespace flac_bindings {
 
     V8_GETTER(CueSheetTrack::type) {
         unwrap(CueSheetTrack);
-        info.GetReturnValue().Set(Nan::New(self->track->type));
+        info.GetReturnValue().Set(numberToJs(self->track->type));
     }
 
     V8_SETTER(CueSheetTrack::type) {
         unwrap(CueSheetTrack);
-        checkValue(Number) {
-            self->track->type = getValue(uint32_t) & 1;
+        checkValueIsNumber(uint32_t) {
+            self->track->type = newValue & 1;
         }
     }
 
@@ -94,7 +91,7 @@ namespace flac_bindings {
             Local<String> posKey = Nan::New("pos").ToLocalChecked();
             CueSheetTrack* self = Nan::ObjectWrap::Unwrap<CueSheetTrack>(parent.ToLocalChecked().As<Object>());
             Local<Number> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked().As<Number>();
-            uint32_t pos = Nan::To<uint32_t>(jsPos).FromJust();
+            uint32_t pos = numberFromJs<uint32_t>(jsPos).FromJust();
             Local<Object> ret = Nan::New<Object>();
             if(pos >= self->track->num_indices) {
                 Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());

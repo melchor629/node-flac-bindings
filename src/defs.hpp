@@ -23,6 +23,13 @@ if(_newValue.IsEmpty() || !_newValue.ToLocalChecked()->Is##type ()) { \
         Nan::ThrowTypeError("Expected argument to be Buffer"); \
     } else
 
+#define checkValueIsNumber(type) \
+    auto _newValue = numberFromJs<type>(value); \
+    auto newValue = _newValue.FromMaybe(0); \
+    if(_newValue.IsNothing()) { \
+        Nan::ThrowTypeError("Expected argument to be number or bigint"); \
+    } else
+
 #define getValue(type) Nan::To<type>(_newValue.ToLocalChecked()).FromJust()
 
 #define assertThrowing(cond, msg) \

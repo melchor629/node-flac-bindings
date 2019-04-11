@@ -26,7 +26,7 @@ namespace flac_bindings {
             Local<String> posKey = Nan::New("pos").ToLocalChecked();
             SeekTableMetadata* self = Nan::ObjectWrap::Unwrap<SeekTableMetadata>(parent.ToLocalChecked().As<Object>());
             Local<Number> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked().As<Number>();
-            uint32_t pos = Nan::To<uint32_t>(jsPos).FromJust();
+            uint32_t pos = numberFromJs<uint32_t>(jsPos).FromJust();
             Local<Object> ret = Nan::New<Object>();
             if(pos >= self->metadata->data.seek_table.num_points) {
                 Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
@@ -50,7 +50,7 @@ namespace flac_bindings {
             Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
         } else {
-            Local<Value> args[] = { Nan::New<Number>(FLAC__MetadataType::FLAC__METADATA_TYPE_SEEKTABLE) };
+            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_SEEKTABLE) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
         }
 
@@ -62,10 +62,11 @@ namespace flac_bindings {
 
     NAN_METHOD(SeekTableMetadata::resizePoints) {
         unwrap(SeekTableMetadata);
-        if(info[0].IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeNum = numberFromJs<unsigned>(info[0]);
+        if(maybeNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else {
-            unsigned num = Nan::To<unsigned>(info[0]).FromJust();
+            unsigned num = maybeNum.FromJust();
             bool ret = FLAC__metadata_object_seektable_resize_points(self->metadata, num);
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         }
@@ -73,12 +74,13 @@ namespace flac_bindings {
 
     NAN_METHOD(SeekTableMetadata::setPoint) {
         unwrap(SeekTableMetadata);
-        if(info[0].IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeNum = numberFromJs<unsigned>(info[0]);
+        if(maybeNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else if(info[1].IsEmpty() || !info[1]->IsObject()) {
             Nan::ThrowTypeError("Expected second argument to be a SeekTableMetadata");
         } else {
-            unsigned pointNum = Nan::To<unsigned>(info[0]).FromJust();
+            unsigned pointNum = maybeNum.FromJust();
             assertThrowing(self->metadata->data.seek_table.num_points > pointNum, "Point position is invalid");
             SeekPoint* seekPoint = Nan::ObjectWrap::Unwrap<SeekPoint>(Nan::To<Object>(info[1]).ToLocalChecked());
             FLAC__metadata_object_seektable_set_point(self->metadata, pointNum, seekPoint->point);
@@ -87,12 +89,13 @@ namespace flac_bindings {
 
     NAN_METHOD(SeekTableMetadata::insertPoint) {
         unwrap(SeekTableMetadata);
-        if(info[0].IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeNum = numberFromJs<unsigned>(info[0]);
+        if(maybeNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else if(info[1].IsEmpty() || !info[1]->IsObject()) {
             Nan::ThrowTypeError("Expected second argument to be a SeekTableMetadata");
         } else {
-            unsigned pointNum = Nan::To<unsigned>(info[0]).FromJust();
+            unsigned pointNum = maybeNum.FromJust();
             assertThrowing(self->metadata->data.seek_table.num_points >= pointNum, "Point position is invalid");
             SeekPoint* seekPoint = Nan::ObjectWrap::Unwrap<SeekPoint>(Nan::To<Object>(info[1]).ToLocalChecked());
             bool r = FLAC__metadata_object_seektable_insert_point(self->metadata, pointNum, seekPoint->point);
@@ -102,10 +105,11 @@ namespace flac_bindings {
 
     NAN_METHOD(SeekTableMetadata::deletePoint) {
         unwrap(SeekTableMetadata);
-        if(info[0].IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeNum = numberFromJs<unsigned>(info[0]);
+        if(maybeNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else {
-            unsigned pointNum = Nan::To<unsigned>(info[0]).FromJust();
+            unsigned pointNum = maybeNum.FromJust();
             assertThrowing(self->metadata->data.seek_table.num_points > pointNum, "Point position is invalid");
             bool res = FLAC__metadata_object_seektable_delete_point(self->metadata, pointNum);
             info.GetReturnValue().Set(Nan::New<Boolean>(res));
@@ -120,10 +124,11 @@ namespace flac_bindings {
 
     NAN_METHOD(SeekTableMetadata::templateAppendPlaceholders) {
         unwrap(SeekTableMetadata);
-        if(info[0].IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeNum = numberFromJs<unsigned>(info[0]);
+        if(maybeNum.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
         } else {
-            unsigned num = Nan::To<unsigned>(info[0]).FromJust();
+            unsigned num = maybeNum.FromJust();
             bool res = FLAC__metadata_object_seektable_template_append_placeholders(self->metadata, num);
             info.GetReturnValue().Set(Nan::New<Boolean>(res));
         }
@@ -143,7 +148,7 @@ namespace flac_bindings {
 
     NAN_METHOD(SeekTableMetadata::templateAppendPoints) {
         unwrap(SeekTableMetadata);
-        if(info[0].IsEmpty() || info[0].IsEmpty()) {
+        if(info[0].IsEmpty() || !info[0]->IsArray()) {
             Nan::ThrowTypeError("Expected first argument to be an Array");
         } else {
             Local<Array> points = info[0].As<Array>();

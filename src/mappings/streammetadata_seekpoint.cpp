@@ -9,11 +9,8 @@ namespace flac_bindings {
 
     V8_SETTER(SeekPoint::sampleNumber) {
         unwrap(SeekPoint);
-        Maybe<uint64_t> maybeNumber = numberFromJs<uint64_t>(value);
-        if(maybeNumber.IsJust()) {
-            self->point.sample_number = maybeNumber.FromJust();
-        } else {
-            Nan::ThrowTypeError("Expected type to be number or BigInt");
+        checkValueIsNumber(uint64_t) {
+            self->point.sample_number = newValue;
         }
     }
 
@@ -24,11 +21,8 @@ namespace flac_bindings {
 
     V8_SETTER(SeekPoint::streamOffset) {
         unwrap(SeekPoint);
-        Maybe<uint64_t> maybeNumber = numberFromJs<uint64_t>(value);
-        if(maybeNumber.IsJust()) {
-            self->point.stream_offset = maybeNumber.FromJust();
-        } else {
-            Nan::ThrowTypeError("Expected type to be number or BigInt");
+        checkValueIsNumber(uint64_t) {
+            self->point.stream_offset = newValue;
         }
     }
 
@@ -39,8 +33,8 @@ namespace flac_bindings {
 
     V8_SETTER(SeekPoint::frameSamples) {
         unwrap(SeekPoint);
-        checkValue(Number) {
-            self->point.frame_samples = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->point.frame_samples = newValue;
         }
     }
 

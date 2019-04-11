@@ -41,7 +41,7 @@ namespace flac_bindings {
             Local<String> posKey = Nan::New("pos").ToLocalChecked();
             VorbisCommentMetadata* self = Nan::ObjectWrap::Unwrap<VorbisCommentMetadata>(parent.ToLocalChecked().As<Object>());
             Local<Number> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked().As<Number>();
-            uint32_t pos = Nan::To<uint32_t>(jsPos).FromJust();
+            uint32_t pos = numberFromJs<uint32_t>(jsPos).FromJust();
             Local<Object> ret = Nan::New<Object>();
             if(pos >= self->metadata->data.vorbis_comment.num_comments) {
                 Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
@@ -66,7 +66,7 @@ namespace flac_bindings {
             Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
         } else {
-            Local<Value> args[] = { Nan::New<Number>(FLAC__MetadataType::FLAC__METADATA_TYPE_VORBIS_COMMENT) };
+            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_VORBIS_COMMENT) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
         }
 
@@ -109,21 +109,21 @@ namespace flac_bindings {
 
     NAN_METHOD(VorbisCommentMetadata::resizeComments) {
         unwrap(VorbisCommentMetadata);
-        MaybeLocal<Number> maybeCount = Nan::To<Number>(info[0]);
-        if(maybeCount.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybeCount = numberFromJs<uint32_t>(info[0]);
+        if(maybeCount.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
             return;
         }
 
-        uint32_t count = Nan::To<uint32_t>(maybeCount.ToLocalChecked()).FromJust();
+        uint32_t count = maybeCount.FromJust();
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_resize_comments(self->metadata, count);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
     }
 
     NAN_METHOD(VorbisCommentMetadata::setComment) {
         unwrap(VorbisCommentMetadata);
-        MaybeLocal<Number> maybePos = Nan::To<Number>(info[0]);
-        if(maybePos.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybePos = numberFromJs<uint32_t>(info[0]);
+        if(maybePos.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
             return;
         }
@@ -131,7 +131,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata_VorbisComment_Entry n;
         if(!convertStringToEntry(info[1], n)) return;
 
-        uint32_t commentNum = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
+        uint32_t commentNum = maybePos.FromJust();
         assertThrowing(self->metadata->data.vorbis_comment.num_comments > commentNum, "Invalid comment number");
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_set_comment(self->metadata, commentNum, n, false);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
@@ -139,8 +139,8 @@ namespace flac_bindings {
 
     NAN_METHOD(VorbisCommentMetadata::insertComment) {
         unwrap(VorbisCommentMetadata);
-        MaybeLocal<Number> maybePos = Nan::To<Number>(info[0]);
-        if(maybePos.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybePos = numberFromJs<uint32_t>(info[0]);
+        if(maybePos.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
             return;
         }
@@ -148,7 +148,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata_VorbisComment_Entry n;
         if(!convertStringToEntry(info[1], n)) return;
 
-        uint32_t commentNum = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
+        uint32_t commentNum = maybePos.FromJust();
         assertThrowing(self->metadata->data.vorbis_comment.num_comments >= commentNum, "Invalid comment number");
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_insert_comment(self->metadata, commentNum, n, false);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
@@ -175,13 +175,13 @@ namespace flac_bindings {
 
     NAN_METHOD(VorbisCommentMetadata::deleteComment) {
         unwrap(VorbisCommentMetadata);
-        MaybeLocal<Number> maybePos = Nan::To<Number>(info[0]);
-        if(maybePos.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybePos = numberFromJs<uint32_t>(info[0]);
+        if(maybePos.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
             return;
         }
 
-        uint32_t commentNum = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
+        uint32_t commentNum = maybePos.FromJust();
         assertThrowing(self->metadata->data.vorbis_comment.num_comments > commentNum, "Invalid comment number");
         FLAC__bool r = FLAC__metadata_object_vorbiscomment_delete_comment(self->metadata, commentNum);
         info.GetReturnValue().Set(Nan::New<Boolean>(r));
@@ -189,8 +189,8 @@ namespace flac_bindings {
 
     NAN_METHOD(VorbisCommentMetadata::findEntryFrom) {
         unwrap(VorbisCommentMetadata);
-        MaybeLocal<Number> maybePos = Nan::To<Number>(info[0]);
-        if(maybePos.IsEmpty() || !info[0]->IsNumber()) {
+        auto maybePos = numberFromJs<uint32_t>(info[0]);
+        if(maybePos.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number");
             return;
         }
@@ -201,10 +201,10 @@ namespace flac_bindings {
             return;
         }
 
-        uint32_t pos = Nan::To<uint32_t>(maybePos.ToLocalChecked()).FromJust();
+        uint32_t pos = maybePos.FromJust();
         Nan::Utf8String key(maybeKey.ToLocalChecked());
         int r = FLAC__metadata_object_vorbiscomment_find_entry_from(self->metadata, pos, *key);
-        info.GetReturnValue().Set(Nan::New<Number>(r));
+        info.GetReturnValue().Set(numberToJs(r));
     }
 
     NAN_METHOD(VorbisCommentMetadata::removeEntryMatching) {
@@ -217,7 +217,7 @@ namespace flac_bindings {
 
         Nan::Utf8String key(maybeKey.ToLocalChecked());
         int r = FLAC__metadata_object_vorbiscomment_remove_entry_matching(self->metadata, *key);
-        info.GetReturnValue().Set(Nan::New<Number>(r));
+        info.GetReturnValue().Set(numberToJs(r));
     }
 
     NAN_METHOD(VorbisCommentMetadata::removeEntriesMatching) {
@@ -230,7 +230,7 @@ namespace flac_bindings {
 
         Nan::Utf8String key(maybeKey.ToLocalChecked());
         int r = FLAC__metadata_object_vorbiscomment_remove_entries_matching(self->metadata, *key);
-        info.GetReturnValue().Set(Nan::New<Number>(r));
+        info.GetReturnValue().Set(numberToJs(r));
     }
 
     NAN_METHOD(VorbisCommentMetadata::get) {

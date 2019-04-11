@@ -220,6 +220,11 @@ namespace flac_bindings {
         static NAN_METHOD(node_FLAC__stream_decoder_init_file) {
             UNWRAP_FLAC
 
+            if(!info[0]->IsString()) {
+                Nan::ThrowTypeError("Expected first argument to be string");
+                return;
+            }
+
             Local<String> fileNameJs = info[0].As<String>();
             if(info[1]->IsFunction()) self->writeCbk.Reset(info[1].As<Function>());
             if(info[2]->IsFunction()) self->metadataCbk.Reset(info[2].As<Function>());
@@ -238,6 +243,11 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__stream_decoder_init_ogg_file) {
             UNWRAP_FLAC
+
+            if(!info[0]->IsString()) {
+                Nan::ThrowTypeError("Expected first argument to be string");
+                return;
+            }
 
             Local<String> fileNameJs = info[0].As<String>();
             if(info[1]->IsFunction()) self->writeCbk.Reset(info[1].As<Function>());
@@ -313,8 +323,14 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__stream_decoder_seek_absolute) {
             UNWRAP_FLAC
+            auto maybeOffset = numberFromJs<uint64_t>(info[0]);
+            if(maybeOffset.IsNothing()) {
+                Nan::ThrowTypeError("Expected first argument to be number or bigint");
+                return;
+            }
+
             self->async = new Nan::AsyncResource("flac:decoder:seekAbsolute");
-            bool returnValue = FLAC__stream_decoder_seek_absolute(dec, numberFromJs<uint64_t>(info[0]).FromJust());
+            bool returnValue = FLAC__stream_decoder_seek_absolute(dec, maybeOffset.FromJust());
             info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
             delete self->async;
         }
@@ -577,8 +593,14 @@ static int read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], si
         Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> bytes2 = Nan::Get(retJust, Nan::New("bytes").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
-        *bytes = numberFromJs<uint64_t>(bytes2).FromJust();
-        return Nan::To<int32_t>(returnValue).FromJust();
+        auto maybeBytes2 = numberFromJs<uint64_t>(bytes2);
+        if(maybeBytes2.IsNothing()) {
+            Nan::ThrowTypeError("Expected bytes to be number or bigint");
+            return 1;
+        }
+
+        *bytes = maybeBytes2.FromJust();
+        return numberFromJs<int32_t>(returnValue).FromMaybe(0);
     } else {
         printf("readCbk returned emtpy, to avoid errors will return END_OF_STREAM\n");
         return 1;
@@ -602,7 +624,7 @@ static int seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void* 
     if(ret.IsEmpty()) {
         return 1;
     } else {
-        return Nan::To<int32_t>(ret.ToLocalChecked()).FromJust();
+        return numberFromJs<int32_t>(ret.ToLocalChecked()).FromMaybe(0);
     }
 }
 
@@ -623,7 +645,7 @@ static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void*
         Local<Value> offset2 = Nan::Get(retJust, Nan::New("offset").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
         *offset = numberFromJs<uint64_t>(offset2).FromJust();
-        return Nan::To<int32_t>(returnValue).FromJust();
+        return numberFromJs<int32_t>(returnValue).FromMaybe(0);
     } else {
         printf("tellCallback returned empty, to avoid errors will return ERROR\n");
         *offset = 0;
@@ -647,8 +669,14 @@ static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, voi
         Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> length2 = Nan::Get(retJust, Nan::New("length").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
-        *length = numberFromJs<uint64_t>(length2).FromJust();
-        return Nan::To<int32_t>(returnValue).FromJust();
+        auto maybeLength2 = numberFromJs<uint64_t>(length2);
+        if(maybeLength2.IsNothing()) {
+            Nan::ThrowTypeError("Expected length to be number or bigint");
+            return 1;
+        }
+
+        *length = maybeLength2.FromJust();
+        return numberFromJs<int32_t>(returnValue).FromMaybe(0);
     } else {
         printf("lengthCbk returned empty, to avoid further issues will return ERROR\n");
         *length = 0;
@@ -671,7 +699,7 @@ static FLAC__bool eof_callback(const FLAC__StreamDecoder* dec, void* data) {
     if(ret.IsEmpty()) {
         return false;
     } else {
-        return Nan::To<bool>(ret.ToLocalChecked()).FromMaybe(0);
+        return Nan::To<bool>(ret.ToLocalChecked()).FromMaybe(false);
     }
 }
 
@@ -698,7 +726,7 @@ static int write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* fra
     if(ret.IsEmpty()) {
         return 2;
     } else {
-        return Nan::To<int32_t>(ret.ToLocalChecked()).FromMaybe(0);
+        return numberFromJs<int32_t>(ret.ToLocalChecked()).FromMaybe(0);
     }
 }
 

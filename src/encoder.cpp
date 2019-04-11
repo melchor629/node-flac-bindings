@@ -211,7 +211,7 @@ namespace flac_bindings {
         static NAN_METHOD(node_FLAC__stream_encoder_init_file) {
             UNWRAP_FLAC
             if(!info[0]->IsString()) {
-                Nan::ThrowError("Second argument has to be a String");
+                Nan::ThrowError("Expected first argument to be a string");
                 return;
             }
 
@@ -225,7 +225,7 @@ namespace flac_bindings {
         static NAN_METHOD(node_FLAC__stream_encoder_init_ogg_file) {
             UNWRAP_FLAC
             if(!info[0]->IsString()) {
-                Nan::ThrowError("Second argument has to be a String");
+                Nan::ThrowError("Expected first argument to be a string");
                 return;
             }
 
@@ -246,24 +246,49 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__stream_encoder_process) {
             UNWRAP_FLAC
-            self->async = new Nan::AsyncResource("flac:encoder:process");
+            if(info[0].IsEmpty() || !info[0]->IsArray()) {
+                Nan::ThrowTypeError("Expected first argument to be an Array");
+                return;
+            }
+
             Local<Array> buffers = info[0].As<Array>();
             int32_t** _buffers = new int32_t*[buffers->Length()];
             for(uint32_t i = 0; i < buffers->Length(); i++) {
                 _buffers[i] = UnwrapPointer<int32_t>(Nan::Get(buffers, i).ToLocalChecked());
+                if(_buffers[i] == nullptr) {
+                    std::string err = "Expected element at " + std::to_string(i) + " to be a Buffer";
+                    Nan::ThrowTypeError(err.c_str());
+                    return;
+                }
             }
-            uint32_t samples = Nan::To<uint32_t>(info[1].As<Number>()).FromJust();
-            FLAC__bool ret = FLAC__stream_encoder_process(enc, _buffers, samples);
+
+            auto samples = numberFromJs<uint32_t>(info[1]);
+            if(samples.IsNothing()) {
+                Nan::ThrowTypeError("Expected second argument to be a number");
+                return;
+            }
+
+            self->async = new Nan::AsyncResource("flac:encoder:process");
+            FLAC__bool ret = FLAC__stream_encoder_process(enc, _buffers, samples.FromJust());
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
             delete self->async;
         }
 
         static NAN_METHOD(node_FLAC__stream_encoder_process_interleaved) {
             UNWRAP_FLAC
-            self->async = new Nan::AsyncResource("flac:encoder:processInterleaved");
             const int32_t* buffer = UnwrapPointer<const int32_t>(info[0]);
-            uint32_t samples = Nan::To<uint32_t>(info[1].As<Number>()).FromJust();
-            FLAC__bool ret = FLAC__stream_encoder_process_interleaved(enc, buffer, samples);
+            auto samples = numberFromJs<uint32_t>(info[1]);
+
+            if(buffer == nullptr) {
+                Nan::ThrowTypeError("Expected first argument to be a Buffer");
+                return;
+            } else if(samples.IsNothing()) {
+                Nan::ThrowTypeError("Expected second argument to be a number");
+                return;
+            }
+
+            self->async = new Nan::AsyncResource("flac:encoder:processInterleaved");
+            FLAC__bool ret = FLAC__stream_encoder_process_interleaved(enc, buffer, samples.FromJust());
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
             delete self->async;
         }
@@ -306,11 +331,11 @@ namespace flac_bindings {
             FLAC__stream_encoder_get_verify_decoder_error_stats(enc, &absolute_sample, &frame_number, &channel, &sample, &expected, &got);
 
             Nan::Set(obj, Nan::New("absoluteSample").ToLocalChecked(), numberToJs(absolute_sample));
-            Nan::Set(obj, Nan::New("frameNumber").ToLocalChecked(), Nan::New<Number>(frame_number));
-            Nan::Set(obj, Nan::New("channel").ToLocalChecked(), Nan::New<Number>(channel));
-            Nan::Set(obj, Nan::New("sample").ToLocalChecked(), Nan::New<Number>(sample));
-            Nan::Set(obj, Nan::New("expected").ToLocalChecked(), Nan::New<Number>(expected));
-            Nan::Set(obj, Nan::New("got").ToLocalChecked(), Nan::New<Number>(got));
+            Nan::Set(obj, Nan::New("frameNumber").ToLocalChecked(), numberToJs(frame_number));
+            Nan::Set(obj, Nan::New("channel").ToLocalChecked(), numberToJs(channel));
+            Nan::Set(obj, Nan::New("sample").ToLocalChecked(), numberToJs(sample));
+            Nan::Set(obj, Nan::New("expected").ToLocalChecked(), numberToJs(expected));
+            Nan::Set(obj, Nan::New("got").ToLocalChecked(), numberToJs(got));
             info.GetReturnValue().Set(obj);
         }
 
@@ -487,7 +512,7 @@ static int read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t* 
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
     Handle<Value> args[] = {
         WrapPointer(buffer, *bytes).ToLocalChecked(),
-        Nan::New<Number>(*bytes)
+        numberToJs(*bytes)
     };
 
     Nan::TryCatch tc;tc.SetVerbose(true);
@@ -504,8 +529,14 @@ static int read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t* 
         Local<Object> retJust = ret.As<Object>();
         Local<Value> bytes2 = Nan::Get(retJust, Nan::New("bytes").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
-        *bytes = (size_t) Nan::To<int32_t>(bytes2).FromJust();
-        return Nan::To<int32_t>(returnValue).FromJust();
+        auto maybeBytes2 = numberFromJs<uint64_t>(bytes2);
+        if(maybeBytes2.IsNothing()) {
+            Nan::ThrowTypeError("Expected bytes to be number or bigint");
+            return 1;
+        }
+
+        *bytes = (size_t) maybeBytes2.FromJust();
+        return numberFromJs<int32_t>(returnValue).FromMaybe(0);
     }
 }
 
@@ -514,9 +545,9 @@ static int write_callback(const FLAC__StreamEncoder* enc, const char buffer[], s
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
     Handle<Value> args[] = {
         WrapPointer(buffer, bytes).ToLocalChecked(),
-        Nan::New<Number>(bytes),
-        Nan::New<Number>(samples),
-        Nan::New<Number>(frame)
+        numberToJs(bytes),
+        numberToJs(samples),
+        numberToJs(frame)
     };
 
     Nan::TryCatch tc;tc.SetVerbose(true);
@@ -526,7 +557,7 @@ static int write_callback(const FLAC__StreamEncoder* enc, const char buffer[], s
         tc.ReThrow();
         return 2;
     }
-    int32_t _b = Nan::To<int32_t>(ret).FromJust();
+    int32_t _b = numberFromJs<int32_t>(ret).FromMaybe(0);
     return _b;
 }
 
@@ -544,7 +575,7 @@ static int seek_callback(const FLAC__StreamEncoder* enc, uint64_t offset, void* 
         tc.ReThrow();
         return 1;
     }
-    return Nan::To<int>(ret).FromJust();
+    return numberFromJs<int>(ret).FromMaybe(0);
 }
 
 static int tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void* data) {
@@ -568,8 +599,14 @@ static int tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void*
         Local<Object> retJust = ret.As<Object>();
         Local<Value> offset2 = Nan::Get(retJust, Nan::New("offset").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
-        *offset = numberFromJs<uint64_t>(offset2).FromJust();
-        return Nan::To<int32_t>(returnValue).FromJust();
+        auto maybeOffset2 = numberFromJs<uint64_t>(offset2);
+        if(maybeOffset2.IsNothing()) {
+            Nan::ThrowTypeError("Expected offset to be number or bigint");
+            return 1;
+        }
+
+        *offset = maybeOffset2.FromJust();
+        return numberFromJs<int32_t>(returnValue).FromMaybe(0);
     }
 }
 

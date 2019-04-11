@@ -26,7 +26,7 @@ namespace flac_bindings {
                 numberFromJs<FLAC__MetadataType>(info[0]).FromMaybe(FLAC__MetadataType::FLAC__METADATA_TYPE_UNDEFINED)
 #endif
             ));
-            Local<Value> args[] = { Nan::New<Number>(undefinedNum) };
+            Local<Value> args[] = { numberToJs<int>(undefinedNum) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
         }
 

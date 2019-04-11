@@ -10,8 +10,8 @@ namespace flac_bindings {
 
     V8_SETTER(PictureMetadata::pictureType) {
         unwrap(PictureMetadata);
-        checkValue(Number) {
-            self->metadata->data.picture.type = (FLAC__StreamMetadata_Picture_Type) getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.picture.type = (FLAC__StreamMetadata_Picture_Type) newValue;
         }
     }
 
@@ -54,8 +54,8 @@ namespace flac_bindings {
 
     V8_SETTER(PictureMetadata::width) {
         unwrap(PictureMetadata);
-        checkValue(Number) {
-            self->metadata->data.picture.width = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.picture.width = newValue;
         }
     }
 
@@ -66,8 +66,8 @@ namespace flac_bindings {
 
     V8_SETTER(PictureMetadata::height) {
         unwrap(PictureMetadata);
-        checkValue(Number) {
-            self->metadata->data.picture.height = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.picture.height = newValue;
         }
     }
 
@@ -78,8 +78,8 @@ namespace flac_bindings {
 
     V8_SETTER(PictureMetadata::depth) {
         unwrap(PictureMetadata);
-        checkValue(Number) {
-            self->metadata->data.picture.depth = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.picture.depth = newValue;
         }
     }
 
@@ -90,8 +90,8 @@ namespace flac_bindings {
 
     V8_SETTER(PictureMetadata::colors) {
         unwrap(PictureMetadata);
-        checkValue(Number) {
-            self->metadata->data.picture.colors = getValue(uint32_t);
+        checkValueIsNumber(uint32_t) {
+            self->metadata->data.picture.colors = newValue;
         }
     }
 
@@ -121,7 +121,7 @@ namespace flac_bindings {
             Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
         } else {
-            Local<Value> args[] = { Nan::New<Number>(FLAC__MetadataType::FLAC__METADATA_TYPE_PICTURE) };
+            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_PICTURE) };
             if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
         }
 

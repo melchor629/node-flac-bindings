@@ -9,23 +9,20 @@ namespace flac_bindings {
 
     V8_SETTER(CueSheetIndex::offset) {
         unwrap(CueSheetIndex);
-        auto maybeValue = numberFromJs<uint64_t>(value);
-        if(maybeValue.IsJust()) {
-            self->index.offset = maybeValue.FromJust();
-        } else {
-            Nan::ThrowTypeError("Value is not a number nor a bigint");
+        checkValueIsNumber(uint64_t) {
+            self->index.offset = newValue;
         }
     }
 
     V8_GETTER(CueSheetIndex::number) {
         unwrap(CueSheetIndex);
-        info.GetReturnValue().Set(Nan::New(self->index.number));
+        info.GetReturnValue().Set(numberToJs(self->index.number));
     }
 
     V8_SETTER(CueSheetIndex::number) {
         unwrap(CueSheetIndex);
-        checkValue(Number) {
-            self->index.number = getValue(uint32_t) & 0xFF;
+        checkValueIsNumber(uint32_t) {
+            self->index.number = newValue & 0xFF;
         }
     }
 
