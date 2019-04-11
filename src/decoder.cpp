@@ -568,13 +568,13 @@ static int read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], si
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->readCbk);
-    Local<Value> ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args).ToLocalChecked();
+    auto ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
     }
     if(!ret.IsEmpty()) {
-        Local<Object> retJust = ret.As<Object>();
+        Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> bytes2 = Nan::Get(retJust, Nan::New("bytes").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
         *bytes = numberFromJs<uint64_t>(bytes2).FromJust();
@@ -594,15 +594,15 @@ static int seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void* 
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->seekCbk);
-    Local<Value> ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args).ToLocalChecked();
+    auto ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
-        return 0;
+        return 1;
     }
     if(ret.IsEmpty()) {
-        return 0;
+        return 1;
     } else {
-        return Nan::To<int32_t>(ret).FromJust();
+        return Nan::To<int32_t>(ret.ToLocalChecked()).FromJust();
     }
 }
 
@@ -613,13 +613,13 @@ static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void*
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->tellCbk);
-    Local<Value> ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args).ToLocalChecked();
+    auto ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
     }
     if(!ret.IsEmpty()) {
-        Local<Object> retJust = ret.As<Object>();
+        Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> offset2 = Nan::Get(retJust, Nan::New("offset").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
         *offset = numberFromJs<uint64_t>(offset2).FromJust();
@@ -638,19 +638,19 @@ static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, voi
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->lengthCbk);
-    Local<Value> ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args).ToLocalChecked();
+    auto ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
     }
     if(!ret.IsEmpty()) {
-        Local<Object> retJust = ret.As<Object>();
+        Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> length2 = Nan::Get(retJust, Nan::New("length").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
         *length = numberFromJs<uint64_t>(length2).FromJust();
         return Nan::To<int32_t>(returnValue).FromJust();
     } else {
-        printf("lengthCbk returned empty, to avoid errors will return ERROR\n");
+        printf("lengthCbk returned empty, to avoid further issues will return ERROR\n");
         *length = 0;
         return 1;
     }
@@ -663,7 +663,7 @@ static FLAC__bool eof_callback(const FLAC__StreamDecoder* dec, void* data) {
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->eofCbk);
-    Local<Value> ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 0, args).ToLocalChecked();
+    auto ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 0, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
         return false;
@@ -671,7 +671,7 @@ static FLAC__bool eof_callback(const FLAC__StreamDecoder* dec, void* data) {
     if(ret.IsEmpty()) {
         return false;
     } else {
-        return Nan::To<bool>(ret).FromMaybe(0);
+        return Nan::To<bool>(ret.ToLocalChecked()).FromMaybe(0);
     }
 }
 
@@ -690,15 +690,15 @@ static int write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* fra
 
     Nan::TryCatch tc; tc.SetVerbose(true);
     Local<Function> func = Nan::New(cbks->writeCbk);
-    Local<Value> ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 2, args).ToLocalChecked();
+    auto ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 2, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 2;
     }
     if(ret.IsEmpty()) {
-        return 0;
+        return 2;
     } else {
-        return Nan::To<int32_t>(ret).FromMaybe(0);
+        return Nan::To<int32_t>(ret.ToLocalChecked()).FromMaybe(0);
     }
 }
 

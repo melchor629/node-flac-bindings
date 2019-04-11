@@ -34,6 +34,7 @@ declare namespace api {
             tellCallback?: Decoder.TellCallback,
             lengthCallback?: Decoder.LengthCallback,
             eofCallback?: Decoder.EOFCallback,
+            writeCallback?: Decoder.WriteCallback,
             metadataCallback?: Decoder.MetadataCallback,
             errorCallback?: Decoder.ErrorCallback
         ): number;
@@ -43,6 +44,7 @@ declare namespace api {
             tellCallback?: Decoder.TellCallback,
             lengthCallback?: Decoder.LengthCallback,
             eofCallback?: Decoder.EOFCallback,
+            writeCallback?: Decoder.WriteCallback,
             metadataCallback?: Decoder.MetadataCallback,
             errorCallback?: Decoder.ErrorCallback
         ): number;
