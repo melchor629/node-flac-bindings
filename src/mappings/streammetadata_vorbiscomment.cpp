@@ -40,7 +40,7 @@ namespace flac_bindings {
 
             Local<String> posKey = Nan::New("pos").ToLocalChecked();
             VorbisCommentMetadata* self = Nan::ObjectWrap::Unwrap<VorbisCommentMetadata>(parent.ToLocalChecked().As<Object>());
-            Local<Number> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked().As<Number>();
+            Local<Value> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked();
             uint32_t pos = numberFromJs<uint32_t>(jsPos).FromJust();
             Local<Object> ret = Nan::New<Object>();
             if(pos >= self->metadata->data.vorbis_comment.num_comments) {

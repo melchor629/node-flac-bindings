@@ -70,7 +70,7 @@ namespace flac_bindings {
 
             Local<String> posKey = Nan::New("pos").ToLocalChecked();
             CueSheetMetadata* self = Nan::ObjectWrap::Unwrap<CueSheetMetadata>(parent.ToLocalChecked().As<Object>());
-            Local<Number> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked().As<Number>();
+            Local<Value> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked();
             uint32_t pos = numberFromJs<uint32_t>(jsPos).FromJust();
             Local<Object> ret = Nan::New<Object>();
             if(pos >= self->metadata->data.cue_sheet.num_tracks) {

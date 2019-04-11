@@ -93,4 +93,8 @@ describe('encode & decode', function() {
         comparePCM(tmpFile.path, 24);
     });
 
+    it('gc should work', function() {
+        require('./gc')();
+    });
+
 });

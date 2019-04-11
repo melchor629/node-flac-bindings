@@ -1,3 +1,4 @@
+#include <memory>
 #include <nan.h>
 #include "dl.hpp"
 
@@ -109,7 +110,7 @@ namespace flac_bindings {
         StreamEncoder();
         ~StreamEncoder();
 
-        Nan::Persistent<Function> readCbk, writeCbk, seekCbk, tellCbk, metadataCbk, progressCbk;
+        std::shared_ptr<Nan::Callback> readCbk, writeCbk, seekCbk, tellCbk, metadataCbk, progressCbk;
         Nan::AsyncResource* async = nullptr;
         FLAC__StreamEncoder* enc = nullptr;
 
@@ -170,17 +171,17 @@ namespace flac_bindings {
         static NAN_METHOD(node_FLAC__stream_encoder_init_stream) {
             UNWRAP_FLAC
 
-            if(info[0]->IsFunction()) self->writeCbk.Reset(info[0].As<Function>());
-            if(info[1]->IsFunction()) self->seekCbk.Reset(info[1].As<Function>());
-            if(info[2]->IsFunction()) self->tellCbk.Reset(info[2].As<Function>());
-            if(info[3]->IsFunction()) self->metadataCbk.Reset(info[3].As<Function>());
+            if(info[0]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[0].As<Function>()));
+            if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
+            if(info[2]->IsFunction()) self->tellCbk.reset(new Nan::Callback(info[2].As<Function>()));
+            if(info[3]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[3].As<Function>()));
 
             self->async = new Nan::AsyncResource("flac:encoder:initStream");
             int ret = FLAC__stream_encoder_init_stream(enc,
-                self->writeCbk.IsEmpty() ? nullptr : write_callback,
-                self->seekCbk.IsEmpty() ? nullptr : seek_callback,
-                self->tellCbk.IsEmpty() ? nullptr : tell_callback,
-                self->metadataCbk.IsEmpty() ? nullptr : metadata_callback,
+                !self->writeCbk ? nullptr : write_callback,
+                !self->seekCbk ? nullptr : seek_callback,
+                !self->tellCbk ? nullptr : tell_callback,
+                !self->metadataCbk ? nullptr : metadata_callback,
                 self);
 
             info.GetReturnValue().Set(Nan::New(ret));
@@ -189,19 +190,19 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__stream_encoder_init_ogg_stream) {
             UNWRAP_FLAC
-            if(info[0]->IsFunction()) self->readCbk.Reset(info[0].As<Function>());
-            if(info[1]->IsFunction()) self->writeCbk.Reset(info[1].As<Function>());
-            if(info[2]->IsFunction()) self->seekCbk.Reset(info[2].As<Function>());
-            if(info[3]->IsFunction()) self->tellCbk.Reset(info[3].As<Function>());
-            if(info[4]->IsFunction()) self->metadataCbk.Reset(info[4].As<Function>());
+            if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
+            if(info[1]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[1].As<Function>()));
+            if(info[2]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[2].As<Function>()));
+            if(info[3]->IsFunction()) self->tellCbk.reset(new Nan::Callback(info[3].As<Function>()));
+            if(info[4]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[4].As<Function>()));
 
             self->async = new Nan::AsyncResource("flac:encoder:initOggStream");
             int ret = FLAC__stream_encoder_init_ogg_stream(enc,
-                self->readCbk.IsEmpty() ? nullptr : read_callback,
-                self->writeCbk.IsEmpty() ? nullptr : write_callback,
-                self->seekCbk.IsEmpty() ? nullptr : seek_callback,
-                self->tellCbk.IsEmpty() ? nullptr : tell_callback,
-                self->metadataCbk.IsEmpty() ? nullptr : metadata_callback,
+                !self->readCbk ? nullptr : read_callback,
+                !self->writeCbk ? nullptr : write_callback,
+                !self->seekCbk ? nullptr : seek_callback,
+                !self->tellCbk ? nullptr : tell_callback,
+                !self->metadataCbk ? nullptr : metadata_callback,
                 self);
 
             info.GetReturnValue().Set(Nan::New(ret));
@@ -215,7 +216,7 @@ namespace flac_bindings {
                 return;
             }
 
-            if(info[1]->IsFunction()) self->progressCbk.Reset(info[1].As<Function>());
+            if(info[1]->IsFunction()) self->progressCbk.reset(new Nan::Callback(info[1].As<Function>()));
             Nan::Utf8String str(info[0]);
 
             int ret = FLAC__stream_encoder_init_file(enc, *str, info[1]->IsFunction() ? progress_callback : nullptr, self);
@@ -229,7 +230,7 @@ namespace flac_bindings {
                 return;
             }
 
-            if(info[1]->IsFunction()) self->progressCbk.Reset(info[1].As<Function>());
+            if(info[1]->IsFunction()) self->progressCbk.reset(new Nan::Callback(info[1].As<Function>()));
             Nan::Utf8String str(info[0]);
 
             int ret = FLAC__stream_encoder_init_ogg_file(enc, *str, info[1]->IsFunction() ? progress_callback : nullptr, self);
@@ -420,12 +421,6 @@ namespace flac_bindings {
 
     StreamEncoder::~StreamEncoder() {
         FLAC__stream_encoder_delete(enc);
-        readCbk.Reset();
-        writeCbk.Reset();
-        seekCbk.Reset();
-        tellCbk.Reset();
-        metadataCbk.Reset();
-        progressCbk.Reset();
     }
 
     NAN_MODULE_INIT(StreamEncoder::initEncoder) {
@@ -515,9 +510,9 @@ static int read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t* 
         numberToJs(*bytes)
     };
 
-    Nan::TryCatch tc;tc.SetVerbose(true);
-    Local<Function> func = Nan::New(cbks->readCbk);
-    Local<Value> ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 2, args).ToLocalChecked();
+    Nan::TryCatch tc;
+    tc.SetVerbose(true);
+    auto ret = (*cbks->readCbk)(cbks->async, 2, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 2;
@@ -550,9 +545,9 @@ static int write_callback(const FLAC__StreamEncoder* enc, const char buffer[], s
         numberToJs(frame)
     };
 
-    Nan::TryCatch tc;tc.SetVerbose(true);
-    Local<Function> func = Nan::New(cbks->writeCbk);
-    Local<Value> ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 4, args).ToLocalChecked();
+    Nan::TryCatch tc;
+    tc.SetVerbose(true);
+    Local<Value> ret = (*cbks->writeCbk)(cbks->async, 4, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 2;
@@ -569,8 +564,7 @@ static int seek_callback(const FLAC__StreamEncoder* enc, uint64_t offset, void* 
     };
 
     Nan::TryCatch tc;tc.SetVerbose(true);
-    Local<Function> func = Nan::New(cbks->seekCbk);
-    Local<Value> ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args).ToLocalChecked();
+    Local<Value> ret = (*cbks->seekCbk)(cbks->async, 1, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
@@ -585,9 +579,9 @@ static int tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void*
         numberToJs(*offset)
     };
 
-    Nan::TryCatch tc;tc.SetVerbose(true);
-    Local<Function> func = Nan::New(cbks->tellCbk);
-    Local<Value> ret = cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args).ToLocalChecked();
+    Nan::TryCatch tc;
+    tc.SetVerbose(true);
+    Local<Value> ret = (*cbks->tellCbk)(cbks->async, 1, args).ToLocalChecked();
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
@@ -617,9 +611,12 @@ static void metadata_callback(const FLAC__StreamEncoder* enc, const FLAC__Stream
         flac_bindings::structToJs(metadata)
     };
 
-    Nan::TryCatch tc;tc.SetVerbose(true);
-    Local<Function> func = Nan::New(cbks->metadataCbk);
-    cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 1, args);
+    Nan::TryCatch tc;
+    tc.SetVerbose(true);
+    (*cbks->metadataCbk)(cbks->async, 1, args);
+    if(tc.HasCaught()) {
+        tc.ReThrow();
+    }
 }
 
 static void progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_written, uint64_t samples_written, unsigned frames_written, unsigned total_frames_estimate, void* data) {
@@ -632,9 +629,9 @@ static void progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_wri
         numberToJs(total_frames_estimate)
     };
 
-    Nan::TryCatch tc;tc.SetVerbose(true);
-    Local<Function> func = Nan::New(cbks->progressCbk);
-    cbks->async->runInAsyncScope(Nan::GetCurrentContext()->Global(), func, 4, args);
+    Nan::TryCatch tc;
+    tc.SetVerbose(true);
+    (*cbks->progressCbk)(cbks->async, 4, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
     }
