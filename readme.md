@@ -27,7 +27,7 @@ Almost every function/method expects his parameters in his right type. If it not
 
 Callbacks don't follow exactly the signature that shows in Encoder and Decoder sections, they don't need some of the parameters as in JS there are other ways to get the encoder/decoder instance and some context. The init functions don't receive any private data.
 
-You need node 8 or higher. Recommended to have 10.x series with `BigInt` support to have the number represented the right way (without truncation - `Number` only stores 48 bit integers! 🤨).
+You need node 8 or higher. Recommended to have 10.x series with `BigInt` support to have the number represented the right way (without truncation - `Number` can only store 53 bit integers! 🤨).
 
 ## How to install
 ```
@@ -38,8 +38,10 @@ $ yarn add flac-bindings
 
 For use it, include with
 
-```
-const flac = require('flag-bindings');
+```javascript
+const flac = require('flac-bindings');  // default node import
+import flac from 'flac-bindings';       // ES6 import
+import * as flac from 'flac-bindings';  // TypeScript import
 ```
 
 `flac` will be an object with `{ api: [Bindings API], StreamEncoder: ..., StreamDecoder: ..., FileEncoder: ..., FileDecoder: ... }`. If the `libFLAC` library is not in the loader's path, you will get an object with a load function (`{ load: [Function load] }`). You must call `load()` with the first argument as the **full** path to the `libFLAC` dynamic library, and then `flac` (the object) will have all objects. You can also use the environment variable `FLAC_LIBRARY` to set a path to the library (it won't throw any exception if it fails).
