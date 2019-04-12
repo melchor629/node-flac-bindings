@@ -66,6 +66,10 @@ NAN_METHOD(_JOIN(node_FLAC__stream_decoder_set_, fn)) { \
     info.GetReturnValue().Set(Nan::New(bool(output))); \
 }
 
+#define CHECK_ASYNC_IS_NULL \
+if(self->async != nullptr) { Nan::ThrowError("Multiple calls to some methods of the Decoder are not allowed"); return; }
+
+
 extern "C" {
     FLAC_FUNC(FLAC__StreamDecoder*, new, void);
     FLAC_FUNC(void, delete, FLAC__StreamDecoder*);
@@ -163,6 +167,7 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__stream_decoder_init_stream) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
 
             if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
             if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
@@ -187,10 +192,12 @@ namespace flac_bindings {
             );
             info.GetReturnValue().Set(Nan::New(ret));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_init_ogg_stream) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
 
             if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
             if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
@@ -215,10 +222,12 @@ namespace flac_bindings {
             );
             info.GetReturnValue().Set(Nan::New(ret));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_init_file) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
 
             if(!info[0]->IsString()) {
                 Nan::ThrowTypeError("Expected first argument to be string");
@@ -239,10 +248,12 @@ namespace flac_bindings {
                 self);
             info.GetReturnValue().Set(Nan::New(ret));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_init_ogg_file) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
 
             if(!info[0]->IsString()) {
                 Nan::ThrowTypeError("Expected first argument to be string");
@@ -262,7 +273,8 @@ namespace flac_bindings {
                 !self->errorCbk ? nullptr : error_callback,
                 self);
             info.GetReturnValue().Set(Nan::New(ret));
-            self->async = new Nan::AsyncResource("flac:decoder:initOggFile");
+            delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_finish) {
@@ -271,58 +283,72 @@ namespace flac_bindings {
             bool returnValue = FLAC__stream_decoder_finish(dec);
             info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_flush) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
             self->async = new Nan::AsyncResource("flac:decoder:flush");
             bool returnValue = FLAC__stream_decoder_flush(dec);
             info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_reset) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
             self->async = new Nan::AsyncResource("flac:decoder:initStream");
             bool returnValue = FLAC__stream_decoder_reset(dec);
             info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_process_single) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
             self->async = new Nan::AsyncResource("flac:decoder:processSingle");
             bool returnValue = FLAC__stream_decoder_process_single(dec);
             info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_process_until_end_of_metadata) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
             self->async = new Nan::AsyncResource("flac:decoder:processUntilEndOfMetadata");
             bool returnValue = FLAC__stream_decoder_process_until_end_of_metadata(dec);
             info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_process_until_end_of_stream) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
             self->async = new Nan::AsyncResource("flac:decoder:processUntilEndOfStream");
             bool returnValue = FLAC__stream_decoder_process_until_end_of_stream(dec);
             info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_skip_single_frame) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
             self->async = new Nan::AsyncResource("flac:decoder:skipSingleFrame");
             bool returnValue = FLAC__stream_decoder_skip_single_frame(dec);
             info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_seek_absolute) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
             auto maybeOffset = numberFromJs<uint64_t>(info[0]);
             if(maybeOffset.IsNothing()) {
                 Nan::ThrowTypeError("Expected first argument to be number or bigint");
@@ -333,6 +359,7 @@ namespace flac_bindings {
             bool returnValue = FLAC__stream_decoder_seek_absolute(dec, maybeOffset.FromJust());
             info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
             delete self->async;
+            self->async = nullptr;
         }
 
         static NAN_METHOD(node_FLAC__stream_decoder_set_metadata_respond_application) {
@@ -397,6 +424,7 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__stream_decoder_get_decode_position) {
             UNWRAP_FLAC
+            CHECK_ASYNC_IS_NULL
             uint64_t pos;
             self->async = new Nan::AsyncResource("flac:decoder:decodePosition");
             FLAC__bool ret = FLAC__stream_decoder_get_decode_position(dec, &pos);
@@ -406,6 +434,7 @@ namespace flac_bindings {
                 info.GetReturnValue().SetNull();
             }
             delete self->async;
+            self->async = nullptr;
         }
 
         static FlacEnumDefineReturnType createStateEnum() {
