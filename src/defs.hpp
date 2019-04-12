@@ -44,7 +44,7 @@ if(_newValue.IsEmpty() || !_newValue.ToLocalChecked()->Is##type ()) { \
 #define V8_GETTER(methodName) void methodName(Local<Name> property, const PropertyCallbackInfo<Value> &info)
 #define V8_SETTER(methodName) void methodName(Local<Name> property, Local<Value> value, const PropertyCallbackInfo<void>& info)
 
-#define unwrap(type) if(info.This()->InternalFieldCount() == 0) return; \
+#define unwrap(type) if(info.This()->InternalFieldCount() == 0) { Nan::ThrowTypeError("Unknown this object type"); return; } \
 type* self = Nan::ObjectWrap::Unwrap<type>(info.This());
 
 #define nativeReadOnlyProperty(obj, name, fnName) \
@@ -58,15 +58,19 @@ type* self = Nan::ObjectWrap::Unwrap<type>(info.This());
 template<typename T,
          typename std::enable_if_t<std::is_signed<T>::value, int> = 0>
 static inline Nan::Maybe<T> numberFromJs(Local<BigInt> bigNum) {
-    if(bigNum->WordCount() > 1) return Nan::Nothing<T>();
-    return Nan::Just((T) bigNum->Int64Value());
+    bool lossless = false;
+    int64_t num = bigNum->Int64Value(&lossless);
+    if(!lossless) return Nan::Nothing<T>();
+    return Nan::Just((T) num);
 }
 
 template<typename T,
          typename std::enable_if_t<std::is_unsigned<T>::value, unsigned> = 0>
 static inline Nan::Maybe<T> numberFromJs(Local<BigInt> bigNum) {
-    if(bigNum->WordCount() > 1) return Nan::Nothing<T>();
-    return Nan::Just((T) bigNum->Uint64Value());
+    bool lossless = false;
+    uint64_t num = bigNum->Uint64Value(&lossless);
+    if(!lossless) return Nan::Nothing<T>();
+    return Nan::Just((T) num);
 }
 #endif
 
@@ -96,9 +100,9 @@ template<typename T,
 static inline Local<Value> numberToJs(T number, bool forceBigInt = false) {
 #if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
     if(!forceBigInt && number <= 9007199254740991) {
-        return Nan::New<Number>(number);
+        return Nan::New<Number>((int64_t) number);
     }
-    return BigInt::NewFromUnsigned(Isolate::GetCurrent(), number);
+    return BigInt::NewFromUnsigned(Isolate::GetCurrent(), (uint64_t) number);
 #else
     return Nan::New<Number>((int64_t) number);
 #endif
@@ -109,9 +113,9 @@ template<typename T,
 static inline Local<Value> numberToJs(T number, bool forceBigInt = false) {
 #if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
     if(!forceBigInt && -9007199254740991 <= number && number <= 9007199254740991) {
-        return Nan::New<Number>(number);
+        return Nan::New<Number>((int64_t) number);
     }
-    return BigInt::New(Isolate::GetCurrent(), number);
+    return BigInt::New(Isolate::GetCurrent(), (int64_t) number);
 #else
     return Nan::New<Number>((int64_t) number);
 #endif
@@ -163,19 +167,20 @@ namespace Nan {
 
 typedef std::tuple<Local<Object>, Local<Object>> FlacEnumDefineReturnType;
 
-#define flacEnum_defineValue(enumObject, reverseEnumObject, name, value) \
-Nan::DefineOwnProperty(\
-    enumObject, \
-    Nan::New(name).ToLocalChecked(), \
-    Nan::New<Number>(value), \
-    (PropertyAttribute) (PropertyAttribute::ReadOnly | PropertyAttribute::DontDelete) \
-); \
-Nan::DefineOwnProperty(\
-    reverseEnumObject, \
-    Nan::To<String>(Nan::New<Number>(value)).ToLocalChecked(), \
-    Nan::New(name).ToLocalChecked(), \
-    (PropertyAttribute) (PropertyAttribute::ReadOnly | PropertyAttribute::DontDelete) \
-);
+static inline void flacEnum_defineValue(Local<Object> &enumObject, Local<Object> &reverseEnumObject, const char* name, int value) {
+    Nan::DefineOwnProperty(
+        enumObject,
+        Nan::New(name).ToLocalChecked(),
+        Nan::New<Number>(value),
+        (PropertyAttribute) (PropertyAttribute::ReadOnly | PropertyAttribute::DontDelete)
+    );
+    Nan::DefineOwnProperty(
+        reverseEnumObject,
+        Nan::To<String>(Nan::New<Number>(value)).ToLocalChecked(),
+        Nan::New(name).ToLocalChecked(),
+        (PropertyAttribute) (PropertyAttribute::ReadOnly | PropertyAttribute::DontDelete)
+    );
+}
 
 #define flacEnum_declareInObject(obj, name, tuple) {\
 auto impl = tuple; \

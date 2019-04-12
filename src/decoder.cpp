@@ -581,7 +581,7 @@ static int read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], si
         tc.ReThrow();
         return 1;
     }
-    if(!ret.IsEmpty()) {
+    if(!ret.IsEmpty() && ret.ToLocalChecked()->IsObject()) {
         Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> bytes2 = Nan::Get(retJust, Nan::New("bytes").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
@@ -594,6 +594,7 @@ static int read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], si
         *bytes = maybeBytes2.FromJust();
         return numberFromJs<int32_t>(returnValue).FromMaybe(0);
     } else {
+        Nan::ThrowError("Read callback did not return an object");
         printf("readCbk returned emtpy, to avoid errors will return END_OF_STREAM\n");
         return 1;
     }
@@ -632,13 +633,14 @@ static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void*
         tc.ReThrow();
         return 1;
     }
-    if(!ret.IsEmpty()) {
+    if(!ret.IsEmpty() && ret.ToLocalChecked()->IsObject()) {
         Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> offset2 = Nan::Get(retJust, Nan::New("offset").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
         *offset = numberFromJs<uint64_t>(offset2).FromJust();
         return numberFromJs<int32_t>(returnValue).FromMaybe(0);
     } else {
+        Nan::ThrowError("Tell callback did not return an object");
         printf("tellCallback returned empty, to avoid errors will return ERROR\n");
         *offset = 0;
         return 1;
@@ -657,7 +659,7 @@ static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, voi
         tc.ReThrow();
         return 1;
     }
-    if(!ret.IsEmpty()) {
+    if(!ret.IsEmpty() && ret.ToLocalChecked()->IsObject()) {
         Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> length2 = Nan::Get(retJust, Nan::New("length").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
@@ -670,6 +672,7 @@ static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, voi
         *length = maybeLength2.FromJust();
         return numberFromJs<int32_t>(returnValue).FromMaybe(0);
     } else {
+        Nan::ThrowError("Length callback did not return an object");
         printf("lengthCbk returned empty, to avoid further issues will return ERROR\n");
         *length = 0;
         return 1;

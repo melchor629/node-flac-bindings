@@ -301,7 +301,19 @@ namespace flac_bindings {
             FLAC__StreamMetadata** metadatas = new FLAC__StreamMetadata*[num_blocks];
 
             for(uint32_t i = 0; i < num_blocks; i++) {
-                metadatas[i] = jsToStruct<FLAC__StreamMetadata>(Nan::Get(metadata, i).ToLocalChecked().As<Object>());
+                auto maybeMetadata = Nan::Get(metadata, i);
+                if(maybeMetadata.IsEmpty() || !maybeMetadata.ToLocalChecked()->IsObject()) {
+                    auto errorMessage = "Expected element at position " + std::to_string(i) + " to be an object";
+                    Nan::ThrowTypeError(errorMessage.c_str());
+                    return;
+                }
+
+                metadatas[i] = jsToStruct<FLAC__StreamMetadata>(maybeMetadata.ToLocalChecked().As<Object>());
+                if(metadatas[i] == nullptr) {
+                    auto errorMessage = "Expected element at position " + std::to_string(i) + " to be a Metadata object";
+                    Nan::ThrowTypeError(errorMessage.c_str());
+                    return;
+                }
             }
 
             FLAC__bool ret = FLAC__stream_encoder_set_metadata(enc, metadatas, num_blocks);
@@ -368,10 +380,10 @@ namespace flac_bindings {
             flacEnum_defineValue(obj1, obj2, "INVALID_BLOCK_SIZE", 7);
             flacEnum_defineValue(obj1, obj2, "INVALID_MAX_LPC_ORDER", 8);
             flacEnum_defineValue(obj1, obj2, "INVALID_QLP_COEFF_PRECISION", 9);
-            flacEnum_defineValue(obj1, obj2,"BLOCK_SIZE_TOO_SMALL_FOR_LPC_ORDER", 10);
-            flacEnum_defineValue(obj1, obj2,"NOT_STREAMABLE", 11);
-            flacEnum_defineValue(obj1, obj2,"INVALID_METADATA", 12);
-            flacEnum_defineValue(obj1, obj2,"ALREADY_INITIALIZED", 13);
+            flacEnum_defineValue(obj1, obj2, "BLOCK_SIZE_TOO_SMALL_FOR_LPC_ORDER", 10);
+            flacEnum_defineValue(obj1, obj2, "NOT_STREAMABLE", 11);
+            flacEnum_defineValue(obj1, obj2, "INVALID_METADATA", 12);
+            flacEnum_defineValue(obj1, obj2, "ALREADY_INITIALIZED", 13);
             return std::make_tuple(obj1, obj2);
         }
 
@@ -512,16 +524,17 @@ static int read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t* 
 
     Nan::TryCatch tc;
     tc.SetVerbose(true);
-    auto ret = (*cbks->readCbk)(cbks->async, 2, args).ToLocalChecked();
+    auto ret = (*cbks->readCbk)(cbks->async, 2, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 2;
     }
-    if(ret.IsEmpty()) {
+    if(ret.IsEmpty() || !ret.ToLocalChecked()->IsObject()) {
+        Nan::ThrowError("Read callback did not return an object");
         *bytes = 0;
         return 2;
     } else {
-        Local<Object> retJust = ret.As<Object>();
+        Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> bytes2 = Nan::Get(retJust, Nan::New("bytes").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
         auto maybeBytes2 = numberFromJs<uint64_t>(bytes2);
@@ -581,16 +594,17 @@ static int tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void*
 
     Nan::TryCatch tc;
     tc.SetVerbose(true);
-    Local<Value> ret = (*cbks->tellCbk)(cbks->async, 1, args).ToLocalChecked();
+    auto ret = (*cbks->tellCbk)(cbks->async, 1, args);
     if(tc.HasCaught()) {
         tc.ReThrow();
         return 1;
     }
-    if(ret.IsEmpty()) {
+    if(ret.IsEmpty() || !ret.ToLocalChecked()->IsObject()) {
+        Nan::ThrowError("Tell callback did not return an object");
         *offset = 0;
         return 1;
     } else {
-        Local<Object> retJust = ret.As<Object>();
+        Local<Object> retJust = ret.ToLocalChecked().As<Object>();
         Local<Value> offset2 = Nan::Get(retJust, Nan::New("offset").ToLocalChecked()).ToLocalChecked();
         Local<Value> returnValue = Nan::Get(retJust, Nan::New("returnValue").ToLocalChecked()).ToLocalChecked();
         auto maybeOffset2 = numberFromJs<uint64_t>(offset2);
