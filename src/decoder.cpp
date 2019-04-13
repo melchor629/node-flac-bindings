@@ -50,14 +50,14 @@ FLAC_SETTER(type, fn);
 NAN_METHOD(_JOIN(node_FLAC__stream_decoder_get_, fn)) { \
     UNWRAP_FLAC \
     type output = _JOIN(FLAC__stream_decoder_get_, fn)(dec); \
-    info.GetReturnValue().Set(Nan::New<v8Type>(output)); \
+    info.GetReturnValue().Set(_JOIN(v8Type, ToJs)(output)); \
 }
 
 #define FLAC_SETTER_METHOD(type, v8Type, fn) \
 NAN_METHOD(_JOIN(node_FLAC__stream_decoder_set_, fn)) { \
     UNWRAP_FLAC \
-    Nan::Maybe<type> inputMaybe = Nan::To<type>(info[0]); \
-    if(inputMaybe.IsNothing() || !info[0]->Is##v8Type ()) { \
+    auto inputMaybe = _JOIN(v8Type, FromJs)<type>(info[0]); \
+    if(inputMaybe.IsNothing()) { \
         Nan::ThrowTypeError("Expected type to be " #v8Type ); \
         return; \
     } \
@@ -105,13 +105,8 @@ extern "C" {
 
     FLAC_SETTER(long, ogg_serial_number);
     FLAC_GETTER_SETTER(FLAC__bool, md5_checking);
-#ifndef _MSC_VER
     FLAC_SETTER(FLAC__MetadataType, metadata_respond);
     FLAC_SETTER(FLAC__MetadataType, metadata_ignore);
-#else
-    FLAC_SETTER(int, metadata_respond);
-    FLAC_SETTER(int, metadata_ignore);
-#endif
     FLAC_GETTER(uint64_t, total_samples);
     FLAC_GETTER(unsigned, channels);
     FLAC_GETTER(FLAC__ChannelAssignment, channel_assignment);
@@ -135,22 +130,17 @@ namespace flac_bindings {
 
     private:
 
-        static FLAC_SETTER_METHOD(long, Number, ogg_serial_number);
-        static FLAC_GETTER_METHOD(FLAC__bool, Boolean, md5_checking);
-        static FLAC_SETTER_METHOD(FLAC__bool, Boolean, md5_checking);
-#ifndef _MSC_VER
-        static FLAC_SETTER_METHOD(FLAC__MetadataType, Number, metadata_respond);
-        static FLAC_SETTER_METHOD(FLAC__MetadataType, Number, metadata_ignore);
-#else
-        static FLAC_SETTER_METHOD(int, Number, metadata_respond);
-        static FLAC_SETTER_METHOD(int, Number, metadata_ignore);
-#endif
-        static FLAC_GETTER_METHOD(uint64_t, Number, total_samples);
-        static FLAC_GETTER_METHOD(unsigned, Number, channels);
-        static FLAC_GETTER_METHOD(FLAC__ChannelAssignment, Number, channel_assignment);
-        static FLAC_GETTER_METHOD(unsigned, Number, bits_per_sample);
-        static FLAC_GETTER_METHOD(unsigned, Number, sample_rate);
-        static FLAC_GETTER_METHOD(unsigned, Number, blocksize);
+        static FLAC_SETTER_METHOD(long, number, ogg_serial_number);
+        static FLAC_GETTER_METHOD(FLAC__bool, boolean, md5_checking);
+        static FLAC_SETTER_METHOD(FLAC__bool, boolean, md5_checking);
+        static FLAC_SETTER_METHOD(FLAC__MetadataType, number, metadata_respond);
+        static FLAC_SETTER_METHOD(FLAC__MetadataType, number, metadata_ignore);
+        static FLAC_GETTER_METHOD(uint64_t, number, total_samples);
+        static FLAC_GETTER_METHOD(unsigned, number, channels);
+        static FLAC_GETTER_METHOD(FLAC__ChannelAssignment, number, channel_assignment);
+        static FLAC_GETTER_METHOD(unsigned, number, bits_per_sample);
+        static FLAC_GETTER_METHOD(unsigned, number, sample_rate);
+        static FLAC_GETTER_METHOD(unsigned, number, blocksize);
 
         static NAN_METHOD(node_FLAC__stream_decoder_new) {
             if(throwIfNotConstructorCall(info)) return;

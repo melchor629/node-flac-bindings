@@ -45,8 +45,8 @@ FLAC_SETTER(type, fn);
 #define FLAC_SETTER_METHOD(type, v8Type, fn) \
 NAN_METHOD(_JOIN(node_FLAC__stream_encoder_set_, fn)) { \
     UNWRAP_FLAC \
-    Nan::Maybe<type> inputMaybe = Nan::To<type>(info[0]); \
-    if(inputMaybe.IsNothing() || !info[0]->Is##v8Type ()) { \
+    auto inputMaybe = _JOIN(v8Type, FromJs)<type>(info[0]); \
+    if(inputMaybe.IsNothing()) { \
         Nan::ThrowTypeError("Expected type to be " #v8Type ); \
         return; \
     } \
@@ -59,7 +59,7 @@ NAN_METHOD(_JOIN(node_FLAC__stream_encoder_set_, fn)) { \
 NAN_METHOD(_JOIN(node_FLAC__stream_encoder_get_, fn)) { \
     UNWRAP_FLAC \
     type output = _JOIN(FLAC__stream_encoder_get_, fn)(enc); \
-    info.GetReturnValue().Set(Nan::New<v8Type>(output)); \
+    info.GetReturnValue().Set(_JOIN(v8Type, ToJs)(output)); \
 }
 
 #define CHECK_ASYNC_IS_NULL \
@@ -119,44 +119,44 @@ namespace flac_bindings {
 
     private:
 
-        static FLAC_SETTER_METHOD(long, Number, ogg_serial_number);
-        static FLAC_GETTER_METHOD(FLAC__bool, Boolean, verify);
-        static FLAC_SETTER_METHOD(FLAC__bool, Boolean, verify);
-        static FLAC_GETTER_METHOD(FLAC__bool, Boolean, streamable_subset);
-        static FLAC_SETTER_METHOD(FLAC__bool, Boolean, streamable_subset);
-        static FLAC_GETTER_METHOD(unsigned, Number, channels);
-        static FLAC_SETTER_METHOD(unsigned, Number, channels);
-        static FLAC_GETTER_METHOD(unsigned, Number, bits_per_sample);
-        static FLAC_SETTER_METHOD(unsigned, Number, bits_per_sample);
-        static FLAC_GETTER_METHOD(unsigned, Number, sample_rate);
-        static FLAC_SETTER_METHOD(unsigned, Number, sample_rate);
-        static FLAC_SETTER_METHOD(unsigned, Number, compression_level);
-        static FLAC_GETTER_METHOD(unsigned, Number, blocksize);
-        static FLAC_SETTER_METHOD(unsigned, Number, blocksize);
-        static FLAC_GETTER_METHOD(FLAC__bool, Boolean, do_mid_side_stereo);
-        static FLAC_SETTER_METHOD(FLAC__bool, Boolean, do_mid_side_stereo);
-        static FLAC_GETTER_METHOD(FLAC__bool, Boolean, loose_mid_side_stereo);
-        static FLAC_SETTER_METHOD(FLAC__bool, Boolean, loose_mid_side_stereo);
-        static FLAC_GETTER_METHOD(unsigned, Number, max_lpc_order);
-        static FLAC_SETTER_METHOD(unsigned, Number, max_lpc_order);
-        static FLAC_GETTER_METHOD(unsigned, Number, qlp_coeff_precision);
-        static FLAC_SETTER_METHOD(unsigned, Number, qlp_coeff_precision);
-        static FLAC_GETTER_METHOD(FLAC__bool, Boolean, do_qlp_coeff_prec_search);
-        static FLAC_SETTER_METHOD(FLAC__bool, Boolean, do_qlp_coeff_prec_search);
-        static FLAC_GETTER_METHOD(FLAC__bool, Boolean, do_escape_coding);
-        static FLAC_SETTER_METHOD(FLAC__bool, Boolean, do_escape_coding);
-        static FLAC_GETTER_METHOD(FLAC__bool, Boolean, do_exhaustive_model_search);
-        static FLAC_SETTER_METHOD(FLAC__bool, Boolean, do_exhaustive_model_search);
-        static FLAC_GETTER_METHOD(unsigned, Number, min_residual_partition_order);
-        static FLAC_SETTER_METHOD(unsigned, Number, min_residual_partition_order);
-        static FLAC_GETTER_METHOD(unsigned, Number, max_residual_partition_order);
-        static FLAC_SETTER_METHOD(unsigned, Number, max_residual_partition_order);
-        static FLAC_GETTER_METHOD(unsigned, Number, rice_parameter_search_dist);
-        static FLAC_SETTER_METHOD(unsigned, Number, rice_parameter_search_dist);
-        static FLAC_GETTER_METHOD(uint64_t, Number, total_samples_estimate);
-        static FLAC_SETTER_METHOD(uint64_t, Number, total_samples_estimate);
-        static FLAC_GETTER_METHOD(int, Number, state);
-        static FLAC_GETTER_METHOD(int, Number, verify_decoder_state);
+        static FLAC_SETTER_METHOD(long, number, ogg_serial_number);
+        static FLAC_GETTER_METHOD(FLAC__bool, boolean, verify);
+        static FLAC_SETTER_METHOD(FLAC__bool, boolean, verify);
+        static FLAC_GETTER_METHOD(FLAC__bool, boolean, streamable_subset);
+        static FLAC_SETTER_METHOD(FLAC__bool, boolean, streamable_subset);
+        static FLAC_GETTER_METHOD(unsigned, number, channels);
+        static FLAC_SETTER_METHOD(unsigned, number, channels);
+        static FLAC_GETTER_METHOD(unsigned, number, bits_per_sample);
+        static FLAC_SETTER_METHOD(unsigned, number, bits_per_sample);
+        static FLAC_GETTER_METHOD(unsigned, number, sample_rate);
+        static FLAC_SETTER_METHOD(unsigned, number, sample_rate);
+        static FLAC_SETTER_METHOD(unsigned, number, compression_level);
+        static FLAC_GETTER_METHOD(unsigned, number, blocksize);
+        static FLAC_SETTER_METHOD(unsigned, number, blocksize);
+        static FLAC_GETTER_METHOD(FLAC__bool, boolean, do_mid_side_stereo);
+        static FLAC_SETTER_METHOD(FLAC__bool, boolean, do_mid_side_stereo);
+        static FLAC_GETTER_METHOD(FLAC__bool, boolean, loose_mid_side_stereo);
+        static FLAC_SETTER_METHOD(FLAC__bool, boolean, loose_mid_side_stereo);
+        static FLAC_GETTER_METHOD(unsigned, number, max_lpc_order);
+        static FLAC_SETTER_METHOD(unsigned, number, max_lpc_order);
+        static FLAC_GETTER_METHOD(unsigned, number, qlp_coeff_precision);
+        static FLAC_SETTER_METHOD(unsigned, number, qlp_coeff_precision);
+        static FLAC_GETTER_METHOD(FLAC__bool, boolean, do_qlp_coeff_prec_search);
+        static FLAC_SETTER_METHOD(FLAC__bool, boolean, do_qlp_coeff_prec_search);
+        static FLAC_GETTER_METHOD(FLAC__bool, boolean, do_escape_coding);
+        static FLAC_SETTER_METHOD(FLAC__bool, boolean, do_escape_coding);
+        static FLAC_GETTER_METHOD(FLAC__bool, boolean, do_exhaustive_model_search);
+        static FLAC_SETTER_METHOD(FLAC__bool, boolean, do_exhaustive_model_search);
+        static FLAC_GETTER_METHOD(unsigned, number, min_residual_partition_order);
+        static FLAC_SETTER_METHOD(unsigned, number, min_residual_partition_order);
+        static FLAC_GETTER_METHOD(unsigned, number, max_residual_partition_order);
+        static FLAC_SETTER_METHOD(unsigned, number, max_residual_partition_order);
+        static FLAC_GETTER_METHOD(unsigned, number, rice_parameter_search_dist);
+        static FLAC_SETTER_METHOD(unsigned, number, rice_parameter_search_dist);
+        static FLAC_GETTER_METHOD(uint64_t, number, total_samples_estimate);
+        static FLAC_SETTER_METHOD(uint64_t, number, total_samples_estimate);
+        static FLAC_GETTER_METHOD(int, number, state);
+        static FLAC_GETTER_METHOD(int, number, verify_decoder_state);
 
         static NAN_METHOD(node_FLAC__stream_encoder_new) {
             if(throwIfNotConstructorCall(info)) return;

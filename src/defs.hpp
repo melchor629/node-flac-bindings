@@ -74,7 +74,8 @@ static inline Nan::Maybe<T> numberFromJs(Local<BigInt> bigNum) {
 }
 #endif
 
-template<typename T>
+template<typename T,
+         typename std::enable_if_t<std::is_unsigned<T>::value || std::is_signed<T>::value, unsigned> = 0>
 static inline Nan::Maybe<T> numberFromJs(Local<Value> num) {
     if(num.IsEmpty()) return Nan::Nothing<T>();
     if(num->IsNumber()) {
@@ -86,6 +87,14 @@ static inline Nan::Maybe<T> numberFromJs(Local<Value> num) {
         return numberFromJs<T>(bigNum);
     }
 #endif
+    return Nan::Nothing<T>();
+}
+
+template<typename T,
+         typename std::enable_if_t<std::is_enum<T>::value, unsigned> = 0>
+static inline Nan::Maybe<T> numberFromJs(Local<Value> num) {
+    auto e = numberFromJs<int>(num);
+    if(e.IsJust()) return Nan::Just<T>((T) e.FromJust());
     return Nan::Nothing<T>();
 }
 
@@ -119,6 +128,38 @@ static inline Local<Value> numberToJs(T number, bool forceBigInt = false) {
 #else
     return Nan::New<Number>((int64_t) number);
 #endif
+}
+
+template<typename T,
+         typename std::enable_if_t<std::is_enum<T>::value, int> = 0>
+static inline Local<Value> numberToJs(T enumValue, bool forceBigInt = false) {
+    return numberToJs<int>((int) enumValue, forceBigInt);
+}
+
+
+template<typename T,
+         typename std::enable_if_t<std::is_integral<T>::value, bool> = 0>
+static inline Nan::Maybe<T> booleanFromJs(Local<Value> boolean) {
+    if(boolean.IsEmpty() || !boolean->IsBoolean()) {
+        return Nan::Nothing<T>();
+    } else {
+        auto mayb = boolean->BooleanValue(Isolate::GetCurrent()->GetCurrentContext());
+        if(mayb.IsNothing()) return Nan::Nothing<T>();
+        return Nan::Just<T>((T) mayb.FromJust());
+    }
+}
+
+template<typename T,
+         typename std::enable_if_t<std::is_integral<T>::value, bool> = 0>
+static inline Nan::Maybe<T> booleanFromJs(MaybeLocal<Value> boolean) {
+    if(boolean.IsEmpty()) return Nan::Nothing<T>();
+    return booleanFromJs<T>(boolean.ToLocalChecked());
+}
+
+template<typename T,
+         typename std::enable_if_t<std::is_integral<T>::value, bool> = 0>
+static inline Local<Boolean> booleanToJs(T boolean) {
+    return Nan::New<Boolean>((bool) boolean);
 }
 
 

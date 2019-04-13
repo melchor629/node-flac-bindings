@@ -261,7 +261,7 @@ declare namespace api {
         setMinResidualPartitionOrder(value: number): void;
         setMaxResidualPartitionOrder(value: number): void;
         setRiceParameterSearchDist(value: number): void;
-        setTotalSamplesEstimate(value: number): void;
+        setTotalSamplesEstimate(value: number | bigint): void;
         setMetadata(metadata: metadata.Metadata[]): void;
         getState(): number;
         getVerifyDecoderState(): number;
@@ -290,7 +290,7 @@ declare namespace api {
         getMinResidualPartitionOrder(): number;
         getMaxResidualPartitionOrder(): number;
         getRiceParameterSearchDist(): number;
-        getTotalSamplesEstimate(): number;
+        getTotalSamplesEstimate(): number | bigint;
         initStream(
             writeCbk: Encoder.WriteCallback,
             seekCbk?: Encoder.SeekCallback,
@@ -1114,9 +1114,10 @@ declare interface FlacEncoderOptions {
     /** Sample resolution of the input to be encoded */
     bitsPerSample: number;
     /**
-     * If set to true, all the input will be treated as 32 bit and won't be converted.
-     * If bitsPerSample is 24, this will be set to true. In the rest of the cases will
-     * be set to false.
+     * If set to `true`, all the input will be treated as 32 bit, if `false``
+     * the input will be treated as `bitsPerSample` bit.
+     * If `bitsPerSample` is 24, this will be set to `true` by default.
+     * In the rest of the cases will be set to `false`.
      **/
     inputAs32?: boolean;
     /** Sample rate in Hz of the input to be encoded */
@@ -1124,7 +1125,7 @@ declare interface FlacEncoderOptions {
     /** If the output is Ogg, this serial number must be set */
     oggSerialNumber?: number;
     /** Number of samples expected to be written into the stream */
-    totalSamplesEstimate?: number;
+    totalSamplesEstimate?: number | bigint;
     /**
      * Sets the compression level (by default 5).
      * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#gae49cf32f5256cb47eecd33779493ac85
@@ -1214,7 +1215,11 @@ declare interface FlacDecoderOptions {
      * specified in it.
      **/
     metadata?: number[] | true;
-    /** If set to true, samples will be output as 32 bit. */
+    /**
+     * If set to `true`, samples will be 32 bit integers. By default, this
+     * value is `false`, except when the flac is 24 bit. When `false`, the
+     * output will be `bitsPerSample` bit.
+     **/
     outputAs32?: boolean;
 }
 
