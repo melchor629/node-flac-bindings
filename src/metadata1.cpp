@@ -112,9 +112,14 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__metadata_simple_iterator_init) {
             UNWRAP_IT
+            if(!info[0]->IsString()) {
+                Nan::ThrowTypeError("Expected first argument to be string");
+                return;
+            }
+
             Nan::Utf8String filename(info[0]);
-            FLAC__bool read_only = numberFromJs<int>(info[1]).FromMaybe(0);
-            FLAC__bool preserve = numberFromJs<int>(info[2]).FromMaybe(0);
+            FLAC__bool read_only = booleanFromJs<FLAC__bool>(info[1]).FromMaybe(false);
+            FLAC__bool preserve = booleanFromJs<FLAC__bool>(info[2]).FromMaybe(false);
             FLAC__bool r = FLAC__metadata_simple_iterator_init(it, *filename, read_only, preserve);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
         }

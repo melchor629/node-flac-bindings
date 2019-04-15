@@ -13,6 +13,10 @@ describe('SimpleIterator', function() {
 
     describe('init', function() {
 
+        it('throws if the first argument is not a string', function() {
+            assert.throws(() => new SimpleIterator().init(8));
+        });
+
         it('returns false if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
             const it = new SimpleIterator();
@@ -172,6 +176,14 @@ describe('SimpleIterator', function() {
 
         afterEach('cleanUpTemporaryFiles', function() {
             temp.cleanupSync();
+        });
+
+        it('set() throws if the first argument is not a Metadata', function() {
+            assert.throws(() => new SimpleIterator().setBlock({}));
+        });
+
+        it('insertBlockAfter() throws if the first argument is not a Metadata', function() {
+            assert.throws(() => new SimpleIterator().insertBlockAfter({}));
         });
 
         it('replace StreamInfo block should not replace it', function() {

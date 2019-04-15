@@ -85,6 +85,11 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__metadata_chain_read) {
             UNWRAP_CHAIN
+            if(!info[0]->IsString()) {
+                Nan::ThrowTypeError("Expected argument to be string");
+                return;
+            }
+
             Nan::Utf8String str(info[0]);
             FLAC__bool s = FLAC__metadata_chain_read(m, *str);
             info.GetReturnValue().Set(Nan::New<Boolean>(s));
@@ -92,6 +97,11 @@ namespace flac_bindings {
 
         static NAN_METHOD(node_FLAC__metadata_chain_read_ogg) {
             UNWRAP_CHAIN
+            if(!info[0]->IsString()) {
+                Nan::ThrowTypeError("Expected argument to be string");
+                return;
+            }
+
             Nan::Utf8String str(info[0]);
             FLAC__bool s = FLAC__metadata_chain_read_ogg(m, *str);
             info.GetReturnValue().Set(Nan::New<Boolean>(s));

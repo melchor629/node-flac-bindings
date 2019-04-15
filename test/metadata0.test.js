@@ -11,6 +11,10 @@ describe('metadata0', function() {
 
     describe('getTags', function() {
 
+        it('should throw if the argument is not a string', function() {
+            assert.throws(() => metadata0.getTags(Symbol.species));
+        });
+
         it('should return false if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
 
@@ -56,6 +60,10 @@ describe('metadata0', function() {
     });
 
     describe('getPicture', function() {
+
+        it('should throw if the argument is not a string', function() {
+            assert.throws(() => metadata0.getPicture(Symbol.iterator));
+        });
 
         it('should return false if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
@@ -104,6 +112,10 @@ describe('metadata0', function() {
     });
 
     describe('getCuesheet', function() {
+
+        it('should throw if the argument is not a string', function() {
+            assert.throws(() => metadata0.getCuesheet(Symbol.asyncIterator));
+        });
 
         it('should return false if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
@@ -160,6 +172,10 @@ describe('metadata0', function() {
     });
 
     describe('getStreaminfo', function() {
+
+        it('should throw if the argument is not a string', function() {
+            assert.throws(() => metadata0.getStreaminfo(Symbol.toPrimitive));
+        });
 
         it('should return false if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');

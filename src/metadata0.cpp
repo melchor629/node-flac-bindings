@@ -27,7 +27,11 @@ namespace flac_bindings {
     extern Library* libFlac;
 
     NAN_METHOD(node_FLAC__metadata_get_streaminfo) {
-        if(info[0].IsEmpty() || !info[0]->IsString()) return;
+        if(info[0].IsEmpty() || !info[0]->IsString()) {
+            Nan::ThrowTypeError("Expected argument to be string");
+            return;
+        }
+
         Nan::Utf8String filename(info[0]);
         FLAC__StreamMetadata metadata;
         FLAC__bool ret = FLAC__metadata_get_streaminfo(*filename, &metadata);
@@ -39,7 +43,11 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__metadata_get_tags) {
-        if(info[0].IsEmpty() || !info[0]->IsString()) return;
+        if(info[0].IsEmpty() || !info[0]->IsString()) {
+            Nan::ThrowTypeError("Expected argument to be string");
+            return;
+        }
+
         Nan::Utf8String filename(info[0]);
         FLAC__StreamMetadata* metadatas;
         FLAC__bool ret = FLAC__metadata_get_tags(*filename, &metadatas);
@@ -51,7 +59,11 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__metadata_get_cuesheet) {
-        if(info[0].IsEmpty() || !info[0]->IsString()) return;
+        if(info[0].IsEmpty() || !info[0]->IsString()) {
+            Nan::ThrowTypeError("Expected argument to be string");
+            return;
+        }
+
         Nan::Utf8String filename(info[0]);
         FLAC__StreamMetadata* metadatas;
         FLAC__bool ret = FLAC__metadata_get_cuesheet(*filename, &metadatas);
@@ -63,7 +75,11 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__metadata_get_picture) {
-        if(info[0].IsEmpty() || !info[0]->IsString()) return;
+        if(info[0].IsEmpty() || !info[0]->IsString()) {
+            Nan::ThrowTypeError("Expected argument to be string");
+            return;
+        }
+
         FLAC__StreamMetadata* picture;
         Nan::Utf8String filename(info[0]);
         FLAC__StreamMetadata_Picture_Type type = (FLAC__StreamMetadata_Picture_Type) numberFromJs<int>(info[1]).FromMaybe(-1);

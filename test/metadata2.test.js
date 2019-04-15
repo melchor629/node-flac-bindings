@@ -13,6 +13,14 @@ describe('Chain & Iterator', function() {
 
     describe('read', function() {
 
+        it('throws if the first argument is not a Metadata', function() {
+            assert.throws(() => new Chain().read({}));
+        });
+
+        it('throws if the first argument is not a Metadata (ogg version)', function() {
+            assert.throws(() => new Chain().readOgg(() => 1));
+        });
+
         it('returns false if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
             const ch = new Chain();
@@ -243,6 +251,18 @@ describe('Chain & Iterator', function() {
     });
 
     describe('modify', function() {
+
+        it('setBlock() throws if the first argument is not a Metadata', function() {
+            assert.throws(() => new Iterator().setBlock({}));
+        });
+
+        it('insertBlockAfter() throws if the first argument is not a Metadata', function() {
+            assert.throws(() => new Iterator().insertBlockAfter({}));
+        });
+
+        it('insertBlockBefore() throws if the first argument is not a Metadata', function() {
+            assert.throws(() => new Iterator().insertBlockBefore({}));
+        });
 
         it('replace StreamInfo block should not replace it', function() {
             const filePath = pathForFile('vc-cs.flac');
