@@ -283,6 +283,7 @@ namespace flac_bindings {
             self->async = new Nan::AsyncResource("flac:encoder:process");
             FLAC__bool ret = FLAC__stream_encoder_process(enc, _buffers, samples.FromJust());
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+            delete _buffers;
             delete self->async;
             self->async = nullptr;
         }
