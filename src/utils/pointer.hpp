@@ -1,25 +1,20 @@
 #ifndef POINTER
 #define POINTER
 
-#ifndef NAN_METHOD
 #include <nan.h>
-
-using namespace v8;
-using namespace node;
-#endif
 
 inline void nop(char*,void*) { ; }
 
 template<typename Type = void>
-inline static Nan::MaybeLocal<Object> WrapPointer(Type* ptr, size_t length = 0) {
+inline static Nan::MaybeLocal<v8::Object> WrapPointer(Type* ptr, size_t length = 0) {
     return Nan::NewBuffer((char*) (void*) ptr, length, nop, nullptr);
 }
 
 template<typename Type = void>
-inline static Type* UnwrapPointer(Handle<Value> buffer) {
+inline static Type* UnwrapPointer(v8::Handle<v8::Value> buffer) {
     void* ptr = nullptr;
-    if(Buffer::HasInstance(buffer)) {
-        ptr = Buffer::Data(buffer.As<Object>());
+    if(node::Buffer::HasInstance(buffer)) {
+        ptr = node::Buffer::Data(buffer.As<v8::Object>());
     }
     return reinterpret_cast<Type*>(ptr);
 }

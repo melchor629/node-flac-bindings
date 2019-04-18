@@ -5,8 +5,6 @@
 #include <type_traits>
 #include "nan.h"
 
-using namespace v8;
-using namespace node;
 #include "pointer.hpp"
 #include "../format/format.h"
 
@@ -19,7 +17,7 @@ if(_newValue.IsEmpty() || !_newValue.ToLocalChecked()->Is##type ()) { \
 } else
 
 #define checkValueIsBuffer() \
-    if(!Buffer::HasInstance(value)) { \
+    if(!node::Buffer::HasInstance(value)) { \
         Nan::ThrowTypeError("Expected argument to be Buffer"); \
     } else
 
@@ -41,23 +39,23 @@ if(_newValue.IsEmpty() || !_newValue.ToLocalChecked()->Is##type ()) { \
 #define SetGetter(name) Nan::SetAccessor(obj, Nan::New( #name ).ToLocalChecked(), name)
 #define SetGetterSetter(name) Nan::SetAccessor(obj, Nan::New( #name ).ToLocalChecked(), name, name)
 
-#define V8_GETTER(methodName) void methodName(Local<Name> property, const PropertyCallbackInfo<Value> &info)
-#define V8_SETTER(methodName) void methodName(Local<Name> property, Local<Value> value, const PropertyCallbackInfo<void>& info)
+#define V8_GETTER(methodName) void methodName(v8::Local<Name> property, const PropertyCallbackInfo<Value> &info)
+#define V8_SETTER(methodName) void methodName(v8::Local<Name> property, v8::Local<Value> value, const v8::PropertyCallbackInfo<void>& info)
 
 #define unwrap(type) if(info.This()->InternalFieldCount() == 0) { Nan::ThrowTypeError("Unknown this object type"); return; } \
 type* self = Nan::ObjectWrap::Unwrap<type>(info.This());
 
 #define nativeReadOnlyProperty(obj, name, fnName) \
-(void) obj->SetNativeDataProperty(info.GetIsolate()->GetCurrentContext(), Nan::New(name).ToLocalChecked(), fnName, 0, Local<Value>(), (PropertyAttribute) (PropertyAttribute::ReadOnly | PropertyAttribute::DontDelete))
+(void) obj->SetNativeDataProperty(info.GetIsolate()->GetCurrentContext(), Nan::New(name).ToLocalChecked(), fnName, 0, v8::Local<Value>(), (v8::PropertyAttribute) (v8::PropertyAttribute::ReadOnly | v8::PropertyAttribute::DontDelete))
 
 #define nativeProperty(obj, name, fnName) \
-(void) obj->SetNativeDataProperty(info.GetIsolate()->GetCurrentContext(), Nan::New(name).ToLocalChecked(), fnName, fnName, Local<Value>(), PropertyAttribute::DontDelete)
+(void) obj->SetNativeDataProperty(info.GetIsolate()->GetCurrentContext(), Nan::New(name).ToLocalChecked(), fnName, fnName, v8::Local<Value>(), v8::PropertyAttribute::DontDelete)
 
 
 #if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
 template<typename T,
          typename std::enable_if_t<std::is_signed<T>::value, int> = 0>
-static inline Nan::Maybe<T> numberFromJs(Local<BigInt> bigNum) {
+static inline Nan::Maybe<T> numberFromJs(v8::Local<v8::BigInt> bigNum) {
     bool lossless = false;
     int64_t num = bigNum->Int64Value(&lossless);
     if(!lossless) return Nan::Nothing<T>();
@@ -66,7 +64,7 @@ static inline Nan::Maybe<T> numberFromJs(Local<BigInt> bigNum) {
 
 template<typename T,
          typename std::enable_if_t<std::is_unsigned<T>::value, unsigned> = 0>
-static inline Nan::Maybe<T> numberFromJs(Local<BigInt> bigNum) {
+static inline Nan::Maybe<T> numberFromJs(v8::Local<v8::BigInt> bigNum) {
     bool lossless = false;
     uint64_t num = bigNum->Uint64Value(&lossless);
     if(!lossless) return Nan::Nothing<T>();
@@ -76,14 +74,14 @@ static inline Nan::Maybe<T> numberFromJs(Local<BigInt> bigNum) {
 
 template<typename T,
          typename std::enable_if_t<std::is_unsigned<T>::value || std::is_signed<T>::value, unsigned> = 0>
-static inline Nan::Maybe<T> numberFromJs(Local<Value> num) {
+static inline Nan::Maybe<T> numberFromJs(v8::Local<v8::Value> num) {
     if(num.IsEmpty()) return Nan::Nothing<T>();
     if(num->IsNumber()) {
         return Nan::To<T>(num);
     }
 #if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
     else if(num->IsBigInt()) {
-        Local<BigInt> bigNum = num.As<BigInt>();
+        v8::Local<v8::BigInt> bigNum = num.As<v8::BigInt>();
         return numberFromJs<T>(bigNum);
     }
 #endif
@@ -92,39 +90,39 @@ static inline Nan::Maybe<T> numberFromJs(Local<Value> num) {
 
 template<typename T,
          typename std::enable_if_t<std::is_enum<T>::value, unsigned> = 0>
-static inline Nan::Maybe<T> numberFromJs(Local<Value> num) {
+static inline Nan::Maybe<T> numberFromJs(v8::Local<v8::Value> num) {
     auto e = numberFromJs<int>(num);
     if(e.IsJust()) return Nan::Just<T>((T) e.FromJust());
     return Nan::Nothing<T>();
 }
 
 template<typename T>
-static inline Nan::Maybe<T> numberFromJs(MaybeLocal<Value> maybeNum) {
+static inline Nan::Maybe<T> numberFromJs(Nan::MaybeLocal<v8::Value> maybeNum) {
     if(maybeNum.IsEmpty()) return Nan::Nothing<T>();
     else return numberFromJs<T>(maybeNum.ToLocalChecked());
 }
 
 template<typename T,
          typename std::enable_if_t<std::is_unsigned<T>::value, unsigned> = 0>
-static inline Local<Value> numberToJs(T number, bool forceBigInt = false) {
+static inline v8::Local<v8::Value> numberToJs(T number, bool forceBigInt = false) {
 #if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
     if(!forceBigInt && number <= 9007199254740991) {
-        return Nan::New<Number>((int64_t) number);
+        return Nan::New<v8::Number>((int64_t) number);
     }
-    return BigInt::NewFromUnsigned(Isolate::GetCurrent(), (uint64_t) number);
+    return v8::BigInt::NewFromUnsigned(v8::Isolate::GetCurrent(), (uint64_t) number);
 #else
-    return Nan::New<Number>((int64_t) number);
+    return Nan::New<v8::Number>((int64_t) number);
 #endif
 }
 
 template<typename T,
          typename std::enable_if_t<std::is_signed<T>::value, int> = 0>
-static inline Local<Value> numberToJs(T number, bool forceBigInt = false) {
+static inline v8::Local<v8::Value> numberToJs(T number, bool forceBigInt = false) {
 #if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
     if(!forceBigInt && -9007199254740991 <= number && number <= 9007199254740991) {
-        return Nan::New<Number>((int64_t) number);
+        return Nan::New<v8::Number>((int64_t) number);
     }
-    return BigInt::New(Isolate::GetCurrent(), (int64_t) number);
+    return v8::BigInt::New(v8::Isolate::GetCurrent(), (int64_t) number);
 #else
     return Nan::New<Number>((int64_t) number);
 #endif
@@ -132,18 +130,18 @@ static inline Local<Value> numberToJs(T number, bool forceBigInt = false) {
 
 template<typename T,
          typename std::enable_if_t<std::is_enum<T>::value, int> = 0>
-static inline Local<Value> numberToJs(T enumValue, bool forceBigInt = false) {
+static inline v8::Local<v8::Value> numberToJs(T enumValue, bool forceBigInt = false) {
     return numberToJs<int>((int) enumValue, forceBigInt);
 }
 
 
 template<typename T,
          typename std::enable_if_t<std::is_integral<T>::value, bool> = 0>
-static inline Nan::Maybe<T> booleanFromJs(Local<Value> boolean) {
+static inline Nan::Maybe<T> booleanFromJs(v8::Local<v8::Value> boolean) {
     if(boolean.IsEmpty() || !boolean->IsBoolean()) {
         return Nan::Nothing<T>();
     } else {
-        auto mayb = boolean->BooleanValue(Isolate::GetCurrent()->GetCurrentContext());
+        auto mayb = boolean->BooleanValue(v8::Isolate::GetCurrent()->GetCurrentContext());
         if(mayb.IsNothing()) return Nan::Nothing<T>();
         return Nan::Just<T>((T) mayb.FromJust());
     }
@@ -151,15 +149,15 @@ static inline Nan::Maybe<T> booleanFromJs(Local<Value> boolean) {
 
 template<typename T,
          typename std::enable_if_t<std::is_integral<T>::value, bool> = 0>
-static inline Nan::Maybe<T> booleanFromJs(MaybeLocal<Value> boolean) {
+static inline Nan::Maybe<T> booleanFromJs(Nan::MaybeLocal<v8::Value> boolean) {
     if(boolean.IsEmpty()) return Nan::Nothing<T>();
     return booleanFromJs<T>(boolean.ToLocalChecked());
 }
 
 template<typename T,
          typename std::enable_if_t<std::is_integral<T>::value, bool> = 0>
-static inline Local<Boolean> booleanToJs(T boolean) {
-    return Nan::New<Boolean>((bool) boolean);
+static inline v8::Local<v8::Boolean> booleanToJs(T boolean) {
+    return Nan::New<v8::Boolean>((bool) boolean);
 }
 
 
@@ -206,20 +204,20 @@ namespace Nan {
 }
 
 
-typedef std::tuple<Local<Object>, Local<Object>> FlacEnumDefineReturnType;
+typedef std::tuple<v8::Local<v8::Object>, v8::Local<v8::Object>> FlacEnumDefineReturnType;
 
-static inline void flacEnum_defineValue(Local<Object> &enumObject, Local<Object> &reverseEnumObject, const char* name, int value) {
+static inline void flacEnum_defineValue(v8::Local<v8::Object> &enumObject, v8::Local<v8::Object> &reverseEnumObject, const char* name, int value) {
     Nan::DefineOwnProperty(
         enumObject,
         Nan::New(name).ToLocalChecked(),
-        Nan::New<Number>(value),
-        (PropertyAttribute) (PropertyAttribute::ReadOnly | PropertyAttribute::DontDelete)
+        Nan::New<v8::Number>(value),
+        (v8::PropertyAttribute) (v8::PropertyAttribute::ReadOnly | v8::PropertyAttribute::DontDelete)
     );
     Nan::DefineOwnProperty(
         reverseEnumObject,
-        Nan::To<String>(Nan::New<Number>(value)).ToLocalChecked(),
+        Nan::To<v8::String>(Nan::New<v8::Number>(value)).ToLocalChecked(),
         Nan::New(name).ToLocalChecked(),
-        (PropertyAttribute) (PropertyAttribute::ReadOnly | PropertyAttribute::DontDelete)
+        (v8::PropertyAttribute) (v8::PropertyAttribute::ReadOnly | v8::PropertyAttribute::DontDelete)
     );
 }
 
