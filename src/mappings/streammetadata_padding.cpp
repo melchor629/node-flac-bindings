@@ -2,6 +2,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     NAN_METHOD(PaddingMetadata::create) {
         PaddingMetadata* self = new PaddingMetadata;
         self->Wrap(info.This());

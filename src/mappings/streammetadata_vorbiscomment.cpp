@@ -3,6 +3,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     V8_GETTER(VorbisCommentMetadata::vendorString) {
         unwrap(VorbisCommentMetadata);
         info.GetReturnValue().Set(

@@ -2,6 +2,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     V8_GETTER(SeekPoint::sampleNumber) {
         unwrap(SeekPoint);
         info.GetReturnValue().Set(numberToJs(self->point.sample_number));

@@ -2,6 +2,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     V8_GETTER(StreamInfoMetadata::minBlocksize) {
         unwrap(StreamInfoMetadata);
         info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.min_blocksize));
@@ -106,8 +108,8 @@ namespace flac_bindings {
     V8_SETTER(StreamInfoMetadata::md5sum) {
         unwrap(StreamInfoMetadata);
         checkValueIsBuffer() {
-            FLAC__byte* data = (FLAC__byte*) node::Buffer::Data(value);
-            size_t dataLength = node::Buffer::Length(value);
+            FLAC__byte* data = (FLAC__byte*) Buffer::Data(value);
+            size_t dataLength = Buffer::Length(value);
             if(dataLength >= 16) {
                 memcpy(self->metadata->data.stream_info.md5sum, data, 16);
             } else {

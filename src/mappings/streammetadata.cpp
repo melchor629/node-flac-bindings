@@ -3,6 +3,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     template<>
     Local<Object> structToJs(const FLAC__StreamMetadata* i);
 

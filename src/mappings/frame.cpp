@@ -2,6 +2,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     template<typename T>
     static inline void defineOwnProperty(const Local<Object> &obj, const char* name, const Local<T> &value) {
         Nan::DefineOwnProperty(

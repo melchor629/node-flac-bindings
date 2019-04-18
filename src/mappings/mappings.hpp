@@ -5,6 +5,8 @@
 
 namespace flac_bindings {
 
+    using namespace v8;
+
     template<typename T>
     class WrappedObject: public Nan::ObjectWrap {
     public:

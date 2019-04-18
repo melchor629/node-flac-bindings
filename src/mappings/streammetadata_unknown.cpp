@@ -5,6 +5,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     V8_GETTER(UnknownMetadata::data) {
         unwrap(UnknownMetadata);
         info.GetReturnValue().Set(WrapPointer(self->metadata->data.unknown.data, self->metadata->length).ToLocalChecked());

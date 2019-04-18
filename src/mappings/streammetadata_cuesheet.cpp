@@ -3,6 +3,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     V8_GETTER(CueSheetMetadata::mediaCatalogNumber) {
         unwrap(CueSheetMetadata);
         info.GetReturnValue().Set(Nan::New(self->metadata->data.cue_sheet.media_catalog_number).ToLocalChecked());

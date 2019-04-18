@@ -3,6 +3,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     V8_GETTER(SeekTableMetadata::points) {
         unwrap(SeekTableMetadata);
         Local<Array> arr = Nan::New<Array>();

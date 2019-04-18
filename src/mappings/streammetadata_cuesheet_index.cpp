@@ -2,6 +2,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     V8_GETTER(CueSheetIndex::offset) {
         unwrap(CueSheetIndex);
         info.GetReturnValue().Set(numberToJs(self->index.offset));

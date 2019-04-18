@@ -3,6 +3,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     V8_GETTER(ApplicationMetadata::id) {
         unwrap(ApplicationMetadata);
         info.GetReturnValue().Set(WrapPointer(self->metadata->data.application.id, 4).ToLocalChecked());

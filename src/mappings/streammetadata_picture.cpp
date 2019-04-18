@@ -3,6 +3,8 @@
 
 namespace flac_bindings {
 
+    using namespace node;
+
     V8_GETTER(PictureMetadata::pictureType) {
         unwrap(PictureMetadata);
         info.GetReturnValue().Set(Nan::New((uint32_t) self->metadata->data.picture.type));
