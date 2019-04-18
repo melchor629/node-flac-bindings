@@ -1,5 +1,5 @@
 #include <nan.h>
-#include "dl.hpp"
+#include "utils/dl.hpp"
 
 using namespace v8;
 using namespace node;

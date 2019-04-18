@@ -1,7 +1,7 @@
 #ifndef MAPPINGS_STREAMMETADATA_HPP
 #define MAPPINGS_STREAMMETADATA_HPP
 
-#include "../defs.hpp"
+#include "../utils/defs.hpp"
 
 namespace flac_bindings {
 

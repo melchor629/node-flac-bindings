@@ -1,11 +1,11 @@
 #include <nan.h>
-#include "dl.hpp"
+#include "../utils/dl.hpp"
 
 using namespace v8;
 using namespace node;
-#include "pointer.hpp"
-#include "format.h"
-#include "mappings/mappings.hpp"
+#include "../utils/pointer.hpp"
+#include "../format/format.h"
+#include "../mappings/mappings.hpp"
 #include "metadata.hpp"
 
 #define _JOIN(a, b) a##b

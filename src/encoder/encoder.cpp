@@ -1,13 +1,13 @@
 #include <memory>
 #include <nan.h>
-#include "dl.hpp"
+#include "../utils/dl.hpp"
 
 using namespace v8;
 using namespace node;
-#include "pointer.hpp"
-#include "format.h"
-#include "defs.hpp"
-#include "mappings/mappings.hpp"
+#include "../utils/pointer.hpp"
+#include "../format/format.h"
+#include "../utils/defs.hpp"
+#include "../mappings/mappings.hpp"
 
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
@@ -283,7 +283,7 @@ namespace flac_bindings {
             self->async = new Nan::AsyncResource("flac:encoder:process");
             FLAC__bool ret = FLAC__stream_encoder_process(enc, _buffers, samples.FromJust());
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-            delete _buffers;
+            delete[] _buffers;
             delete self->async;
             self->async = nullptr;
         }
