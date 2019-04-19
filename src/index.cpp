@@ -1,5 +1,7 @@
 #include <nan.h>
 #include "utils/dl.hpp"
+#include "utils/async.hpp"
+#include <thread>
 
 using namespace v8;
 using namespace node;
@@ -52,8 +54,37 @@ namespace flac_bindings {
         }
     }
 
+    NAN_METHOD(testAsync) {
+        using namespace std::chrono_literals;
+        AsyncBackgroundTask<bool, char>::FunctionCallback asyncFunction = [] (auto resolve, const auto &reject, const auto &progress) {
+            for(char c = '0'; c <= '9'; c++) {
+                progress.Send(&c, 1);
+                std::this_thread::sleep_for(100ms);
+            }
+            std::this_thread::sleep_for(1s);
+            reject.withMessage("e");
+        };
+
+        AsyncBackgroundTask<bool, char>::ProgressCallback asyncFUNction = [] (const auto *self, const auto e, auto s) {
+            auto func = self->GetFromPersistent("cbk").template As<v8::Function>();
+            Local<Value> args[] = { Nan::New(e, 1).ToLocalChecked() };
+            Nan::Call(func, func, 1, args);
+        };
+
+        const auto worker = new PromisifiedAsyncBackgroundTask<bool, char>(
+            asyncFunction,
+            asyncFUNction,
+            "flac:testAsync",
+            [] (bool v) { return Nan::New<Boolean>(v); }
+        );
+        worker->SaveToPersistent("cbk", info[0]);
+        AsyncQueueWorker(worker);
+        info.GetReturnValue().Set(worker->getPromise());
+    }
+
     NAN_MODULE_INIT(init) {
         module.Reset(target);
+        Nan::Set(target, Nan::New("testAsync").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(testAsync)).ToLocalChecked());
         libFlac = Library::load("libFLAC", "so.8");
         if(libFlac == nullptr) {
 #ifdef __linux__

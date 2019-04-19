@@ -36,6 +36,12 @@ if(_newValue.IsEmpty() || !_newValue.ToLocalChecked()->Is##type ()) { \
         return; \
     }
 
+#define assertThrowing2(cond, msg, errorReturnValue) \
+    if(!(cond)) { \
+        Nan::ThrowError(msg " - the following condition was not meet: " #cond " at " __FILE__ ":" _stringify(__LINE__)); \
+        return errorReturnValue; \
+    }
+
 #define SetGetter(name) Nan::SetAccessor(obj, Nan::New( #name ).ToLocalChecked(), name)
 #define SetGetterSetter(name) Nan::SetAccessor(obj, Nan::New( #name ).ToLocalChecked(), name, name)
 
@@ -50,6 +56,14 @@ type* self = Nan::ObjectWrap::Unwrap<type>(info.This());
 
 #define nativeProperty(obj, name, fnName) \
 (void) obj->SetNativeDataProperty(info.GetIsolate()->GetCurrentContext(), Nan::New(name).ToLocalChecked(), fnName, fnName, v8::Local<Value>(), v8::PropertyAttribute::DontDelete)
+
+
+#define WARN_SYNC_FUNCTION(name) \
+    static bool __has_ben_called = false; \
+    if(!__has_ben_called) { \
+        __has_ben_called = true; \
+        printf("(flac-bindings) Warning: The sync function %s will be replaced by the async version in the next major version\n", name); \
+    }
 
 
 #if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION

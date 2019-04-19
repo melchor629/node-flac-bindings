@@ -4,7 +4,9 @@
         "sources": [
             "src/index.cpp",
             "src/encoder/encoder.cpp",
+            "src/encoder/async-encoder.cpp",
             "src/decoder/decoder.cpp",
+            "src/decoder/async-decoder.cpp",
             "src/format/format.cpp",
             "src/metadata/metadata0.cpp",
             "src/metadata/metadata1.cpp",

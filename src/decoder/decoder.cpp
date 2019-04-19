@@ -4,57 +4,28 @@
 
 using namespace v8;
 using namespace node;
+#define DECODER_IMPL
+#include "decoder.hpp"
 #include "../utils/pointer.hpp"
-#include "../format/format.h"
-#include "../utils/defs.hpp"
 #include "../mappings/mappings.hpp"
 
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
 
-typedef int(*FLAC__StreamDecoderReadCallback)(const FLAC__StreamDecoder*, FLAC__byte [], size_t*, void*);
-typedef int(*FLAC__StreamDecoderSeekCallback)(const FLAC__StreamDecoder*, uint64_t, void*);
-typedef int(*FLAC__StreamDecoderTellCallback)(const FLAC__StreamDecoder*, uint64_t*, void*);
-typedef int(*FLAC__StreamDecoderLengthCallback)(const FLAC__StreamDecoder*, uint64_t*, void*);
-typedef FLAC__bool(*FLAC__StreamDecoderEofCallback)(const FLAC__StreamDecoder*, void*);
-typedef int(*FLAC__StreamDecoderWriteCallback)(const FLAC__StreamDecoder*, const FLAC__Frame*, const int32_t *const [], void*);
-typedef void(*FLAC__StreamDecoderMetadataCallback)(const FLAC__StreamDecoder*, const FLAC__StreamMetadata*, void*);
-typedef void(*FLAC__StreamDecoderErrorCallback)(const FLAC__StreamDecoder*, int, void*);
-
-static int read_callback(const FLAC__StreamDecoder*, FLAC__byte [], size_t*, void*);
-static int seek_callback(const FLAC__StreamDecoder*, uint64_t, void*);
-static int tell_callback(const FLAC__StreamDecoder*, uint64_t*, void*);
-static int length_callback(const FLAC__StreamDecoder*, uint64_t*, void*);
-static FLAC__bool eof_callback(const FLAC__StreamDecoder*, void*);
-static int write_callback(const FLAC__StreamDecoder*, const FLAC__Frame*, const int32_t *const [], void*);
-static void metadata_callback(const FLAC__StreamDecoder*, const FLAC__StreamMetadata*, void*);
-static void error_callback(const FLAC__StreamDecoder*, int, void*);
 
 #define UNWRAP_FLAC \
     StreamDecoder* self = Nan::ObjectWrap::Unwrap<StreamDecoder>(info.Holder()); \
     FLAC__StreamDecoder* dec = self->dec;
 
-#define FLAC_FUNC(returnType, fn, ...) \
-    typedef returnType (*_JOIN2(FLAC__stream_decoder_, fn, _t))(__VA_ARGS__); \
-    static _JOIN2(FLAC__stream_decoder_, fn, _t) _JOIN(FLAC__stream_decoder_, fn);
-
-#define FLAC_GETTER(type, fn) FLAC_FUNC(type, _JOIN(get_, fn), const FLAC__StreamDecoder*);
-
-#define FLAC_SETTER(type, fn) FLAC_FUNC(FLAC__bool, _JOIN(set_, fn), FLAC__StreamDecoder*, type)
-
-#define FLAC_GETTER_SETTER(type, fn) \
-FLAC_GETTER(type, fn); \
-FLAC_SETTER(type, fn);
-
-#define FLAC_GETTER_METHOD(type, v8Type, fn) \
-NAN_METHOD(_JOIN(node_FLAC__stream_decoder_get_, fn)) { \
+#define FLAC_GETTER_METHOD(type, v8Type, fn, jsFn) \
+NAN_METHOD(StreamDecoder:: jsFn) { \
     UNWRAP_FLAC \
     type output = _JOIN(FLAC__stream_decoder_get_, fn)(dec); \
     info.GetReturnValue().Set(_JOIN(v8Type, ToJs)(output)); \
 }
 
-#define FLAC_SETTER_METHOD(type, v8Type, fn) \
-NAN_METHOD(_JOIN(node_FLAC__stream_decoder_set_, fn)) { \
+#define FLAC_SETTER_METHOD(type, v8Type, fn, jsFn) \
+NAN_METHOD(StreamDecoder:: jsFn) { \
     UNWRAP_FLAC \
     auto inputMaybe = _JOIN(v8Type, FromJs)<type>(info[0]); \
     if(inputMaybe.IsNothing()) { \
@@ -70,461 +41,520 @@ NAN_METHOD(_JOIN(node_FLAC__stream_decoder_set_, fn)) { \
 if(self->async != nullptr) { Nan::ThrowError("Multiple calls to some methods of the Decoder are not allowed"); return; }
 
 
-extern "C" {
-    FLAC_FUNC(FLAC__StreamDecoder*, new, void);
-    FLAC_FUNC(void, delete, FLAC__StreamDecoder*);
-    FLAC_FUNC(int, init_stream, FLAC__StreamDecoder*, FLAC__StreamDecoderReadCallback,
-        FLAC__StreamDecoderSeekCallback, FLAC__StreamDecoderTellCallback,
-        FLAC__StreamDecoderLengthCallback, FLAC__StreamDecoderEofCallback,
-        FLAC__StreamDecoderWriteCallback, FLAC__StreamDecoderMetadataCallback,
-        FLAC__StreamDecoderErrorCallback, void*);
-    FLAC_FUNC(int, init_ogg_stream, FLAC__StreamDecoder*, FLAC__StreamDecoderReadCallback,
-        FLAC__StreamDecoderSeekCallback, FLAC__StreamDecoderTellCallback,
-        FLAC__StreamDecoderLengthCallback, FLAC__StreamDecoderEofCallback,
-        FLAC__StreamDecoderWriteCallback, FLAC__StreamDecoderMetadataCallback,
-        FLAC__StreamDecoderErrorCallback, void*);
-    FLAC_FUNC(int, init_file, FLAC__StreamDecoder*, const char*, FLAC__StreamDecoderWriteCallback,
-        FLAC__StreamDecoderMetadataCallback, FLAC__StreamDecoderErrorCallback, void*);
-    FLAC_FUNC(int, init_ogg_file, FLAC__StreamDecoder*, const char*, FLAC__StreamDecoderWriteCallback,
-        FLAC__StreamDecoderMetadataCallback, FLAC__StreamDecoderErrorCallback, void*);
-    FLAC_FUNC(FLAC__bool, finish, FLAC__StreamDecoder*);
-    FLAC_FUNC(FLAC__bool, flush, FLAC__StreamDecoder*);
-    FLAC_FUNC(FLAC__bool, reset, FLAC__StreamDecoder*);
-    FLAC_FUNC(FLAC__bool, process_single, FLAC__StreamDecoder*);
-    FLAC_FUNC(FLAC__bool, process_until_end_of_metadata, FLAC__StreamDecoder*);
-    FLAC_FUNC(FLAC__bool, process_until_end_of_stream, FLAC__StreamDecoder*);
-    FLAC_FUNC(FLAC__bool, skip_single_frame, FLAC__StreamDecoder*);
-    FLAC_FUNC(FLAC__bool, seek_absolute, FLAC__StreamDecoder*, uint64_t);
-    FLAC_FUNC(FLAC__bool, set_metadata_respond_application, FLAC__StreamDecoder*, const FLAC__byte id[4]);
-    FLAC_FUNC(FLAC__bool, set_metadata_respond_all, FLAC__StreamDecoder*);
-    FLAC_FUNC(FLAC__bool, set_metadata_ignore_application, FLAC__StreamDecoder*, const FLAC__byte id[4]);
-    FLAC_FUNC(FLAC__bool, set_metadata_ignore_all, FLAC__StreamDecoder*);
-    FLAC_FUNC(int, get_state, const FLAC__StreamDecoder*);
-    FLAC_FUNC(const char*, get_resolved_state_string, const FLAC__StreamDecoder*);
-    FLAC_FUNC(FLAC__bool, get_decode_position, const FLAC__StreamDecoder*, uint64_t*);
-
-    FLAC_SETTER(long, ogg_serial_number);
-    FLAC_GETTER_SETTER(FLAC__bool, md5_checking);
-    FLAC_SETTER(FLAC__MetadataType, metadata_respond);
-    FLAC_SETTER(FLAC__MetadataType, metadata_ignore);
-    FLAC_GETTER(uint64_t, total_samples);
-    FLAC_GETTER(unsigned, channels);
-    FLAC_GETTER(FLAC__ChannelAssignment, channel_assignment);
-    FLAC_GETTER(unsigned, bits_per_sample);
-    FLAC_GETTER(unsigned, sample_rate);
-    FLAC_GETTER(unsigned, blocksize);
-}
-
 namespace flac_bindings {
 
     extern Library* libFlac;
 
-    class StreamDecoder: public Nan::ObjectWrap {
+    FLAC_SETTER_METHOD(long, number, ogg_serial_number, setOggSerialNumber);
+    FLAC_GETTER_METHOD(FLAC__bool, boolean, md5_checking, getMd5Checking);
+    FLAC_SETTER_METHOD(FLAC__bool, boolean, md5_checking, setMd5Checking);
+    FLAC_SETTER_METHOD(FLAC__MetadataType, number, metadata_respond, setMetadataRespond);
+    FLAC_SETTER_METHOD(FLAC__MetadataType, number, metadata_ignore, setMetadataIgnore);
+    FLAC_GETTER_METHOD(uint64_t, number, total_samples, getTotalSamples);
+    FLAC_GETTER_METHOD(unsigned, number, channels, getChannels);
+    FLAC_GETTER_METHOD(FLAC__ChannelAssignment, number, channel_assignment, getChannelAssignment);
+    FLAC_GETTER_METHOD(unsigned, number, bits_per_sample, getBitsPerSample);
+    FLAC_GETTER_METHOD(unsigned, number, sample_rate, getSampleRate);
+    FLAC_GETTER_METHOD(unsigned, number, blocksize, getBlocksize);
 
-    public:
-        std::shared_ptr<Nan::Callback> readCbk, seekCbk, tellCbk, lengthCbk, eofCbk, writeCbk, metadataCbk, errorCbk;
-        Nan::AsyncResource* async = nullptr;
-        FLAC__StreamDecoder* dec = nullptr;
+    NAN_METHOD(StreamDecoder::create) {
+        if(throwIfNotConstructorCall(info)) return;
+        FLAC__StreamDecoder* dec = FLAC__stream_decoder_new();
+        if(dec != nullptr) {
+            StreamDecoder* obj = new StreamDecoder;
+            obj->dec = dec;
+            obj->Wrap(info.This());
+            info.GetReturnValue().Set(info.This());
+        } else {
+            Nan::ThrowError("Could not allocate memory");
+        }
+    }
 
-        ~StreamDecoder();
+    NAN_METHOD(StreamDecoder::initStream) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
 
-    private:
+        if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
+        if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
+        if(info[2]->IsFunction()) self->tellCbk.reset(new Nan::Callback(info[2].As<Function>()));
+        if(info[3]->IsFunction()) self->lengthCbk.reset(new Nan::Callback(info[3].As<Function>()));
+        if(info[4]->IsFunction()) self->eofCbk.reset(new Nan::Callback(info[4].As<Function>()));
+        if(info[5]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[5].As<Function>()));
+        if(info[6]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[6].As<Function>()));
+        if(info[7]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[7].As<Function>()));
 
-        static FLAC_SETTER_METHOD(long, number, ogg_serial_number);
-        static FLAC_GETTER_METHOD(FLAC__bool, boolean, md5_checking);
-        static FLAC_SETTER_METHOD(FLAC__bool, boolean, md5_checking);
-        static FLAC_SETTER_METHOD(FLAC__MetadataType, number, metadata_respond);
-        static FLAC_SETTER_METHOD(FLAC__MetadataType, number, metadata_ignore);
-        static FLAC_GETTER_METHOD(uint64_t, number, total_samples);
-        static FLAC_GETTER_METHOD(unsigned, number, channels);
-        static FLAC_GETTER_METHOD(FLAC__ChannelAssignment, number, channel_assignment);
-        static FLAC_GETTER_METHOD(unsigned, number, bits_per_sample);
-        static FLAC_GETTER_METHOD(unsigned, number, sample_rate);
-        static FLAC_GETTER_METHOD(unsigned, number, blocksize);
+        self->async = new Nan::AsyncResource("flac:decoder:initStream");
+        int ret = FLAC__stream_decoder_init_stream(dec,
+            !self->readCbk ? nullptr : decoder_read_callback,
+            !self->seekCbk ? nullptr : decoder_seek_callback,
+            !self->tellCbk ? nullptr : decoder_tell_callback,
+            !self->lengthCbk ? nullptr : decoder_length_callback,
+            !self->eofCbk ? nullptr : decoder_eof_callback,
+            !self->writeCbk ? nullptr : decoder_write_callback,
+            !self->metadataCbk ? nullptr : decoder_metadata_callback,
+            !self->errorCbk ? nullptr : decoder_error_callback,
+            self
+        );
+        info.GetReturnValue().Set(Nan::New(ret));
+        delete self->async;
+        self->async = nullptr;
+    }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_new) {
-            if(throwIfNotConstructorCall(info)) return;
-            FLAC__StreamDecoder* dec = FLAC__stream_decoder_new();
-            if(dec != nullptr) {
-                StreamDecoder* obj = new StreamDecoder;
-                obj->dec = dec;
-                obj->Wrap(info.This());
-                info.GetReturnValue().Set(info.This());
-            } else {
-                Nan::ThrowError("Could not allocate memory");
-            }
+    NAN_METHOD(StreamDecoder::initOggStream) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+
+        if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
+        if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
+        if(info[2]->IsFunction()) self->tellCbk.reset(new Nan::Callback(info[2].As<Function>()));
+        if(info[3]->IsFunction()) self->lengthCbk.reset(new Nan::Callback(info[3].As<Function>()));
+        if(info[4]->IsFunction()) self->eofCbk.reset(new Nan::Callback(info[4].As<Function>()));
+        if(info[5]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[5].As<Function>()));
+        if(info[6]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[6].As<Function>()));
+        if(info[7]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[7].As<Function>()));
+
+        self->async = new Nan::AsyncResource("flac:decoder:initOggStream");
+        int ret = FLAC__stream_decoder_init_ogg_stream(dec,
+            !self->readCbk ? nullptr : decoder_read_callback,
+            !self->seekCbk ? nullptr : decoder_seek_callback,
+            !self->tellCbk ? nullptr : decoder_tell_callback,
+            !self->lengthCbk ? nullptr : decoder_length_callback,
+            !self->eofCbk ? nullptr : decoder_eof_callback,
+            !self->writeCbk ? nullptr : decoder_write_callback,
+            !self->metadataCbk ? nullptr : decoder_metadata_callback,
+            !self->errorCbk ? nullptr : decoder_error_callback,
+            self
+        );
+        info.GetReturnValue().Set(Nan::New(ret));
+        delete self->async;
+        self->async = nullptr;
+    }
+
+    NAN_METHOD(StreamDecoder::initFile) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+
+        if(!info[0]->IsString()) {
+            Nan::ThrowTypeError("Expected first argument to be string");
+            return;
         }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_init_stream) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
+        Local<String> fileNameJs = info[0].As<String>();
+        if(info[1]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[1].As<Function>()));
+        if(info[2]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[2].As<Function>()));
+        if(info[3]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[3].As<Function>()));
+        Nan::Utf8String fileName(fileNameJs);
 
-            if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
-            if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
-            if(info[2]->IsFunction()) self->tellCbk.reset(new Nan::Callback(info[2].As<Function>()));
-            if(info[3]->IsFunction()) self->lengthCbk.reset(new Nan::Callback(info[3].As<Function>()));
-            if(info[4]->IsFunction()) self->eofCbk.reset(new Nan::Callback(info[4].As<Function>()));
-            if(info[5]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[5].As<Function>()));
-            if(info[6]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[6].As<Function>()));
-            if(info[7]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[7].As<Function>()));
+        self->async = new Nan::AsyncResource("flac:decoder:initFile");
+        int ret = FLAC__stream_decoder_init_file(dec, *fileName,
+            !self->writeCbk ? nullptr : decoder_write_callback,
+            !self->metadataCbk ? nullptr : decoder_metadata_callback,
+            !self->errorCbk ? nullptr : decoder_error_callback,
+            self);
+        info.GetReturnValue().Set(Nan::New(ret));
+        delete self->async;
+        self->async = nullptr;
+    }
 
-            self->async = new Nan::AsyncResource("flac:decoder:initStream");
-            int ret = FLAC__stream_decoder_init_stream(dec,
-                !self->readCbk ? nullptr : read_callback,
-                !self->seekCbk ? nullptr : seek_callback,
-                !self->tellCbk ? nullptr : tell_callback,
-                !self->lengthCbk ? nullptr : length_callback,
-                !self->eofCbk ? nullptr : eof_callback,
-                !self->writeCbk ? nullptr : write_callback,
-                !self->metadataCbk ? nullptr : metadata_callback,
-                !self->errorCbk ? nullptr : error_callback,
-                self
-            );
-            info.GetReturnValue().Set(Nan::New(ret));
-            delete self->async;
-            self->async = nullptr;
+    NAN_METHOD(StreamDecoder::initOggFile) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+
+        if(!info[0]->IsString()) {
+            Nan::ThrowTypeError("Expected first argument to be string");
+            return;
         }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_init_ogg_stream) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
+        Local<String> fileNameJs = info[0].As<String>();
+        if(info[1]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[1].As<Function>()));
+        if(info[2]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[2].As<Function>()));
+        if(info[3]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[3].As<Function>()));
+        Nan::Utf8String fileName(fileNameJs);
 
-            if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
-            if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
-            if(info[2]->IsFunction()) self->tellCbk.reset(new Nan::Callback(info[2].As<Function>()));
-            if(info[3]->IsFunction()) self->lengthCbk.reset(new Nan::Callback(info[3].As<Function>()));
-            if(info[4]->IsFunction()) self->eofCbk.reset(new Nan::Callback(info[4].As<Function>()));
-            if(info[5]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[5].As<Function>()));
-            if(info[6]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[6].As<Function>()));
-            if(info[7]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[7].As<Function>()));
+        self->async = new Nan::AsyncResource("flac:decoder:initOggFile");
+        int ret = FLAC__stream_decoder_init_ogg_file(dec, *fileName,
+            !self->writeCbk ? nullptr : decoder_write_callback,
+            !self->metadataCbk ? nullptr : decoder_metadata_callback,
+            !self->errorCbk ? nullptr : decoder_error_callback,
+            self);
+        info.GetReturnValue().Set(Nan::New(ret));
+        delete self->async;
+        self->async = nullptr;
+    }
 
-            self->async = new Nan::AsyncResource("flac:decoder:initOggStream");
-            int ret = FLAC__stream_decoder_init_ogg_stream(dec,
-                !self->readCbk ? nullptr : read_callback,
-                !self->seekCbk ? nullptr : seek_callback,
-                !self->tellCbk ? nullptr : tell_callback,
-                !self->lengthCbk ? nullptr : length_callback,
-                !self->eofCbk ? nullptr : eof_callback,
-                !self->writeCbk ? nullptr : write_callback,
-                !self->metadataCbk ? nullptr : metadata_callback,
-                !self->errorCbk ? nullptr : error_callback,
-                self
-            );
-            info.GetReturnValue().Set(Nan::New(ret));
-            delete self->async;
-            self->async = nullptr;
+    NAN_METHOD(StreamDecoder::finish) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("finish");
+        self->async = new Nan::AsyncResource("flac:decoder:finish");
+        bool returnValue = FLAC__stream_decoder_finish(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
+        delete self->async;
+        self->async = nullptr;
+    }
+
+    NAN_METHOD(StreamDecoder::flush) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("flush");
+        self->async = new Nan::AsyncResource("flac:decoder:flush");
+        bool returnValue = FLAC__stream_decoder_flush(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
+        delete self->async;
+        self->async = nullptr;
+    }
+
+    NAN_METHOD(StreamDecoder::reset) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        self->async = new Nan::AsyncResource("flac:decoder:initStream");
+        bool returnValue = FLAC__stream_decoder_reset(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
+        delete self->async;
+        self->async = nullptr;
+    }
+
+    NAN_METHOD(StreamDecoder::processSingle) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("processSingle");
+        self->async = new Nan::AsyncResource("flac:decoder:processSingle");
+        bool returnValue = FLAC__stream_decoder_process_single(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
+        delete self->async;
+        self->async = nullptr;
+    }
+
+    NAN_METHOD(StreamDecoder::processUntilEndOfMetadata) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("processUntilEndOfMetadata");
+        self->async = new Nan::AsyncResource("flac:decoder:processUntilEndOfMetadata");
+        bool returnValue = FLAC__stream_decoder_process_until_end_of_metadata(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
+        delete self->async;
+        self->async = nullptr;
+    }
+
+    NAN_METHOD(StreamDecoder::processUntilEndOfStream) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("processUntilEndOfStream");
+        self->async = new Nan::AsyncResource("flac:decoder:processUntilEndOfStream");
+        bool returnValue = FLAC__stream_decoder_process_until_end_of_stream(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
+        delete self->async;
+        self->async = nullptr;
+    }
+
+    NAN_METHOD(StreamDecoder::skipSingleFrame) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("skipSingleFrame");
+        self->async = new Nan::AsyncResource("flac:decoder:skipSingleFrame");
+        bool returnValue = FLAC__stream_decoder_skip_single_frame(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
+        delete self->async;
+        self->async = nullptr;
+    }
+
+    NAN_METHOD(StreamDecoder::seekAbsolute) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("seekAbsolute");
+        auto maybeOffset = numberFromJs<uint64_t>(info[0]);
+        if(maybeOffset.IsNothing()) {
+            Nan::ThrowTypeError("Expected first argument to be number or bigint");
+            return;
         }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_init_file) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
+        self->async = new Nan::AsyncResource("flac:decoder:seekAbsolute");
+        bool returnValue = FLAC__stream_decoder_seek_absolute(dec, maybeOffset.FromJust());
+        info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
+        delete self->async;
+        self->async = nullptr;
+    }
 
-            if(!info[0]->IsString()) {
-                Nan::ThrowTypeError("Expected first argument to be string");
-                return;
-            }
-
-            Local<String> fileNameJs = info[0].As<String>();
-            if(info[1]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[1].As<Function>()));
-            if(info[2]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[2].As<Function>()));
-            if(info[3]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[3].As<Function>()));
-            Nan::Utf8String fileName(fileNameJs);
-
-            self->async = new Nan::AsyncResource("flac:decoder:initFile");
-            int ret = FLAC__stream_decoder_init_file(dec, *fileName,
-                !self->writeCbk ? nullptr : write_callback,
-                !self->metadataCbk ? nullptr : metadata_callback,
-                !self->errorCbk ? nullptr : error_callback,
-                self);
-            info.GetReturnValue().Set(Nan::New(ret));
-            delete self->async;
-            self->async = nullptr;
+    NAN_METHOD(StreamDecoder::setMetadataRespondApplication) {
+        UNWRAP_FLAC
+        if(info[0].IsEmpty() || !Buffer::HasInstance(info[0])) {
+            Nan::ThrowError("Parameter must be a Buffer");
+            return;
         }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_init_ogg_file) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
-
-            if(!info[0]->IsString()) {
-                Nan::ThrowTypeError("Expected first argument to be string");
-                return;
-            }
-
-            Local<String> fileNameJs = info[0].As<String>();
-            if(info[1]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[1].As<Function>()));
-            if(info[2]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[2].As<Function>()));
-            if(info[3]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[3].As<Function>()));
-            Nan::Utf8String fileName(fileNameJs);
-
-            self->async = new Nan::AsyncResource("flac:decoder:initOggFile");
-            int ret = FLAC__stream_decoder_init_ogg_file(dec, *fileName,
-                !self->writeCbk ? nullptr : write_callback,
-                !self->metadataCbk ? nullptr : metadata_callback,
-                !self->errorCbk ? nullptr : error_callback,
-                self);
-            info.GetReturnValue().Set(Nan::New(ret));
-            delete self->async;
-            self->async = nullptr;
+        Local<Object> canBeBuffer = info[0].As<Object>();
+        FLAC__byte* id = (FLAC__byte*) node::Buffer::Data(canBeBuffer);
+        if(node::Buffer::Length(canBeBuffer) < 4) {
+            Nan::ThrowError("Buffer must have 4 bytes");
+            return;
         }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_finish) {
-            UNWRAP_FLAC
-            self->async = new Nan::AsyncResource("flac:decoder:finish");
-            bool returnValue = FLAC__stream_decoder_finish(dec);
-            info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
-            delete self->async;
-            self->async = nullptr;
+        FLAC__bool ret = FLAC__stream_decoder_set_metadata_respond_application(dec, id);
+        info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+    }
+
+    NAN_METHOD(StreamDecoder::setMetadataRespondAll) {
+        UNWRAP_FLAC
+        FLAC__bool ret = FLAC__stream_decoder_set_metadata_respond_all(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+    }
+
+    NAN_METHOD(StreamDecoder::setMetadataIgnoreApplication) {
+        UNWRAP_FLAC
+        if(info[0].IsEmpty() || !Buffer::HasInstance(info[0])) {
+            Nan::ThrowError("Parameter must be a Buffer");
+            return;
         }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_flush) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
-            self->async = new Nan::AsyncResource("flac:decoder:flush");
-            bool returnValue = FLAC__stream_decoder_flush(dec);
-            info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
-            delete self->async;
-            self->async = nullptr;
+        Local<Object> canBeBuffer = info[0].As<Object>();
+        FLAC__byte* id = (FLAC__byte*) node::Buffer::Data(canBeBuffer);
+        if(node::Buffer::Length(canBeBuffer) < 4) {
+            Nan::ThrowError("Buffer must have 4 bytes");
+            return;
         }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_reset) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
-            self->async = new Nan::AsyncResource("flac:decoder:initStream");
-            bool returnValue = FLAC__stream_decoder_reset(dec);
-            info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
-            delete self->async;
-            self->async = nullptr;
+        FLAC__bool ret = FLAC__stream_decoder_set_metadata_ignore_application(dec, id);
+        info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+    }
+
+    NAN_METHOD(StreamDecoder::setMetadataIgnoreAll) {
+        UNWRAP_FLAC
+        FLAC__bool ret = FLAC__stream_decoder_set_metadata_ignore_all(dec);
+        info.GetReturnValue().Set(Nan::New<Boolean>(ret));
+    }
+
+    NAN_METHOD(StreamDecoder::getState) {
+        UNWRAP_FLAC
+        int state = FLAC__stream_decoder_get_state(dec);
+        info.GetReturnValue().Set(Nan::New(state));
+    }
+
+    NAN_METHOD(StreamDecoder::getResolvedStateString) {
+        UNWRAP_FLAC
+        const char* stateString = FLAC__stream_decoder_get_resolved_state_string(dec);
+        info.GetReturnValue().Set(Nan::New(stateString).ToLocalChecked());
+    }
+
+    NAN_METHOD(StreamDecoder::getDecodePosition) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        uint64_t pos;
+        self->async = new Nan::AsyncResource("flac:decoder:decodePosition");
+        FLAC__bool ret = FLAC__stream_decoder_get_decode_position(dec, &pos);
+        if(ret) {
+            info.GetReturnValue().Set(numberToJs(pos));
+        } else {
+            info.GetReturnValue().SetNull();
+        }
+        delete self->async;
+        self->async = nullptr;
+    }
+
+
+    NAN_METHOD(StreamDecoder::finishAsync) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        (void) dec;
+        AsyncDecoderWorkBase* w;
+        if(info[0]->IsFunction()) {
+            w = AsyncDecoderWork::forFinish(self, new Nan::Callback(info[0].template As<Function>()));
+        } else {
+            w = PromisifiedAsyncDecoderWork::forFinish(self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
+        }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
+
+    NAN_METHOD(StreamDecoder::flushAsync) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        (void) dec;
+        AsyncDecoderWorkBase* w;
+        if(info[0]->IsFunction()) {
+            w = AsyncDecoderWork::forFlush(self, new Nan::Callback(info[0].template As<Function>()));
+        } else {
+            w = PromisifiedAsyncDecoderWork::forFlush(self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
+        }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
+
+    NAN_METHOD(StreamDecoder::processSingleAsync) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        (void) dec;
+        AsyncDecoderWorkBase* w;
+        if(info[0]->IsFunction()) {
+            w = AsyncDecoderWork::forProcessSingle(self, new Nan::Callback(info[0].template As<Function>()));
+        } else {
+            w = PromisifiedAsyncDecoderWork::forProcessSingle(self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
+        }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
+
+    NAN_METHOD(StreamDecoder::processUntilEndOfMetadataAsync) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        (void) dec;
+        AsyncDecoderWorkBase* w;
+        if(info[0]->IsFunction()) {
+            w = AsyncDecoderWork::forProcessUntilEndOfMetadata(self, new Nan::Callback(info[0].template As<Function>()));
+        } else {
+            w = PromisifiedAsyncDecoderWork::forProcessUntilEndOfMetadata(self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
+        }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
+
+
+    NAN_METHOD(StreamDecoder::processUntilEndOfStreamAsync) {
+        UNWRAP_FLAC (void) dec;
+        CHECK_ASYNC_IS_NULL
+        AsyncDecoderWorkBase* w;
+        if(info[0]->IsFunction()) {
+            w = AsyncDecoderWork::forProcessUntilEndOfStream(self, new Nan::Callback(info[0].template As<Function>()));
+        } else {
+            w = PromisifiedAsyncDecoderWork::forProcessUntilEndOfStream(self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
+        }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
+
+    NAN_METHOD(StreamDecoder::skipSingleFrameAsync) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        (void) dec;
+        AsyncDecoderWorkBase* w;
+        if(info[0]->IsFunction()) {
+            w = AsyncDecoderWork::forSkipSingleFrame(self, new Nan::Callback(info[0].template As<Function>()));
+        } else {
+            w = PromisifiedAsyncDecoderWork::forSkipSingleFrame(self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
+        }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
+
+    NAN_METHOD(StreamDecoder::seekAbsoluteAsync) {
+        UNWRAP_FLAC
+        CHECK_ASYNC_IS_NULL
+        (void) dec;
+
+        auto maybeOffset = numberFromJs<uint64_t>(info[0]);
+        if(maybeOffset.IsNothing()) {
+            Nan::ThrowTypeError("Expected first argument to be number or bigint");
+            return;
         }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_process_single) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
-            self->async = new Nan::AsyncResource("flac:decoder:processSingle");
-            bool returnValue = FLAC__stream_decoder_process_single(dec);
-            info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
-            delete self->async;
-            self->async = nullptr;
+        uint16_t p = maybeOffset.FromJust();
+        AsyncDecoderWorkBase* w;
+        if(info[1]->IsFunction()) {
+            w = AsyncDecoderWork::forSeekAbsolute(p, self, new Nan::Callback(info[1].template As<Function>()));
+        } else {
+            w = PromisifiedAsyncDecoderWork::forSeekAbsolute(p, self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
         }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_process_until_end_of_metadata) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
-            self->async = new Nan::AsyncResource("flac:decoder:processUntilEndOfMetadata");
-            bool returnValue = FLAC__stream_decoder_process_until_end_of_metadata(dec);
-            info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
-            delete self->async;
-            self->async = nullptr;
-        }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_process_until_end_of_stream) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
-            self->async = new Nan::AsyncResource("flac:decoder:processUntilEndOfStream");
-            bool returnValue = FLAC__stream_decoder_process_until_end_of_stream(dec);
-            info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
-            delete self->async;
-            self->async = nullptr;
-        }
+    FlacEnumDefineReturnType StreamDecoder::createStateEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "SEARCH_FOR_METADATA", 0);
+        flacEnum_defineValue(obj1, obj2, "READ_METADATA", 1);
+        flacEnum_defineValue(obj1, obj2, "SEARCH_FOR_FRAME_SYNC", 2);
+        flacEnum_defineValue(obj1, obj2, "READ_FRAME", 3);
+        flacEnum_defineValue(obj1, obj2, "END_OF_STREAM", 4);
+        flacEnum_defineValue(obj1, obj2, "OGG_ERROR", 5);
+        flacEnum_defineValue(obj1, obj2, "SEEK_ERROR", 6);
+        flacEnum_defineValue(obj1, obj2, "DECODER_ABORTED", 7);
+        flacEnum_defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", 8);
+        flacEnum_defineValue(obj1, obj2, "UNINITIALIZED", 9);
+        return std::make_tuple(obj1, obj2);
+    }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_skip_single_frame) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
-            self->async = new Nan::AsyncResource("flac:decoder:skipSingleFrame");
-            bool returnValue = FLAC__stream_decoder_skip_single_frame(dec);
-            info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
-            delete self->async;
-            self->async = nullptr;
-        }
+    FlacEnumDefineReturnType StreamDecoder::createInitStatusEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "OK", 0);
+        flacEnum_defineValue(obj1, obj2, "UNSUPPORTED_CONTAINER", 1);
+        flacEnum_defineValue(obj1, obj2, "INVALID_CALLBACKS", 2);
+        flacEnum_defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", 3);
+        flacEnum_defineValue(obj1, obj2, "ERROR_OPENING_FILE", 4);
+        flacEnum_defineValue(obj1, obj2, "ALREADY_INITIALIZED", 5);
+        return std::make_tuple(obj1, obj2);
+    }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_seek_absolute) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
-            auto maybeOffset = numberFromJs<uint64_t>(info[0]);
-            if(maybeOffset.IsNothing()) {
-                Nan::ThrowTypeError("Expected first argument to be number or bigint");
-                return;
-            }
+    FlacEnumDefineReturnType StreamDecoder::createReadStatusEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "CONTINUE", 0);
+        flacEnum_defineValue(obj1, obj2, "END_OF_STREAM", 1);
+        flacEnum_defineValue(obj1, obj2, "ABORT", 2);
+        return std::make_tuple(obj1, obj2);
+    }
 
-            self->async = new Nan::AsyncResource("flac:decoder:seekAbsolute");
-            bool returnValue = FLAC__stream_decoder_seek_absolute(dec, maybeOffset.FromJust());
-            info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
-            delete self->async;
-            self->async = nullptr;
-        }
+    FlacEnumDefineReturnType StreamDecoder::createSeekStatusEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "OK", 0);
+        flacEnum_defineValue(obj1, obj2, "ERROR", 1);
+        flacEnum_defineValue(obj1, obj2, "UNSUPPORTED", 2);
+        return std::make_tuple(obj1, obj2);
+    }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_set_metadata_respond_application) {
-            UNWRAP_FLAC
-            if(info[0].IsEmpty() || !Buffer::HasInstance(info[0])) {
-                Nan::ThrowError("Parameter must be a Buffer");
-                return;
-            }
+    FlacEnumDefineReturnType StreamDecoder::createTellStatusEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "OK", 0);
+        flacEnum_defineValue(obj1, obj2, "ERROR", 1);
+        flacEnum_defineValue(obj1, obj2, "UNSUPPORTED", 2);
+        return std::make_tuple(obj1, obj2);
+    }
 
-            Local<Object> canBeBuffer = info[0].As<Object>();
-            FLAC__byte* id = (FLAC__byte*) node::Buffer::Data(canBeBuffer);
-            if(node::Buffer::Length(canBeBuffer) < 4) {
-                Nan::ThrowError("Buffer must have 4 bytes");
-                return;
-            }
+    FlacEnumDefineReturnType StreamDecoder::createLengthStatusEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "OK", 0);
+        flacEnum_defineValue(obj1, obj2, "ERROR", 1);
+        flacEnum_defineValue(obj1, obj2, "UNSUPPORTED", 2);
+        return std::make_tuple(obj1, obj2);
+    }
 
-            FLAC__bool ret = FLAC__stream_decoder_set_metadata_respond_application(dec, id);
-            info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        }
+    FlacEnumDefineReturnType StreamDecoder::createWriteStatusEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "CONTINUE", 0);
+        flacEnum_defineValue(obj1, obj2, "ABORT", 1);
+        flacEnum_defineValue(obj1, obj2, "UNSUPPORTED", 2);
+        return std::make_tuple(obj1, obj2);
+    }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_set_metadata_respond_all) {
-            UNWRAP_FLAC
-            FLAC__bool ret = FLAC__stream_decoder_set_metadata_respond_all(dec);
-            info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        }
+    FlacEnumDefineReturnType StreamDecoder::createErrorStatusEnum() {
+        Local<Object> obj1 = Nan::New<Object>();
+        Local<Object> obj2 = Nan::New<Object>();
+        flacEnum_defineValue(obj1, obj2, "LOST_SYNC", 0);
+        flacEnum_defineValue(obj1, obj2, "BAD_HEADER", 1);
+        flacEnum_defineValue(obj1, obj2, "FRAME_CRC_MISMATCH", 2);
+        flacEnum_defineValue(obj1, obj2, "UNPARSEABLE_STREAM", 3);
+        return std::make_tuple(obj1, obj2);
+    }
 
-        static NAN_METHOD(node_FLAC__stream_decoder_set_metadata_ignore_application) {
-            UNWRAP_FLAC
-            if(info[0].IsEmpty() || !Buffer::HasInstance(info[0])) {
-                Nan::ThrowError("Parameter must be a Buffer");
-                return;
-            }
-
-            Local<Object> canBeBuffer = info[0].As<Object>();
-            FLAC__byte* id = (FLAC__byte*) node::Buffer::Data(canBeBuffer);
-            if(node::Buffer::Length(canBeBuffer) < 4) {
-                Nan::ThrowError("Buffer must have 4 bytes");
-                return;
-            }
-
-            FLAC__bool ret = FLAC__stream_decoder_set_metadata_ignore_application(dec, id);
-            info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        }
-
-        static NAN_METHOD(node_FLAC__stream_decoder_set_metadata_ignore_all) {
-            UNWRAP_FLAC
-            FLAC__bool ret = FLAC__stream_decoder_set_metadata_ignore_all(dec);
-            info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        }
-
-        static NAN_METHOD(node_FLAC__stream_decoder_get_state) {
-            UNWRAP_FLAC
-            int state = FLAC__stream_decoder_get_state(dec);
-            info.GetReturnValue().Set(Nan::New(state));
-        }
-
-        static NAN_METHOD(node_FLAC__stream_decoder_get_resolved_state_string) {
-            UNWRAP_FLAC
-            const char* stateString = FLAC__stream_decoder_get_resolved_state_string(dec);
-            info.GetReturnValue().Set(Nan::New(stateString).ToLocalChecked());
-        }
-
-        static NAN_METHOD(node_FLAC__stream_decoder_get_decode_position) {
-            UNWRAP_FLAC
-            CHECK_ASYNC_IS_NULL
-            uint64_t pos;
-            self->async = new Nan::AsyncResource("flac:decoder:decodePosition");
-            FLAC__bool ret = FLAC__stream_decoder_get_decode_position(dec, &pos);
-            if(ret) {
-                info.GetReturnValue().Set(numberToJs(pos));
-            } else {
-                info.GetReturnValue().SetNull();
-            }
-            delete self->async;
-            self->async = nullptr;
-        }
-
-        static FlacEnumDefineReturnType createStateEnum() {
-            Local<Object> obj1 = Nan::New<Object>();
-            Local<Object> obj2 = Nan::New<Object>();
-            flacEnum_defineValue(obj1, obj2, "SEARCH_FOR_METADATA", 0);
-            flacEnum_defineValue(obj1, obj2, "READ_METADATA", 1);
-            flacEnum_defineValue(obj1, obj2, "SEARCH_FOR_FRAME_SYNC", 2);
-            flacEnum_defineValue(obj1, obj2, "READ_FRAME", 3);
-            flacEnum_defineValue(obj1, obj2, "END_OF_STREAM", 4);
-            flacEnum_defineValue(obj1, obj2, "OGG_ERROR", 5);
-            flacEnum_defineValue(obj1, obj2, "SEEK_ERROR", 6);
-            flacEnum_defineValue(obj1, obj2, "DECODER_ABORTED", 7);
-            flacEnum_defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", 8);
-            flacEnum_defineValue(obj1, obj2, "UNINITIALIZED", 9);
-            return std::make_tuple(obj1, obj2);
-        }
-
-        static FlacEnumDefineReturnType createInitStatusEnum() {
-            Local<Object> obj1 = Nan::New<Object>();
-            Local<Object> obj2 = Nan::New<Object>();
-            flacEnum_defineValue(obj1, obj2, "OK", 0);
-            flacEnum_defineValue(obj1, obj2, "UNSUPPORTED_CONTAINER", 1);
-            flacEnum_defineValue(obj1, obj2, "INVALID_CALLBACKS", 2);
-            flacEnum_defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", 3);
-            flacEnum_defineValue(obj1, obj2, "ERROR_OPENING_FILE", 4);
-            flacEnum_defineValue(obj1, obj2, "ALREADY_INITIALIZED", 5);
-            return std::make_tuple(obj1, obj2);
-        }
-
-        static FlacEnumDefineReturnType createReadStatusEnum() {
-            Local<Object> obj1 = Nan::New<Object>();
-            Local<Object> obj2 = Nan::New<Object>();
-            flacEnum_defineValue(obj1, obj2, "OK", 0);
-            flacEnum_defineValue(obj1, obj2, "UNSUPPORTED_CONTAINER", 1);
-            flacEnum_defineValue(obj1, obj2, "INVALID_CALLBACKS", 2);
-            flacEnum_defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", 3);
-            flacEnum_defineValue(obj1, obj2, "ERROR_OPENING_FILE", 4);
-            flacEnum_defineValue(obj1, obj2, "ALREADY_INITIALIZED", 5);
-            return std::make_tuple(obj1, obj2);
-        }
-
-        static FlacEnumDefineReturnType createSeekStatusEnum() {
-            Local<Object> obj1 = Nan::New<Object>();
-            Local<Object> obj2 = Nan::New<Object>();
-            flacEnum_defineValue(obj1, obj2, "OK", 0);
-            flacEnum_defineValue(obj1, obj2, "ERROR", 1);
-            flacEnum_defineValue(obj1, obj2, "UNSUPPORTED", 2);
-            return std::make_tuple(obj1, obj2);
-        }
-
-        static FlacEnumDefineReturnType createTellStatusEnum() {
-            Local<Object> obj1 = Nan::New<Object>();
-            Local<Object> obj2 = Nan::New<Object>();
-            flacEnum_defineValue(obj1, obj2, "OK", 0);
-            flacEnum_defineValue(obj1, obj2, "ERROR", 1);
-            flacEnum_defineValue(obj1, obj2, "UNSUPPORTED", 2);
-            return std::make_tuple(obj1, obj2);
-        }
-
-        static FlacEnumDefineReturnType createLengthStatusEnum() {
-            Local<Object> obj1 = Nan::New<Object>();
-            Local<Object> obj2 = Nan::New<Object>();
-            flacEnum_defineValue(obj1, obj2, "OK", 0);
-            flacEnum_defineValue(obj1, obj2, "ERROR", 1);
-            flacEnum_defineValue(obj1, obj2, "UNSUPPORTED", 2);
-            return std::make_tuple(obj1, obj2);
-        }
-
-        static FlacEnumDefineReturnType createWriteStatusEnum() {
-            Local<Object> obj1 = Nan::New<Object>();
-            Local<Object> obj2 = Nan::New<Object>();
-            flacEnum_defineValue(obj1, obj2, "CONTINUE", 0);
-            flacEnum_defineValue(obj1, obj2, "ABORT", 1);
-            flacEnum_defineValue(obj1, obj2, "UNSUPPORTED", 2);
-            return std::make_tuple(obj1, obj2);
-        }
-
-        static FlacEnumDefineReturnType createErrorStatusEnum() {
-            Local<Object> obj1 = Nan::New<Object>();
-            Local<Object> obj2 = Nan::New<Object>();
-            flacEnum_defineValue(obj1, obj2, "LOST_SYNC", 0);
-            flacEnum_defineValue(obj1, obj2, "BAD_HEADER", 1);
-            flacEnum_defineValue(obj1, obj2, "FRAME_CRC_MISMATCH", 2);
-            flacEnum_defineValue(obj1, obj2, "UNPARSEABLE_STREAM", 3);
-            return std::make_tuple(obj1, obj2);
-        }
-
-    public:
-
-        static NAN_MODULE_INIT(initDecoder);
-
-    };
 
     StreamDecoder::~StreamDecoder() {
         FLAC__stream_decoder_delete(dec);
     }
 
     NAN_MODULE_INIT(StreamDecoder::initDecoder) {
-        Local<FunctionTemplate> obj = Nan::New<FunctionTemplate>(node_FLAC__stream_decoder_new);
+        Local<FunctionTemplate> obj = Nan::New<FunctionTemplate>(create);
         obj->SetClassName(Nan::New("StreamDecoder").ToLocalChecked());
         obj->InstanceTemplate()->SetInternalFieldCount(1);
 
@@ -533,7 +563,7 @@ namespace flac_bindings {
         if(_JOIN(FLAC__stream_decoder_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
 
         #define setMethod(fn, jsFn) \
-        Nan::SetPrototypeMethod(obj, #jsFn, _JOIN(node_FLAC__stream_decoder_, fn)); \
+        Nan::SetPrototypeMethod(obj, #jsFn, jsFn); \
         loadFunction(fn)
 
         loadFunction(new);
@@ -569,6 +599,14 @@ namespace flac_bindings {
         setMethod(skip_single_frame, skipSingleFrame);
         setMethod(seek_absolute, seekAbsolute);
 
+        Nan::SetPrototypeMethod(obj, "finishAsync", finishAsync);
+        Nan::SetPrototypeMethod(obj, "flushAsync", flushAsync);
+        Nan::SetPrototypeMethod(obj, "processSingleAsync", processSingleAsync);
+        Nan::SetPrototypeMethod(obj, "processUntilEndOfMetadataAsync", processUntilEndOfMetadataAsync);
+        Nan::SetPrototypeMethod(obj, "processUntilEndOfStreamAsync", processUntilEndOfStreamAsync);
+        Nan::SetPrototypeMethod(obj, "skipSingleFrameAsync", skipSingleFrameAsync);
+        Nan::SetPrototypeMethod(obj, "seekAbsoluteAsync", seekAbsoluteAsync);
+
         Local<Function> functionClass = Nan::GetFunction(obj).ToLocalChecked();
 
         flacEnum_declareInObject(functionClass, State, createStateEnum());
@@ -586,9 +624,27 @@ namespace flac_bindings {
 }
 
 
-static int read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], size_t* bytes, void* data) {
-    Nan::HandleScope scope;
+static int doAsyncWork(flac_bindings::StreamDecoder* dec, flac_bindings::DecoderWorkRequest &dwr, int errorReturnValue) {
+    int returnValue = errorReturnValue;
+    dwr.returnValue = &returnValue;
+
+    dec->progress->Send(&dwr, 1);
+    dwr.waitForWorkDone();
+
+    return returnValue;
+}
+
+int decoder_read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], size_t* bytes, void* data) {
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
+    if(cbks->progress) {
+        using namespace flac_bindings;
+        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Read);
+        dwr.buffer = buffer;
+        dwr.bytes = bytes;
+        return doAsyncWork(cbks, dwr, 2);
+    }
+
+    Nan::HandleScope scope;
     Handle<Value> args[] {
         WrapPointer(buffer, *bytes).ToLocalChecked()
     };
@@ -619,9 +675,16 @@ static int read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], si
     }
 }
 
-static int seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void* data) {
-    Nan::HandleScope scope;
+int decoder_seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void* data) {
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
+    if(cbks->progress) {
+        using namespace flac_bindings;
+        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Seek);
+        dwr.offset = &offset;
+        return doAsyncWork(cbks, dwr, 1);
+    }
+
+    Nan::HandleScope scope;
     Handle<Value> args[] {
         numberToJs(offset)
     };
@@ -640,9 +703,16 @@ static int seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void* 
     }
 }
 
-static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void* data) {
-    Nan::HandleScope scope;
+int decoder_tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void* data) {
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
+    if(cbks->progress) {
+        using namespace flac_bindings;
+        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Tell);
+        dwr.offset = offset;
+        return doAsyncWork(cbks, dwr, 1);
+    }
+
+    Nan::HandleScope scope;
     Handle<Value> args[] { numberToJs(*offset) };
 
     Nan::TryCatch tc;
@@ -666,9 +736,16 @@ static int tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void*
     }
 }
 
-static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, void* data) {
-    Nan::HandleScope scope;
+int decoder_length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, void* data) {
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
+    if(cbks->progress) {
+        using namespace flac_bindings;
+        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Read);
+        dwr.offset = length;
+        return doAsyncWork(cbks, dwr, 1);
+    }
+
+    Nan::HandleScope scope;
     Handle<Value> args[] { numberToJs(*length) };
 
     Nan::TryCatch tc;
@@ -698,9 +775,15 @@ static int length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, voi
     }
 }
 
-static FLAC__bool eof_callback(const FLAC__StreamDecoder* dec, void* data) {
-    Nan::HandleScope scope;
+FLAC__bool decoder_eof_callback(const FLAC__StreamDecoder* dec, void* data) {
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
+    if(cbks->progress) {
+        using namespace flac_bindings;
+        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Eof);
+        return doAsyncWork(cbks, dwr, true);
+    }
+
+    Nan::HandleScope scope;
     Handle<Value> args[] { Nan::Null() };
 
     Nan::TryCatch tc;
@@ -717,9 +800,17 @@ static FLAC__bool eof_callback(const FLAC__StreamDecoder* dec, void* data) {
     }
 }
 
-static int write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* frame, const int32_t *const buffer[], void* data) {
-    Nan::HandleScope scope;
+int decoder_write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* frame, const int32_t *const buffer[], void* data) {
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
+    if(cbks->progress) {
+        using namespace flac_bindings;
+        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Write);
+        dwr.frame = frame;
+        dwr.samples = buffer;
+        return doAsyncWork(cbks, dwr, 1);
+    }
+
+    Nan::HandleScope scope;
     Local<Array> buffers = Nan::New<Array>();
     unsigned channels = FLAC__stream_decoder_get_channels(dec);
     for(uint32_t i = 0; i < channels; i++)
@@ -744,9 +835,17 @@ static int write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* fra
     }
 }
 
-static void metadata_callback(const FLAC__StreamDecoder* dec, const FLAC__StreamMetadata* metadata, void* data) {
-    Nan::HandleScope scope;
+void decoder_metadata_callback(const FLAC__StreamDecoder* dec, const FLAC__StreamMetadata* metadata, void* data) {
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
+    if(cbks->progress) {
+        using namespace flac_bindings;
+        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Metadata);
+        dwr.metadata = metadata;
+        doAsyncWork(cbks, dwr, 0);
+        return;
+    }
+
+    Nan::HandleScope scope;
     Handle<Value> args[] = {
         flac_bindings::structToJs(metadata)
     };
@@ -759,9 +858,17 @@ static void metadata_callback(const FLAC__StreamDecoder* dec, const FLAC__Stream
     }
 }
 
-static void error_callback(const FLAC__StreamDecoder* dec, int error, void* data) {
-    Nan::HandleScope scope;
+void decoder_error_callback(const FLAC__StreamDecoder* dec, int error, void* data) {
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
+    if(cbks->progress) {
+        using namespace flac_bindings;
+        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Error);
+        dwr.errorCode = error;
+        doAsyncWork(cbks, dwr, 0);
+        return;
+    }
+
+    Nan::HandleScope scope;
     Handle<Value> args[] = {
         Nan::New(error)
     };

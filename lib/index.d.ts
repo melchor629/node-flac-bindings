@@ -29,36 +29,36 @@ declare namespace api {
         getBlocksize(): number;
         getDecodePosition(): number | bigint;
         initStream(
-            readCallback?: Decoder.ReadCallback,
-            seekCallback?: Decoder.SeekCallback,
-            tellCallback?: Decoder.TellCallback,
-            lengthCallback?: Decoder.LengthCallback,
-            eofCallback?: Decoder.EOFCallback,
-            writeCallback?: Decoder.WriteCallback,
-            metadataCallback?: Decoder.MetadataCallback,
-            errorCallback?: Decoder.ErrorCallback
+            readCallback: Decoder.ReadCallback,
+            seekCallback: Decoder.SeekCallback | null,
+            tellCallback: Decoder.TellCallback | null,
+            lengthCallback: Decoder.LengthCallback | null,
+            eofCallback: Decoder.EOFCallback | null,
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback
         ): number;
         initOggStream(
-            readCallback?: Decoder.ReadCallback,
-            seekCallback?: Decoder.SeekCallback,
-            tellCallback?: Decoder.TellCallback,
-            lengthCallback?: Decoder.LengthCallback,
-            eofCallback?: Decoder.EOFCallback,
-            writeCallback?: Decoder.WriteCallback,
-            metadataCallback?: Decoder.MetadataCallback,
-            errorCallback?: Decoder.ErrorCallback
+            readCallback: Decoder.ReadCallback,
+            seekCallback: Decoder.SeekCallback | null,
+            tellCallback: Decoder.TellCallback | null,
+            lengthCallback: Decoder.LengthCallback | null,
+            eofCallback: Decoder.EOFCallback | null,
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback
         ): number;
         initFile(
             path: string,
-            writeCallback?: Decoder.WriteCallback,
-            metadataCallback?: Decoder.MetadataCallback,
-            errorCallback?: Decoder.ErrorCallback
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback
         ): number;
         initOggFile(
             path: string,
-            writeCallback?: Decoder.WriteCallback,
-            metadataCallback?: Decoder.MetadataCallback,
-            errorCallback?: Decoder.ErrorCallback
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback
         ): number;
         finish(): boolean;
         flush(): boolean;
@@ -68,6 +68,21 @@ declare namespace api {
         processUntilEndOfMetadata(): boolean;
         skipSingleFrame(): boolean;
         seekAbsolute(position: number | bigint): boolean;
+
+        finishAsync(): Promise<boolean>;
+        finishAsync(callback: (error: any, result?: boolean) => void): void;
+        flushAsync(): Promise<boolean>;
+        flushAsync(callback: (error: any, result?: boolean) => void): void;
+        processSingleAsync(): Promise<boolean>;
+        processSingleAsync(callback: (error: any, result?: boolean) => void): void;
+        processUntilEndOfStreamAsync(): Promise<boolean>;
+        processUntilEndOfStreamAsync(callback: (error: any, result?: boolean) => void): void;
+        processUntilEndOfMetadataAsync(): Promise<boolean>;
+        processUntilEndOfMetadataAsync(callback: (error: any, result?: boolean) => void): void;
+        skipSingleFrameAsync(): Promise<boolean>;
+        skipSingleFrameAsync(callback: (error: any, result?: boolean) => void): void;
+        seekAbsoluteAsync(position: number | bigint): Promise<boolean>;
+        seekAbsoluteAsync(position: number | bigint, callback: (error: any, result?: boolean) => void): void;
 
         static readonly State: Decoder.State;
         static readonly StateString: ReverseEnum<Decoder.State>;
@@ -90,9 +105,12 @@ declare namespace api {
 
     namespace Decoder {
         /**
-         * Function that will be called when the decoder needs to read more data from the stream.
+         * Function that will be called when the decoder needs to read more data from the stream. The API
+         * expects to fill the buffer, but is valid to partially fill the buffer.
          *  > **Note**: the offset can be a `bigint` if the number cannot be stored in a `number`.
-         * @returns The number of bytes read and the {@link ReadStatus}.
+         *  > **Note**: The buffer is valid only inside the callback. Write in it anything and don't try to
+         *    use it outside the callback.
+         * @returns The number of bytes read into the buffer and the {@link ReadStatus}.
          * @see https://xiph.org/flac/api/group__flac__stream__decoder.html#ga7a5f593b9bc2d163884348b48c4285fd
          */
         type ReadCallback = (buffer: Buffer) => { bytes: number | bigint; returnValue: number; };
@@ -128,6 +146,8 @@ declare namespace api {
         /**
          * Function that will be called when the decoder has decoded a frame. Contains information about
          * the frame and the decoded (PCM) data separated in channels.
+         *  > **Note**: The buffers are valid only inside the callback. If you need to use them outside the callback,
+         *    use `buffers.map(b => Buffer.from(b))` to make a copy of all of them.
          * @param frame The {@link Frame} struct.
          * @param buffers PCM data for each channel ordered by channel assignment.
          * @returns The {@link WriteStatus}.
@@ -293,22 +313,76 @@ declare namespace api {
         getTotalSamplesEstimate(): number | bigint;
         initStream(
             writeCbk: Encoder.WriteCallback,
-            seekCbk?: Encoder.SeekCallback,
-            tellCbk?: Encoder.TellCallback,
-            metadataCbk?: Encoder.MetadataCallback
+            seekCbk?: Encoder.SeekCallback | null,
+            tellCbk?: Encoder.TellCallback | null,
+            metadataCbk?: Encoder.MetadataCallback | null
         ): number;
         initOggStream(
-            readCbk: Encoder.ReadCallback,
+            readCbk: Encoder.ReadCallback | null,
             writeCbk: Encoder.WriteCallback,
-            seekCbk?: Encoder.SeekCallback,
-            tellCbk?: Encoder.TellCallback,
-            metadataCbk?: Encoder.MetadataCallback
+            seekCbk?: Encoder.SeekCallback | null,
+            tellCbk?: Encoder.TellCallback | null,
+            metadataCbk?: Encoder.MetadataCallback | null
         ): number;
-        initFile(file: string, progressCbk?: Encoder.ProgressCallback): number;
-        initOggFile(file: string, progressCbk?: Encoder.ProgressCallback): number;
+        initFile(file: string, progressCbk?: Encoder.ProgressCallback | null): number;
+        initOggFile(file: string, progressCbk?: Encoder.ProgressCallback | null): number;
         finish(): boolean;
         process(buffers: Buffer[], samples: Number): boolean;
-        processInterleaved(buffer: Buffer, samples: Number): boolean;
+        processInterleaved(buffer: Buffer, samples?: Number | null): boolean;
+
+        finishAsync(): Promise<boolean>;
+        finishAsync(callback: (error: any, result?: boolean) => void): void;
+        processAsync(buffers: Buffer[], samples?: Number | null): Promise<boolean>;
+        processAsync(buffers: Buffer[], callback: (error: any, result?: boolean) => void): void;
+        processAsync(buffers: Buffer[], samples: Number | null, callback: (error: any, result?: boolean) => void): void;
+        processInterleavedAsync(buffer: Buffer, samples: Number): Promise<boolean>;
+        processInterleavedAsync(buffer: Buffer, samples: Number, callback: (error: any, result?: boolean) => void): void;
+        initStreamAsync(
+            writeCbk: Encoder.WriteCallback,
+            seekCbk: Encoder.SeekCallback | null | undefined,
+            tellCbk: Encoder.TellCallback | null | undefined,
+            metadataCbk: Encoder.MetadataCallback | null | undefined,
+            callback: (error: any, result?: true) => void
+        ): void;
+        initStreamAsync(
+            writeCbk: Encoder.WriteCallback,
+            seekCbk: Encoder.SeekCallback | null | undefined,
+            tellCbk: Encoder.TellCallback | null | undefined,
+            metadataCbk: Encoder.MetadataCallback | null | undefined
+        ): Promise<true>;
+        initOggStreamAsync(
+            readCbk: Encoder.ReadCallback | null,
+            writeCbk: Encoder.WriteCallback,
+            seekCbk: Encoder.SeekCallback | null | undefined,
+            tellCbk: Encoder.TellCallback | null | undefined,
+            metadataCbk: Encoder.MetadataCallback | null | undefined,
+            callback: (error: any, result?: true) => void
+        ): void;
+        initOggStreamAsync(
+            readCbk: Encoder.ReadCallback | null,
+            writeCbk: Encoder.WriteCallback,
+            seekCbk: Encoder.SeekCallback | null | undefined,
+            tellCbk: Encoder.TellCallback | null | undefined,
+            metadataCbk: Encoder.MetadataCallback | null | undefined
+        ): Promise<true>;
+        initFileAsync(
+            file: string,
+            progressCbk: Encoder.ProgressCallback | null | undefined,
+            callback: (error: any, result?: true) => void
+        ): void;
+        initFileAsync(
+            file: string,
+            progressCbk: Encoder.ProgressCallback | null | undefined,
+        ): Promise<true>;
+        initOggFileAsync(
+            file: string,
+            progressCbk: Encoder.ProgressCallback | null | undefined,
+            callback: (error: any, result?: true) => void
+        ): void;
+        initOggFileAsync(
+            file: string,
+            progressCbk: Encoder.ProgressCallback | null | undefined
+        ): Promise<true>;
 
         static readonly State: Encoder.State;
         static readonly StateString: ReverseEnum<Encoder.State>;
@@ -327,17 +401,21 @@ declare namespace api {
 
     namespace Encoder {
         /**
-         * Called when the encoder needs to read from the stream.
+         * Called when the encoder needs to read from the stream. The number of bytes
+         * matches the size of the buffer. The callback should try to fill the buffer.
          * @returns The number of bytes read and the {@link ReadStatus}.
          * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga97d25c75f49897422d93a9d8405043cd
          */
-        type ReadCallback = (buffer: Buffer, bytes: number) => { bytes: number; returnValue: ReadStatus; };
+        type ReadCallback = (buffer: Buffer) => { bytes: number; returnValue: ReadStatus; };
         /**
-         * Called when encoder needs to write to the stream.
+         * Called when encoder needs to write to the stream. The number of bytes matches
+         * the size of the buffer.
+         *  > **Note**: The buffer is valid only inside the callback. If you need to use it outside the callback,
+         *    use `Buffer.from(buffer)` to make a copy of it.
          * @returns The {@link WriteStatus}.
          * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#gabf2f9bb39c806111c83dd16936ff6d09
          */
-        type WriteCallback = (buffer: Buffer, bytes: number, samples: number, frame: number) => number;
+        type WriteCallback = (buffer: Buffer, samples: number, frame: number) => number;
         /**
          * Called when the encoder needs to seek to another position in the stream.
          *  > **Note**: the offset can be a `bigint` if the number cannot be stored in a `number`.
@@ -351,7 +429,7 @@ declare namespace api {
          * @returns The position in the stream and the {@link TellStatus}.
          * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga4cab0b7556d8509a9f74693804c8c86e
          */
-        type TellCallback = (offset: number | bigint) => { offset: number | bigint; returnValue: number; };
+        type TellCallback = () => { offset: number | bigint; returnValue: number; };
         /**
          * Called when the encoder wrote the `STREAMINFO` block into the stream.
          * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga87778e16cdd0834a301ee8d8258cf946

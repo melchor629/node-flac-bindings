@@ -1,5 +1,4 @@
-#ifndef POINTER
-#define POINTER
+#pragma once
 
 #include <nan.h>
 
@@ -18,5 +17,3 @@ inline static Type* UnwrapPointer(v8::Handle<v8::Value> buffer) {
     }
     return reinterpret_cast<Type*>(ptr);
 }
-
-#endif
