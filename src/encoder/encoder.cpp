@@ -342,7 +342,7 @@ namespace flac_bindings {
         if(info[0]->IsFunction()) {
             w = AsyncEncoderWork::forFinish(self, new Nan::Callback(info[0].template As<Function>()));
         } else {
-            w = PromisifiedAsyncEncoderWork::forFinish(self);
+            w = AsyncEncoderWork::forFinish(self);
             if(w) info.GetReturnValue().Set(((PromisifiedAsyncEncoderWork*) w)->getPromise());
         }
         if(w == nullptr) return; //Exception thrown inside the work "constructor"
@@ -360,7 +360,7 @@ namespace flac_bindings {
         if(info[2]->IsFunction()) {
             w = AsyncEncoderWork::forProcess(__0, __1, self, new Nan::Callback(info[2].template As<Function>()));
         } else {
-            w = PromisifiedAsyncEncoderWork::forProcess(__0, __1, self);
+            w = AsyncEncoderWork::forProcess(__0, __1, self);
             if(w) info.GetReturnValue().Set(((PromisifiedAsyncEncoderWork*) w)->getPromise());
         }
         if(w == nullptr) return; //Exception thrown inside the work "constructor"
@@ -380,7 +380,7 @@ namespace flac_bindings {
         } else if(info[1]->IsFunction()) {
             w = AsyncEncoderWork::forProcessInterleaved(__0, __1, self, new Nan::Callback(info[1].template As<Function>()));
         } else {
-            w = PromisifiedAsyncEncoderWork::forProcessInterleaved(__0, __1, self);
+            w = AsyncEncoderWork::forProcessInterleaved(__0, __1, self);
             if(w) info.GetReturnValue().Set(((PromisifiedAsyncEncoderWork*) w)->getPromise());
         }
         if(w == nullptr) return; //Exception thrown inside the work "constructor"
@@ -402,7 +402,7 @@ namespace flac_bindings {
         if(info[4]->IsFunction()) {
             w = AsyncEncoderWork::forInitStream(self, new Nan::Callback(info[4].template As<Function>()));
         } else {
-            w = PromisifiedAsyncEncoderWork::forInitStream(self);
+            w = AsyncEncoderWork::forInitStream(self);
             if(w) info.GetReturnValue().Set(((PromisifiedAsyncEncoderWork*) w)->getPromise());
         }
         if(w == nullptr) return;
@@ -425,7 +425,7 @@ namespace flac_bindings {
         if(info[5]->IsFunction()) {
             w = AsyncEncoderWork::forInitOggStream(self, new Nan::Callback(info[5].template As<Function>()));
         } else {
-            w = PromisifiedAsyncEncoderWork::forInitOggStream(self);
+            w = AsyncEncoderWork::forInitOggStream(self);
             if(w) info.GetReturnValue().Set(((PromisifiedAsyncEncoderWork*) w)->getPromise());
         }
         if(w == nullptr) return;
@@ -445,7 +445,7 @@ namespace flac_bindings {
         if(info[2]->IsFunction()) {
             w = AsyncEncoderWork::forInitFile(str, self, new Nan::Callback(info[2].template As<Function>()));
         } else {
-            w = PromisifiedAsyncEncoderWork::forInitFile(str, self);
+            w = AsyncEncoderWork::forInitFile(str, self);
             if(w) info.GetReturnValue().Set(((PromisifiedAsyncEncoderWork*) w)->getPromise());
         }
         if(w == nullptr) return;
@@ -465,7 +465,7 @@ namespace flac_bindings {
         if(info[2]->IsFunction()) {
             w = AsyncEncoderWork::forInitOggFile(str, self, new Nan::Callback(info[2].template As<Function>()));
         } else {
-            w = PromisifiedAsyncEncoderWork::forInitOggFile(str, self);
+            w = AsyncEncoderWork::forInitOggFile(str, self);
             if(w) info.GetReturnValue().Set(((PromisifiedAsyncEncoderWork*) w)->getPromise());
         }
         if(w == nullptr) return;

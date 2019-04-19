@@ -204,13 +204,13 @@ namespace flac_bindings {
         friend void encoderDoWork(const StreamEncoder* dec, const AsyncEncoderWorkBase* w, const EncoderWorkRequest *data, size_t size);
 #endif
     public:
-        static AsyncEncoderWork* forFinish(StreamEncoder* enc, Nan::Callback* cbk);
-        static AsyncEncoderWork* forProcess(v8::Local<v8::Value> &buffers, v8::Local<v8::Value> &samples, StreamEncoder* enc, Nan::Callback* cbk);
-        static AsyncEncoderWork* forProcessInterleaved(v8::Local<v8::Value> &buffer, v8::Local<v8::Value> &samples, StreamEncoder* enc, Nan::Callback* cbk);
-        static AsyncEncoderWork* forInitStream(StreamEncoder* enc, Nan::Callback* cbk);
-        static AsyncEncoderWork* forInitOggStream(StreamEncoder* enc, Nan::Callback* cbk);
-        static AsyncEncoderWork* forInitFile(v8::Local<v8::Value> &path, StreamEncoder* enc, Nan::Callback* cbk);
-        static AsyncEncoderWork* forInitOggFile(v8::Local<v8::Value> &path, StreamEncoder* enc, Nan::Callback* cbk);
+        static AsyncEncoderWorkBase* forFinish(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
+        static AsyncEncoderWorkBase* forProcess(v8::Local<v8::Value> &buffers, v8::Local<v8::Value> &samples, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
+        static AsyncEncoderWorkBase* forProcessInterleaved(v8::Local<v8::Value> &buffer, v8::Local<v8::Value> &samples, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
+        static AsyncEncoderWorkBase* forInitStream(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
+        static AsyncEncoderWorkBase* forInitOggStream(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
+        static AsyncEncoderWorkBase* forInitFile(v8::Local<v8::Value> &path, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
+        static AsyncEncoderWorkBase* forInitOggFile(v8::Local<v8::Value> &path, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
     };
 
     class PromisifiedAsyncEncoderWork: public PromisifiedAsyncEncoderWorkBase {
@@ -222,15 +222,10 @@ namespace flac_bindings {
 
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
+#ifdef MAKE_FRIENDS
         friend void encoderDoWork(const StreamEncoder* dec, const AsyncEncoderWorkBase* w, const EncoderWorkRequest *data, size_t size);
-    public:
-        static PromisifiedAsyncEncoderWork* forFinish(StreamEncoder* enc);
-        static PromisifiedAsyncEncoderWork* forProcess(v8::Local<v8::Value> &buffers, v8::Local<v8::Value> &samples, StreamEncoder* enc);
-        static PromisifiedAsyncEncoderWork* forProcessInterleaved(v8::Local<v8::Value> &buffer, v8::Local<v8::Value> &samples, StreamEncoder* enc);
-        static PromisifiedAsyncEncoderWork* forInitStream(StreamEncoder* enc);
-        static PromisifiedAsyncEncoderWork* forInitOggStream(StreamEncoder* enc);
-        static PromisifiedAsyncEncoderWork* forInitFile(v8::Local<v8::Value> &path, StreamEncoder* enc);
-        static PromisifiedAsyncEncoderWork* forInitOggFile(v8::Local<v8::Value> &path, StreamEncoder* enc);
+        friend class AsyncEncoderWork;
+#endif
     };
 }
 

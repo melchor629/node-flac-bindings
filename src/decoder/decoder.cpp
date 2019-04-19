@@ -359,7 +359,7 @@ namespace flac_bindings {
         if(info[0]->IsFunction()) {
             w = AsyncDecoderWork::forFinish(self, new Nan::Callback(info[0].template As<Function>()));
         } else {
-            w = PromisifiedAsyncDecoderWork::forFinish(self);
+            w = AsyncDecoderWork::forFinish(self);
             info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
         }
         w->SaveToPersistent("this", info.This());
@@ -374,7 +374,7 @@ namespace flac_bindings {
         if(info[0]->IsFunction()) {
             w = AsyncDecoderWork::forFlush(self, new Nan::Callback(info[0].template As<Function>()));
         } else {
-            w = PromisifiedAsyncDecoderWork::forFlush(self);
+            w = AsyncDecoderWork::forFlush(self);
             info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
         }
         w->SaveToPersistent("this", info.This());
@@ -389,7 +389,7 @@ namespace flac_bindings {
         if(info[0]->IsFunction()) {
             w = AsyncDecoderWork::forProcessSingle(self, new Nan::Callback(info[0].template As<Function>()));
         } else {
-            w = PromisifiedAsyncDecoderWork::forProcessSingle(self);
+            w = AsyncDecoderWork::forProcessSingle(self);
             info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
         }
         w->SaveToPersistent("this", info.This());
@@ -404,7 +404,7 @@ namespace flac_bindings {
         if(info[0]->IsFunction()) {
             w = AsyncDecoderWork::forProcessUntilEndOfMetadata(self, new Nan::Callback(info[0].template As<Function>()));
         } else {
-            w = PromisifiedAsyncDecoderWork::forProcessUntilEndOfMetadata(self);
+            w = AsyncDecoderWork::forProcessUntilEndOfMetadata(self);
             info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
         }
         w->SaveToPersistent("this", info.This());
@@ -419,7 +419,7 @@ namespace flac_bindings {
         if(info[0]->IsFunction()) {
             w = AsyncDecoderWork::forProcessUntilEndOfStream(self, new Nan::Callback(info[0].template As<Function>()));
         } else {
-            w = PromisifiedAsyncDecoderWork::forProcessUntilEndOfStream(self);
+            w = AsyncDecoderWork::forProcessUntilEndOfStream(self);
             info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
         }
         w->SaveToPersistent("this", info.This());
@@ -434,7 +434,7 @@ namespace flac_bindings {
         if(info[0]->IsFunction()) {
             w = AsyncDecoderWork::forSkipSingleFrame(self, new Nan::Callback(info[0].template As<Function>()));
         } else {
-            w = PromisifiedAsyncDecoderWork::forSkipSingleFrame(self);
+            w = AsyncDecoderWork::forSkipSingleFrame(self);
             info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
         }
         w->SaveToPersistent("this", info.This());
@@ -457,7 +457,7 @@ namespace flac_bindings {
         if(info[1]->IsFunction()) {
             w = AsyncDecoderWork::forSeekAbsolute(p, self, new Nan::Callback(info[1].template As<Function>()));
         } else {
-            w = PromisifiedAsyncDecoderWork::forSeekAbsolute(p, self);
+            w = AsyncDecoderWork::forSeekAbsolute(p, self);
             info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
         }
         w->SaveToPersistent("this", info.This());

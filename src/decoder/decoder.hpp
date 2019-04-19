@@ -191,13 +191,13 @@ namespace flac_bindings {
         friend void decoderDoWork(const StreamDecoder* dec, const AsyncDecoderWorkBase* w, const DecoderWorkRequest *data, size_t size);
 #endif
     public:
-        static AsyncDecoderWork* forFinish(StreamDecoder* dec, Nan::Callback* cbk);
-        static AsyncDecoderWork* forFlush(StreamDecoder* dec, Nan::Callback* cbk);
-        static AsyncDecoderWork* forProcessSingle(StreamDecoder* dec, Nan::Callback* cbk);
-        static AsyncDecoderWork* forProcessUntilEndOfMetadata(StreamDecoder* dec, Nan::Callback* cbk);
-        static AsyncDecoderWork* forProcessUntilEndOfStream(StreamDecoder* dec, Nan::Callback* cbk);
-        static AsyncDecoderWork* forSkipSingleFrame(StreamDecoder* dec, Nan::Callback* cbk);
-        static AsyncDecoderWork* forSeekAbsolute(uint64_t value, StreamDecoder* dec, Nan::Callback* cbk);
+        static AsyncDecoderWorkBase* forFinish(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
+        static AsyncDecoderWorkBase* forFlush(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
+        static AsyncDecoderWorkBase* forProcessSingle(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
+        static AsyncDecoderWorkBase* forProcessUntilEndOfMetadata(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
+        static AsyncDecoderWorkBase* forProcessUntilEndOfStream(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
+        static AsyncDecoderWorkBase* forSkipSingleFrame(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
+        static AsyncDecoderWorkBase* forSeekAbsolute(uint64_t value, StreamDecoder* dec, Nan::Callback* cbk = nullptr);
     };
 
     class PromisifiedAsyncDecoderWork: public PromisifiedAsyncDecoderWorkBase {
@@ -209,15 +209,10 @@ namespace flac_bindings {
 
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
+#ifdef MAKE_FRIENDS
         friend void decoderDoWork(const StreamDecoder* dec, const AsyncDecoderWorkBase* w, const DecoderWorkRequest *data, size_t size);
-    public:
-        static PromisifiedAsyncDecoderWork* forFinish(StreamDecoder* dec);
-        static PromisifiedAsyncDecoderWork* forFlush(StreamDecoder* dec);
-        static PromisifiedAsyncDecoderWork* forProcessSingle(StreamDecoder* dec);
-        static PromisifiedAsyncDecoderWork* forProcessUntilEndOfMetadata(StreamDecoder* dec);
-        static PromisifiedAsyncDecoderWork* forProcessUntilEndOfStream(StreamDecoder* dec);
-        static PromisifiedAsyncDecoderWork* forSkipSingleFrame(StreamDecoder* dec);
-        static PromisifiedAsyncDecoderWork* forSeekAbsolute(uint64_t value, StreamDecoder* dec);
+        friend class AsyncDecoderWork;
+#endif
     };
 }
 
