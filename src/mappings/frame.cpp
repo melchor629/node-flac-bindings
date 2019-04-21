@@ -36,7 +36,7 @@ namespace flac_bindings {
     template<typename T>
     static Local<Array> getQlpCoeff(const T &p) {
         Local<Array> qlpCoeff = Nan::New<Array>();
-        for(uint32_t u = 0; u < p.order * p.qlp_coeff_precision; u++)
+        for(uint32_t u = 0; u < p.order; u++)
             Nan::Set(qlpCoeff, u, Nan::New(p.qlp_coeff[u]));
         return qlpCoeff;
     }

@@ -181,7 +181,8 @@ namespace flac_bindings {
 
     AsyncEncoderWorkBase* AsyncEncoderWork::forFinish(StreamEncoder* enc, Callback* cbk) {
         auto workFunction = [enc] () { return FLAC__stream_encoder_finish(enc->enc); };
-        return new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::finishAsync", enc);
+        if(cbk) return new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::finishAsync", enc);
+        else return new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder::finishAsync", enc);
     }
 
     AsyncEncoderWorkBase* AsyncEncoderWork::forProcess(Local<Value> &buffers_, Local<Value> &samples, StreamEncoder* enc, Callback* cbk) {
@@ -198,7 +199,9 @@ namespace flac_bindings {
             delete[] _buffers;
             return ret;
         };
-        auto work = new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::processAsync", enc);
+        AsyncEncoderWorkBase* work;
+        if(cbk) work = new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::processAsync", enc);
+        else work = new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder::processAsync", enc);
         work->SaveToPersistent("buffers", buffers_);
         work->SaveToPersistent("samples", samples);
         return work;
@@ -214,7 +217,9 @@ namespace flac_bindings {
         auto buffer = std::get<0>(result.FromJust());
         auto samples = std::get<1>(result.FromJust());
         auto workFunction = [enc, buffer, samples] () { return FLAC__stream_encoder_process_interleaved(enc->enc, buffer, samples); };
-        auto work = new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::processInterleavedAsync", enc);
+        AsyncEncoderWorkBase* work;
+        if(cbk) work = new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::processInterleavedAsync", enc);
+        else work = new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder:processInterleavedAsync", enc);
         work->SaveToPersistent("buffer", _buffer);
         work->SaveToPersistent("samples", _samples);
         return work;
