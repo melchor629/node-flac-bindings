@@ -151,6 +151,10 @@ namespace flac_bindings {
         static NAN_METHOD(processUntilEndOfStreamAsync);
         static NAN_METHOD(skipSingleFrameAsync);
         static NAN_METHOD(seekAbsoluteAsync);
+        static NAN_METHOD(initStreamAsync);
+        static NAN_METHOD(initOggStreamAsync);
+        static NAN_METHOD(initFileAsync);
+        static NAN_METHOD(initOggFileAsync);
 
         static FlacEnumDefineReturnType createStateEnum();
         static FlacEnumDefineReturnType createInitStatusEnum();
@@ -198,6 +202,10 @@ namespace flac_bindings {
         static AsyncDecoderWorkBase* forProcessUntilEndOfStream(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
         static AsyncDecoderWorkBase* forSkipSingleFrame(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
         static AsyncDecoderWorkBase* forSeekAbsolute(uint64_t value, StreamDecoder* dec, Nan::Callback* cbk = nullptr);
+        static AsyncDecoderWorkBase* forInitStream(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
+        static AsyncDecoderWorkBase* forInitOggStream(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
+        static AsyncDecoderWorkBase* forInitFile(const std::string &filePath, StreamDecoder* dec, Nan::Callback* cbk = nullptr);
+        static AsyncDecoderWorkBase* forInitOggFile(const std::string &filePath, StreamDecoder* dec, Nan::Callback* cbk = nullptr);
     };
 
     class PromisifiedAsyncDecoderWork: public PromisifiedAsyncDecoderWorkBase {

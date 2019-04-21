@@ -2,6 +2,7 @@ import { Transform, Writable, Readable } from 'stream';
 
 type ReverseEnum<T> = { [index: number]: keyof T | undefined };
 type Global_Iterator<T> = Iterator<T>; //Avoid type shadowing (in TS there's nothing like global:: or :: to refer global namespace)
+type AsyncCallback<ReturnType> = (error: any, result?: ReturnType) => void;
 
 declare namespace api {
     /**
@@ -70,19 +71,87 @@ declare namespace api {
         seekAbsolute(position: number | bigint): boolean;
 
         finishAsync(): Promise<boolean>;
-        finishAsync(callback: (error: any, result?: boolean) => void): void;
+        finishAsync(callback: AsyncCallback<boolean>): void;
         flushAsync(): Promise<boolean>;
-        flushAsync(callback: (error: any, result?: boolean) => void): void;
+        flushAsync(callback: AsyncCallback<boolean>): void;
         processSingleAsync(): Promise<boolean>;
-        processSingleAsync(callback: (error: any, result?: boolean) => void): void;
+        processSingleAsync(callback: AsyncCallback<boolean>): void;
         processUntilEndOfStreamAsync(): Promise<boolean>;
-        processUntilEndOfStreamAsync(callback: (error: any, result?: boolean) => void): void;
+        processUntilEndOfStreamAsync(callback: AsyncCallback<boolean>): void;
         processUntilEndOfMetadataAsync(): Promise<boolean>;
-        processUntilEndOfMetadataAsync(callback: (error: any, result?: boolean) => void): void;
+        processUntilEndOfMetadataAsync(callback: AsyncCallback<boolean>): void;
         skipSingleFrameAsync(): Promise<boolean>;
-        skipSingleFrameAsync(callback: (error: any, result?: boolean) => void): void;
+        skipSingleFrameAsync(callback: AsyncCallback<boolean>): void;
         seekAbsoluteAsync(position: number | bigint): Promise<boolean>;
-        seekAbsoluteAsync(position: number | bigint, callback: (error: any, result?: boolean) => void): void;
+        seekAbsoluteAsync(position: number | bigint, callback: AsyncCallback<boolean>): void;
+        initStreamAsync(
+            readCallback: Decoder.ReadCallback,
+            seekCallback: Decoder.SeekCallback | null,
+            tellCallback: Decoder.TellCallback | null,
+            lengthCallback: Decoder.LengthCallback | null,
+            eofCallback: Decoder.EOFCallback | null,
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback
+        ): Promise<true>;
+        initStreamAsync(
+            readCallback: Decoder.ReadCallback,
+            seekCallback: Decoder.SeekCallback | null,
+            tellCallback: Decoder.TellCallback | null,
+            lengthCallback: Decoder.LengthCallback | null,
+            eofCallback: Decoder.EOFCallback | null,
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback,
+            callback: AsyncCallback<true>
+        ): void;
+        initOggStreamAsync(
+            readCallback: Decoder.ReadCallback,
+            seekCallback: Decoder.SeekCallback | null,
+            tellCallback: Decoder.TellCallback | null,
+            lengthCallback: Decoder.LengthCallback | null,
+            eofCallback: Decoder.EOFCallback | null,
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback
+        ): Promise<true>;
+        initOggStreamAsync(
+            readCallback: Decoder.ReadCallback,
+            seekCallback: Decoder.SeekCallback | null,
+            tellCallback: Decoder.TellCallback | null,
+            lengthCallback: Decoder.LengthCallback | null,
+            eofCallback: Decoder.EOFCallback | null,
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback,
+            callback: AsyncCallback<true>
+        ): void;
+        initFileAsync(
+            path: string,
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback
+        ): Promise<true>;
+        initFileAsync(
+            path: string,
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback,
+            callback: AsyncCallback<true>
+        ): void;
+        initOggFileAsync(
+            path: string,
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback
+        ): Promise<true>;
+        initOggFileAsync(
+            path: string,
+            writeCallback: Decoder.WriteCallback,
+            metadataCallback: Decoder.MetadataCallback | null,
+            errorCallback: Decoder.ErrorCallback,
+            callback: AsyncCallback<true>
+        ): void;
 
         static readonly State: Decoder.State;
         static readonly StateString: ReverseEnum<Decoder.State>;
@@ -331,18 +400,18 @@ declare namespace api {
         processInterleaved(buffer: Buffer, samples?: Number | null): boolean;
 
         finishAsync(): Promise<boolean>;
-        finishAsync(callback: (error: any, result?: boolean) => void): void;
+        finishAsync(callback: AsyncCallback<boolean>): void;
         processAsync(buffers: Buffer[], samples?: Number | null): Promise<boolean>;
-        processAsync(buffers: Buffer[], callback: (error: any, result?: boolean) => void): void;
-        processAsync(buffers: Buffer[], samples: Number | null, callback: (error: any, result?: boolean) => void): void;
+        processAsync(buffers: Buffer[], callback: AsyncCallback<boolean>): void;
+        processAsync(buffers: Buffer[], samples: Number | null, callback: AsyncCallback<boolean>): void;
         processInterleavedAsync(buffer: Buffer, samples: Number): Promise<boolean>;
-        processInterleavedAsync(buffer: Buffer, samples: Number, callback: (error: any, result?: boolean) => void): void;
+        processInterleavedAsync(buffer: Buffer, samples: Number, callback: AsyncCallback<boolean>): void;
         initStreamAsync(
             writeCbk: Encoder.WriteCallback,
             seekCbk: Encoder.SeekCallback | null | undefined,
             tellCbk: Encoder.TellCallback | null | undefined,
             metadataCbk: Encoder.MetadataCallback | null | undefined,
-            callback: (error: any, result?: true) => void
+            callback: AsyncCallback<true>
         ): void;
         initStreamAsync(
             writeCbk: Encoder.WriteCallback,
@@ -356,7 +425,7 @@ declare namespace api {
             seekCbk: Encoder.SeekCallback | null | undefined,
             tellCbk: Encoder.TellCallback | null | undefined,
             metadataCbk: Encoder.MetadataCallback | null | undefined,
-            callback: (error: any, result?: true) => void
+            callback: AsyncCallback<true>
         ): void;
         initOggStreamAsync(
             readCbk: Encoder.ReadCallback | null,
@@ -368,7 +437,7 @@ declare namespace api {
         initFileAsync(
             file: string,
             progressCbk: Encoder.ProgressCallback | null | undefined,
-            callback: (error: any, result?: true) => void
+            callback: AsyncCallback<true>
         ): void;
         initFileAsync(
             file: string,
@@ -377,7 +446,7 @@ declare namespace api {
         initOggFileAsync(
             file: string,
             progressCbk: Encoder.ProgressCallback | null | undefined,
-            callback: (error: any, result?: true) => void
+            callback: AsyncCallback<true>
         ): void;
         initOggFileAsync(
             file: string,

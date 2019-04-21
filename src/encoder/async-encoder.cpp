@@ -158,7 +158,7 @@ namespace flac_bindings {
         } else if(r == 12) { //INVALID_METADATA
             errorMessage = "Any of the metadata blocks given are invalid or there are duplicated metadata blocks";
         } else if(r == 13) { //ALREADY_INITIALIZED
-            errorMessage = "init*() method called when the encoder has been already initialized";
+            errorMessage = "init*() method called when the encoder has already been initialized";
         }
 
         enc->reject->withMessage(errorMessage);

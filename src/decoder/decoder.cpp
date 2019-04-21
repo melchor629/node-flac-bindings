@@ -73,6 +73,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::initStream) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("initStream");
 
         if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
         if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
@@ -103,6 +104,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::initOggStream) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("initOggStream");
 
         if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
         if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
@@ -133,6 +135,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::initFile) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("initFile");
 
         if(!info[0]->IsString()) {
             Nan::ThrowTypeError("Expected first argument to be string");
@@ -159,6 +162,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::initOggFile) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
+        WARN_SYNC_FUNCTION("initOggFile");
 
         if(!info[0]->IsString()) {
             Nan::ThrowTypeError("Expected first argument to be string");
@@ -464,6 +468,111 @@ namespace flac_bindings {
         AsyncQueueWorker(w);
     }
 
+    NAN_METHOD(StreamDecoder::initStreamAsync) {
+        UNWRAP_FLAC;
+        CHECK_ASYNC_IS_NULL
+        (void) dec;
+
+        if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
+        if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
+        if(info[2]->IsFunction()) self->tellCbk.reset(new Nan::Callback(info[2].As<Function>()));
+        if(info[3]->IsFunction()) self->lengthCbk.reset(new Nan::Callback(info[3].As<Function>()));
+        if(info[4]->IsFunction()) self->eofCbk.reset(new Nan::Callback(info[4].As<Function>()));
+        if(info[5]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[5].As<Function>()));
+        if(info[6]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[6].As<Function>()));
+        if(info[7]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[7].As<Function>()));
+
+        AsyncDecoderWorkBase* w;
+        if(info[8]->IsFunction()) {
+            w = AsyncDecoderWork::forInitStream(self, new Nan::Callback(info[8].template As<Function>()));
+        } else {
+            w = AsyncDecoderWork::forInitStream(self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
+        }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
+
+    NAN_METHOD(StreamDecoder::initOggStreamAsync) {
+        UNWRAP_FLAC;
+        CHECK_ASYNC_IS_NULL
+        (void) dec;
+
+        if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
+        if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
+        if(info[2]->IsFunction()) self->tellCbk.reset(new Nan::Callback(info[2].As<Function>()));
+        if(info[3]->IsFunction()) self->lengthCbk.reset(new Nan::Callback(info[3].As<Function>()));
+        if(info[4]->IsFunction()) self->eofCbk.reset(new Nan::Callback(info[4].As<Function>()));
+        if(info[5]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[5].As<Function>()));
+        if(info[6]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[6].As<Function>()));
+        if(info[7]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[7].As<Function>()));
+
+        AsyncDecoderWorkBase* w;
+        if(info[8]->IsFunction()) {
+            w = AsyncDecoderWork::forInitOggStream(self, new Nan::Callback(info[8].template As<Function>()));
+        } else {
+            w = AsyncDecoderWork::forInitOggStream(self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
+        }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
+
+    NAN_METHOD(StreamDecoder::initFileAsync) {
+        UNWRAP_FLAC;
+        CHECK_ASYNC_IS_NULL
+        (void) dec;
+
+        if(!info[0]->IsString()) {
+            Nan::ThrowTypeError("Expected first argument to be string");
+            return;
+        }
+
+        Local<String> fileNameJs = info[0].As<String>();
+        if(info[1]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[1].As<Function>()));
+        if(info[2]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[2].As<Function>()));
+        if(info[3]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[3].As<Function>()));
+        Nan::Utf8String fileName(fileNameJs);
+
+        AsyncDecoderWorkBase* w;
+        if(info[4]->IsFunction()) {
+            w = AsyncDecoderWork::forInitFile(*fileName, self, new Nan::Callback(info[4].template As<Function>()));
+        } else {
+            w = AsyncDecoderWork::forInitFile(*fileName, self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
+        }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
+
+    NAN_METHOD(StreamDecoder::initOggFileAsync) {
+        UNWRAP_FLAC;
+        CHECK_ASYNC_IS_NULL
+        (void) dec;
+
+        if(!info[0]->IsString()) {
+            Nan::ThrowTypeError("Expected first argument to be string");
+            return;
+        }
+
+        Local<String> fileNameJs = info[0].As<String>();
+        if(info[1]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[1].As<Function>()));
+        if(info[2]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[2].As<Function>()));
+        if(info[3]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[3].As<Function>()));
+        Nan::Utf8String fileName(fileNameJs);
+
+        AsyncDecoderWorkBase* w;
+        if(info[4]->IsFunction()) {
+            w = AsyncDecoderWork::forInitOggFile(*fileName, self, new Nan::Callback(info[4].template As<Function>()));
+        } else {
+            w = AsyncDecoderWork::forInitOggFile(*fileName, self);
+            info.GetReturnValue().Set(((PromisifiedAsyncDecoderWork*) w)->getPromise());
+        }
+        w->SaveToPersistent("this", info.This());
+        AsyncQueueWorker(w);
+    }
+
+
 
     FlacEnumDefineReturnType StreamDecoder::createStateEnum() {
         Local<Object> obj1 = Nan::New<Object>();
@@ -606,6 +715,10 @@ namespace flac_bindings {
         Nan::SetPrototypeMethod(obj, "processUntilEndOfStreamAsync", processUntilEndOfStreamAsync);
         Nan::SetPrototypeMethod(obj, "skipSingleFrameAsync", skipSingleFrameAsync);
         Nan::SetPrototypeMethod(obj, "seekAbsoluteAsync", seekAbsoluteAsync);
+        Nan::SetPrototypeMethod(obj, "initStreamAsync", initStreamAsync);
+        Nan::SetPrototypeMethod(obj, "initOggStreamAsync", initOggStreamAsync);
+        Nan::SetPrototypeMethod(obj, "initFileAsync", initFileAsync);
+        Nan::SetPrototypeMethod(obj, "initOggFileAsync", initOggFileAsync);
 
         Local<Function> functionClass = Nan::GetFunction(obj).ToLocalChecked();
 

@@ -54,6 +54,28 @@ namespace flac_bindings {
         };
     }
 
+    static bool captureInitErrorAndThrow(StreamDecoder* dec, int r) {
+        if(r == 0) { //OK
+            return true;
+        }
+
+        const char* errorMessage = "Unknwon decoder error";
+        if(r == 1) { //UNSUPPORTED_CONTAINER
+            errorMessage = "The library was not compiled with support for the given container format";
+        } else if(r == 2) { //INVALID_CALLBACKS
+            errorMessage = "A required callback was not supplied";
+        } else if(r == 3) { //MEMORY_ALLOCATION_ERROR
+            errorMessage = "An error occurred allocating memory";
+        } else if(r == 4) { //ERROR_OPENING_FILE
+            errorMessage = "Could not open the file";
+        } else if(r == 5) { //ALREADY_INITIALIZED
+            errorMessage = "init*() method called when the decoder has already been initialized";
+        }
+
+        dec->reject->withMessage(errorMessage);
+        return true;
+    }
+
 
     AsyncDecoderWork::AsyncDecoderWork(
         std::function<bool()> function,
@@ -109,6 +131,76 @@ namespace flac_bindings {
         if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::seekAbsoluteAsync", dec);
         else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::seekAbsoluteAsync", dec);
     }
+
+    AsyncDecoderWorkBase* AsyncDecoderWork::forInitStream(StreamDecoder* dec, Nan::Callback* cbk) {
+        auto workFunction = [dec] () {
+            return captureInitErrorAndThrow(dec, FLAC__stream_decoder_init_stream(
+                dec->dec,
+                !dec->readCbk ? nullptr : decoder_read_callback,
+                !dec->seekCbk ? nullptr : decoder_seek_callback,
+                !dec->tellCbk ? nullptr : decoder_tell_callback,
+                !dec->lengthCbk ? nullptr : decoder_length_callback,
+                !dec->eofCbk ? nullptr : decoder_eof_callback,
+                !dec->writeCbk ? nullptr : decoder_write_callback,
+                !dec->metadataCbk ? nullptr : decoder_metadata_callback,
+                !dec->errorCbk ? nullptr : decoder_error_callback,
+                dec
+            ));
+        };
+        if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::initStreamAsync", dec);
+        else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::initStreamAsync", dec);
+    }
+
+    AsyncDecoderWorkBase* AsyncDecoderWork::forInitOggStream(StreamDecoder* dec, Nan::Callback* cbk) {
+        auto workFunction = [dec] () {
+            return captureInitErrorAndThrow(dec, FLAC__stream_decoder_init_ogg_stream(
+                dec->dec,
+                !dec->readCbk ? nullptr : decoder_read_callback,
+                !dec->seekCbk ? nullptr : decoder_seek_callback,
+                !dec->tellCbk ? nullptr : decoder_tell_callback,
+                !dec->lengthCbk ? nullptr : decoder_length_callback,
+                !dec->eofCbk ? nullptr : decoder_eof_callback,
+                !dec->writeCbk ? nullptr : decoder_write_callback,
+                !dec->metadataCbk ? nullptr : decoder_metadata_callback,
+                !dec->errorCbk ? nullptr : decoder_error_callback,
+                dec
+            ));
+        };
+        if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::initOggStreamAsync", dec);
+        else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::initOggStreamAsync", dec);
+    }
+
+
+    AsyncDecoderWorkBase* AsyncDecoderWork::forInitFile(const std::string &filePath, StreamDecoder* dec, Nan::Callback* cbk) {
+        auto workFunction = [dec, filePath] () {
+            return captureInitErrorAndThrow(dec, FLAC__stream_decoder_init_file(
+                dec->dec,
+                filePath.c_str(),
+                dec->writeCbk ? decoder_write_callback : nullptr,
+                dec->metadataCbk ? decoder_metadata_callback : nullptr,
+                dec->errorCbk ? decoder_error_callback : nullptr,
+                dec
+            ));
+        };
+        if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::initFileAsync", dec);
+        else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::initFileAsync", dec);
+    }
+
+    AsyncDecoderWorkBase* AsyncDecoderWork::forInitOggFile(const std::string &filePath, StreamDecoder* dec, Nan::Callback* cbk) {
+        auto workFunction = [dec, filePath] () {
+            return captureInitErrorAndThrow(dec, FLAC__stream_decoder_init_ogg_file(
+                dec->dec,
+                filePath.c_str(),
+                dec->writeCbk ? decoder_write_callback : nullptr,
+                dec->metadataCbk ? decoder_metadata_callback : nullptr,
+                dec->errorCbk ? decoder_error_callback : nullptr,
+                dec
+            ));
+        };
+        if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::initOggFileAsync", dec);
+        else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::initOggFileAsync", dec);
+    }
+
 
 
     PromisifiedAsyncDecoderWork::PromisifiedAsyncDecoderWork(

@@ -239,7 +239,7 @@ describe('encode & decode: manual version', function() {
         const fd = fs.openSync(pathForFile('loop.flac'), 'r');
         const dec = new api.Decoder();
         const allBuffers = [];
-        const initErrorCode = dec.initStream(
+        await dec.initStreamAsync(
             (buffer) => ({ bytes: fs.readSync(fd, buffer, 0, buffer.length, null), returnValue: 0 }),
             (offset) => fs.readSync(fd, Buffer.alloc(1), 0, 1, offset - 1) === 1 ? 0 : 2,
             () => ({ returnValue: api.Decoder.TellStatus.UNSUPPORTED, offset: 0n }),
@@ -249,7 +249,6 @@ describe('encode & decode: manual version', function() {
             null,
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
         );
-        assert.equal(initErrorCode, 0, api.Decoder.InitStatusString[initErrorCode]);
 
         const e = await dec.processUntilEndOfMetadataAsync();
         assert.isTrue(e);
@@ -264,13 +263,12 @@ describe('encode & decode: manual version', function() {
     it('decode using file', async function() {
         const dec = new api.Decoder();
         const allBuffers = [];
-        const initErrorCode = dec.initFile(
+        await dec.initFileAsync(
             pathForFile('loop.flac'),
             (_, buffers) => { allBuffers.push(buffers.map(b => Buffer.from(b))); return 0; },
             null,
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
         );
-        assert.equal(initErrorCode, 0, api.Decoder.InitStatusString[initErrorCode]);
 
         const e = await dec.processUntilEndOfMetadataAsync();
         assert.isTrue(e);
