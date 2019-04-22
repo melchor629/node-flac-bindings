@@ -381,7 +381,7 @@ namespace flac_bindings {
         if(tryCatch.HasCaught()) {
             enc->reject->withException(tryCatch.Exception());
             data->notifyWorkDone();
-        } else {
+        } else if(!result.IsEmpty()) {
             auto theGoodResult = result.ToLocalChecked();
             if(theGoodResult->IsPromise()) {
                 auto promise = theGoodResult.As<Promise>();
@@ -394,6 +394,8 @@ namespace flac_bindings {
                 if(processResult && !result.IsEmpty()) processResult(result.ToLocalChecked());
                 data->notifyWorkDone();
             }
+        } else {
+            data->notifyWorkDone();
         }
     }
 
