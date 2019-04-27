@@ -1248,6 +1248,9 @@ declare namespace api {
      * If a suitable library cannot be loaded, this function will be available.
      */
     const load: ((flacDynamicLibraryPath: string) => typeof api) | undefined;
+
+    function testAsync(mode: 'reject' | 'exception' | 'resolve', progress: (char: string) => void): Promise<true>;
+    function testAsync(mode: 'reject' | 'exception' | 'resolve', progress: (char: string) => void, callback: (err: any, res?: true) => void): void;
 }
 
 

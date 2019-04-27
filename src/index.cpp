@@ -56,35 +56,65 @@ namespace flac_bindings {
 
     NAN_METHOD(testAsync) {
         using namespace std::chrono_literals;
-        AsyncBackgroundTask<bool, char>::FunctionCallback asyncFunction = [] (auto resolve, const auto &reject, const auto &progress) {
-            for(char c = '0'; c <= '9'; c++) {
-                progress.Send(&c, 1);
-                std::this_thread::sleep_for(100ms);
+        Nan::Utf8String endModeJsStr(info[0]);
+        std::string endMode(*endModeJsStr);
+        AsyncBackgroundTask<bool, char>::FunctionCallback asyncFunction = [endMode] (auto &c) {
+            for(char ch = '0'; ch <= '9'; ch++) {
+                c.sendProgress(ch);
+                if(c.isCompleted()) return;
+                std::this_thread::sleep_for(5ms);
             }
-            std::this_thread::sleep_for(1s);
-            reject.withMessage("e");
+
+            std::this_thread::sleep_for(10ms);
+
+            if(endMode == "reject") {
+                c.reject("Rejected :(");
+            } else if(endMode == "resolve") {
+                c.resolve(true);
+            }
         };
 
-        AsyncBackgroundTask<bool, char>::ProgressCallback asyncFUNction = [] (const auto *self, const auto e, auto s) {
-            auto func = self->GetFromPersistent("cbk").template As<v8::Function>();
+        AsyncBackgroundTask<bool, char>::ProgressCallback asyncFUNction = [endMode] (auto &self, const auto e, auto s) {
+            Nan::HandleScope scope;
+            auto func = self.getTask()->GetFromPersistent("cbk").template As<v8::Function>();
             Local<Value> args[] = { Nan::New(e, 1).ToLocalChecked() };
             Nan::Call(func, func, 1, args);
+            if(*e == '9' && endMode == "exception") {
+                self.reject(Nan::Error("Thrown :("));
+            }
         };
 
-        const auto worker = new PromisifiedAsyncBackgroundTask<bool, char>(
-            asyncFunction,
-            asyncFUNction,
-            "flac:testAsync",
-            [] (bool v) { return Nan::New<Boolean>(v); }
-        );
-        worker->SaveToPersistent("cbk", info[0]);
+        AsyncBackgroundTask<bool, char>* worker;
+        if(info[2].IsEmpty() || !info[2]->IsFunction()) {
+            worker = new PromisifiedAsyncBackgroundTask<bool, char>(
+                asyncFunction,
+                asyncFUNction,
+                "flac:testAsync",
+                [] (bool v) { return Nan::New<Boolean>(v); }
+            );
+            info.GetReturnValue().Set(((PromisifiedAsyncBackgroundTask<bool, char>*) worker)->getPromise());
+        } else {
+            worker = new AsyncBackgroundTask<bool, char>(
+                asyncFunction,
+                asyncFUNction,
+                new Nan::Callback(Local<Function>::Cast(info[2])),
+                "flac:testAsync",
+                [] (bool v) { return Nan::New<Boolean>(v); }
+            );
+        }
+        worker->SaveToPersistent("cbk", info[1]);
         AsyncQueueWorker(worker);
-        info.GetReturnValue().Set(worker->getPromise());
     }
 
     NAN_MODULE_INIT(init) {
         module.Reset(target);
-        Nan::Set(target, Nan::New("testAsync").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(testAsync)).ToLocalChecked());
+
+        Nan::Set(
+            target,
+            Nan::New("testAsync").ToLocalChecked(),
+            Nan::GetFunction(Nan::New<FunctionTemplate>(testAsync)).ToLocalChecked()
+        );
+
         libFlac = Library::load("libFLAC", "so.8");
         if(libFlac == nullptr) {
 #ifdef __linux__

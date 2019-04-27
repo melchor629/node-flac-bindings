@@ -183,16 +183,15 @@ namespace flac_bindings {
         std::shared_ptr<Nan::Callback> readCbk, writeCbk, seekCbk, tellCbk, metadataCbk, progressCbk;
         Nan::AsyncResource* async = nullptr;
         FLAC__StreamEncoder* enc = nullptr;
-        const AsyncEncoderWorkBase::RejectCallbacks* reject = nullptr;
-        const AsyncEncoderWorkBase::ExecutionProgress* progress = nullptr;
+        AsyncEncoderWorkBase::ExecutionContext* asyncExecutionContext = nullptr;
     };
 
 #ifdef MAKE_FRIENDS
-    static void encoderDoWork(const StreamEncoder* dec, const AsyncEncoderWorkBase* w, const EncoderWorkRequest *data, size_t size);
+    static void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, const EncoderWorkRequest *data);
 #endif
     class AsyncEncoderWork: public AsyncEncoderWorkBase {
         AsyncEncoderWork(
-            std::function<bool()> function,
+            std::function<bool(AsyncEncoderWorkBase::ExecutionContext &)> function,
             Nan::Callback* callback,
             const char* name,
             StreamEncoder* enc
@@ -201,7 +200,7 @@ namespace flac_bindings {
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
 #ifdef MAKE_FRIENDS
-        friend void encoderDoWork(const StreamEncoder* dec, const AsyncEncoderWorkBase* w, const EncoderWorkRequest *data, size_t size);
+        friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, const EncoderWorkRequest *data);
 #endif
     public:
         static AsyncEncoderWorkBase* forFinish(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
@@ -215,7 +214,7 @@ namespace flac_bindings {
 
     class PromisifiedAsyncEncoderWork: public PromisifiedAsyncEncoderWorkBase {
         PromisifiedAsyncEncoderWork(
-            std::function<bool()> function,
+            std::function<bool(AsyncEncoderWorkBase::ExecutionContext &)> function,
             const char* name,
             StreamEncoder* enc
         );
@@ -223,7 +222,7 @@ namespace flac_bindings {
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
 #ifdef MAKE_FRIENDS
-        friend void encoderDoWork(const StreamEncoder* dec, const AsyncEncoderWorkBase* w, const EncoderWorkRequest *data, size_t size);
+        friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, const EncoderWorkRequest *data);
         friend class AsyncEncoderWork;
 #endif
     };

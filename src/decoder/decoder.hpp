@@ -168,9 +168,8 @@ namespace flac_bindings {
     public:
         std::shared_ptr<Nan::Callback> readCbk, seekCbk, tellCbk, lengthCbk, eofCbk, writeCbk, metadataCbk, errorCbk;
         Nan::Persistent<v8::Value> lastExceptionProcessed;
-        const AsyncDecoderWorkBase::ExecutionProgress *progress = nullptr;
-        const AsyncDecoderWorkBase::RejectCallbacks* reject = nullptr;
         Nan::AsyncResource* async = nullptr;
+        AsyncDecoderWorkBase::ExecutionContext* asyncExecutionContext = nullptr;
         void* dec = nullptr;
 
         ~StreamDecoder();
@@ -179,11 +178,11 @@ namespace flac_bindings {
     };
 
 #ifdef MAKE_FRIENDS
-    static void decoderDoWork(const StreamDecoder* dec, const AsyncDecoderWorkBase* w, const DecoderWorkRequest *data, size_t size);
+    static void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, const DecoderWorkRequest *data);
 #endif
     class AsyncDecoderWork: public AsyncDecoderWorkBase {
         AsyncDecoderWork(
-            std::function<bool()> function,
+            std::function<bool(AsyncDecoderWorkBase::ExecutionContext &)> function,
             Nan::Callback* callback,
             const char* name,
             StreamDecoder* dec
@@ -192,7 +191,7 @@ namespace flac_bindings {
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
 #ifdef MAKE_FRIENDS
-        friend void decoderDoWork(const StreamDecoder* dec, const AsyncDecoderWorkBase* w, const DecoderWorkRequest *data, size_t size);
+        friend void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, const DecoderWorkRequest *data);
 #endif
     public:
         static AsyncDecoderWorkBase* forFinish(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
@@ -210,7 +209,7 @@ namespace flac_bindings {
 
     class PromisifiedAsyncDecoderWork: public PromisifiedAsyncDecoderWorkBase {
         PromisifiedAsyncDecoderWork(
-            std::function<bool()> function,
+            std::function<bool(AsyncDecoderWorkBase::ExecutionContext &)> function,
             const char* name,
             StreamDecoder* dec
         );
@@ -218,7 +217,7 @@ namespace flac_bindings {
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
 #ifdef MAKE_FRIENDS
-        friend void decoderDoWork(const StreamDecoder* dec, const AsyncDecoderWorkBase* w, const DecoderWorkRequest *data, size_t size);
+        friend void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, const DecoderWorkRequest *data);
         friend class AsyncDecoderWork;
 #endif
     };

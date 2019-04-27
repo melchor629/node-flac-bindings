@@ -11,16 +11,67 @@ namespace flac_bindings {
     template<typename T, typename P>
     class AsyncBackgroundTask: public Nan::AsyncProgressQueueWorker<P> {
     public:
-        struct RejectCallbacks {
-            std::function<void (const std::string &message)> withMessage;
-            std::function<void (v8::Local<v8::Value> exception)> withException;
+        typedef typename Nan::AsyncProgressQueueWorker<P>::ExecutionProgress ExecutionProgress;
+
+        class ExecutionContext {
+            AsyncBackgroundTask<T, P>* self;
+            const ExecutionProgress &progress;
+
+            friend class AsyncBackgroundTask<T, P>;
+
+            ExecutionContext(
+                AsyncBackgroundTask<T, P>* s,
+                const ExecutionProgress &progress
+            ): self(s), progress(progress) {}
+
+        public:
+            void resolve(const T &returnValue) {
+                if(!self->completed) {
+                    self->returnValue = Nan::Just(returnValue);
+                    self->completed = true;
+                }
+            }
+
+            void reject(const std::string &message) {
+                if(!self->completed) {
+                    self->SetErrorMessage(message.c_str());
+                    self->completed = true;
+                }
+            }
+
+            void reject(v8::Local<v8::Value> exception) {
+                assert(v8::Isolate::GetCurrent() != nullptr);
+                if(!self->completed) {
+                    self->exceptionValue.Reset(exception);
+                    self->SetErrorMessage("<mock>");
+                    self->completed = true;
+                }
+            }
+
+            void sendProgress(const P* data, size_t count = 1) {
+                if(!self->completed) {
+                    progress.Send(data, count);
+                }
+            }
+
+            inline void sendProgress(const P &data) {
+                sendProgress(&data);
+            }
+
+            inline AsyncBackgroundTask<T, P>* getTask() {
+                return self;
+            }
+
+            inline bool isCompleted() {
+                return self->completed;
+            }
         };
 
-        typedef typename Nan::AsyncProgressQueueWorker<P>::ExecutionProgress ExecutionProgress;
-        typedef typename std::function<void (const AsyncBackgroundTask<T, P>*, const P *data, size_t size)> ProgressCallback;
-        typedef std::function<void (T returnValue)> ResolveCallback;
-        typedef std::function<void (ResolveCallback, const RejectCallbacks &, const ExecutionProgress &)> FunctionCallback;
+        typedef typename std::function<void (ExecutionContext &, const P *data, size_t size)> ProgressCallback;
+        typedef std::function<void (ExecutionContext &)> FunctionCallback;
         typedef std::function<v8::Local<v8::Value> (T value)> ToV8ConverterFunction;
+
+        ExecutionContext* executionContext = nullptr;
 
     protected:
         FunctionCallback function;
@@ -46,40 +97,27 @@ namespace flac_bindings {
 
         virtual void Execute(const ExecutionProgress &progress) override {
             if(function) {
-                RejectCallbacks rejectCbks = {
-                    [this] (const auto &message) {
-                        if(!this->resolved) {
-                            this->SetErrorMessage(message.c_str());
-                            this->resolved = true;
-                        }
-                    },
-                    [this] (auto object) {
-                        assert(v8::Isolate::GetCurrent() != nullptr);
-                        if(!this->resolved) {
-                            this->exceptionValue.Reset(object);
-                            this->SetErrorMessage("<mock>");
-                            this->resolved = true;
-                        }
-                    }
-                };
-                auto resolveCbk = [this] (T returnValue) {
-                    if(!this->resolved) {
-                        this->returnValue = Nan::Just(returnValue);
-                        this->resolved = true;
-                    }
-                };
-
-                function(resolveCbk, rejectCbks, progress);
+                executionContext = new ExecutionContext(this, progress);
+                function(*executionContext);
+                delete executionContext;
             } else {
                 this->SetErrorMessage("Impl - No lambda function received in AsyncBackgroundTask");
             }
         }
 
         virtual void HandleProgressCallback(const P *data, size_t size) override {
-            Nan::HandleScope scope;
             if(this->progress) {
-                this->progress(this, data, size);
+                Nan::HandleScope scope;
+                Nan::TryCatch tryCatch;
+                this->progress(*executionContext, data, size);
+                if(tryCatch.HasCaught()) {
+                    executionContext->reject(tryCatch.Exception());
+                }
             }
+        }
+
+        Nan::AsyncResource* getAsyncResource() {
+            return this->async_resource;
         }
 
         const Nan::AsyncResource* getAsyncResource() const {
@@ -87,7 +125,7 @@ namespace flac_bindings {
         }
 
     protected:
-        bool resolved = false;
+        bool completed = false;
 
         virtual void HandleOKCallback() override {
             Nan::HandleScope scope;
@@ -131,10 +169,10 @@ namespace flac_bindings {
         }
 
     public:
-        typedef typename AsyncBackgroundTask<T, P>::RejectCallbacks RejectCallbacks;
-        typedef typename AsyncBackgroundTask<T, P>::ExecutionProgress ExecutionProgress;
+        //typedef typename AsyncBackgroundTask<T, P>::RejectCallbacks RejectCallbacks;
+        //typedef typename AsyncBackgroundTask<T, P>::ExecutionProgress ExecutionProgress;
         typedef typename AsyncBackgroundTask<T, P>::ProgressCallback ProgressCallback;
-        typedef typename AsyncBackgroundTask<T, P>::ResolveCallback ResolveCallback;
+        //typedef typename AsyncBackgroundTask<T, P>::ResolveCallback ResolveCallback;
         typedef typename AsyncBackgroundTask<T, P>::FunctionCallback FunctionCallback;
         typedef typename AsyncBackgroundTask<T, P>::ToV8ConverterFunction ToV8ConverterFunction;
 

@@ -34,24 +34,24 @@ namespace flac_bindings {
 
 
     static std::function<void (
-        AsyncEncoderWorkBase::ResolveCallback resolve,
-        const AsyncEncoderWorkBase::RejectCallbacks &reject,
-        const AsyncEncoderWorkBase::ExecutionProgress &progress
+        AsyncEncoderWorkBase::ExecutionContext &c
     )>
-    decorate(StreamEncoder* enc, std::function<bool()> func) {
-        return [enc, func] (auto resolve, const auto &reject, const auto &progress) {
-            if(enc->progress != nullptr) {
-                reject.withMessage("There's already an asynchronous operation on the encoder");
+    decorate(StreamEncoder* enc, std::function<bool(AsyncEncoderWorkBase::ExecutionContext &c)> func) {
+        return [enc, func] (auto &c) {
+            if(enc->async != nullptr) {
+                c.reject("There's already an asynchronous operation on the encoder");
                 return;
             }
 
-            enc->progress = &progress;
-            enc->reject = &reject;
-            bool ok = func();
-            if(!ok) reject.withMessage(FLAC__stream_encoder_get_resolved_state_string(enc->enc));
-            else resolve(ok);
-            enc->progress = nullptr;
-            enc->reject = nullptr;
+            enc->async = c.getTask()->getAsyncResource();
+            enc->asyncExecutionContext = &c;
+            bool ok = func(c);
+            if(!c.isCompleted()) {
+                if(!ok) c.reject(FLAC__stream_encoder_get_resolved_state_string(enc->enc));
+                else c.resolve(ok);
+            }
+            enc->async = nullptr;
+            enc->asyncExecutionContext = nullptr;
         };
     }
 
@@ -127,7 +127,7 @@ namespace flac_bindings {
         return Nan::Just(std::make_pair(buffer, samples.FromJust()));
     }
 
-    static bool captureInitErrorAndThrow(StreamEncoder* enc, int r) {
+    static bool captureInitErrorAndThrow(StreamEncoder* enc, AsyncEncoderWorkBase::ExecutionContext &c, int r) {
         if(r == 0) {
             return true;
         }
@@ -161,26 +161,26 @@ namespace flac_bindings {
             errorMessage = "init*() method called when the encoder has already been initialized";
         }
 
-        enc->reject->withMessage(errorMessage);
+        c.reject(errorMessage);
         return true;
     }
 
 
     AsyncEncoderWork::AsyncEncoderWork(
-        std::function<bool()> function,
+        std::function<bool(AsyncEncoderWorkBase::ExecutionContext &)> function,
         Callback* callback,
         const char* name,
         StreamEncoder* enc
     ): AsyncEncoderWorkBase(
         decorate(enc, function),
-        std::bind(encoderDoWork, enc, _1, _2, _3),
+        std::bind(encoderDoWork, enc, _1, _2),
         callback,
         name,
         booleanToJs<bool>
     ) {}
 
     AsyncEncoderWorkBase* AsyncEncoderWork::forFinish(StreamEncoder* enc, Callback* cbk) {
-        auto workFunction = [enc] () { return FLAC__stream_encoder_finish(enc->enc); };
+        auto workFunction = [enc] (AsyncEncoderWorkBase::ExecutionContext &c) { return FLAC__stream_encoder_finish(enc->enc); };
         if(cbk) return new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::finishAsync", enc);
         else return new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder::finishAsync", enc);
     }
@@ -194,7 +194,7 @@ namespace flac_bindings {
 
         auto _buffers = std::get<0>(result.FromJust());
         auto samples2 = std::get<1>(result.FromJust());
-        auto workFunction = [enc, _buffers, samples2] () {
+        auto workFunction = [enc, _buffers, samples2] (AsyncEncoderWorkBase::ExecutionContext &c) {
             bool ret = FLAC__stream_encoder_process(enc->enc, _buffers, samples2);
             delete[] _buffers;
             return ret;
@@ -216,7 +216,7 @@ namespace flac_bindings {
 
         auto buffer = std::get<0>(result.FromJust());
         auto samples = std::get<1>(result.FromJust());
-        auto workFunction = [enc, buffer, samples] () { return FLAC__stream_encoder_process_interleaved(enc->enc, buffer, samples); };
+        auto workFunction = [enc, buffer, samples] (AsyncEncoderWorkBase::ExecutionContext &c) { return FLAC__stream_encoder_process_interleaved(enc->enc, buffer, samples); };
         AsyncEncoderWorkBase* work;
         if(cbk) work = new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::processInterleavedAsync", enc);
         else work = new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder:processInterleavedAsync", enc);
@@ -226,8 +226,8 @@ namespace flac_bindings {
     }
 
     AsyncEncoderWorkBase* AsyncEncoderWork::forInitStream(StreamEncoder* enc, Nan::Callback* cbk) {
-        auto workFunction = [enc] () {
-            return captureInitErrorAndThrow(enc, FLAC__stream_encoder_init_stream(
+        auto workFunction = [enc] (AsyncEncoderWorkBase::ExecutionContext &c) {
+            return captureInitErrorAndThrow(enc, c, FLAC__stream_encoder_init_stream(
                 enc->enc,
                 !enc->writeCbk ? nullptr : encoder_write_callback,
                 !enc->seekCbk ? nullptr : encoder_seek_callback,
@@ -242,8 +242,8 @@ namespace flac_bindings {
     }
 
     AsyncEncoderWorkBase* AsyncEncoderWork::forInitOggStream(StreamEncoder* enc, Nan::Callback* cbk) {
-        auto workFunction = [enc] () {
-            return captureInitErrorAndThrow(enc, FLAC__stream_encoder_init_ogg_stream(
+        auto workFunction = [enc] (AsyncEncoderWorkBase::ExecutionContext &c) {
+            return captureInitErrorAndThrow(enc, c, FLAC__stream_encoder_init_ogg_stream(
                 enc->enc,
                 !enc->readCbk ? nullptr : encoder_read_callback,
                 !enc->writeCbk ? nullptr : encoder_write_callback,
@@ -266,8 +266,8 @@ namespace flac_bindings {
 
         Nan::Utf8String str(path);
         std::string string(*str);
-        auto workFunction = [enc, string] () {
-            return captureInitErrorAndThrow(enc, FLAC__stream_encoder_init_file(
+        auto workFunction = [enc, string] (AsyncEncoderWorkBase::ExecutionContext &c) {
+            return captureInitErrorAndThrow(enc, c, FLAC__stream_encoder_init_file(
                 enc->enc,
                 string.c_str(),
                 enc->progressCbk ? encoder_progress_callback : nullptr,
@@ -287,8 +287,8 @@ namespace flac_bindings {
 
         Nan::Utf8String str(path);
         std::string string(*str);
-        auto workFunction = [enc, string] () {
-            return captureInitErrorAndThrow(enc, FLAC__stream_encoder_init_ogg_file(
+        auto workFunction = [enc, string] (AsyncEncoderWorkBase::ExecutionContext &c) {
+            return captureInitErrorAndThrow(enc, c, FLAC__stream_encoder_init_ogg_file(
                 enc->enc,
                 string.c_str(),
                 enc->progressCbk ? encoder_progress_callback : nullptr,
@@ -303,24 +303,24 @@ namespace flac_bindings {
 
 
     PromisifiedAsyncEncoderWork::PromisifiedAsyncEncoderWork(
-        std::function<bool()> function,
+        std::function<bool(AsyncEncoderWorkBase::ExecutionContext &)> function,
         const char* name,
         StreamEncoder* enc
     ): PromisifiedAsyncEncoderWorkBase(
         decorate(enc, function),
-        std::bind(encoderDoWork, enc, _1, _2, _3),
+        std::bind(encoderDoWork, enc, _1, _2),
         name,
         booleanToJs<bool>
     ) {}
 
 
 
-    static void encoderDoWork(const StreamEncoder* enc, const AsyncEncoderWorkBase* w, const EncoderWorkRequest *data, size_t size) {
+    static void encoderDoWork(const StreamEncoder* enc, AsyncEncoderWorkBase::ExecutionContext &c, const EncoderWorkRequest *data) {
         using namespace v8;
         using namespace Nan;
         using namespace node;
 
-        auto async = (Nan::AsyncResource*) w->getAsyncResource();
+        auto async = (Nan::AsyncResource*) c.getTask()->getAsyncResource();
         std::function<void (Local<Value> result)> processResult;
         Nan::MaybeLocal<Value> result;
         Nan::TryCatch tryCatch;
@@ -379,7 +379,7 @@ namespace flac_bindings {
         }
 
         if(tryCatch.HasCaught()) {
-            enc->reject->withException(tryCatch.Exception());
+            c.reject(tryCatch.Exception());
             data->notifyWorkDone();
         } else if(!result.IsEmpty()) {
             auto theGoodResult = result.ToLocalChecked();

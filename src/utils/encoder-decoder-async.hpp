@@ -10,7 +10,7 @@ namespace flac_bindings {
                 auto maybeReturnValue = numberFromJs<int>(res);
                 if(maybeReturnValue.IsNothing()) {
                     std::string errorMessage = std::string(op) + " - Expected number or bigint as return value";
-                    enc->reject->withException(Nan::TypeError(errorMessage.c_str()));
+                    enc->asyncExecutionContext->reject(Nan::TypeError(errorMessage.c_str()));
                     return;
                 }
 
@@ -26,7 +26,7 @@ namespace flac_bindings {
             return [dec, data, op, attributeName, setter] (Local<Value> res) {
                 if(!res->IsObject()) {
                     std::string errorMessage = std::string(op) + " - Expected object as return value";
-                    dec->reject->withException(Nan::TypeError(errorMessage.c_str()));
+                    dec->asyncExecutionContext->reject(Nan::TypeError(errorMessage.c_str()));
                     return;
                 }
 
@@ -35,13 +35,13 @@ namespace flac_bindings {
                 auto maybeReturnValue = numberFromJs<int>(Nan::Get(obj, Nan::New("returnValue").ToLocalChecked()));
                 if(maybeE.IsNothing()) {
                     std::string errorMessage = std::string(op) + " - " + std::string(attributeName) + " is not a number nor bigint";
-                    dec->reject->withException(Nan::TypeError(errorMessage.c_str()));
+                    dec->asyncExecutionContext->reject(Nan::TypeError(errorMessage.c_str()));
                     return;
                 }
 
                 if(maybeReturnValue.IsNothing()) {
                     std::string errorMessage = std::string(op) + " - returnValue is not a number nor bigint";
-                    dec->reject->withException(Nan::TypeError(errorMessage.c_str()));
+                    dec->asyncExecutionContext->reject(Nan::TypeError(errorMessage.c_str()));
                     return;
                 }
 

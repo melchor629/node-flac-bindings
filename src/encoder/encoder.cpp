@@ -643,7 +643,7 @@ static int doAsyncWork(flac_bindings::StreamEncoder* enc, flac_bindings::Encoder
     int returnValue = errorReturnValue;
     ewr.returnValue = &returnValue;
 
-    enc->progress->Send(&ewr, 1);
+    enc->asyncExecutionContext->sendProgress(ewr);
     ewr.waitForWorkDone();
 
     return returnValue;
@@ -651,7 +651,7 @@ static int doAsyncWork(flac_bindings::StreamEncoder* enc, flac_bindings::Encoder
 
 int encoder_read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t* bytes, void* data) {
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
-    if(cbks->progress) {
+    if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
         EncoderWorkRequest ewr(EncoderWorkRequest::Type::Read);
         ewr.buffer = buffer;
@@ -692,7 +692,7 @@ int encoder_read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t*
 
 int encoder_write_callback(const FLAC__StreamEncoder* enc, const char buffer[], size_t bytes, unsigned samples, unsigned frame, void* data) {
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
-    if(cbks->progress) {
+    if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
         EncoderWorkRequest ewr(EncoderWorkRequest::Type::Write);
         ewr.constBuffer = buffer;
@@ -722,7 +722,7 @@ int encoder_write_callback(const FLAC__StreamEncoder* enc, const char buffer[], 
 
 int encoder_seek_callback(const FLAC__StreamEncoder* enc, uint64_t offset, void* data) {
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
-    if(cbks->progress) {
+    if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
         EncoderWorkRequest ewr(EncoderWorkRequest::Type::Seek);
         ewr.offset = &offset;
@@ -745,7 +745,7 @@ int encoder_seek_callback(const FLAC__StreamEncoder* enc, uint64_t offset, void*
 
 int encoder_tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void* data) {
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
-    if(cbks->progress) {
+    if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
         EncoderWorkRequest ewr(EncoderWorkRequest::Type::Tell);
         ewr.offset = offset;
@@ -781,7 +781,7 @@ int encoder_tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void
 
 void encoder_metadata_callback(const FLAC__StreamEncoder* enc, const FLAC__StreamMetadata* metadata, void* data) {
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
-    if(cbks->progress) {
+    if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
         EncoderWorkRequest ewr(EncoderWorkRequest::Type::Metadata);
         ewr.metadata = metadata;
@@ -804,7 +804,7 @@ void encoder_metadata_callback(const FLAC__StreamEncoder* enc, const FLAC__Strea
 
 void encoder_progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_written, uint64_t samples_written, unsigned frames_written, unsigned total_frames_estimate, void* data) {
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
-    if(cbks->progress) {
+    if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
         EncoderWorkRequest ewr(EncoderWorkRequest::Type::Progress);
         ewr.progress.bytesWritten = bytes_written;

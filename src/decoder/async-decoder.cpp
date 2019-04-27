@@ -33,28 +33,28 @@ namespace flac_bindings {
 
 
     static std::function<void (
-        AsyncDecoderWorkBase::ResolveCallback resolve,
-        const AsyncDecoderWorkBase::RejectCallbacks &reject,
-        const AsyncDecoderWorkBase::ExecutionProgress &progress
+        AsyncDecoderWorkBase::ExecutionContext &c
     )>
-    decorate(StreamDecoder* dec, std::function<bool()> func) {
-        return [dec, func] (auto resolve, const auto &reject, const auto &progress) {
-            if(dec->progress != nullptr) {
-                reject.withMessage("There's already an asynchronous operation on the decoder");
+    decorate(AsyncDecoderWorkBase* w, StreamDecoder* dec, std::function<bool(AsyncDecoderWorkBase::ExecutionContext &)> func) {
+        return [w, dec, func] (auto &c) {
+            if(dec->async != nullptr) {
+                c.reject("There's already an asynchronous operation on the decoder");
                 return;
             }
 
-            dec->progress = &progress;
-            dec->reject = &reject;
-            bool ok = func();
-            if(!ok) reject.withMessage(FLAC__stream_decoder_get_resolved_state_string(dec->dec));
-            else resolve(ok);
-            dec->progress = nullptr;
-            dec->reject = nullptr;
+            dec->async = w->getAsyncResource();
+            dec->asyncExecutionContext = &c;
+            bool ok = func(c);
+            if(!c.isCompleted()) {
+                if(!ok) c.reject(FLAC__stream_decoder_get_resolved_state_string(dec->dec));
+                else c.resolve(ok);
+            }
+            dec->async = nullptr;
+            dec->asyncExecutionContext = nullptr;
         };
     }
 
-    static bool captureInitErrorAndThrow(StreamDecoder* dec, int r) {
+    static bool captureInitErrorAndThrow(StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &c, int r) {
         if(r == 0) { //OK
             return true;
         }
@@ -72,69 +72,69 @@ namespace flac_bindings {
             errorMessage = "init*() method called when the decoder has already been initialized";
         }
 
-        dec->reject->withMessage(errorMessage);
+        c.reject(errorMessage);
         return true;
     }
 
 
     AsyncDecoderWork::AsyncDecoderWork(
-        std::function<bool()> function,
+        std::function<bool(AsyncDecoderWorkBase::ExecutionContext &)> function,
         Callback* callback,
         const char* name,
         StreamDecoder* dec
     ): AsyncBackgroundTask<bool, DecoderWorkRequest>(
-        decorate(dec, function),
-        std::bind(decoderDoWork, dec, _1, _2, _3),
+        decorate(this, dec, function),
+        std::bind(decoderDoWork, dec, _1, _2),
         callback,
         name,
         booleanToJs<bool>
     ) {}
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forFinish(StreamDecoder* dec, Callback* cbk) {
-        auto workFunction = [dec] () { return FLAC__stream_decoder_finish(dec->dec); };
+        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_finish(dec->dec); };
         if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::finishAsync", dec);
         else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::finishAsync", dec);
     }
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forFlush(StreamDecoder* dec, Callback* cbk) {
-        auto workFunction = [dec] () { return FLAC__stream_decoder_flush(dec->dec); };
+        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_flush(dec->dec); };
         if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::flushAsync", dec);
         else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::flushAsync", dec);
     }
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forProcessSingle(StreamDecoder* dec, Callback* cbk) {
-        auto workFunction = [dec] () { return FLAC__stream_decoder_process_single(dec->dec); };
+        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_process_single(dec->dec); };
         if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::processSingleAsync", dec);
         else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::processSingleAsync", dec);
     }
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forProcessUntilEndOfMetadata(StreamDecoder* dec, Callback* cbk) {
-        auto workFunction = [dec] () { return FLAC__stream_decoder_process_until_end_of_metadata(dec->dec); };
+        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_process_until_end_of_metadata(dec->dec); };
         if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::processUntilEndOfMetadataAsync", dec);
         else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::processUntilEndOfMetadataAsync", dec);
     }
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forProcessUntilEndOfStream(StreamDecoder* dec, Callback* cbk) {
-        auto workFunction = [dec] () { return FLAC__stream_decoder_process_until_end_of_stream(dec->dec); };
+        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_process_until_end_of_stream(dec->dec); };
         if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::processUntilEndOfStreamAsync", dec);
         else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::processUntilEndOfStreamAsync", dec);
     }
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forSkipSingleFrame(StreamDecoder* dec, Callback* cbk) {
-        auto workFunction = [dec] () { return FLAC__stream_decoder_skip_single_frame(dec->dec); };
+        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_skip_single_frame(dec->dec); };
         if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::skipSingleFrameAsync", dec);
         else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::skipSingleFrameAsync", dec);
     }
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forSeekAbsolute(uint64_t value, StreamDecoder* dec, Callback* cbk) {
-        auto workFunction = [dec, value] () { return FLAC__stream_decoder_seek_absolute(dec->dec, value); };
+        auto workFunction = [dec, value] (auto &c) { return FLAC__stream_decoder_seek_absolute(dec->dec, value); };
         if(cbk) return new AsyncDecoderWork(workFunction, cbk, "flac_bindings::decoder::seekAbsoluteAsync", dec);
         else return new PromisifiedAsyncDecoderWork(workFunction, "flac_bindings::decoder::seekAbsoluteAsync", dec);
     }
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forInitStream(StreamDecoder* dec, Nan::Callback* cbk) {
-        auto workFunction = [dec] () {
-            return captureInitErrorAndThrow(dec, FLAC__stream_decoder_init_stream(
+        auto workFunction = [dec] (auto &c) {
+            return captureInitErrorAndThrow(dec, c, FLAC__stream_decoder_init_stream(
                 dec->dec,
                 !dec->readCbk ? nullptr : decoder_read_callback,
                 !dec->seekCbk ? nullptr : decoder_seek_callback,
@@ -152,8 +152,8 @@ namespace flac_bindings {
     }
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forInitOggStream(StreamDecoder* dec, Nan::Callback* cbk) {
-        auto workFunction = [dec] () {
-            return captureInitErrorAndThrow(dec, FLAC__stream_decoder_init_ogg_stream(
+        auto workFunction = [dec] (auto &c) {
+            return captureInitErrorAndThrow(dec, c, FLAC__stream_decoder_init_ogg_stream(
                 dec->dec,
                 !dec->readCbk ? nullptr : decoder_read_callback,
                 !dec->seekCbk ? nullptr : decoder_seek_callback,
@@ -172,8 +172,8 @@ namespace flac_bindings {
 
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forInitFile(const std::string &filePath, StreamDecoder* dec, Nan::Callback* cbk) {
-        auto workFunction = [dec, filePath] () {
-            return captureInitErrorAndThrow(dec, FLAC__stream_decoder_init_file(
+        auto workFunction = [dec, filePath] (auto &c) {
+            return captureInitErrorAndThrow(dec, c, FLAC__stream_decoder_init_file(
                 dec->dec,
                 filePath.c_str(),
                 dec->writeCbk ? decoder_write_callback : nullptr,
@@ -187,8 +187,8 @@ namespace flac_bindings {
     }
 
     AsyncDecoderWorkBase* AsyncDecoderWork::forInitOggFile(const std::string &filePath, StreamDecoder* dec, Nan::Callback* cbk) {
-        auto workFunction = [dec, filePath] () {
-            return captureInitErrorAndThrow(dec, FLAC__stream_decoder_init_ogg_file(
+        auto workFunction = [dec, filePath] (auto &c) {
+            return captureInitErrorAndThrow(dec, c, FLAC__stream_decoder_init_ogg_file(
                 dec->dec,
                 filePath.c_str(),
                 dec->writeCbk ? decoder_write_callback : nullptr,
@@ -204,24 +204,24 @@ namespace flac_bindings {
 
 
     PromisifiedAsyncDecoderWork::PromisifiedAsyncDecoderWork(
-        std::function<bool()> function,
+        std::function<bool(AsyncDecoderWorkBase::ExecutionContext &)> function,
         const char* name,
         StreamDecoder* dec
     ): PromisifiedAsyncDecoderWorkBase(
-        decorate(dec, function),
-        std::bind(decoderDoWork, dec, _1, _2, _3),
+        decorate(this, dec, function),
+        std::bind(decoderDoWork, dec, _1, _2),
         name,
         booleanToJs<bool>
     ) {}
 
 
 
-    void decoderDoWork(const StreamDecoder* dec, const AsyncDecoderWorkBase* w, const DecoderWorkRequest *data, size_t size) {
+    void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, const DecoderWorkRequest *data) {
         using namespace v8;
         using namespace Nan;
         using namespace node;
 
-        auto async = (Nan::AsyncResource*) w->getAsyncResource();
+        auto async = (Nan::AsyncResource*) w.getTask()->getAsyncResource();
         std::function<void (Local<Value> result)> processResult;
         Nan::MaybeLocal<Value> result;
         Nan::TryCatch tryCatch;
@@ -232,12 +232,12 @@ namespace flac_bindings {
         switch(data->type) {
             case DecoderWorkRequest::Type::Eof: {
                 result = dec->eofCbk->Call(0, nullptr, async);
-                processResult = [data, dec] (auto res) {
+                processResult = [data, &w] (auto res) {
                     auto maybeBoolean = booleanFromJs<int>(res);
                     if(maybeBoolean.IsJust()) {
                         *data->returnValue = maybeBoolean.FromJust();
                     } else {
-                        dec->reject->withException(Nan::TypeError("Decoder::EofCallback - Expected boolean as return value"));
+                        w.reject(Nan::TypeError("Decoder::EofCallback - Expected boolean as return value"));
                     }
                 };
                 break;
@@ -299,7 +299,7 @@ namespace flac_bindings {
         }
 
         if(tryCatch.HasCaught()) {
-            dec->reject->withException(tryCatch.Exception());
+            w.reject(tryCatch.Exception());
             data->notifyWorkDone();
         } else if(!result.IsEmpty()) {
             auto theGoodResult = result.ToLocalChecked();
