@@ -84,15 +84,19 @@ namespace flac_bindings {
         explicit AsyncBackgroundTask(
             FunctionCallback function,
             ProgressCallback progress,
-            Nan::Callback* callback,
             const char* name,
-            ToV8ConverterFunction convertFunction = nullptr
+            ToV8ConverterFunction convertFunction,
+            Nan::Callback* callback
         ): Nan::AsyncProgressQueueWorker<P>(callback, name), function(function), progress(progress), convertFunction(convertFunction) {}
 
         ~AsyncBackgroundTask() {
             if(!this->exceptionValue.IsEmpty()) {
                 this->exceptionValue.Reset();
             }
+        }
+
+        virtual inline v8::Local<v8::Value> getReturnValue() {
+            return Nan::Undefined();
         }
 
         virtual void Execute(const ExecutionProgress &progress) override {
@@ -169,10 +173,7 @@ namespace flac_bindings {
         }
 
     public:
-        //typedef typename AsyncBackgroundTask<T, P>::RejectCallbacks RejectCallbacks;
-        //typedef typename AsyncBackgroundTask<T, P>::ExecutionProgress ExecutionProgress;
         typedef typename AsyncBackgroundTask<T, P>::ProgressCallback ProgressCallback;
-        //typedef typename AsyncBackgroundTask<T, P>::ResolveCallback ResolveCallback;
         typedef typename AsyncBackgroundTask<T, P>::FunctionCallback FunctionCallback;
         typedef typename AsyncBackgroundTask<T, P>::ToV8ConverterFunction ToV8ConverterFunction;
 
@@ -181,7 +182,7 @@ namespace flac_bindings {
             ProgressCallback progress,
             const char* name,
             ToV8ConverterFunction convertFunction = nullptr
-        ): AsyncBackgroundTask<T, P>(function, progress, (Nan::Callback*) (0x1), name, convertFunction) {
+        ): AsyncBackgroundTask<T, P>(function, progress, name, convertFunction, (Nan::Callback*) (0x1)) {
             auto resolver = v8::Promise::Resolver::New(Nan::GetCurrentContext()).ToLocalChecked();
             this->SaveToPersistent("promiseResolver", resolver);
             asyncContext = node::EmitAsyncInit(v8::Isolate::GetCurrent(), resolver, name);
@@ -230,6 +231,28 @@ namespace flac_bindings {
         }
 
     };
+
+
+    template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
+    static inline WorkerBase* newWorker(
+        Nan::Callback* callback,
+        Args... args
+    ) {
+        if(callback) {
+            return new Worker(std::forward<Args>(args)..., callback);
+        } else {
+            return new PromisifiedWorker(std::forward<Args>(args)...);
+        }
+    }
+
+    template<typename Worker, class PromisifiedWorker, class... Args>
+    static inline Worker* newWorker(
+        Nan::Callback* callback,
+        Args... args
+    ) {
+        return newWorker<Worker, Worker, PromisifiedWorker, Args...>(callback, std::forward<Args>(args)...);
+    }
+
 
     struct SyncronizableWorkRequest {
         std::shared_ptr<std::atomic_bool> workDone = std::shared_ptr<std::atomic_bool>(new std::atomic_bool(false));

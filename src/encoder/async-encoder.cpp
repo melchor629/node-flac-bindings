@@ -33,28 +33,6 @@ namespace flac_bindings {
     }
 
 
-    static std::function<void (
-        AsyncEncoderWorkBase::ExecutionContext &c
-    )>
-    decorate(StreamEncoder* enc, std::function<bool(AsyncEncoderWorkBase::ExecutionContext &c)> func) {
-        return [enc, func] (auto &c) {
-            if(enc->async != nullptr) {
-                c.reject("There's already an asynchronous operation on the encoder");
-                return;
-            }
-
-            enc->async = c.getTask()->getAsyncResource();
-            enc->asyncExecutionContext = &c;
-            bool ok = func(c);
-            if(!c.isCompleted()) {
-                if(!ok) c.reject(FLAC__stream_encoder_get_resolved_state_string(enc->enc));
-                else c.resolve(ok);
-            }
-            enc->async = nullptr;
-            enc->asyncExecutionContext = nullptr;
-        };
-    }
-
     static inline Nan::Maybe<std::pair<int32_t**, uint32_t>> convertArgsForProcess(Local<Value> &buffers_, Local<Value> &samples, uint32_t ch) {
         if(!buffers_->IsArray()) {
             Nan::ThrowTypeError("Expected first argument to be an array");
@@ -168,21 +146,20 @@ namespace flac_bindings {
 
     AsyncEncoderWork::AsyncEncoderWork(
         std::function<bool(AsyncEncoderWorkBase::ExecutionContext &)> function,
-        Callback* callback,
         const char* name,
-        StreamEncoder* enc
+        StreamEncoder* enc,
+        Callback* callback
     ): AsyncEncoderWorkBase(
-        decorate(enc, function),
+        decorate(enc, function, [enc] () { return FLAC__stream_encoder_get_resolved_state_string(enc->enc); }),
         std::bind(encoderDoWork, enc, _1, _2),
-        callback,
         name,
-        booleanToJs<bool>
+        booleanToJs<bool>,
+        callback
     ) {}
 
     AsyncEncoderWorkBase* AsyncEncoderWork::forFinish(StreamEncoder* enc, Callback* cbk) {
         auto workFunction = [enc] (AsyncEncoderWorkBase::ExecutionContext &c) { return FLAC__stream_encoder_finish(enc->enc); };
-        if(cbk) return new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::finishAsync", enc);
-        else return new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder::finishAsync", enc);
+        return newWorker<AsyncEncoderWorkBase>(workFunction, "flac_bindings::encoder::finishAsync", enc, cbk);
     }
 
     AsyncEncoderWorkBase* AsyncEncoderWork::forProcess(Local<Value> &buffers_, Local<Value> &samples, StreamEncoder* enc, Callback* cbk) {
@@ -199,9 +176,7 @@ namespace flac_bindings {
             delete[] _buffers;
             return ret;
         };
-        AsyncEncoderWorkBase* work;
-        if(cbk) work = new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::processAsync", enc);
-        else work = new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder::processAsync", enc);
+        auto work = newWorker<AsyncEncoderWorkBase>(workFunction, "flac_bindings::encoder::processAsync", enc, cbk);
         work->SaveToPersistent("buffers", buffers_);
         work->SaveToPersistent("samples", samples);
         return work;
@@ -217,9 +192,7 @@ namespace flac_bindings {
         auto buffer = std::get<0>(result.FromJust());
         auto samples = std::get<1>(result.FromJust());
         auto workFunction = [enc, buffer, samples] (AsyncEncoderWorkBase::ExecutionContext &c) { return FLAC__stream_encoder_process_interleaved(enc->enc, buffer, samples); };
-        AsyncEncoderWorkBase* work;
-        if(cbk) work = new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::processInterleavedAsync", enc);
-        else work = new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder:processInterleavedAsync", enc);
+        auto work = newWorker<AsyncEncoderWorkBase>(workFunction, "flac_bindings::encoder::processInterleavedAsync", enc, cbk);
         work->SaveToPersistent("buffer", _buffer);
         work->SaveToPersistent("samples", _samples);
         return work;
@@ -237,8 +210,7 @@ namespace flac_bindings {
             ));
         };
 
-        if(cbk) return new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::initStreamAsync", enc);
-        else return new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder::initStreamAsync", enc);
+        return newWorker<AsyncEncoderWorkBase>(workFunction, "flac_bindings::encoder::initStreamAsync", enc, cbk);
     }
 
     AsyncEncoderWorkBase* AsyncEncoderWork::forInitOggStream(StreamEncoder* enc, Nan::Callback* cbk) {
@@ -254,8 +226,7 @@ namespace flac_bindings {
             ));
         };
 
-        if(cbk) return new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::initOggStreamAsync", enc);
-        else return new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder::initOggStreamAsync", enc);
+        return newWorker<AsyncEncoderWorkBase>(workFunction, "flac_bindings::encoder::initOggStreamAsync", enc, cbk);
     }
 
     AsyncEncoderWorkBase* AsyncEncoderWork::forInitFile(Local<Value> &path, StreamEncoder* enc, Nan::Callback* cbk) {
@@ -275,8 +246,7 @@ namespace flac_bindings {
             ));
         };
 
-        if(cbk) return new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::initFileAsync", enc);
-        else return new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder::initFileAsync", enc);
+        return newWorker<AsyncEncoderWorkBase>(workFunction, "flac_bindings::encoder::initFileAsync", enc, cbk);
     }
 
     AsyncEncoderWorkBase* AsyncEncoderWork::forInitOggFile(Local<Value> &path, StreamEncoder* enc, Nan::Callback* cbk) {
@@ -296,8 +266,7 @@ namespace flac_bindings {
             ));
         };
 
-        if(cbk) return new AsyncEncoderWork(workFunction, cbk, "flac_bindings::encoder::initOggFileAsync", enc);
-        else return new PromisifiedAsyncEncoderWork(workFunction, "flac_bindings::encoder::initOggFileAsync", enc);
+        return newWorker<AsyncEncoderWorkBase>(workFunction, "flac_bindings::encoder::initOggFileAsync", enc, cbk);
     }
 
 
@@ -307,7 +276,7 @@ namespace flac_bindings {
         const char* name,
         StreamEncoder* enc
     ): PromisifiedAsyncEncoderWorkBase(
-        decorate(enc, function),
+        decorate(enc, function, [enc] () { return FLAC__stream_encoder_get_resolved_state_string(enc->enc); }),
         std::bind(encoderDoWork, enc, _1, _2),
         name,
         booleanToJs<bool>

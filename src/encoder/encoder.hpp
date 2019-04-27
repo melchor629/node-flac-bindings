@@ -188,19 +188,23 @@ namespace flac_bindings {
 
 #ifdef MAKE_FRIENDS
     static void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, const EncoderWorkRequest *data);
+    template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
+    static inline WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
     class AsyncEncoderWork: public AsyncEncoderWorkBase {
         AsyncEncoderWork(
             std::function<bool(AsyncEncoderWorkBase::ExecutionContext &)> function,
-            Nan::Callback* callback,
             const char* name,
-            StreamEncoder* enc
+            StreamEncoder* enc,
+            Nan::Callback* callback
         );
 
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
 #ifdef MAKE_FRIENDS
         friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, const EncoderWorkRequest *data);
+        template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
+        friend WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
     public:
         static AsyncEncoderWorkBase* forFinish(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
@@ -224,6 +228,8 @@ namespace flac_bindings {
 #ifdef MAKE_FRIENDS
         friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, const EncoderWorkRequest *data);
         friend class AsyncEncoderWork;
+        template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
+        friend WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
     };
 }
