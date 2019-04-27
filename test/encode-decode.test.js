@@ -228,7 +228,7 @@ describe('encode & decode', function() {
     });
 
     it('gc should work', function() {
-        require('./gc')();
+        require('./helper/gc')();
     });
 
 });

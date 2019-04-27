@@ -1174,7 +1174,7 @@ describe('metadata', function() {
 
     describe('gc', function() {
         it('gc should work', function() {
-            require('./gc')();
+            require('./helper/gc')();
         });
     });
 

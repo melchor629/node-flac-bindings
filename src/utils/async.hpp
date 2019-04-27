@@ -8,7 +8,7 @@
 
 namespace flac_bindings {
 
-    template<typename T, typename P>
+    template<typename T, typename P = char>
     class AsyncBackgroundTask: public Nan::AsyncProgressQueueWorker<P> {
     public:
         typedef typename Nan::AsyncProgressQueueWorker<P>::ExecutionProgress ExecutionProgress;
@@ -163,7 +163,7 @@ namespace flac_bindings {
 
     };
 
-    template<typename T, typename P>
+    template<typename T, typename P = char>
     class PromisifiedAsyncBackgroundTask: public AsyncBackgroundTask<T, P> {
 
         node::async_context asyncContext;

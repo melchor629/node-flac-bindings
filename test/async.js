@@ -1,7 +1,8 @@
 /// <reference path="../lib/index.d.ts" />
 const { testAsync } = require('../lib/index').api;
-const { assert } = require('chai');
+const { assert, use } = require('chai');
 
+use(require('./helper/async-chai-extensions.js'));
 const progressValues = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ];
 
 describe('async', function() {
@@ -60,12 +61,7 @@ describe('async', function() {
         });
 
         it('should reject', async function() {
-            try {
-                await testAsync('reject', (c) => c);
-            } catch (e) {
-                return;
-            }
-            throw new Error('Expected task to fail');
+            await assert.throwsAsync(() => testAsync('reject', (c) => c));
         });
 
         it('resolve should send the end result in the callback', async function() {
@@ -73,12 +69,7 @@ describe('async', function() {
         });
 
         it('should reject if an internal exception is thrown', async function() {
-            try {
-                await testAsync('exception', c => c);
-            } catch(e) {
-                return;
-            }
-            throw new Error('Expected task to fail');
+            await assert.throwsAsync(() => testAsync('exception', c => c));
         });
 
         ['resolve', 'reject', 'exception'].forEach(function(endMode) {
@@ -89,12 +80,7 @@ describe('async', function() {
             });
 
             it('should reject if the progress callback throws an exception end mode ' + endMode, async function() {
-                try {
-                    await testAsync(endMode, (c) => { throw new Error(c); });
-                } catch(e) {
-                    return;
-                }
-                throw new Error('Expected task to fail');
+                await assert.throwsAsync(() => testAsync(endMode, (c) => { throw new Error(c); }));
             });
         });
     });

@@ -961,12 +961,24 @@ declare namespace api {
     namespace metadata0 {
         /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga804b42d9da714199b4b383ce51078d51 */
         function getStreaminfo(path: string): metadata.StreamInfoMetadata | false;
+        /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga804b42d9da714199b4b383ce51078d51 */
+        function getStreaminfoAsync(path: string, callback: AsyncCallback<metadata.StreamInfoMetadata>): void;
+        function getStreaminfoAsync(path: string): Promise<metadata.StreamInfoMetadata>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga1626af09cd39d4fa37d5b46ebe3790fd */
         function getTags(path: string): metadata.VorbisCommentMetadata | false;
+        /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga1626af09cd39d4fa37d5b46ebe3790fd */
+        function getTagsAsync(path: string, callback: AsyncCallback<metadata.StreamInfoMetadata>): void;
+        function getTagsAsync(path: string): Promise<metadata.StreamInfoMetadata>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga0f47949dca514506718276205a4fae0b */
         function getCuesheet(path: string): metadata.CueSheetMetadata | false;
+        /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga0f47949dca514506718276205a4fae0b */
+        function getCuesheetAsync(path: string, callback: AsyncCallback<metadata.StreamInfoMetadata>): void;
+        function getCuesheetAsync(path: string): Promise<metadata.StreamInfoMetadata>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga0c9cd22296400c8ce16ee1db011342cb */
         function getPicture(path: string, type: number, maxWidth?: number, maxHeight?: number, maxDepth?: number, maxColors?: number): metadata.PictureMetadata | false;
+        /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga0c9cd22296400c8ce16ee1db011342cb */
+        function getPicture(path: string, type: number, maxWidth: number | null, maxHeight: number | null, maxDepth: number | null, maxColors: number | null, callback: AsyncCallback<metadata.PictureMetadata>): void;
+        function getPicture(path: string, type: number, maxWidth?: number, maxHeight?: number, maxDepth?: number, maxColors?: number): Promise<metadata.PictureMetadata>;
     }
 
 
