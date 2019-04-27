@@ -95,7 +95,7 @@ namespace flac_bindings {
             }
         }
 
-        virtual inline v8::Local<v8::Value> getReturnValue() {
+        virtual inline v8::Local<v8::Value> getReturnValue() const {
             return Nan::Undefined();
         }
 
@@ -197,6 +197,10 @@ namespace flac_bindings {
             return scope.Escape(this->getResolver()->GetPromise());
         }
 
+        virtual inline v8::Local<v8::Value> getReturnValue() const override {
+            return getPromise();
+        }
+
     protected:
         virtual void HandleOKCallback() override {
             this->callback = nullptr;
@@ -251,6 +255,14 @@ namespace flac_bindings {
         Args... args
     ) {
         return newWorker<Worker, Worker, PromisifiedWorker, Args...>(callback, std::forward<Args>(args)...);
+    }
+
+    static inline Nan::Callback* newCallback(v8::Local<v8::Value> value) {
+        if(value.IsEmpty() || !value->IsFunction()) {
+            return nullptr;
+        } else {
+            return new Nan::Callback(v8::Local<v8::Function>::Cast(value));
+        }
     }
 
 

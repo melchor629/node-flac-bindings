@@ -85,23 +85,14 @@ namespace flac_bindings {
         };
 
         AsyncBackgroundTask<bool, char>* worker;
-        if(info[2].IsEmpty() || !info[2]->IsFunction()) {
-            worker = new PromisifiedAsyncBackgroundTask<bool, char>(
-                asyncFunction,
-                asyncFUNction,
-                "flac:testAsync",
-                [] (bool v) { return Nan::New<Boolean>(v); }
-            );
-            info.GetReturnValue().Set(((PromisifiedAsyncBackgroundTask<bool, char>*) worker)->getPromise());
-        } else {
-            worker = new AsyncBackgroundTask<bool, char>(
-                asyncFunction,
-                asyncFUNction,
-                new Nan::Callback(Local<Function>::Cast(info[2])),
-                "flac:testAsync",
-                [] (bool v) { return Nan::New<Boolean>(v); }
-            );
-        }
+        worker = newWorker<AsyncBackgroundTask<bool, char>, PromisifiedAsyncBackgroundTask<bool, char>>(
+            newCallback(info[2]),
+            asyncFunction,
+            asyncFUNction,
+            "flac:testAsync",
+            [] (bool v) { return Nan::New<Boolean>(v); }
+        );
+        info.GetReturnValue().Set(worker->getReturnValue());
         worker->SaveToPersistent("cbk", info[1]);
         AsyncQueueWorker(worker);
     }

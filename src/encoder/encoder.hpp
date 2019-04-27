@@ -208,12 +208,12 @@ namespace flac_bindings {
 #endif
     public:
         static AsyncEncoderWorkBase* forFinish(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-        static AsyncEncoderWorkBase* forProcess(v8::Local<v8::Value> &buffers, v8::Local<v8::Value> &samples, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-        static AsyncEncoderWorkBase* forProcessInterleaved(v8::Local<v8::Value> &buffer, v8::Local<v8::Value> &samples, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
+        static AsyncEncoderWorkBase* forProcess(v8::Local<v8::Value> buffers, v8::Local<v8::Value> samples, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
+        static AsyncEncoderWorkBase* forProcessInterleaved(v8::Local<v8::Value> buffer, v8::Local<v8::Value> samples, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
         static AsyncEncoderWorkBase* forInitStream(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
         static AsyncEncoderWorkBase* forInitOggStream(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-        static AsyncEncoderWorkBase* forInitFile(v8::Local<v8::Value> &path, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-        static AsyncEncoderWorkBase* forInitOggFile(v8::Local<v8::Value> &path, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
+        static AsyncEncoderWorkBase* forInitFile(v8::Local<v8::Value> path, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
+        static AsyncEncoderWorkBase* forInitOggFile(v8::Local<v8::Value> path, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
     };
 
     class PromisifiedAsyncEncoderWork: public PromisifiedAsyncEncoderWorkBase {

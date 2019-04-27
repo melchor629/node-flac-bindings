@@ -162,7 +162,7 @@ namespace flac_bindings {
         return newWorker<AsyncEncoderWorkBase>(workFunction, "flac_bindings::encoder::finishAsync", enc, cbk);
     }
 
-    AsyncEncoderWorkBase* AsyncEncoderWork::forProcess(Local<Value> &buffers_, Local<Value> &samples, StreamEncoder* enc, Callback* cbk) {
+    AsyncEncoderWorkBase* AsyncEncoderWork::forProcess(Local<Value> buffers_, Local<Value> samples, StreamEncoder* enc, Callback* cbk) {
         assertThrowing2(FLAC__stream_encoder_get_state(enc->enc) == 0, "The encoder must be in OK state", nullptr);
         auto result = convertArgsForProcess(buffers_, samples, FLAC__stream_encoder_get_channels(enc->enc));
         if(result.IsNothing()) {
@@ -182,7 +182,7 @@ namespace flac_bindings {
         return work;
     }
 
-    AsyncEncoderWorkBase* AsyncEncoderWork::forProcessInterleaved(Local<Value> &_buffer, Local<Value> &_samples, StreamEncoder* enc, Callback* cbk) {
+    AsyncEncoderWorkBase* AsyncEncoderWork::forProcessInterleaved(Local<Value> _buffer, Local<Value> _samples, StreamEncoder* enc, Callback* cbk) {
         assertThrowing2(FLAC__stream_encoder_get_state(enc->enc) == 0, "The encoder must be in OK state", nullptr);
         auto result = convertArgsForProcessInterleaved(_buffer, _samples, FLAC__stream_encoder_get_channels(enc->enc));
         if(result.IsNothing()) {
@@ -229,7 +229,7 @@ namespace flac_bindings {
         return newWorker<AsyncEncoderWorkBase>(workFunction, "flac_bindings::encoder::initOggStreamAsync", enc, cbk);
     }
 
-    AsyncEncoderWorkBase* AsyncEncoderWork::forInitFile(Local<Value> &path, StreamEncoder* enc, Nan::Callback* cbk) {
+    AsyncEncoderWorkBase* AsyncEncoderWork::forInitFile(Local<Value> path, StreamEncoder* enc, Nan::Callback* cbk) {
         if(!path->IsString()) {
             Nan::ThrowTypeError("Expected first argument to be string");
             return nullptr;
@@ -249,7 +249,7 @@ namespace flac_bindings {
         return newWorker<AsyncEncoderWorkBase>(workFunction, "flac_bindings::encoder::initFileAsync", enc, cbk);
     }
 
-    AsyncEncoderWorkBase* AsyncEncoderWork::forInitOggFile(Local<Value> &path, StreamEncoder* enc, Nan::Callback* cbk) {
+    AsyncEncoderWorkBase* AsyncEncoderWork::forInitOggFile(Local<Value> path, StreamEncoder* enc, Nan::Callback* cbk) {
         if(!path->IsString()) {
             Nan::ThrowTypeError("Expected first argument to be string");
             return nullptr;
