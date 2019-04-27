@@ -73,7 +73,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::initStream) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("initStream");
+        WARN_SYNC_FUNCTION("Decoder.initStream");
 
         if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
         if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
@@ -104,7 +104,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::initOggStream) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("initOggStream");
+        WARN_SYNC_FUNCTION("Decoder.initOggStream");
 
         if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
         if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
@@ -135,7 +135,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::initFile) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("initFile");
+        WARN_SYNC_FUNCTION("Decoder.initFile");
 
         if(!info[0]->IsString()) {
             Nan::ThrowTypeError("Expected first argument to be string");
@@ -189,7 +189,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::finish) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("finish");
+        WARN_SYNC_FUNCTION("Decoder.finish");
         self->async = new Nan::AsyncResource("flac:decoder:finish");
         bool returnValue = FLAC__stream_decoder_finish(dec);
         info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
@@ -200,7 +200,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::flush) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("flush");
+        WARN_SYNC_FUNCTION("Decoder.flush");
         self->async = new Nan::AsyncResource("flac:decoder:flush");
         bool returnValue = FLAC__stream_decoder_flush(dec);
         info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
@@ -221,7 +221,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::processSingle) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("processSingle");
+        WARN_SYNC_FUNCTION("Decoder.processSingle");
         self->async = new Nan::AsyncResource("flac:decoder:processSingle");
         bool returnValue = FLAC__stream_decoder_process_single(dec);
         info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
@@ -232,7 +232,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::processUntilEndOfMetadata) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("processUntilEndOfMetadata");
+        WARN_SYNC_FUNCTION("Decoder.processUntilEndOfMetadata");
         self->async = new Nan::AsyncResource("flac:decoder:processUntilEndOfMetadata");
         bool returnValue = FLAC__stream_decoder_process_until_end_of_metadata(dec);
         info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
@@ -243,7 +243,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::processUntilEndOfStream) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("processUntilEndOfStream");
+        WARN_SYNC_FUNCTION("Decoder.processUntilEndOfStream");
         self->async = new Nan::AsyncResource("flac:decoder:processUntilEndOfStream");
         bool returnValue = FLAC__stream_decoder_process_until_end_of_stream(dec);
         info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
@@ -254,7 +254,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::skipSingleFrame) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("skipSingleFrame");
+        WARN_SYNC_FUNCTION("Decoder.skipSingleFrame");
         self->async = new Nan::AsyncResource("flac:decoder:skipSingleFrame");
         bool returnValue = FLAC__stream_decoder_skip_single_frame(dec);
         info.GetReturnValue().Set(Nan::New<Boolean>(returnValue));
@@ -265,7 +265,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamDecoder::seekAbsolute) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("seekAbsolute");
+        WARN_SYNC_FUNCTION("Decoder.seekAbsolute");
         auto maybeOffset = numberFromJs<uint64_t>(info[0]);
         if(maybeOffset.IsNothing()) {
             Nan::ThrowTypeError("Expected first argument to be number or bigint");

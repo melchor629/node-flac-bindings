@@ -99,7 +99,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamEncoder::initStream) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("initStream");
+        WARN_SYNC_FUNCTION("Encoder.initStream");
 
         if(info[0]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[0].As<Function>()));
         if(info[1]->IsFunction()) self->seekCbk.reset(new Nan::Callback(info[1].As<Function>()));
@@ -122,7 +122,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamEncoder::initOggStream) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("initOggStream");
+        WARN_SYNC_FUNCTION("Encoder.initOggStream");
 
         if(info[0]->IsFunction()) self->readCbk.reset(new Nan::Callback(info[0].As<Function>()));
         if(info[1]->IsFunction()) self->writeCbk.reset(new Nan::Callback(info[1].As<Function>()));
@@ -146,7 +146,7 @@ namespace flac_bindings {
 
     NAN_METHOD(StreamEncoder::initFile) {
         UNWRAP_FLAC
-        WARN_SYNC_FUNCTION("initFile");
+        WARN_SYNC_FUNCTION("Encoder.initFile");
         if(!info[0]->IsString()) {
             Nan::ThrowError("Expected first argument to be a string");
             return;
@@ -161,7 +161,7 @@ namespace flac_bindings {
 
     NAN_METHOD(StreamEncoder::initOggFile) {
         UNWRAP_FLAC
-        WARN_SYNC_FUNCTION("initOggFile");
+        WARN_SYNC_FUNCTION("Encoder.initOggFile");
         if(!info[0]->IsString()) {
             Nan::ThrowError("Expected first argument to be a string");
             return;
@@ -177,7 +177,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamEncoder::finish) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("finish");
+        WARN_SYNC_FUNCTION("Encoder.finish");
         self->async = new Nan::AsyncResource("flac:encoder:finish");
         FLAC__bool ret = FLAC__stream_encoder_finish(enc);
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
@@ -188,7 +188,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamEncoder::process) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("process");
+        WARN_SYNC_FUNCTION("Encoder.process");
         assertThrowing(FLAC__stream_encoder_get_state(self->enc) == 0, "The encoder must be in OK state");
         if(info[0].IsEmpty() || !info[0]->IsArray()) {
             Nan::ThrowTypeError("Expected first argument to be an Array");
@@ -243,7 +243,7 @@ namespace flac_bindings {
     NAN_METHOD(StreamEncoder::processInterleaved) {
         UNWRAP_FLAC
         CHECK_ASYNC_IS_NULL
-        WARN_SYNC_FUNCTION("processInterleaved");
+        WARN_SYNC_FUNCTION("Encoder.processInterleaved");
         assertThrowing(FLAC__stream_encoder_get_state(self->enc) == 0, "The encoder must be in OK state");
         const int32_t* buffer = UnwrapPointer<const int32_t>(info[0]);
         auto samples = numberFromJs<uint32_t>(info[1]);

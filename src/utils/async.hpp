@@ -58,7 +58,7 @@ namespace flac_bindings {
                         if(!this->resolved) {
                             this->exceptionValue.Reset(object);
                             this->SetErrorMessage("<mock>");
-                            this->resolved = true;printf("rejected\n");
+                            this->resolved = true;
                         }
                     }
                 };
