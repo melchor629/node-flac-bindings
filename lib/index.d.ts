@@ -1062,18 +1062,27 @@ declare namespace api {
         status(): number;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga5a4f2056c30f78af5a79f6b64d5bfdcd */
         read(path: string): boolean;
+        /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga5a4f2056c30f78af5a79f6b64d5bfdcd */
+        readAsync(path: string, callback: AsyncCallback<true>): void;
+        readAsync(path: string): Promise<true>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga3995010aab28a483ad9905669e5c4954 */
         readOgg(path: string): boolean;
+        /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga3995010aab28a483ad9905669e5c4954 */
+        readOggAsync(path: string, callback: AsyncCallback<true>): void;
+        readOggAsync(path: string): Promise<true>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga595f55b611ed588d4d55a9b2eb9d2add */
-        //readWithCallbacks(callbacks: Chain.IOCallbacks): boolean; //TODO
+        //readWithCallbacks(callbacks: Chain.IOCallbacks): Promise<true>; //TODO
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gaccc2f991722682d3c31d36f51985066c */
-        //readOggWithCallbacks(callbacks: Chain.IOCallbacks): boolean; //TODO
+        //readOggWithCallbacks(callbacks: Chain.IOCallbacks): Promise<true>; //TODO
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46bf9cf7d426078101b9297ba80bb835 */
         write(padding?: boolean, preserve?: boolean): boolean;
+        /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46bf9cf7d426078101b9297ba80bb835 */
+        writeAsync(padding: boolean | undefined | null, preserve: boolean | undefined | null, callback: AsyncCallback<true>): void;
+        writeAsync(padding?: boolean, preserve?: boolean): Promise<true>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga70532b3705294dc891d8db649a4d4843 */
-        //writeWithCallbacks(usePadding: boolean, callbacks: Chain.IOCallbacks): boolean; //TODO
+        //writeWithCallbacks(usePadding: boolean, callbacks: Chain.IOCallbacks): Promise<true>; //TODO
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga72facaa621e8d798036a4a7da3643e41 */
-        //writeWithCallbacksAndTempFile(usePadding: boolean, callbacks: Chain.IOCallbacks, tempCallbacks: Chain.IOCallbacks): boolean; //TODO
+        //writeWithCallbacksAndTempFile(usePadding: boolean, callbacks: Chain.IOCallbacks, tempCallbacks: Chain.IOCallbacks): Promise<true>; //TODO
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga0a43897914edb751cb87f7e281aff3dc */
         mergePadding(): void;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga82b66fe71c727adb9cf80a1da9834ce5 */

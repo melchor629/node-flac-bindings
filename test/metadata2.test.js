@@ -1,6 +1,6 @@
 /// <reference path="../lib/index.d.ts" />
 const { Chain, Iterator, metadata, format } = require('../lib/index').api;
-const { assert } = require('chai');
+const { assert, use } = require('chai');
 const { promises: fs, ...oldfs } = require('fs');
 const path = require('path');
 const temp = require('temp');
@@ -8,6 +8,8 @@ const temp = require('temp');
 temp.track();
 
 const pathForFile = (...file) => path.join(__dirname, 'data', 'tags', ...file);
+
+use(require('./helper/async-chai-extensions.js'));
 
 describe('Chain & Iterator', function() {
 
@@ -29,9 +31,7 @@ describe('Chain & Iterator', function() {
 
             assert.isFalse(ret);
             assert.equal(ch.status(), Chain.Status.ERROR_OPENING_FILE);
-            let hasThrown = false;
-            try { await fs.access(filePath); } catch(e) { hasThrown = true; }
-            assert.isTrue(hasThrown, 'The file must not exist');
+            await assert.throwsAsync(fs.access(filePath), 'The file should not exist');
         });
 
         it('returns true if the file exists', async function() {
@@ -39,6 +39,37 @@ describe('Chain & Iterator', function() {
             const ch = new Chain();
 
             const ret = ch.read(filePath);
+
+            assert.isTrue(ret, Chain.StatusString[ch.status()]);
+            await fs.access(filePath);
+        });
+
+    });
+
+    describe('readAsync', function() {
+
+        it('throws if the first argument is not a Metadata', async function() {
+            await assert.throwsAsync(() => new Chain().readAsync({}));
+        });
+
+        it('throws if the first argument is not a Metadata (ogg version)', async function() {
+            await assert.throwsAsync(() => new Chain().readOggAsync(() => 1));
+        });
+
+        it('throws if the file does not exist', async function() {
+            const filePath = pathForFile('el.flac');
+            const ch = new Chain();
+
+            await assert.throwsAsync(() => ch.readAsync(filePath), /ERROR_OPENING_FILE/);
+
+            await assert.throwsAsync(fs.access(filePath), 'The file should not exist');
+        });
+
+        it('returns true if the file exists', async function() {
+            const filePath = pathForFile('no.flac');
+            const ch = new Chain();
+
+            const ret = await ch.readAsync(filePath);
 
             assert.isTrue(ret, Chain.StatusString[ch.status()]);
             await fs.access(filePath);
@@ -429,7 +460,7 @@ describe('Chain & Iterator', function() {
             temp.cleanupSync();
         });
 
-        it('modify the blocks and write should modify the file correctly', function() {
+        it('modify the blocks and write should modify the file correctly (sync)', function() {
             const ch = new Chain();
             const initRetValue = ch.read(tmpFile.path);
             assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
@@ -444,6 +475,34 @@ describe('Chain & Iterator', function() {
             assert.isTrue(it.next());
 
             assert.isTrue(ch.write(false));
+
+            assert.deepEqual(
+                Array.from(ch.createIterator()).map(i => i.type),
+                [
+                    format.MetadataType.STREAMINFO,
+                    format.MetadataType.VORBIS_COMMENT,
+                    format.MetadataType.PADDING,
+                    format.MetadataType.APPLICATION,
+                    format.MetadataType.PADDING,
+                ]
+            );
+        });
+
+        it('modify the blocks and write should modify the file correctly (async)', async function() {
+            const ch = new Chain();
+            const initRetValue = await ch.readAsync(tmpFile.path);
+            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            const it = ch.createIterator();
+
+            const vc = new metadata.VorbisCommentMetadata();
+            vc.vendorString = 'flac-bindings 2.0.0';
+            assert.isTrue(it.insertBlockAfter(vc));
+
+            assert.isTrue(it.insertBlockAfter(new metadata.PaddingMetadata(50)));
+            assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()));
+            assert.isTrue(it.next());
+
+            assert.isTrue(await ch.writeAsync(false));
 
             assert.deepEqual(
                 Array.from(ch.createIterator()).map(i => i.type),

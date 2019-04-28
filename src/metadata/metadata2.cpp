@@ -7,6 +7,7 @@ using namespace node;
 #include "../format/format.h"
 #include "../utils/defs.hpp"
 #include "../mappings/mappings.hpp"
+#include "../utils/async.hpp"
 
 #define _JOIN(a, b) a##b
 #define _JOIN2(a,b,c) a##b##c
@@ -48,6 +49,8 @@ extern "C" {
     metadataFunction(FLAC__bool, iterator_delete_block, FLAC__Metadata_Iterator *iterator, FLAC__bool replace_with_padding);
     metadataFunction(FLAC__bool, iterator_insert_block_before, FLAC__Metadata_Iterator *iterator, FLAC__StreamMetadata *block);
     metadataFunction(FLAC__bool, iterator_insert_block_after, FLAC__Metadata_Iterator *iterator, FLAC__StreamMetadata *block);
+
+    const char* const* FLAC__Metadata_ChainStatusString;
 }
 
 #define UNWRAP_CHAIN \
@@ -64,7 +67,7 @@ namespace flac_bindings {
 
     class Chain: public Nan::ObjectWrap {
 
-        static NAN_METHOD(node_FLAC__metadata_chain_new) {
+        static NAN_METHOD(create) {
             if(throwIfNotConstructorCall(info)) return;
             FLAC__Metadata_Chain* m = FLAC__metadata_chain_new();
             if(m != nullptr) {
@@ -77,13 +80,13 @@ namespace flac_bindings {
             }
         }
 
-        static NAN_METHOD(node_FLAC__metadata_chain_status) {
+        static NAN_METHOD(status) {
             UNWRAP_CHAIN
             FLAC__Metadata_ChainStatus s = FLAC__metadata_chain_status(m);
             info.GetReturnValue().Set(Nan::New(s));
         }
 
-        static NAN_METHOD(node_FLAC__metadata_chain_read) {
+        static NAN_METHOD(read) {
             UNWRAP_CHAIN
             if(!info[0]->IsString()) {
                 Nan::ThrowTypeError("Expected argument to be string");
@@ -95,7 +98,44 @@ namespace flac_bindings {
             info.GetReturnValue().Set(Nan::New<Boolean>(s));
         }
 
-        static NAN_METHOD(node_FLAC__metadata_chain_read_ogg) {
+        static Local<Value> simpleAsyncImpl(void* m, Local<Value> This, Nan::Callback* cbk, std::function<bool()> impl) {
+            Nan::EscapableHandleScope scope;
+            auto* worker = newWorker<AsyncBackgroundTask<bool>, PromisifiedAsyncBackgroundTask<bool>>(
+                cbk,
+                [m, impl] (auto &c) {
+                    if(impl()) {
+                        c.resolve(true);
+                    } else {
+                        c.reject(FLAC__Metadata_ChainStatusString[FLAC__metadata_chain_status(m)]);
+                    }
+                },
+                nullptr,
+                "flac_bindings:metadata2:readAsync",
+                booleanToJs<bool>
+            );
+            worker->SaveToPersistent("this", This);
+            Nan::AsyncQueueWorker(worker);
+            return scope.Escape(worker->getReturnValue());
+        }
+
+        static NAN_METHOD(readAsync) {
+            UNWRAP_CHAIN
+            if(!info[0]->IsString()) {
+                Nan::ThrowTypeError("Expected argument to be string");
+                return;
+            }
+
+            Nan::Utf8String str(info[0]);
+            std::string path = *str;
+            info.GetReturnValue().Set(simpleAsyncImpl(
+                m,
+                info.This(),
+                newCallback(info[1]),
+                [m, path] () { return FLAC__metadata_chain_read(m, path.c_str()); }
+            ));
+        }
+
+        static NAN_METHOD(readOgg) {
             UNWRAP_CHAIN
             if(!info[0]->IsString()) {
                 Nan::ThrowTypeError("Expected argument to be string");
@@ -107,7 +147,24 @@ namespace flac_bindings {
             info.GetReturnValue().Set(Nan::New<Boolean>(s));
         }
 
-        static NAN_METHOD(node_FLAC__metadata_chain_write) {
+        static NAN_METHOD(readOggAsync) {
+            UNWRAP_CHAIN
+            if(!info[0]->IsString()) {
+                Nan::ThrowTypeError("Expected argument to be string");
+                return;
+            }
+
+            Nan::Utf8String str(info[0]);
+            std::string path = *str;
+            info.GetReturnValue().Set(simpleAsyncImpl(
+                m,
+                info.This(),
+                newCallback(info[1]),
+                [m, path] () { return FLAC__metadata_chain_read_ogg(m, path.c_str()); }
+            ));
+        }
+
+        static NAN_METHOD(write) {
             UNWRAP_CHAIN
             FLAC__bool padding = numberFromJs<int>(info[0]).FromMaybe(1);
             FLAC__bool preserve = numberFromJs<int>(info[1]).FromMaybe(0);
@@ -115,12 +172,24 @@ namespace flac_bindings {
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
         }
 
-        static NAN_METHOD(node_FLAC__metadata_chain_merge_padding) {
+        static NAN_METHOD(writeAsync) {
+            UNWRAP_CHAIN
+            FLAC__bool padding = numberFromJs<int>(info[0]).FromMaybe(1);
+            FLAC__bool preserve = numberFromJs<int>(info[1]).FromMaybe(0);
+            info.GetReturnValue().Set(simpleAsyncImpl(
+                m,
+                info.This(),
+                newCallback(info[2]),
+                [m, padding, preserve] () { return FLAC__metadata_chain_write(m, padding, preserve); }
+            ));
+        }
+
+        static NAN_METHOD(mergePadding) {
             UNWRAP_CHAIN
             FLAC__metadata_chain_merge_padding(m);
         }
 
-        static NAN_METHOD(node_FLAC__metadata_chain_sort_padding) {
+        static NAN_METHOD(sortPadding) {
             UNWRAP_CHAIN
             FLAC__metadata_chain_sort_padding(m);
         }
@@ -160,7 +229,7 @@ namespace flac_bindings {
 
     class Iterator: public Nan::ObjectWrap {
 
-        static NAN_METHOD(node_FLAC__metadata_iterator_new) {
+        static NAN_METHOD(create) {
             if(throwIfNotConstructorCall(info)) return;
             FLAC__Metadata_Iterator* m = FLAC__metadata_iterator_new();
             if(m != nullptr) {
@@ -206,7 +275,7 @@ namespace flac_bindings {
             info.GetReturnValue().Set(obj);
         }
 
-        static NAN_METHOD(node_FLAC__metadata_iterator_init) {
+        static NAN_METHOD(init) {
             UNWRAP_IT
             MaybeLocal<Object> maybeChain = Nan::To<Object>(info[0]);
             if(maybeChain.IsEmpty()) {
@@ -218,31 +287,31 @@ namespace flac_bindings {
             FLAC__metadata_iterator_init(m, n->m);
         }
 
-        static NAN_METHOD(node_FLAC__metadata_iterator_next) {
+        static NAN_METHOD(next) {
             UNWRAP_IT
             FLAC__bool r = FLAC__metadata_iterator_next(m);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
         }
 
-        static NAN_METHOD(node_FLAC__metadata_iterator_prev) {
+        static NAN_METHOD(prev) {
             UNWRAP_IT
             FLAC__bool r = FLAC__metadata_iterator_prev(m);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
         }
 
-        static NAN_METHOD(node_FLAC__metadata_iterator_get_block_type) {
+        static NAN_METHOD(getBlockType) {
             UNWRAP_IT
             FLAC__MetadataType r = FLAC__metadata_iterator_get_block_type(m);
             info.GetReturnValue().Set(numberToJs<int>(r));
         }
 
-        static NAN_METHOD(node_FLAC__metadata_iterator_get_block) {
+        static NAN_METHOD(getBlock) {
             UNWRAP_IT
             FLAC__StreamMetadata* r = FLAC__metadata_iterator_get_block(m);
             info.GetReturnValue().Set(structToJs(r));
         }
 
-        static NAN_METHOD(node_FLAC__metadata_iterator_set_block) {
+        static NAN_METHOD(setBlock) {
             UNWRAP_IT
             FLAC__StreamMetadata* n = jsToStruct<FLAC__StreamMetadata>(info[0]);
             if(n == nullptr) {
@@ -254,14 +323,14 @@ namespace flac_bindings {
             Nan::ObjectWrap::Unwrap<Metadata>(info[0].As<Object>())->hasToBeDeleted = false;
         }
 
-        static NAN_METHOD(node_FLAC__metadata_iterator_delete_block) {
+        static NAN_METHOD(deleteBlock) {
             UNWRAP_IT
             FLAC__bool padding = numberFromJs<int>(info[0]).FromMaybe(1);
             FLAC__bool r = FLAC__metadata_iterator_delete_block(m, padding);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
         }
 
-        static NAN_METHOD(node_FLAC__metadata_iterator_insert_block_before) {
+        static NAN_METHOD(insertBlockBefore) {
             UNWRAP_IT
             FLAC__StreamMetadata* n = jsToStruct<FLAC__StreamMetadata>(info[0]);
             if(n == nullptr) {
@@ -273,7 +342,7 @@ namespace flac_bindings {
             Nan::ObjectWrap::Unwrap<Metadata>(info[0].As<Object>())->hasToBeDeleted = false;
         }
 
-        static NAN_METHOD(node_FLAC__metadata_iterator_insert_block_after) {
+        static NAN_METHOD(insertBlockAfter) {
             UNWRAP_IT
             FLAC__StreamMetadata* n = jsToStruct<FLAC__StreamMetadata>(info[0]);
             if(n == nullptr) {
@@ -309,7 +378,7 @@ _JOIN(FLAC__metadata_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__metadata_, f
 if(_JOIN(FLAC__metadata_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
 
 #define setMethod(fn, jsFn) \
-Nan::SetPrototypeMethod(obj, #jsFn, _JOIN(node_FLAC__metadata_, fn)); \
+Nan::SetPrototypeMethod(obj, #jsFn, jsFn); \
 loadFunction(fn)
 
 #define propertyGetter(func, jsName) \
@@ -324,7 +393,7 @@ Nan::SetIndexedPropertyHandler(_JOIN(func, _template), jsName, nullptr, nullptr,
 Nan::Set(functionClass, Nan::New(#jsName).ToLocalChecked(), Nan::NewInstance(_JOIN(func, _template)).ToLocalChecked());
 
     NAN_MODULE_INIT(Chain::initMetadata2) {
-        Local<FunctionTemplate> obj = Nan::New<FunctionTemplate>(node_FLAC__metadata_chain_new);
+        Local<FunctionTemplate> obj = Nan::New<FunctionTemplate>(create);
         obj->SetClassName(Nan::New("Chain").ToLocalChecked());
         obj->InstanceTemplate()->SetInternalFieldCount(1);
 
@@ -337,6 +406,11 @@ Nan::Set(functionClass, Nan::New(#jsName).ToLocalChecked(), Nan::NewInstance(_JO
         setMethod(chain_merge_padding, mergePadding);
         setMethod(chain_sort_padding, sortPadding);
         Nan::SetPrototypeMethod(obj, "createIterator", createIterator);
+        Nan::SetPrototypeMethod(obj, "readAsync", readAsync);
+        Nan::SetPrototypeMethod(obj, "readOggAsync", readOggAsync);
+        Nan::SetPrototypeMethod(obj, "writeAsync", writeAsync);
+
+        FLAC__Metadata_ChainStatusString = libFlac->getSymbolAddress<const char**>("FLAC__Metadata_ChainStatusString");
 
         Local<Function> functionClass = Nan::GetFunction(obj).ToLocalChecked();
 
@@ -347,7 +421,7 @@ Nan::Set(functionClass, Nan::New(#jsName).ToLocalChecked(), Nan::NewInstance(_JO
 
     Nan::Persistent<Function> Iterator::iteratorClass;
     NAN_MODULE_INIT(Iterator::initMetadata2) {
-        Local<FunctionTemplate> obj = Nan::New<FunctionTemplate>(node_FLAC__metadata_iterator_new);
+        Local<FunctionTemplate> obj = Nan::New<FunctionTemplate>(create);
         obj->SetClassName(Nan::New("Iterator").ToLocalChecked());
         obj->InstanceTemplate()->SetInternalFieldCount(1);
 
