@@ -42,7 +42,7 @@ namespace flac_bindings {
     }
 
     template<>
-    Local<Object> structToJs(const FLAC__Frame* i) {
+    Local<Object> structToJs(const FLAC__Frame* i, bool deleteHint) {
         Local<Object> obj = Nan::New<Object>();
         Local<Object> header = Nan::New<Object>();
         Local<Array> subframes = Nan::New<Array>();

@@ -124,10 +124,10 @@ namespace flac_bindings {
 
         if(!info[0].IsEmpty() && info[0]->IsObject() && Buffer::HasInstance(info[0].As<Object>())) {
             cueSheetTrack->track = UnwrapPointer<FLAC__StreamMetadata_CueSheet_Track>(info[0]);
-            cueSheetTrack->mustBeDeleted = Nan::To<bool>(info[1]).FromMaybe(false);
+            cueSheetTrack->hintToDelete = Nan::To<bool>(info[1]).FromMaybe(false);
         } else {
             cueSheetTrack->track = FLAC__metadata_object_cuesheet_track_new();
-            cueSheetTrack->mustBeDeleted = true;
+            cueSheetTrack->hintToDelete = true;
         }
 
         nativeProperty(info.This(), "offset", offset);
@@ -155,14 +155,14 @@ namespace flac_bindings {
     }
 
     CueSheetTrack::~CueSheetTrack() {
-        if(mustBeDeleted && track != nullptr) {
+        if(hintToDelete && track != nullptr) {
             FLAC__metadata_object_cuesheet_track_delete(track);
         }
     }
 
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_CueSheet_Track* track) {
-        Local<Value> args[] = { WrapPointer(track).ToLocalChecked(), Nan::False() };
+    Local<Object> structToJs(const FLAC__StreamMetadata_CueSheet_Track* track, bool deleteHint) {
+        Local<Value> args[] = { WrapPointer(track).ToLocalChecked(), deleteHint ? Nan::True() : Nan::False() };
         auto metadata = Nan::NewInstance(CueSheetTrack::getFunction(), 2, args);
         return metadata.ToLocalChecked();
     }

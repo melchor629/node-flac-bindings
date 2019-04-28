@@ -80,7 +80,7 @@ namespace flac_bindings {
     }
 
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_CueSheet_Index* index) {
+    Local<Object> structToJs(const FLAC__StreamMetadata_CueSheet_Index* index, bool deleteHint) {
         Local<Value> args[] = { WrapPointer(index).ToLocalChecked() };
         auto metadata = Nan::NewInstance(CueSheetIndex::getFunction(), 1, args);
         return metadata.ToLocalChecked();

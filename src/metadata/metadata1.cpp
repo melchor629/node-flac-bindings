@@ -87,7 +87,7 @@ namespace flac_bindings {
                     Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
                 } else {
                     FLAC__StreamMetadata* metadata = FLAC__metadata_simple_iterator_get_block(it);
-                    Nan::Set(ret, Nan::New("value").ToLocalChecked(), structToJs(metadata));
+                    Nan::Set(ret, Nan::New("value").ToLocalChecked(), structToJs(metadata, true));
                     Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::False());
                     prevReturn = FLAC__metadata_simple_iterator_next(it);
                 }
@@ -185,7 +185,7 @@ namespace flac_bindings {
         static NAN_METHOD(node_FLAC__metadata_simple_iterator_get_block) {
             UNWRAP_IT
             FLAC__StreamMetadata* r = FLAC__metadata_simple_iterator_get_block(it);
-            info.GetReturnValue().Set(structToJs(r));
+            info.GetReturnValue().Set(structToJs(r, true));
         }
 
         static NAN_METHOD(node_FLAC__metadata_simple_iterator_set_block) {

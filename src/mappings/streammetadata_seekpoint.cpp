@@ -79,9 +79,9 @@ namespace flac_bindings {
     }
 
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_SeekPoint* point) {
-        Local<Value> args[] = { WrapPointer(point).ToLocalChecked(), Nan::False() };
-        auto metadata = Nan::NewInstance(SeekPoint::getFunction(), 2, args);
+    Local<Object> structToJs(const FLAC__StreamMetadata_SeekPoint* point, bool deleteHint) {
+        Local<Value> args[] = { WrapPointer(point).ToLocalChecked() };
+        auto metadata = Nan::NewInstance(SeekPoint::getFunction(), 1, args);
         return metadata.ToLocalChecked();
     }
 

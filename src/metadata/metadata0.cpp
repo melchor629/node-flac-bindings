@@ -37,10 +37,31 @@ namespace flac_bindings {
         FLAC__StreamMetadata metadata;
         FLAC__bool ret = FLAC__metadata_get_streaminfo(*filename, &metadata);
         if(ret) {
-            info.GetReturnValue().Set(structToJs(FLAC__metadata_object_clone(&metadata)));
+            info.GetReturnValue().Set(structToJs(FLAC__metadata_object_clone(&metadata), true));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
+    }
+
+    static Local<Value> asyncImpl(Nan::Callback* cbk, const char* name, std::function<FLAC__StreamMetadata*()> impl) {
+        Nan::EscapableHandleScope scope;
+        auto* worker = newWorker<AsyncBackgroundTask<FLAC__StreamMetadata*>, PromisifiedAsyncBackgroundTask<FLAC__StreamMetadata*>>(
+            cbk,
+            [impl] (auto &c) {
+                FLAC__StreamMetadata* metadata = impl();
+                if(metadata != nullptr) {
+                    c.resolve(metadata);
+                } else {
+                    c.reject("Could not read the block from the file");
+                }
+            },
+            nullptr,
+            name,
+            [] (auto m) { return structToJs(m, true); }
+        );
+
+        AsyncQueueWorker(worker);
+        return scope.Escape(worker->getReturnValue());
     }
 
     static NAN_METHOD(getStreaminfoAsync) {
@@ -51,24 +72,15 @@ namespace flac_bindings {
 
         Nan::Utf8String filename(info[0]);
         std::string fileName = *filename;
-        auto* worker = newWorker<AsyncBackgroundTask<FLAC__StreamMetadata*>, PromisifiedAsyncBackgroundTask<FLAC__StreamMetadata*>>(
+        info.GetReturnValue().Set(asyncImpl(
             newCallback(info[1]),
-            [fileName] (auto &c) {
+            "flac_bindings:metadata0:getStreaminfoAsync",
+            [fileName] () {
                 FLAC__StreamMetadata metadata;
                 FLAC__bool ret = FLAC__metadata_get_streaminfo(fileName.c_str(), &metadata);
-                if(ret) {
-                    c.resolve(FLAC__metadata_object_clone(&metadata));
-                } else {
-                    c.reject("Could not read the STREAMINFO block from file " + fileName);
-                }
-            },
-            nullptr,
-            "flac_bindings::metadata0::getStreaminfoAsync",
-            structToJs<FLAC__StreamMetadata>
-        );
-
-        info.GetReturnValue().Set(worker->getReturnValue());
-        AsyncQueueWorker(worker);
+                return ret ? FLAC__metadata_object_clone(&metadata) : nullptr;
+            }
+        ));
     }
 
     static NAN_METHOD(getTags) {
@@ -81,7 +93,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata* metadatas;
         FLAC__bool ret = FLAC__metadata_get_tags(*filename, &metadatas);
         if(ret) {
-            info.GetReturnValue().Set(structToJs(metadatas));
+            info.GetReturnValue().Set(structToJs(metadatas, true));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
@@ -95,24 +107,15 @@ namespace flac_bindings {
 
         Nan::Utf8String filename(info[0]);
         std::string fileName = *filename;
-        auto* worker = newWorker<AsyncBackgroundTask<FLAC__StreamMetadata*>, PromisifiedAsyncBackgroundTask<FLAC__StreamMetadata*>>(
+        info.GetReturnValue().Set(asyncImpl(
             newCallback(info[1]),
-            [fileName] (auto &c) {
-                FLAC__StreamMetadata* metadata;
+            "flac_bindings:metadata0:getTagsAsync",
+            [fileName] () {
+                FLAC__StreamMetadata* metadata = nullptr;
                 FLAC__bool ret = FLAC__metadata_get_tags(fileName.c_str(), &metadata);
-                if(ret) {
-                    c.resolve(metadata);
-                } else {
-                    c.reject("Could not read the TAGS block from file " + fileName);
-                }
-            },
-            nullptr,
-            "flac_bindings::metadata0::getTagsAsync",
-            structToJs<FLAC__StreamMetadata>
-        );
-
-        info.GetReturnValue().Set(worker->getReturnValue());
-        AsyncQueueWorker(worker);
+                return ret ? metadata : nullptr;
+            }
+        ));
     }
 
     static NAN_METHOD(getCuesheet) {
@@ -125,7 +128,7 @@ namespace flac_bindings {
         FLAC__StreamMetadata* metadatas;
         FLAC__bool ret = FLAC__metadata_get_cuesheet(*filename, &metadatas);
         if(ret) {
-            info.GetReturnValue().Set(structToJs(metadatas));
+            info.GetReturnValue().Set(structToJs(metadatas, true));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
@@ -139,24 +142,15 @@ namespace flac_bindings {
 
         Nan::Utf8String filename(info[0]);
         std::string fileName = *filename;
-        auto* worker = newWorker<AsyncBackgroundTask<FLAC__StreamMetadata*>, PromisifiedAsyncBackgroundTask<FLAC__StreamMetadata*>>(
+        info.GetReturnValue().Set(asyncImpl(
             newCallback(info[1]),
-            [fileName] (auto &c) {
-                FLAC__StreamMetadata* metadata;
+            "flac_bindings:metadata0:getCuesheetAsync",
+            [fileName] () {
+                FLAC__StreamMetadata* metadata = nullptr;
                 FLAC__bool ret = FLAC__metadata_get_cuesheet(fileName.c_str(), &metadata);
-                if(ret) {
-                    c.resolve(metadata);
-                } else {
-                    c.reject("Could not read the CUESHEET block from file " + fileName);
-                }
-            },
-            nullptr,
-            "flac_bindings::metadata0::getCuesheetAsync",
-            structToJs<FLAC__StreamMetadata>
-        );
-
-        info.GetReturnValue().Set(worker->getReturnValue());
-        AsyncQueueWorker(worker);
+                return ret ? metadata : nullptr;
+            }
+        ));
     }
 
     static NAN_METHOD(getPicture) {
@@ -187,7 +181,7 @@ namespace flac_bindings {
         );
 
         if(ret) {
-            info.GetReturnValue().Set(structToJs(picture));
+            info.GetReturnValue().Set(structToJs(picture, true));
         } else {
             info.GetReturnValue().Set(Nan::New<Boolean>(false));
         }
@@ -210,9 +204,10 @@ namespace flac_bindings {
         unsigned max_height = numberFromJs<unsigned>(info[5]).FromMaybe(-1);
         unsigned max_depth = numberFromJs<unsigned>(info[6]).FromMaybe(-1);
         unsigned max_colors = numberFromJs<unsigned>(info[7]).FromMaybe(-1);
-        auto* worker = newWorker<AsyncBackgroundTask<FLAC__StreamMetadata*>, PromisifiedAsyncBackgroundTask<FLAC__StreamMetadata*>>(
+        info.GetReturnValue().Set(asyncImpl(
             newCallback(info[1]),
-            [=] (auto &c) {
+            "flac_bindings:metadata0:getPictureAsync",
+            [=] () {
                 FLAC__StreamMetadata* metadata;
                 FLAC__bool ret = FLAC__metadata_get_picture(
                     fileName.c_str(),
@@ -225,19 +220,9 @@ namespace flac_bindings {
                     max_depth,
                     max_colors
                 );
-                if(ret) {
-                    c.resolve(metadata);
-                } else {
-                    c.reject("Could not read the PICTURE block from file " + fileName);
-                }
-            },
-            nullptr,
-            "flac_bindings::metadata0::getPictureAsync",
-            structToJs<FLAC__StreamMetadata>
-        );
-
-        info.GetReturnValue().Set(worker->getReturnValue());
-        AsyncQueueWorker(worker);
+                return ret ? metadata : nullptr;
+            }
+        ));
     }
 
     NAN_MODULE_INIT(initMetadata0) {

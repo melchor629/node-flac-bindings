@@ -6,7 +6,7 @@ namespace flac_bindings {
     using namespace node;
 
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata* i);
+    Local<Object> structToJs(const FLAC__StreamMetadata* i, bool deleteHint);
 
     V8_GETTER(Metadata::type) {
         unwrap(Metadata);
@@ -33,12 +33,12 @@ namespace flac_bindings {
             Metadata* metadata = Nan::ObjectWrap::Unwrap<Metadata>(info.This());
             if(Buffer::HasInstance(info[0])) {
                 metadata->metadata = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
-                metadata->hasToBeDeleted = Nan::To<bool>(info[1]).FromMaybe(false);
+                metadata->hintToDelete = Nan::To<bool>(info[1]).FromMaybe(false);
             } else if(info[0]->IsNumber()) {
                 int number = numberFromJs<int>(info[0]).FromJust();
                 FLAC__MetadataType type = (FLAC__MetadataType) number;
                 metadata->metadata = FLAC__metadata_object_new(type);
-                metadata->hasToBeDeleted = true;
+                metadata->hintToDelete = true;
             } else {
                 delete metadata;
                 Nan::ThrowTypeError("Expected number of Buffer as parameter");
@@ -62,9 +62,7 @@ namespace flac_bindings {
         if(newMetadata == nullptr) {
             Nan::ThrowError("Could not clone: no enough memory");
         } else {
-            auto newMetadataJs = structToJs(newMetadata);
-            auto metadataImpl = Nan::ObjectWrap::Unwrap<Metadata>(newMetadataJs);
-            metadataImpl->hasToBeDeleted = true;
+            auto newMetadataJs = structToJs(newMetadata, true);
             info.GetReturnValue().Set(newMetadataJs);
         }
     }
@@ -88,7 +86,7 @@ namespace flac_bindings {
     Nan::Persistent<Function> Metadata::metadataJs;
     Nan::Persistent<FunctionTemplate> Metadata::metadataProtoJs;
     Metadata::~Metadata() {
-        if(hasToBeDeleted && metadata != nullptr) {
+        if(hintToDelete && metadata != nullptr) {
             FLAC__metadata_object_delete(metadata);
         }
     }
@@ -108,7 +106,7 @@ namespace flac_bindings {
     }
 
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata* i) {
+    Local<Object> structToJs(const FLAC__StreamMetadata* i, bool deleteHint) {
         Local<Function> classFunction;
         switch(i->type) {
             case FLAC__METADATA_TYPE_STREAMINFO: classFunction = StreamInfoMetadata::getFunction(); break;
@@ -121,7 +119,7 @@ namespace flac_bindings {
             default: classFunction = UnknownMetadata::getFunction(); break;
         }
 
-        Local<Value> args[] = { WrapPointer(i).ToLocalChecked(), Nan::False() };
+        Local<Value> args[] = { WrapPointer(i).ToLocalChecked(), deleteHint ? Nan::True() : Nan::False() };
         auto metadata = Nan::NewInstance(classFunction, 2, args);
         return metadata.ToLocalChecked();
     }

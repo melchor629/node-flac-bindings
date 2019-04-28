@@ -8,13 +8,20 @@ namespace flac_bindings {
     using namespace v8;
 
     template<typename T>
+    static void markDeleteObjectTo(Local<Value> m, bool hintToDelete);
+
+    template<typename T>
     class WrappedObject: public Nan::ObjectWrap {
+        template<typename TT>
+        friend void markDeleteObjectTo(Local<Value> m, bool hintToDelete);
+    protected:
+        bool hintToDelete = false;
     public:
         virtual T* get() = 0;
     };
 
     template<typename T>
-    Local<Object> structToJs(const T* i);
+    Local<Object> structToJs(const T* i, bool deleteHint = false);
 
     template<typename T>
     static T* jsToStruct(const Local<Value> &m) {
@@ -24,6 +31,16 @@ namespace flac_bindings {
         Local<Object> obj = maybeObj.ToLocalChecked();
         if(obj->InternalFieldCount() == 0) { Nan::ThrowError("Object does not seem to be valid"); return nullptr; }
         return Nan::ObjectWrap::Unwrap<WrappedObject<T>>(obj)->get();
+    }
+
+    template<typename T>
+    static void markDeleteObjectTo(Local<Value> m, bool hintToDelete) {
+        Nan::HandleScope scope;
+        MaybeLocal<Object> maybeObj = Nan::To<Object>(m);
+        if(maybeObj.IsEmpty()) return;
+        Local<Object> obj = maybeObj.ToLocalChecked();
+        if(obj->InternalFieldCount() == 0) return;
+        Nan::ObjectWrap::Unwrap<WrappedObject<T>>(obj)->hintToDelete = hintToDelete;
     }
 
 
@@ -43,7 +60,6 @@ namespace flac_bindings {
         static inline Local<Function> getFunction(Isolate* isolate = Isolate::GetCurrent()) { return metadataJs.Get(isolate); }
 
         FLAC__StreamMetadata* metadata = nullptr;
-        bool hasToBeDeleted;
         virtual inline FLAC__StreamMetadata* get() { return metadata; }
 
         ~Metadata();
@@ -235,7 +251,6 @@ namespace flac_bindings {
         static inline Local<Function> getFunction(Isolate* isolate = Isolate::GetCurrent()) { return jsFunction.Get(isolate); }
         static NAN_MODULE_INIT(init);
 
-        bool mustBeDeleted = true;
         FLAC__StreamMetadata_CueSheet_Track* track = nullptr;
         virtual inline FLAC__StreamMetadata_CueSheet_Track* get() { return track; }
         ~CueSheetTrack();

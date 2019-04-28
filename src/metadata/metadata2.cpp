@@ -98,7 +98,7 @@ namespace flac_bindings {
             info.GetReturnValue().Set(Nan::New<Boolean>(s));
         }
 
-        static Local<Value> simpleAsyncImpl(void* m, Local<Value> This, Nan::Callback* cbk, std::function<bool()> impl) {
+        static Local<Value> simpleAsyncImpl(void* m, Local<Value> This, Nan::Callback* cbk, const char* name, std::function<bool()> impl) {
             Nan::EscapableHandleScope scope;
             auto* worker = newWorker<AsyncBackgroundTask<bool>, PromisifiedAsyncBackgroundTask<bool>>(
                 cbk,
@@ -110,7 +110,7 @@ namespace flac_bindings {
                     }
                 },
                 nullptr,
-                "flac_bindings:metadata2:readAsync",
+                name,
                 booleanToJs<bool>
             );
             worker->SaveToPersistent("this", This);
@@ -131,6 +131,7 @@ namespace flac_bindings {
                 m,
                 info.This(),
                 newCallback(info[1]),
+                "flac_bindings:metadata2:readAsync",
                 [m, path] () { return FLAC__metadata_chain_read(m, path.c_str()); }
             ));
         }
@@ -160,6 +161,7 @@ namespace flac_bindings {
                 m,
                 info.This(),
                 newCallback(info[1]),
+                "flac_bindings:metadata2:readOggAsync",
                 [m, path] () { return FLAC__metadata_chain_read_ogg(m, path.c_str()); }
             ));
         }
@@ -180,6 +182,7 @@ namespace flac_bindings {
                 m,
                 info.This(),
                 newCallback(info[2]),
+                "flac_bindings:metadata2:writeAsync",
                 [m, padding, preserve] () { return FLAC__metadata_chain_write(m, padding, preserve); }
             ));
         }
@@ -320,7 +323,7 @@ namespace flac_bindings {
             }
             FLAC__bool r = FLAC__metadata_iterator_set_block(m, n);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
-            Nan::ObjectWrap::Unwrap<Metadata>(info[0].As<Object>())->hasToBeDeleted = false;
+            markDeleteObjectTo<Metadata>(info[0], false);
         }
 
         static NAN_METHOD(deleteBlock) {
@@ -339,7 +342,7 @@ namespace flac_bindings {
             }
             FLAC__bool r = FLAC__metadata_iterator_insert_block_before(m, n);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
-            Nan::ObjectWrap::Unwrap<Metadata>(info[0].As<Object>())->hasToBeDeleted = false;
+            markDeleteObjectTo<Metadata>(info[0], false);
         }
 
         static NAN_METHOD(insertBlockAfter) {
@@ -351,7 +354,7 @@ namespace flac_bindings {
             }
             FLAC__bool r = FLAC__metadata_iterator_insert_block_after(m, n);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
-            Nan::ObjectWrap::Unwrap<Metadata>(info[0].As<Object>())->hasToBeDeleted = false;
+            markDeleteObjectTo<Metadata>(info[0], false);
         }
 
     public:
