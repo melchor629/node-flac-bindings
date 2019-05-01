@@ -106,7 +106,7 @@ namespace flac_bindings {
                     if(impl()) {
                         c.resolve(true);
                     } else {
-                        c.reject(FLAC__Metadata_ChainStatusString[FLAC__metadata_chain_status(m)]);
+                        c.reject(&FLAC__Metadata_ChainStatusString[FLAC__metadata_chain_status(m)][28]);
                     }
                 },
                 nullptr,

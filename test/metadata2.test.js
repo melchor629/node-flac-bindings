@@ -60,7 +60,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('el.flac');
             const ch = new Chain();
 
-            await assert.throwsAsync(() => ch.readAsync(filePath), /ERROR_OPENING_FILE/);
+            await assert.throwsAsync(() => ch.readAsync(filePath), /^ERROR_OPENING_FILE$/);
 
             await assert.throwsAsync(() => fs.access(filePath), 'The file should not exist');
         });

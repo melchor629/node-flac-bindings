@@ -72,7 +72,7 @@ namespace flac_bindings {
                     if(v) {
                         c.resolve(v);
                     } else {
-                        c.reject(FLAC__Metadata_SimpleIteratorStatusString[FLAC__metadata_simple_iterator_status(it)]);
+                        c.reject(&FLAC__Metadata_SimpleIteratorStatusString[FLAC__metadata_simple_iterator_status(it)][38]);
                     }
                 },
                 nullptr,
