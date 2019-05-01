@@ -120,7 +120,7 @@ template<typename T,
          typename std::enable_if_t<std::is_unsigned<T>::value, unsigned> = 0>
 static inline v8::Local<v8::Value> numberToJs(T number, bool forceBigInt = false) {
 #if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
-    if(!forceBigInt && number <= 9007199254740991) {
+    if(!forceBigInt && number <= 9007199254740992) {
         return Nan::New<v8::Number>((int64_t) number);
     }
     return v8::BigInt::NewFromUnsigned(v8::Isolate::GetCurrent(), (uint64_t) number);
@@ -133,7 +133,7 @@ template<typename T,
          typename std::enable_if_t<std::is_signed<T>::value, int> = 0>
 static inline v8::Local<v8::Value> numberToJs(T number, bool forceBigInt = false) {
 #if NODE_MODULE_VERSION >= NODE_10_0_MODULE_VERSION
-    if(!forceBigInt && -9007199254740991 <= number && number <= 9007199254740991) {
+    if(!forceBigInt && -9007199254740992 <= number && number <= 9007199254740992) {
         return Nan::New<v8::Number>((int64_t) number);
     }
     return v8::BigInt::New(v8::Isolate::GetCurrent(), (int64_t) number);
