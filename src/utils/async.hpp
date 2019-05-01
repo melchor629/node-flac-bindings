@@ -6,6 +6,8 @@
 #include <mutex>
 #include <nan.h>
 
+#include "./pointer.hpp"
+
 namespace flac_bindings {
 
     template<typename T, typename P = char>
@@ -19,10 +21,42 @@ namespace flac_bindings {
 
             friend class AsyncBackgroundTask<T, P>;
 
+            typedef typename std::function<void(const P*, Nan::NAN_METHOD_ARGS_TYPE)> PromiseCallback;
+            typedef typename std::function<void(ExecutionContext &, const P*, Nan::NAN_METHOD_ARGS_TYPE)> FullPromiseCallback;
+            struct PromiseContext {
+                PromiseCallback resolve, reject;
+                P* data;
+                AsyncBackgroundTask<T, P>* self;
+
+                ~PromiseContext() { delete data; }
+            };
+
             ExecutionContext(
                 AsyncBackgroundTask<T, P>* s,
                 const ExecutionProgress &progress
             ): self(s), progress(progress) {}
+
+            static NAN_METHOD(promiseThen) {
+                auto* p = UnwrapPointer<PromiseContext>(info.Data());
+                //Workaround https://github.com/nodejs/node/issues/5691 - This allows to handle promises without any warnings from node
+                node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), Nan::New<v8::Object>(), p->self->asyncContext);
+                if(p->resolve) {
+                    p->resolve(p->data, info);
+                }
+                delete p;
+            }
+
+            static NAN_METHOD(promiseCatch) {
+                auto* p = UnwrapPointer<PromiseContext>(info.Data());
+                //Workaround https://github.com/nodejs/node/issues/5691 - This allows to handle promises without any warnings from node
+                node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), Nan::New<v8::Object>(), p->self->asyncContext);
+                if(p->reject) {
+                    p->reject(p->data, info);
+                } else {
+                    p->self->executionContext->reject(info[0]);
+                }
+                delete p;
+            }
 
         public:
             void resolve(const T &returnValue) {
@@ -58,6 +92,23 @@ namespace flac_bindings {
                 sendProgress(&data);
             }
 
+            void defer(v8::Local<v8::Promise> promise, const P* data, FullPromiseCallback resolve = nullptr, FullPromiseCallback reject = nullptr) {
+                using namespace std::placeholders;
+                auto context = new PromiseContext {
+                    resolve ? std::bind(resolve, *this, _1, _2) : PromiseCallback(nullptr),
+                    reject ? std::bind(reject, *this, _1, _2) : PromiseCallback(nullptr),
+                    new P(*data),
+                    self
+                };
+                auto contextBuffer = WrapPointer(context).ToLocalChecked();
+                auto thenFunction = Nan::New<v8::Function>(promiseThen, contextBuffer);
+                auto catchFunction = Nan::New<v8::Function>(promiseCatch, contextBuffer);
+                promise->Then(Nan::GetCurrentContext(), thenFunction)
+                    .ToLocalChecked()
+                    ->Catch(Nan::GetCurrentContext(), catchFunction)
+                    .IsEmpty();
+            }
+
             inline AsyncBackgroundTask<T, P>* getTask() {
                 return self;
             }
@@ -79,6 +130,7 @@ namespace flac_bindings {
         ToV8ConverterFunction convertFunction;
         Nan::Maybe<T> returnValue = Nan::Nothing<T>();
         Nan::Persistent<v8::Value> exceptionValue;
+        node::async_context asyncContext;
 
     public:
         explicit AsyncBackgroundTask(
@@ -87,12 +139,16 @@ namespace flac_bindings {
             const char* name,
             ToV8ConverterFunction convertFunction,
             Nan::Callback* callback
-        ): Nan::AsyncProgressQueueWorker<P>(callback, name), function(function), progress(progress), convertFunction(convertFunction) {}
+        ): Nan::AsyncProgressQueueWorker<P>(callback, name), function(function), progress(progress), convertFunction(convertFunction) {
+            asyncContext = node::EmitAsyncInit(v8::Isolate::GetCurrent(), Nan::New<v8::Object>(), name);
+        }
 
         ~AsyncBackgroundTask() {
             if(!this->exceptionValue.IsEmpty()) {
                 this->exceptionValue.Reset();
             }
+
+            node::EmitAsyncDestroy(v8::Isolate::GetCurrent(), asyncContext);
         }
 
         virtual inline v8::Local<v8::Value> getReturnValue() const {
@@ -112,6 +168,8 @@ namespace flac_bindings {
         virtual void HandleProgressCallback(const P *data, size_t size) override {
             if(this->progress) {
                 Nan::HandleScope scope;
+                //Workaround https://github.com/nodejs/node/issues/5691 - This allows to handle promises without any warnings from node
+                node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), Nan::New<v8::Object>(), asyncContext);
                 Nan::TryCatch tryCatch;
                 this->progress(*executionContext, data, size);
                 if(tryCatch.HasCaught()) {
@@ -166,8 +224,6 @@ namespace flac_bindings {
     template<typename T, typename P = char>
     class PromisifiedAsyncBackgroundTask: public AsyncBackgroundTask<T, P> {
 
-        node::async_context asyncContext;
-
         inline v8::Local<v8::Promise::Resolver> getResolver() const {
             return this->GetFromPersistent("promiseResolver").template As<v8::Promise::Resolver>();
         }
@@ -185,11 +241,6 @@ namespace flac_bindings {
         ): AsyncBackgroundTask<T, P>(function, progress, name, convertFunction, (Nan::Callback*) (0x1)) {
             auto resolver = v8::Promise::Resolver::New(Nan::GetCurrentContext()).ToLocalChecked();
             this->SaveToPersistent("promiseResolver", resolver);
-            asyncContext = node::EmitAsyncInit(v8::Isolate::GetCurrent(), resolver, name);
-        }
-
-        ~PromisifiedAsyncBackgroundTask() {
-            node::EmitAsyncDestroy(v8::Isolate::GetCurrent(), asyncContext);
         }
 
         inline v8::Local<v8::Promise> getPromise() const {
@@ -207,7 +258,7 @@ namespace flac_bindings {
             Nan::HandleScope scope;
             auto resolver = this->getResolver();
             //Workaround https://github.com/nodejs/node/issues/5691
-            node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), resolver, asyncContext);
+            node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), resolver, this->asyncContext);
             auto context = Nan::GetCurrentContext();
 
             if(this->returnValue.IsJust() && this->convertFunction) {
@@ -222,7 +273,7 @@ namespace flac_bindings {
             Nan::HandleScope scope;
             auto resolver = this->getResolver();
             //Workaround https://github.com/nodejs/node/issues/5691
-            node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), resolver, asyncContext);
+            node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), resolver, this->asyncContext);
             auto context = Nan::GetCurrentContext();
 
             if(this->exceptionValue.IsEmpty()) {

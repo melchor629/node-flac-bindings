@@ -78,7 +78,18 @@ namespace flac_bindings {
             Nan::HandleScope scope;
             auto func = self.getTask()->GetFromPersistent("cbk").template As<v8::Function>();
             Local<Value> args[] = { Nan::New(e, 1).ToLocalChecked() };
-            Nan::Call(func, func, 1, args);
+            auto maybeResult = Nan::Call(func, func, 1, args);
+            if(!maybeResult.IsEmpty()) {
+                auto res = maybeResult.ToLocalChecked();
+                if(res->IsPromise()) {
+                    self.defer(res.template As<Promise>(), e, [endMode] (auto &c, auto e, auto &info) {
+                        if(*e == '9' && endMode == "exception") {
+                            c.reject(Nan::Error("Thrown :("));
+                        }
+                    });
+                    return;
+                }
+            }
             if(*e == '9' && endMode == "exception") {
                 self.reject(Nan::Error("Thrown :("));
             }

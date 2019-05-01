@@ -212,7 +212,7 @@ namespace flac_bindings {
 
             case DecoderWorkRequest::Type::Error: {
                 Local<Value> args[] { numberToJs(data->errorCode) };
-                dec->errorCbk->Call(1, args, async);
+                result = dec->errorCbk->Call(1, args, async);
                 break;
             }
 
@@ -225,7 +225,7 @@ namespace flac_bindings {
             case DecoderWorkRequest::Type::Metadata: {
                 Local<Value> elstru = structToJs(data->metadata);
                 Local<Value> args[] { elstru };
-                dec->metadataCbk->Call(1, args, async);
+                result = dec->metadataCbk->Call(1, args, async);
                 break;
             }
 
@@ -272,11 +272,13 @@ namespace flac_bindings {
             auto theGoodResult = result.ToLocalChecked();
             if(theGoodResult->IsPromise()) {
                 auto promise = theGoodResult.As<Promise>();
-                (void) promise;
-                //TODO
-                //promise->Then(Isolate::GetCurrent()->GetCurrentContext(), Nan::Undefined());
-                //promise->Catch(Isolate::GetCurrent()->GetCurrentContext(), Nan::Undefined());
-                //defer data->notifyWorkDone();
+                w.defer(promise, data, [processResult] (auto &w, auto data, auto &info) {
+                    if(processResult && !info[0].IsEmpty()) {
+                        processResult(info[0]);
+                    }
+
+                    data->notifyWorkDone();
+                }, [] (auto &w, auto data, auto &info) { w.reject(info[0]); data->notifyWorkDone(); });
             } else {
                 if(processResult && !result.IsEmpty()) processResult(result.ToLocalChecked());
                 data->notifyWorkDone();

@@ -260,6 +260,31 @@ describe('encode & decode: manual version', function() {
         comparePCM(finalBuffer, 32);
     });
 
+    it('decode with async callbacks using stream', async function() {
+        const fh = await fs.promises.open(pathForFile('loop.flac'), 'r');
+        const dec = new api.Decoder();
+        const allBuffers = [];
+        await dec.initStreamAsync(
+            async (buffer) => ({ bytes: (await fh.read(buffer, 0, buffer.length, null)).bytesRead, returnValue: 0 }),
+            async (offset) => (await fh.read(Buffer.alloc(1), 0, 1, offset - 1)).bytesRead === 1 ? 0 : 2,
+            () => ({ returnValue: api.Decoder.TellStatus.UNSUPPORTED, offset: 0n }),
+            async () => ({ length: (await fh.stat(pathForFile('loop.flac'))).size, returnValue: 0 }),
+            () => false,
+            (_, buffers) => { allBuffers.push(buffers.map(b => Buffer.from(b))); return 0; },
+            null,
+            (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+        );
+
+        const e = await dec.processUntilEndOfMetadataAsync();
+        assert.isTrue(e);
+        const f = await dec.processUntilEndOfStreamAsync();
+        assert.isTrue(f);
+
+        const [ finalBuffer, samples ] = joinIntoInterleaved(allBuffers);
+        assert.equal(samples, totalSamples);
+        comparePCM(finalBuffer, 32);
+    });
+
     it('decode using file', async function() {
         const dec = new api.Decoder();
         const allBuffers = [];
@@ -302,6 +327,28 @@ describe('encode & decode: manual version', function() {
         comparePCM(tmpFile.path, 24);
     });
 
+    it('encode with async callbacks using stream', async function() {
+        const enc = new api.Encoder();
+        const fh = await fs.promises.open(tmpFile.path, 'w');
+        enc.setBitsPerSample(24);
+        enc.setChannels(2);
+        enc.setCompressionLevel(9);
+        enc.setSampleRate(44100);
+        await enc.initStreamAsync(
+            async (buffer) => (await fh.write(buffer, 0, buffer.length, null)).bytesWritten === buffer.length ? 0 : 2,
+            async (offset) => (await fh.write(Buffer.alloc(1), 0, 0, offset)).bytesWritten,
+            () => ({ offset: 0n, returnValue: api.Encoder.TellStatus.UNSUPPORTED }),
+            null,
+        );
+
+        const chunkazo = Buffer.allocUnsafe(totalSamples * 4 * 2);
+        for(let i = 0; i < totalSamples * 2; i++) chunkazo.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+        await enc.processInterleavedAsync(chunkazo);
+        await enc.finishAsync();
+
+        comparePCM(tmpFile.path, 24);
+    });
+
     it('encode using file', async function() {
         const enc = new api.Encoder();
         enc.setBitsPerSample(24);
@@ -322,4 +369,3 @@ describe('encode & decode: manual version', function() {
     });
 
 });
-function mitm(n, f) { return function(...args) { console.log(`Start of ${n}`); console.log(args); const r = f(...args); console.log(r); console.log(`End of ${n}`); return r; } }

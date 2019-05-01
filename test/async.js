@@ -46,8 +46,23 @@ describe('async', function() {
                 });
             });
 
+            it('should call the process callback, waiting for it, with all the values using end mode ' + endMode, function(done) {
+                const values = [];
+                testAsync(endMode, async (c) => values.push(c), () => {
+                    assert.deepEqual(values, progressValues);
+                    done();
+                });
+            });
+
             it('should reject if the progress callback throws an exception end mode ' + endMode, function(done) {
                 testAsync(endMode, (c) => { throw new Error(c); }, (err) => {
+                    if(err) done();
+                    else done('Expected task to fail');
+                });
+            });
+
+            it('should reject if the progress callback rejects the promise end mode ' + endMode, function(done) {
+                testAsync(endMode, async (c) => { throw new Error(c); }, (err) => {
                     if(err) done();
                     else done('Expected task to fail');
                 });
@@ -79,8 +94,18 @@ describe('async', function() {
                 assert.deepEqual(values, progressValues);
             });
 
+            it('should call the process callback, waiting for it, with all the values using end mode ' + endMode, async function() {
+                const values = [];
+                try { await testAsync(endMode, async (c) => values.push(c)); } catch(e) {}
+                assert.deepEqual(values, progressValues);
+            });
+
             it('should reject if the progress callback throws an exception end mode ' + endMode, async function() {
                 await assert.throwsAsync(() => testAsync(endMode, (c) => { throw new Error(c); }));
+            });
+
+            it('should reject if the progress callback rejects the promise end mode ' + endMode, async function() {
+                await assert.throwsAsync(() => testAsync(endMode, async (c) => { throw new Error(c); }));
             });
         });
     });

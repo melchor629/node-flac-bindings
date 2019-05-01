@@ -331,7 +331,7 @@ namespace flac_bindings {
 
             case EncoderWorkRequest::Type::Metadata: {
                 Local<Value> args[] { structToJs(data->metadata) };
-                enc->metadataCbk->Call(1, args, async);
+                result = enc->metadataCbk->Call(1, args, async);
                 break;
             }
 
@@ -342,7 +342,7 @@ namespace flac_bindings {
                     numberToJs(data->progress.framesWritten),
                     numberToJs(data->progress.totalFramesEstimate)
                 };
-                enc->progressCbk->Call(4, args, async);
+                result = enc->progressCbk->Call(4, args, async);
                 break;
             }
         }
@@ -354,11 +354,13 @@ namespace flac_bindings {
             auto theGoodResult = result.ToLocalChecked();
             if(theGoodResult->IsPromise()) {
                 auto promise = theGoodResult.As<Promise>();
-                (void) promise;
-                //TODO
-                //promise->Then(Isolate::GetCurrent()->GetCurrentContext(), Nan::Undefined());
-                //promise->Catch(Isolate::GetCurrent()->GetCurrentContext(), Nan::Undefined());
-                //defer data->notifyWorkDone();
+                c.defer(promise, data, [processResult] (auto &c, auto data, auto &info) {
+                    if(processResult && !info[0].IsEmpty()) {
+                        processResult(info[0]);
+                    }
+
+                    data->notifyWorkDone();
+                }, [] (auto &c, auto data, auto &info) { c.reject(info[0]); data->notifyWorkDone(); });
             } else {
                 if(processResult && !result.IsEmpty()) processResult(result.ToLocalChecked());
                 data->notifyWorkDone();
