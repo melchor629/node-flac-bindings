@@ -316,6 +316,14 @@ namespace flac_bindings {
         }
     }
 
+    static inline Nan::Callback* newCallback(Nan::MaybeLocal<v8::Value> maybeValue) {
+        if(maybeValue.IsEmpty()) {
+            return nullptr;
+        } else {
+            return newCallback(maybeValue.ToLocalChecked());
+        }
+    }
+
 
     struct SyncronizableWorkRequest {
         std::shared_ptr<std::atomic_bool> workDone = std::shared_ptr<std::atomic_bool>(new std::atomic_bool(false));

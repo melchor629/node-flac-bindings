@@ -48,11 +48,11 @@ describe('Chain & Iterator', function() {
 
     describe('readAsync', function() {
 
-        it('throws if the first argument is not a Metadata', async function() {
+        it('throws if the first argument is not a string', async function() {
             await assert.throwsAsync(() => new Chain().readAsync({}));
         });
 
-        it('throws if the first argument is not a Metadata (ogg version)', async function() {
+        it('throws if the first argument is not a string (ogg version)', async function() {
             await assert.throwsAsync(() => new Chain().readOggAsync(() => 1));
         });
 
@@ -73,6 +73,48 @@ describe('Chain & Iterator', function() {
 
             assert.isTrue(ret, Chain.StatusString[ch.status()]);
             await fs.access(filePath);
+        });
+
+    });
+
+    describe('readWithCallbacks', function() {
+
+        const whence = (p, np, w, f) => {
+            console.log(p, np, w);
+            if(w === 'set') return Promise.resolve(np);
+            if(w === 'cur') return Promise.resolve(p + np);
+            if(w === 'end') return f.stat().then(s => s.size + np);
+        };
+
+        it('throws if the first argument is not an object', async function() {
+            await assert.throwsAsync(() => new Chain().readWithCallbacks(7));
+        });
+
+        it('throws if the lacks callbacks', async function() {
+            await assert.throwsAsync(() => new Chain().readWithCallbacks({}));
+        });
+
+        it('returns works if the file can be read', async function() {
+            const file = await fs.open('test/data/tags/vc-cs.flac', 'r');
+            const chain = new Chain();
+            let pos = 0n;
+            await chain.readWithCallbacks({
+                read: (b, s, n) => file.read(b, 0, s * n).then(({ bytesRead }) => { pos += bytesRead; return bytesRead }).catch(() => -1),
+                seek: (p, w) => whence(pos, p, w, file).then(newPos => file.read(Buffer.alloc(0), 0, 0, newPos).then(() => pos = newPos).then(() => 0)).catch(() => -1),
+                tell: () => pos,
+                close: () => file.close().then(() => 0).catch(() => -1),
+            })
+            .finally(() => file.close());
+        });
+
+        it('it throws if the file cannot be read', async function() {
+            const chain = new Chain();
+            await assert.throwsAsync(() => chain.readWithCallbacks({
+                read: () => 0,
+                seek: () => -1,
+                tell: () => 0n,
+                close: () => undefined,
+            }));
         });
 
     });
@@ -490,8 +532,7 @@ describe('Chain & Iterator', function() {
 
         it('modify the blocks and write should modify the file correctly (async)', async function() {
             const ch = new Chain();
-            const initRetValue = await ch.readAsync(tmpFile.path);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            await ch.readAsync(tmpFile.path);
             const it = ch.createIterator();
 
             const vc = new metadata.VorbisCommentMetadata();

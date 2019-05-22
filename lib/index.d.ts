@@ -1111,18 +1111,20 @@ declare namespace api {
         readOggAsync(path: string, callback: AsyncCallback<true>): void;
         readOggAsync(path: string): Promise<true>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga595f55b611ed588d4d55a9b2eb9d2add */
-        //readWithCallbacks(callbacks: Chain.IOCallbacks): Promise<true>; //TODO
+        readWithCallbacks(callbacks: Chain.IOCallbacks): Promise<true>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gaccc2f991722682d3c31d36f51985066c */
-        //readOggWithCallbacks(callbacks: Chain.IOCallbacks): Promise<true>; //TODO
+        readOggWithCallbacks(callbacks: Chain.IOCallbacks): Promise<true>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46bf9cf7d426078101b9297ba80bb835 */
         write(padding?: boolean, preserve?: boolean): boolean;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46bf9cf7d426078101b9297ba80bb835 */
         writeAsync(padding: boolean | undefined | null, preserve: boolean | undefined | null, callback: AsyncCallback<true>): void;
         writeAsync(padding?: boolean, preserve?: boolean): Promise<true>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga70532b3705294dc891d8db649a4d4843 */
-        //writeWithCallbacks(usePadding: boolean, callbacks: Chain.IOCallbacks): Promise<true>; //TODO
+        writeWithCallbacks(callbacks: Chain.IOCallbacks, usePadding?: boolean): Promise<true>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga72facaa621e8d798036a4a7da3643e41 */
-        //writeWithCallbacksAndTempFile(usePadding: boolean, callbacks: Chain.IOCallbacks, tempCallbacks: Chain.IOCallbacks): Promise<true>; //TODO
+        writeWithCallbacksAndTempFile(usePadding: boolean, callbacks: Chain.IOCallbacks, tempCallbacks: Chain.IOCallbacks): Promise<true>;
+        /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46602f64d423cfe5d5f8a4155f8a97e2 */
+        checkIfTempFileIsNeeded(usePadding?: boolean): boolean;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga0a43897914edb751cb87f7e281aff3dc */
         mergePadding(): void;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga82b66fe71c727adb9cf80a1da9834ce5 */
@@ -1200,46 +1202,50 @@ declare namespace api {
          */
         interface IOCallbacks {
             /**
-             * Read operation callback.
+             * Read operation callback. It must read a multiple of `sizeOfItem` bytes.
              * @param outputBuffer Buffer where to write the data after reading.
+             * @param sizeOfItem The size of an item to read in bytes.
+             * @param numberOfItems The number of items to read.
              * @returns the number of bytes read.
              */
-            read?: (outputBuffer: Buffer) => number;
+            read?: (outputBuffer: Buffer, sizeOfItem: number, numberOfItems: number) => number | bigint | Promise<number | bigint>;
 
             /**
-             * Write operation callback.
+             * Write operation callback. It must write a multiple of `sizeOfItem` bytes.
              * @param inputBuffer Buffer with the data to be written.
+             * @param sizeOfItem The size of an item to read in bytes.
+             * @param numberOfItems The number of items to read.
              * @returns the number of bytes written.
              */
-            write?: (inputBuffer: Buffer) => number;
+            write?: (inputBuffer: Buffer, sizeOfItem: number, numberOfItems: number) => number | bigint | Promise<number | bigint>;
 
             /**
              * Seek operation callback.
              * @param offset Position offset where to move, relative to `whence`.
-             * @param whence Relative mark. 0 (`SEEK_SET`) is relative to the beginning
-             * of the stream. 1 (`SEEK_CUR`) is relative to the current position. 2
-             * (`SEEK_END`) is relative to the end of the stream.
+             * @param whence Relative mark. 0 (`set`) is relative to the beginning
+             * of the stream. 1 (`cur`) is relative to the current position. 2
+             * (`end`) is relative to the end of the stream.
              * @returns 0 on success, -1 on error.
              */
-            seek?: (offset: number | bigint, whence: 0 | 1 | 2) => 0 | -1;
+            seek?: (offset: number | bigint, whence: 'set' | 'cur' | 'end') => 0 | -1 | Promise<0 | -1>;
 
             /**
              * Tell operation callback.
              * @returns The current position in bytes of the stream or -1 in case of error.
              */
-            tell?: () => number | bigint | -1;
+            tell?: () => number | bigint | -1 | Promise<number | bigint | -1>;
 
             /**
              * EOF check callback.
              * @returns `true` if the End Of File is reached, `false` otherwise.
              */
-            eof?: () => boolean;
+            eof?: () => boolean | Promise<boolean>;
 
             /**
              * Close operation callback.
              * @returns 0 on success, -1 on error.
              */
-            close: () => 0 | -1;
+            close: () => 0 | -1 | Promise<0 | -1>;
         }
     }
 

@@ -1,4 +1,5 @@
 #include <nan.h>
+#include "metadata2.hpp"
 #include "../utils/dl.hpp"
 
 using namespace v8;
@@ -25,17 +26,18 @@ extern "C" {
         FLAC__METADATA_CHAIN_STATUS_WRITE_ERROR, FLAC__METADATA_CHAIN_STATUS_RENAME_ERROR, FLAC__METADATA_CHAIN_STATUS_UNLINK_ERROR, FLAC__METADATA_CHAIN_STATUS_MEMORY_ALLOCATION_ERROR,
         FLAC__METADATA_CHAIN_STATUS_INTERNAL_ERROR, FLAC__METADATA_CHAIN_STATUS_INVALID_CALLBACKS, FLAC__METADATA_CHAIN_STATUS_READ_WRITE_MISMATCH, FLAC__METADATA_CHAIN_STATUS_WRONG_WRITE_CALL
     };
+
     metadataFunction(FLAC__Metadata_Chain*, chain_new, void);
     metadataFunction(void, chain_delete, FLAC__Metadata_Chain *chain);
     metadataFunction(FLAC__Metadata_ChainStatus, chain_status, FLAC__Metadata_Chain *chain);
     metadataFunction(FLAC__bool, chain_read, FLAC__Metadata_Chain *chain, const char *filename);
     metadataFunction(FLAC__bool, chain_read_ogg, FLAC__Metadata_Chain *chain, const char *filename);
-    //metadataFunction(FLAC__bool, chain_read_with_callbacks, FLAC__Metadata_Chain *chain, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks);
-    //metadataFunction(FLAC__bool, chain_read_ogg_with_callbacks, FLAC__Metadata_Chain *chain, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks);
-    //metadataFunction(FLAC__bool, chain_check_if_tempfile_needed, FLAC__Metadata_Chain *chain, FLAC__bool use_padding);
+    metadataFunction(FLAC__bool, chain_read_with_callbacks, FLAC__Metadata_Chain *chain, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks);
+    metadataFunction(FLAC__bool, chain_read_ogg_with_callbacks, FLAC__Metadata_Chain *chain, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks);
+    metadataFunction(FLAC__bool, chain_check_if_tempfile_needed, FLAC__Metadata_Chain *chain, FLAC__bool use_padding);
     metadataFunction(FLAC__bool, chain_write, FLAC__Metadata_Chain *chain, FLAC__bool use_padding, FLAC__bool preserve_file_stats);
-    //metadataFunction(FLAC__bool, chain_write_with_callbacks, FLAC__Metadata_Chain *chain, FLAC__bool use_padding, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks);
-    //metadataFunction(FLAC__bool, chain_write_with_callbacks_and_tempfile, FLAC__Metadata_Chain *chain, FLAC__bool use_padding, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks, FLAC__IOHandle temp_handle, FLAC__IOCallbacks temp_callbacks);
+    metadataFunction(FLAC__bool, chain_write_with_callbacks, FLAC__Metadata_Chain *chain, FLAC__bool use_padding, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks);
+    metadataFunction(FLAC__bool, chain_write_with_callbacks_and_tempfile, FLAC__Metadata_Chain *chain, FLAC__bool use_padding, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks, FLAC__IOHandle temp_handle, FLAC__IOCallbacks temp_callbacks);
     metadataFunction(void, chain_merge_padding, FLAC__Metadata_Chain *chain);
     metadataFunction(void, chain_sort_padding, FLAC__Metadata_Chain *chain);
     metadataFunction(FLAC__Metadata_Iterator*, iterator_new, void);
@@ -64,6 +66,30 @@ FLAC__Metadata_Iterator* m = self->m;
 namespace flac_bindings {
 
     extern Library* libFlac;
+
+    static std::function<bool(void*, FLAC__IOCallbacks)>
+    asyncWrap(FLAC__Metadata_Chain* m, std::function<bool(FLAC__IOCallbacks, void*)> f) {
+        return [m, f] (auto c, auto io) {
+            bool r = f(io, c);
+            if(!r) {
+                const char* msg = &FLAC__Metadata_ChainStatusString[FLAC__metadata_chain_status(m)][28];
+                std::get<1>(*(std::tuple<void*, AsyncFlacIOWork::ExecutionContext*>*) c)->reject(msg);
+            }
+            return r;
+        };
+    }
+
+    static std::function<bool(void*, FLAC__IOCallbacks, void*, FLAC__IOCallbacks)>
+    asyncWrap(FLAC__Metadata_Chain* m, std::function<bool(FLAC__IOCallbacks, void*, FLAC__IOCallbacks, void*)> f) {
+        return [m, f] (auto c, auto io, auto c2, auto io2) {
+            bool r = f(io, c, io2, c2);
+            if(!r) {
+                const char* msg = &FLAC__Metadata_ChainStatusString[FLAC__metadata_chain_status(m)][28];
+                std::get<1>(*(std::tuple<void*, AsyncFlacIOWork::ExecutionContext*>*) c)->reject(msg);
+            }
+            return r;
+        };
+    }
 
     class Chain: public Nan::ObjectWrap {
 
@@ -166,18 +192,54 @@ namespace flac_bindings {
             ));
         }
 
+        static NAN_METHOD(readWithCallbacks) {
+            UNWRAP_CHAIN
+            if(!info[0]->IsObject()) {
+                Nan::ThrowTypeError("Expected argument to be object");
+                return;
+            }
+
+            Local<Object> obj = info[0].As<Object>();
+            auto* work = new AsyncFlacIOWork(
+                asyncWrap(m, [m] (auto io, auto c) { return FLAC__metadata_chain_read_with_callbacks(m, c, io); }),
+                "metadata2:readWithCallbacks",
+                obj
+            );
+            work->SaveToPersistent("this", info.This());
+            info.GetReturnValue().Set(work->getPromise());
+            AsyncQueueWorker(work);
+        }
+
+        static NAN_METHOD(readOggWithCallbacks) {
+            UNWRAP_CHAIN
+            if(!info[0]->IsObject()) {
+                Nan::ThrowTypeError("Expected argument to be object");
+                return;
+            }
+
+            Local<Object> obj = info[0].As<Object>();
+            auto* work = new AsyncFlacIOWork(
+                asyncWrap(m, [m] (auto io, auto c) { return FLAC__metadata_chain_read_ogg_with_callbacks(m, c, io); }),
+                "metadata2:readOggWithCallbacks",
+                obj
+            );
+            work->SaveToPersistent("this", info.This());
+            info.GetReturnValue().Set(work->getPromise());
+            AsyncQueueWorker(work);
+        }
+
         static NAN_METHOD(write) {
             UNWRAP_CHAIN
-            FLAC__bool padding = numberFromJs<int>(info[0]).FromMaybe(1);
-            FLAC__bool preserve = numberFromJs<int>(info[1]).FromMaybe(0);
+            FLAC__bool padding = booleanFromJs<FLAC__bool>(info[0]).FromMaybe(true);
+            FLAC__bool preserve = booleanFromJs<FLAC__bool>(info[1]).FromMaybe(false);
             FLAC__bool r = FLAC__metadata_chain_write(m, padding, preserve);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
         }
 
         static NAN_METHOD(writeAsync) {
             UNWRAP_CHAIN
-            FLAC__bool padding = numberFromJs<int>(info[0]).FromMaybe(1);
-            FLAC__bool preserve = numberFromJs<int>(info[1]).FromMaybe(0);
+            FLAC__bool padding = booleanFromJs<FLAC__bool>(info[0]).FromMaybe(true);
+            FLAC__bool preserve = booleanFromJs<FLAC__bool>(info[1]).FromMaybe(false);
             info.GetReturnValue().Set(simpleAsyncImpl(
                 m,
                 info.This(),
@@ -185,6 +247,60 @@ namespace flac_bindings {
                 "flac_bindings:metadata2:writeAsync",
                 [m, padding, preserve] () { return FLAC__metadata_chain_write(m, padding, preserve); }
             ));
+        }
+
+        static NAN_METHOD(writeWithCallbacks) {
+            UNWRAP_CHAIN
+            if(!info[0]->IsObject()) {
+                Nan::ThrowTypeError("Expected argument to be object");
+                return;
+            }
+
+            Local<Object> obj = info[0].As<Object>();
+            FLAC__bool padding = booleanFromJs<FLAC__bool>(info[1]).FromMaybe(true);
+            auto* work = new AsyncFlacIOWork(
+                asyncWrap(m, [m, padding] (auto io, auto c) { return FLAC__metadata_chain_write_with_callbacks(m, padding, c, io); }),
+                "metadata2:writeWithCallbacks",
+                obj
+            );
+            work->SaveToPersistent("this", info.This());
+            info.GetReturnValue().Set(work->getPromise());
+            AsyncQueueWorker(work);
+        }
+
+        static NAN_METHOD(writeWithCallbacksAndTempFile) {
+            UNWRAP_CHAIN
+            if(!info[1]->IsObject()) {
+                Nan::ThrowTypeError("Expected second argument to be object");
+                return;
+            }
+
+            if(!info[2]->IsObject()) {
+                Nan::ThrowTypeError("Expected third argument to be object");
+                return;
+            }
+
+            FLAC__bool padding = booleanFromJs<FLAC__bool>(info[0]).FromMaybe(true);
+            Local<Object> obj1 = info[1].As<Object>();
+            Local<Object> obj2 = info[2].As<Object>();
+            auto* work = new AsyncFlacIOWork(
+                asyncWrap(m, [m, padding] (auto io, auto c, auto io2, auto c2) {
+                    return FLAC__metadata_chain_write_with_callbacks_and_tempfile(m, padding, c, io, c2, io2);
+                }),
+                "metadata2:writeWithCallbacksAndTempFile",
+                obj1,
+                obj2
+            );
+            work->SaveToPersistent("this", info.This());
+            info.GetReturnValue().Set(work->getPromise());
+            AsyncQueueWorker(work);
+        }
+
+        static NAN_METHOD(checkIfTempFileIsNeeded) {
+            UNWRAP_CHAIN
+            FLAC__bool padding = booleanFromJs<FLAC__bool>(info[0]).FromMaybe(true);
+            FLAC__bool result = FLAC__metadata_chain_check_if_tempfile_needed(m, padding);
+            info.GetReturnValue().Set(booleanToJs(result));
         }
 
         static NAN_METHOD(mergePadding) {
@@ -408,6 +524,11 @@ Nan::Set(functionClass, Nan::New(#jsName).ToLocalChecked(), Nan::NewInstance(_JO
         setMethod(chain_write, write);
         setMethod(chain_merge_padding, mergePadding);
         setMethod(chain_sort_padding, sortPadding);
+        setMethod(chain_read_with_callbacks, readWithCallbacks);
+        setMethod(chain_read_ogg_with_callbacks, readOggWithCallbacks);
+        setMethod(chain_write_with_callbacks, writeWithCallbacks);
+        setMethod(chain_write_with_callbacks_and_tempfile, writeWithCallbacksAndTempFile);
+        setMethod(chain_check_if_tempfile_needed, checkIfTempFileIsNeeded);
         Nan::SetPrototypeMethod(obj, "createIterator", createIterator);
         Nan::SetPrototypeMethod(obj, "readAsync", readAsync);
         Nan::SetPrototypeMethod(obj, "readOggAsync", readOggAsync);

@@ -10,6 +10,7 @@
             "src/format/format.cpp",
             "src/metadata/metadata0.cpp",
             "src/metadata/metadata1.cpp",
+            "src/metadata/async-io-metadata2.cpp",
             "src/metadata/metadata2.cpp",
             "src/metadata/metadata.cpp",
             "src/mappings/frame.cpp",
