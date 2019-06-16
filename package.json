@@ -6,8 +6,8 @@
   "main": "./lib/index.js",
   "scripts": {
     "test": "mocha",
-    "install": "prebuild-install || node-gyp rebuild",
-    "prebuild": "prebuild -t 8.16.0 -t 10.16.0 -t 12.4.0 --strip"
+    "install": "prebuild-install || cmake-js compile",
+    "prebuild": "prebuild --backend cmake-js -t 8.16.0 -t 10.16.0 -t 12.4.0 --strip"
   },
   "keywords": [
     "flac",
@@ -20,7 +20,8 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "nan": "^2.14.0",
-    "prebuild-install": "^5.3.0"
+    "prebuild-install": "^5.3.0",
+    "cmake-js": "^5.2.0"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",
@@ -33,5 +34,5 @@
     "temp": "^0.9.0"
   },
   "gypfile": true,
-  "types": "lib/flac.d.ts"
+  "types": "lib/index.d.ts"
 }
