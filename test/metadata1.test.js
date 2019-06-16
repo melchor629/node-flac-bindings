@@ -1,3 +1,4 @@
+/* eslint-disable prefer-arrow-callback */
 /// <reference path="../lib/index.d.ts" />
 const { SimpleIterator, metadata, format } = require('../lib/index').api;
 const { assert, use } = require('chai');
@@ -183,6 +184,7 @@ describe('SimpleIterator', function() {
 
             const initRetValue = it.init(filePath);
             assert.isTrue(initRetValue, SimpleIterator.StatusString[it.status()]);
+            // eslint-disable-next-line curly
             while(it.next());
 
             assert.isTrue(it.isLast());
@@ -274,6 +276,7 @@ describe('SimpleIterator', function() {
             const it = new SimpleIterator();
 
             await it.initAsync(filePath);
+            // eslint-disable-next-line curly
             while(await it.nextAsync());
 
             assert.isTrue(it.isLast());

@@ -1,3 +1,5 @@
+/* eslint-disable prefer-arrow-callback */
+/* global BigInt */
 /// <reference path="../lib/index.d.ts" />
 const { Chain, Iterator, metadata, format } = require('../lib/index').api;
 const { assert, use } = require('chai');
@@ -80,10 +82,15 @@ describe('Chain & Iterator', function() {
     describe('readWithCallbacks', function() {
 
         const whence = (p, np, w, f) => {
-            console.log(p, np, w);
-            if(w === 'set') return Promise.resolve(np);
-            if(w === 'cur') return Promise.resolve(p + np);
-            if(w === 'end') return f.stat().then(s => s.size + np);
+            if(w === 'set') {
+                return Promise.resolve(np);
+            }
+            if(w === 'cur') {
+                return Promise.resolve(p + np);
+            }
+            if(w === 'end') {
+                return f.stat().then((s) => s.size + np);
+            }
         };
 
         it('throws if the first argument is not an object', async function() {
@@ -97,14 +104,25 @@ describe('Chain & Iterator', function() {
         it('returns works if the file can be read', async function() {
             const file = await fs.open('test/data/tags/vc-cs.flac', 'r');
             const chain = new Chain();
-            let pos = 0n;
+            let pos = BigInt(0);
             await chain.readWithCallbacks({
-                read: (b, s, n) => file.read(b, 0, s * n).then(({ bytesRead }) => { pos += bytesRead; return bytesRead }).catch(() => -1),
-                seek: (p, w) => whence(pos, p, w, file).then(newPos => file.read(Buffer.alloc(0), 0, 0, newPos).then(() => pos = newPos).then(() => 0)).catch(() => -1),
+                read: (b, s, n) => file.read(b, 0, s * n)
+                    .then(({ bytesRead }) => {
+                        pos += bytesRead;
+                        return bytesRead;
+                    })
+                    .catch(() => -1),
+                seek: (p, w) => whence(pos, p, w, file)
+                    .then((newPos) => file.read(Buffer.alloc(0), 0, 0, newPos)
+                        .then(() => pos = newPos)
+                        .then(() => 0)
+                    )
+                    .catch(() => -1),
                 tell: () => pos,
-                close: () => file.close().then(() => 0).catch(() => -1),
+                close: () => file.close().then(() => 0)
+                    .catch(() => -1),
             })
-            .finally(() => file.close());
+                .finally(() => file.close());
         });
 
         it('it throws if the file cannot be read', async function() {
@@ -112,7 +130,7 @@ describe('Chain & Iterator', function() {
             await assert.throwsAsync(() => chain.readWithCallbacks({
                 read: () => 0,
                 seek: () => -1,
-                tell: () => 0n,
+                tell: () => BigInt(0),
                 close: () => undefined,
             }));
         });
@@ -232,6 +250,7 @@ describe('Chain & Iterator', function() {
             assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
 
             const it = ch.createIterator();
+            // eslint-disable-next-line curly
             while(it.next());
 
             assert.equal(it.getBlockType(), format.MetadataType.VORBIS_COMMENT);
@@ -269,13 +288,13 @@ describe('Chain & Iterator', function() {
             ch.sortPadding();
 
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.APPLICATION,
                     format.MetadataType.PICTURE,
                     format.MetadataType.VORBIS_COMMENT,
-                    format.MetadataType.PADDING
+                    format.MetadataType.PADDING,
                 ]
             );
         });
@@ -292,11 +311,12 @@ describe('Chain & Iterator', function() {
             assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
 
             const it = ch.createIterator();
+            // eslint-disable-next-line curly
             while(it.next());
             it.insertBlockBefore(new metadata.PaddingMetadata(100));
 
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.APPLICATION,
@@ -310,7 +330,7 @@ describe('Chain & Iterator', function() {
             ch.sortPadding();
 
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.APPLICATION,
@@ -346,7 +366,7 @@ describe('Chain & Iterator', function() {
 
             assert.isFalse(ch.createIterator().setBlock(new metadata.PaddingMetadata()));
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.SEEKTABLE,
@@ -369,7 +389,7 @@ describe('Chain & Iterator', function() {
             assert.isTrue(it.setBlock(new metadata.PaddingMetadata()));
             assert.equal(it.getBlockType(), format.MetadataType.PADDING);
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.SEEKTABLE,
@@ -388,7 +408,7 @@ describe('Chain & Iterator', function() {
 
             assert.isFalse(ch.createIterator().deleteBlock());
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.SEEKTABLE,
@@ -411,7 +431,7 @@ describe('Chain & Iterator', function() {
             assert.isTrue(it.deleteBlock(true));
             assert.equal(it.getBlockType(), format.MetadataType.SEEKTABLE);
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.SEEKTABLE,
@@ -430,7 +450,7 @@ describe('Chain & Iterator', function() {
 
             assert.isFalse(ch.createIterator().insertBlockBefore(new metadata.ApplicationMetadata()));
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.SEEKTABLE,
@@ -453,7 +473,7 @@ describe('Chain & Iterator', function() {
             assert.isTrue(it.insertBlockBefore(new metadata.ApplicationMetadata()));
             assert.equal(it.getBlockType(), format.MetadataType.APPLICATION);
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.SEEKTABLE,
@@ -477,7 +497,7 @@ describe('Chain & Iterator', function() {
             assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()));
             assert.equal(it.getBlockType(), format.MetadataType.APPLICATION);
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.SEEKTABLE,
@@ -519,7 +539,7 @@ describe('Chain & Iterator', function() {
             assert.isTrue(ch.write(false));
 
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.VORBIS_COMMENT,
@@ -546,7 +566,7 @@ describe('Chain & Iterator', function() {
             assert.isTrue(await ch.writeAsync(false));
 
             assert.deepEqual(
-                Array.from(ch.createIterator()).map(i => i.type),
+                Array.from(ch.createIterator()).map((i) => i.type),
                 [
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.VORBIS_COMMENT,

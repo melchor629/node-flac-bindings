@@ -1,3 +1,4 @@
+/* eslint-disable prefer-arrow-callback */
 /// <reference path="../lib/index.d.ts" />
 const { metadata0, metadata, format } = require('../lib/index').api;
 const { assert, use } = require('chai');
@@ -23,7 +24,11 @@ describe('metadata0', function() {
 
             assert.isFalse(tags);
             let hasThrown = false;
-            try { await fs.access(filePath); } catch(e) { hasThrown = true; }
+            try {
+                await fs.access(filePath);
+            } catch(e) {
+                hasThrown = true;
+            }
             assert.isTrue(hasThrown, 'The file must not exist');
         });
 
@@ -118,7 +123,11 @@ describe('metadata0', function() {
 
             assert.isFalse(picture);
             let hasThrown = false;
-            try { await fs.access(filePath); } catch(e) { hasThrown = true; }
+            try {
+                await fs.access(filePath);
+            } catch(e) {
+                hasThrown = true;
+            }
             assert.isTrue(hasThrown, 'The file must not exist');
         });
 
@@ -216,7 +225,11 @@ describe('metadata0', function() {
 
             assert.isFalse(cueSheet);
             let hasThrown = false;
-            try { await fs.access(filePath); } catch(e) { hasThrown = true; }
+            try {
+                await fs.access(filePath);
+            } catch(e) {
+                hasThrown = true;
+            }
             assert.isTrue(hasThrown, 'The file must not exist');
         });
 
@@ -330,7 +343,11 @@ describe('metadata0', function() {
 
             assert.isFalse(streamInfo);
             let hasThrown = false;
-            try { await fs.access(filePath); } catch(e) { hasThrown = true; }
+            try {
+                await fs.access(filePath);
+            } catch(e) {
+                hasThrown = true;
+            }
             assert.isTrue(hasThrown, 'The file must not exist');
         });
 
@@ -347,7 +364,10 @@ describe('metadata0', function() {
             assert.equal(streamInfo.sampleRate, 44100);
             assert.equal(streamInfo.channels, 2);
             assert.equal(streamInfo.totalSamples, 441000);
-            assert.isTrue(Buffer.from('c5671d66cdca83ac483dcc302ae169af', 'hex').equals(streamInfo.md5sum), 'MD5Sum does not match');
+            assert.isTrue(
+                Buffer.from('c5671d66cdca83ac483dcc302ae169af', 'hex').equals(streamInfo.md5sum),
+                'MD5Sum does not match'
+            );
         });
 
     });
@@ -378,7 +398,10 @@ describe('metadata0', function() {
             assert.equal(streamInfo.sampleRate, 44100);
             assert.equal(streamInfo.channels, 2);
             assert.equal(streamInfo.totalSamples, 441000);
-            assert.isTrue(Buffer.from('c5671d66cdca83ac483dcc302ae169af', 'hex').equals(streamInfo.md5sum), 'MD5Sum does not match');
+            assert.isTrue(
+                Buffer.from('c5671d66cdca83ac483dcc302ae169af', 'hex').equals(streamInfo.md5sum),
+                'MD5Sum does not match'
+            );
         });
 
     });

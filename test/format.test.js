@@ -1,3 +1,5 @@
+/* eslint-disable prefer-arrow-callback */
+/* global BigInt */
 /// <reference path="../lib/index.d.ts" />
 const { format } = require('../lib/index').api;
 const { assert } = require('chai');
@@ -6,7 +8,7 @@ describe('format', function() {
 
     it('sampleRateIsValid() should work', function() {
         assert.isTrue(format.sampleRateIsValid(96000));
-        assert.isFalse(format.sampleRateIsValid(112938129312n));
+        assert.isFalse(format.sampleRateIsValid(BigInt(112938129312)));
     });
 
     it('sampleRateIsValid() should return false if the argument is not number', function() {
@@ -26,7 +28,7 @@ describe('format', function() {
 
     it('sampleRateIsSubset() should work', function() {
         assert.isTrue(format.sampleRateIsSubset(44100));
-        assert.isFalse(format.sampleRateIsSubset(9123812830192n));
+        assert.isFalse(format.sampleRateIsSubset(BigInt(9123812830192)));
     });
 
     it('sampleRateIsSubset() should return false if the argument is not number', function() {

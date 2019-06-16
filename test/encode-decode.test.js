@@ -1,3 +1,5 @@
+/* eslint-disable prefer-arrow-callback */
+/* global BigInt */
 /// <reference path="../lib/index.d.ts" />
 const {
     FileDecoder,
@@ -11,6 +13,8 @@ const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
 const temp = require('temp');
+
+const totalSamples = 992250 / 3 / 2;
 
 const pathForFile = (...file) => path.join(__dirname, 'data', '*coder', ...file);
 const promisifyEvent = (t, event) => new Promise((resolve, reject) => t.on(event, resolve).on('error', reject));
@@ -47,7 +51,7 @@ const comparePCM = (flacFile, bitsPerSample=16) => {
 const joinIntoInterleaved = (arrayOfArrayOfBuffers) => {
     const finalBuffer = Buffer.allocUnsafe(totalSamples * 4 * 2);
     let sample = 0;
-    for(let buffers of arrayOfArrayOfBuffers) {
+    for(const buffers of arrayOfArrayOfBuffers) {
         for(let i = 0; i < buffers[0].length / 4; i++) {
             finalBuffer.writeInt32LE(buffers[0].readInt32LE(i * 4), sample * 4 * 2);
             finalBuffer.writeInt32LE(buffers[1].readInt32LE(i * 4), sample * 4 * 2 + 4);
@@ -58,7 +62,6 @@ const joinIntoInterleaved = (arrayOfArrayOfBuffers) => {
     return [ finalBuffer, sample ];
 };
 
-const totalSamples = 992250 / 3 / 2;
 let tmpFile;
 beforeEach('createTemporaryFiles', function() {
     tmpFile = temp.openSync('flac-bindings.encode-decode');
@@ -72,7 +75,13 @@ describe('encode & decode', function() {
 
     it('encode/decode using stream', async function() {
         const dec = new StreamDecoder({ outputAs32: false });
-        const enc = new StreamEncoder({ samplerate: 44100, channels: 2, bitsPerSample: 24, compressionLevel: 9, inputAs32: false });
+        const enc = new StreamEncoder({
+            samplerate: 44100,
+            channels: 2,
+            bitsPerSample: 24,
+            compressionLevel: 9,
+            inputAs32: false,
+        });
         const input = fs.createReadStream(pathForFile('loop.flac'));
         const output = fs.createWriteStream(tmpFile.path);
 
@@ -89,7 +98,14 @@ describe('encode & decode', function() {
 
     it('encode/decode using file', async function() {
         const dec = new FileDecoder({ file: pathForFile('loop.flac'), outputAs32: false });
-        const enc = new FileEncoder({ file: tmpFile.path, samplerate: 44100, channels: 2, bitsPerSample: 24, compressionLevel: 9, inputAs32: false });
+        const enc = new FileEncoder({
+            file: tmpFile.path,
+            samplerate: 44100,
+            channels: 2,
+            bitsPerSample: 24,
+            compressionLevel: 9,
+            inputAs32: false,
+        });
 
         dec.pipe(enc);
         await promisifyEvent(enc, 'finish');
@@ -102,7 +118,14 @@ describe('encode & decode', function() {
 
     it('encode/decode using 32 bit integers', async function() {
         const dec = new FileDecoder({ file: pathForFile('loop.flac'), outputAs32: true });
-        const enc = new FileEncoder({ file: tmpFile.path, samplerate: 44100, channels: 2, bitsPerSample: 24, compressionLevel: 9, inputAs32: true });
+        const enc = new FileEncoder({
+            file: tmpFile.path,
+            samplerate: 44100,
+            channels: 2,
+            bitsPerSample: 24,
+            compressionLevel: 9,
+            inputAs32: true,
+        });
 
         dec.pipe(enc);
         await promisifyEvent(enc, 'finish');
@@ -119,7 +142,7 @@ describe('encode & decode', function() {
         const chunks = [];
 
         input.pipe(dec);
-        dec.on('data', chunk => chunks.push(chunk));
+        dec.on('data', (chunk) => chunks.push(chunk));
         await promisifyEvent(dec, 'end');
 
         const raw = Buffer.concat(chunks);
@@ -134,7 +157,7 @@ describe('encode & decode', function() {
         const chunks = [];
 
         input.pipe(dec);
-        dec.on('data', chunk => chunks.push(chunk));
+        dec.on('data', (chunk) => chunks.push(chunk));
         await promisifyEvent(dec, 'end');
 
         const raw = Buffer.concat(chunks);
@@ -147,7 +170,7 @@ describe('encode & decode', function() {
         const dec = new FileDecoder({ outputAs32: false, file: pathForFile('loop.flac') });
         const chunks = [];
 
-        dec.on('data', chunk => chunks.push(chunk));
+        dec.on('data', (chunk) => chunks.push(chunk));
         await promisifyEvent(dec, 'end');
 
         const raw = Buffer.concat(chunks);
@@ -160,7 +183,7 @@ describe('encode & decode', function() {
         const dec = new FileDecoder({ outputAs32: true, file: pathForFile('loop.flac') });
         const chunks = [];
 
-        dec.on('data', chunk => chunks.push(chunk));
+        dec.on('data', (chunk) => chunks.push(chunk));
         await promisifyEvent(dec, 'end');
 
         const raw = Buffer.concat(chunks);
@@ -171,7 +194,13 @@ describe('encode & decode', function() {
 
     it('encode using stream and file-bit input', async function() {
         const output = fs.createWriteStream(tmpFile.path);
-        const enc = new StreamEncoder({ samplerate: 44100, channels: 2, bitsPerSample: 24, compressionLevel: 9, inputAs32: false });
+        const enc = new StreamEncoder({
+            samplerate: 44100,
+            channels: 2,
+            bitsPerSample: 24,
+            compressionLevel: 9,
+            inputAs32: false,
+        });
         const raw = okData;
 
         enc.pipe(output);
@@ -185,10 +214,18 @@ describe('encode & decode', function() {
 
     it('encode using stream and 32-bit input', async function() {
         const output = fs.createWriteStream(tmpFile.path);
-        const enc = new StreamEncoder({ samplerate: 44100, channels: 2, bitsPerSample: 24, compressionLevel: 9, inputAs32: true });
+        const enc = new StreamEncoder({
+            samplerate: 44100,
+            channels: 2,
+            bitsPerSample: 24,
+            compressionLevel: 9,
+            inputAs32: true,
+        });
         const raw = okData;
         const chunkazo = Buffer.allocUnsafe(totalSamples * 4 * 2);
-        for(let i = 0; i < totalSamples * 2; i++) chunkazo.writeInt32LE(raw.readIntLE(i * 3, 3), i * 4);
+        for(let i = 0; i < totalSamples * 2; i++) {
+            chunkazo.writeInt32LE(raw.readIntLE(i * 3, 3), i * 4);
+        }
 
         enc.pipe(output);
         enc.end(chunkazo);
@@ -201,7 +238,14 @@ describe('encode & decode', function() {
 
     it('encode using file and file-bit input', async function() {
         const file = tmpFile.path;
-        const enc = new FileEncoder({ samplerate: 44100, channels: 2, bitsPerSample: 24, compressionLevel: 9, inputAs32: false, file });
+        const enc = new FileEncoder({
+            samplerate: 44100,
+            channels: 2,
+            bitsPerSample: 24,
+            compressionLevel: 9,
+            inputAs32: false,
+            file,
+        });
         const raw = okData;
 
         enc.end(raw);
@@ -214,10 +258,19 @@ describe('encode & decode', function() {
 
     it('encode using file and 32-bit input', async function() {
         const file = tmpFile.path;
-        const enc = new FileEncoder({ samplerate: 44100, channels: 2, bitsPerSample: 24, compressionLevel: 9, inputAs32: true, file });
+        const enc = new FileEncoder({
+            samplerate: 44100,
+            channels: 2,
+            bitsPerSample: 24,
+            compressionLevel: 9,
+            inputAs32: true,
+            file,
+        });
         const raw = okData;
         const chunkazo = Buffer.allocUnsafe(totalSamples * 4 * 2);
-        for(let i = 0; i < totalSamples * 2; i++) chunkazo.writeInt32LE(raw.readIntLE(i * 3, 3), i * 4);
+        for(let i = 0; i < totalSamples * 2; i++) {
+            chunkazo.writeInt32LE(raw.readIntLE(i * 3, 3), i * 4);
+        }
 
         enc.end(chunkazo);
         await promisifyEvent(enc, 'finish');
@@ -242,11 +295,15 @@ describe('encode & decode: manual version', function() {
         await dec.initStreamAsync(
             (buffer) => ({ bytes: fs.readSync(fd, buffer, 0, buffer.length, null), returnValue: 0 }),
             (offset) => fs.readSync(fd, Buffer.alloc(1), 0, 1, offset - 1) === 1 ? 0 : 2,
-            () => ({ returnValue: api.Decoder.TellStatus.UNSUPPORTED, offset: 0n }),
+            () => ({ returnValue: api.Decoder.TellStatus.UNSUPPORTED, offset: BigInt(0) }),
             () => ({ length: fs.statSync(pathForFile('loop.flac')).size, returnValue: 0 }),
             () => false,
-            (_, buffers) => { allBuffers.push(buffers.map(b => Buffer.from(b))); return 0; },
+            (_, buffers) => {
+                allBuffers.push(buffers.map((b) => Buffer.from(b)));
+                return 0;
+            },
             null,
+            // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
         );
 
@@ -267,11 +324,15 @@ describe('encode & decode: manual version', function() {
         await dec.initStreamAsync(
             async (buffer) => ({ bytes: (await fh.read(buffer, 0, buffer.length, null)).bytesRead, returnValue: 0 }),
             async (offset) => (await fh.read(Buffer.alloc(1), 0, 1, offset - 1)).bytesRead === 1 ? 0 : 2,
-            () => ({ returnValue: api.Decoder.TellStatus.UNSUPPORTED, offset: 0n }),
+            () => ({ returnValue: api.Decoder.TellStatus.UNSUPPORTED, offset: BigInt(0) }),
             async () => ({ length: (await fh.stat(pathForFile('loop.flac'))).size, returnValue: 0 }),
             () => false,
-            (_, buffers) => { allBuffers.push(buffers.map(b => Buffer.from(b))); return 0; },
+            (_, buffers) => {
+                allBuffers.push(buffers.map((b) => Buffer.from(b)));
+                return 0;
+            },
             null,
+            // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
         );
 
@@ -290,8 +351,12 @@ describe('encode & decode: manual version', function() {
         const allBuffers = [];
         await dec.initFileAsync(
             pathForFile('loop.flac'),
-            (_, buffers) => { allBuffers.push(buffers.map(b => Buffer.from(b))); return 0; },
+            (_, buffers) => {
+                allBuffers.push(buffers.map((b) => Buffer.from(b)));
+                return 0;
+            },
             null,
+            // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
         );
 
@@ -315,12 +380,14 @@ describe('encode & decode: manual version', function() {
         await enc.initStreamAsync(
             (buffer) => fs.writeSync(fd, buffer, 0, buffer.length, null) === buffer.length ? 0 : 2,
             (offset) => fs.writeSync(fd, Buffer.alloc(1), 0, 0, offset),
-            () => ({ offset: 0n, returnValue: api.Encoder.TellStatus.UNSUPPORTED }),
+            () => ({ offset: BigInt(0), returnValue: api.Encoder.TellStatus.UNSUPPORTED }),
             null,
         );
 
         const chunkazo = Buffer.allocUnsafe(totalSamples * 4 * 2);
-        for(let i = 0; i < totalSamples * 2; i++) chunkazo.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+        for(let i = 0; i < totalSamples * 2; i++) {
+            chunkazo.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+        }
         await enc.processInterleavedAsync(chunkazo);
         await enc.finishAsync();
 
@@ -337,12 +404,14 @@ describe('encode & decode: manual version', function() {
         await enc.initStreamAsync(
             async (buffer) => (await fh.write(buffer, 0, buffer.length, null)).bytesWritten === buffer.length ? 0 : 2,
             async (offset) => (await fh.write(Buffer.alloc(1), 0, 0, offset)).bytesWritten,
-            () => ({ offset: 0n, returnValue: api.Encoder.TellStatus.UNSUPPORTED }),
+            () => ({ offset: BigInt(0), returnValue: api.Encoder.TellStatus.UNSUPPORTED }),
             null,
         );
 
         const chunkazo = Buffer.allocUnsafe(totalSamples * 4 * 2);
-        for(let i = 0; i < totalSamples * 2; i++) chunkazo.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+        for(let i = 0; i < totalSamples * 2; i++) {
+            chunkazo.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+        }
         await enc.processInterleavedAsync(chunkazo);
         await enc.finishAsync();
 
@@ -361,7 +430,9 @@ describe('encode & decode: manual version', function() {
         );
 
         const chunkazo = Buffer.allocUnsafe(totalSamples * 4 * 2);
-        for(let i = 0; i < totalSamples * 2; i++) chunkazo.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+        for(let i = 0; i < totalSamples * 2; i++) {
+            chunkazo.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+        }
         await enc.processInterleavedAsync(chunkazo);
         await enc.finishAsync();
 

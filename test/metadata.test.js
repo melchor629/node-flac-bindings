@@ -1,3 +1,5 @@
+/* eslint-disable prefer-arrow-callback */
+/* global BigInt */
 /// <reference path="../lib/index.d.ts" />
 const {
     ApplicationMetadata,
@@ -183,7 +185,7 @@ describe('metadata', function() {
         it('mediaCatalogNumber should throw if the string has more then 128 bytes', function() {
             const cst = new CueSheetMetadata();
 
-            assert.throws(() => cst.mediaCatalogNumber = 'this is a very long string that you should not care about becuase it is here only for the reason to throw an exception 🗿🤔🙃🤨');
+            assert.throws(() => cst.mediaCatalogNumber = 'this is a very long string that you should not care about because it is here only for the reason to throw an exception 🗿🤔🙃🤨');
         });
 
         it('leadIn should work with numbers', function() {
