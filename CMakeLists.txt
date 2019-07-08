@@ -4,7 +4,7 @@ project(flac-bindings)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-file(GLOB SOURCE_FILES "src/**/*.cpp" "src/**/*.hpp" "src/**/*.h")
+file(GLOB SOURCE_FILES "src/**/*.cpp" "src/**/*.hpp" "src/**/*.h" "src/index.cpp")
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_JS_INC})
