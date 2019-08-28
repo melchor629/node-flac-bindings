@@ -21,6 +21,6 @@ jobs:
       run: |
         npm install
         npm run build --if-present
-        npm test
+        node --version | egrep -v "^v8." && npm test
       env:
         CI: true
