@@ -3,55 +3,53 @@ name: Node CI
 on: [push]
 
 jobs:
-  build:
+  build-8:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [8.x, 10.x, 12.x]
-
-    steps:
-    - uses: actions/checkout@v1
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: npm install and build
-      run: |
-        npm install
+    container:
+      image: node:8-buster
       env:
         CI: true
+    steps:
+    - uses: actions/checkout@v1
+    - name: Prepare
+      run: |
+        apt-get update
+        apt-get install -y cmake libflac-dev
+    - name: Install
+      run: npm install
+    - name: Test
+      run: npm test
 
-  test-10:
+  build-10:
     runs-on: ubuntu-latest
     container:
       image: node:10-buster
       env:
         CI: true
-      volumes:
-        - $GITHUB_WORKSPACE:/app
-
     steps:
-    - name: Test
+    - uses: actions/checkout@v1
+    - name: Prepare
       run: |
         apt-get update
         apt-get install -y cmake libflac-dev
-        cd app
-        npm test
+    - name: Install
+      run: npm install
+    - name: Test
+      run: npm test
 
-  test-12:
+  build-12:
     runs-on: ubuntu-latest
     container:
       image: node:12-buster
       env:
         CI: true
-      volumes:
-        - $GITHUB_WORKSPACE:/app
-
     steps:
-    - name: Test
+    - uses: actions/checkout@v1
+    - name: Prepare
       run: |
         apt-get update
         apt-get install -y cmake libflac-dev
-        cd app
-        npm test
+    - name: Install
+      run: npm install
+    - name: Test
+      run: npm test
