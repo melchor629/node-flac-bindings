@@ -22,14 +22,27 @@ jobs:
       env:
         CI: true
 
-  test:
-    strategy:
-      matrix:
-        node-version: ['10', '12']
-
+  test-10:
     runs-on: ubuntu-latest
     container:
-      image: node:${{ matrix.node_version }}-buster
+      image: node:10-buster
+      env:
+        CI: true
+      volumes:
+        - $GITHUB_WORKSPACE:/app
+
+    steps:
+    - name: Test
+      run: |
+        apt-get update
+        apt-get install -y cmake libflac-dev
+        cd app
+        npm test
+
+  test-10:
+    runs-on: ubuntu-latest
+    container:
+      image: node:12-buster
       env:
         CI: true
       volumes:
