@@ -39,7 +39,7 @@ jobs:
         cd app
         npm test
 
-  test-10:
+  test-12:
     runs-on: ubuntu-latest
     container:
       image: node:12-buster
