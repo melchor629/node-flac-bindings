@@ -27,6 +27,7 @@ jobs:
       matrix:
         node-version: ['10', '12']
 
+    runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node_version }}-buster
       env:
