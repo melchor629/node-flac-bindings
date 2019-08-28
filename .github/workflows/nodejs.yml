@@ -28,7 +28,7 @@ jobs:
         node-version: ['10', '12']
 
     container:
-      image: node:${{ node_version }}-buster
+      image: node:${{ matrix.node_version }}-buster
       env:
         CI: true
       volumes:
