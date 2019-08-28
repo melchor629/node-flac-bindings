@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/* global BigInt */
 /// <reference path="../lib/index.d.ts" />
 const {
     FileDecoder,

@@ -49,3 +49,4 @@ test
 *.wav
 Jenkinsfile
 tsconfig.json
+.github

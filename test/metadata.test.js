@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/* global BigInt */
 /// <reference path="../lib/index.d.ts" />
 const {
     ApplicationMetadata,
@@ -185,7 +184,10 @@ describe('metadata', function() {
         it('mediaCatalogNumber should throw if the string has more then 128 bytes', function() {
             const cst = new CueSheetMetadata();
 
-            assert.throws(() => cst.mediaCatalogNumber = 'this is a very long string that you should not care about because it is here only for the reason to throw an exception 🗿🤔🙃🤨');
+            assert.throws(() => {
+                cst.mediaCatalogNumber = 'this is a very long string that you should not care about because it is ' +
+                    'here only for the reason to throw an exception 🗿🤔🙃🤨';
+            });
         });
 
         it('leadIn should work with numbers', function() {
@@ -966,10 +968,10 @@ describe('metadata', function() {
             const vc = new VorbisCommentMetadata();
             vc.resizeComments(1);
 
-            assert.isTrue(vc.setComment(0, "ARTIST=Mario"));
+            assert.isTrue(vc.setComment(0, 'ARTIST=Mario'));
 
             assert.equal(vc.comments.length, 1);
-            assert.equal(vc.comments[0], "ARTIST=Mario");
+            assert.equal(vc.comments[0], 'ARTIST=Mario');
         });
 
         it('setComment() should throw if the position is invalid', function() {
@@ -995,7 +997,7 @@ describe('metadata', function() {
             assert.isTrue(vc.insertComment(0, 'TITLE=tests'));
 
             assert.equal(vc.comments.length, 1);
-            assert.equal(vc.comments[0], "TITLE=tests");
+            assert.equal(vc.comments[0], 'TITLE=tests');
         });
 
         it('insertComment() should throw if the position is invalid', function() {
@@ -1019,7 +1021,7 @@ describe('metadata', function() {
             assert.isTrue(vc.appendComment('TITLE=tests'));
 
             assert.equal(vc.comments.length, 1);
-            assert.equal(vc.comments[0], "TITLE=tests");
+            assert.equal(vc.comments[0], 'TITLE=tests');
         });
 
         it('appendComment() should throw if the first argument is not a string', function() {
@@ -1033,7 +1035,7 @@ describe('metadata', function() {
             assert.isTrue(vc.replaceComment('TITLE=tests', true));
 
             assert.equal(vc.comments.length, 1);
-            assert.equal(vc.comments[0], "TITLE=tests");
+            assert.equal(vc.comments[0], 'TITLE=tests');
         });
 
         it('deleteComment() should remove the comment entry if the position is valid', function() {
