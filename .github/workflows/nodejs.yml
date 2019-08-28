@@ -17,6 +17,8 @@ jobs:
         apt-get install -y cmake libflac-dev
     - name: Install
       run: npm install
+    - name: Build
+      run: npm run compile
     - name: Test
       run: npm test
 
@@ -34,6 +36,8 @@ jobs:
         apt-get install -y cmake libflac-dev
     - name: Install
       run: npm install
+    - name: Build
+      run: npm run compile
     - name: Test
       run: npm test
 
@@ -51,5 +55,7 @@ jobs:
         apt-get install -y cmake libflac-dev
     - name: Install
       run: npm install
+    - name: Build
+      run: npm run compile
     - name: Test
       run: npm test
