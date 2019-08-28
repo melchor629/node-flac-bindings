@@ -1313,6 +1313,9 @@ declare namespace api {
 
     /**
      * If a suitable library cannot be loaded, this function will be available.
+     * Given a path to the `libflac` library, tries to load it as flac library.
+     * If the library is not a the FLAC one, the behaviour is undefined and crashes
+     * may occur.
      */
     const load: ((flacDynamicLibraryPath: string) => typeof api) | undefined;
 
@@ -1442,7 +1445,7 @@ declare interface FlacDecoderOptions {
 
 /**
  * FLAC decoder which transforms a stream of FLAC (or Ogg/FLAC) into
- * a raw interleaved PCM stream.
+ * a interleaved raw PCM stream.
  * @emits metadata When a metadata block is received, the event will be fired
  */
 declare class StreamDecoder extends Transform {
@@ -1458,7 +1461,7 @@ declare class StreamDecoder extends Transform {
 
 /**
  * FLAC decoder which reads a FLAC or Ogg/FLAC file and outputs
- * a raw interleaved PCM stream.
+ * a interleaved raw PCM stream.
  * @emits metadata When a metadata block is received, the event will be fired
  */
 declare class FileDecoder extends Readable {

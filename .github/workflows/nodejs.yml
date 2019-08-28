@@ -1,0 +1,59 @@
+name: Node CI
+
+on: [push]
+
+jobs:
+  build-8:
+    runs-on: ubuntu-latest
+    container:
+      image: node:8-buster
+      env:
+        CI: true
+    steps:
+    - uses: actions/checkout@v1
+    - name: Prepare
+      run: |
+        apt-get update
+        apt-get install -y cmake libflac-dev flac
+    - name: Install
+      run: npm install
+    - name: Build
+      run: npm run compile
+
+  build-10:
+    runs-on: ubuntu-latest
+    container:
+      image: node:10-buster
+      env:
+        CI: true
+    steps:
+    - uses: actions/checkout@v1
+    - name: Prepare
+      run: |
+        apt-get update
+        apt-get install -y cmake libflac-dev flac
+    - name: Install
+      run: npm install
+    - name: Build
+      run: npm run compile
+    - name: Test
+      run: npm test
+
+  build-12:
+    runs-on: ubuntu-latest
+    container:
+      image: node:12-buster
+      env:
+        CI: true
+    steps:
+    - uses: actions/checkout@v1
+    - name: Prepare
+      run: |
+        apt-get update
+        apt-get install -y cmake libflac-dev flac
+    - name: Install
+      run: npm install
+    - name: Build
+      run: npm run compile
+    - name: Test
+      run: npm test
