@@ -138,7 +138,7 @@ static inline v8::Local<v8::Value> numberToJs(T number, bool forceBigInt = false
     }
     return v8::BigInt::New(v8::Isolate::GetCurrent(), (int64_t) number);
 #else
-    return Nan::New<Number>((int64_t) number);
+    return Nan::New<v8::Number>((int64_t) number);
 #endif
 }
 
