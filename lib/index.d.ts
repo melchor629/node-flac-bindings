@@ -991,8 +991,8 @@ declare namespace api {
         /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga0c9cd22296400c8ce16ee1db011342cb */
         function getPicture(path: string, type: number, maxWidth?: number, maxHeight?: number, maxDepth?: number, maxColors?: number): metadata.PictureMetadata | false;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level0.html#ga0c9cd22296400c8ce16ee1db011342cb */
-        function getPicture(path: string, type: number, maxWidth: number | null, maxHeight: number | null, maxDepth: number | null, maxColors: number | null, callback: AsyncCallback<metadata.PictureMetadata>): void;
-        function getPicture(path: string, type: number, maxWidth?: number, maxHeight?: number, maxDepth?: number, maxColors?: number): Promise<metadata.PictureMetadata>;
+        function getPictureAsync(path: string, type: number, maxWidth: number | null, maxHeight: number | null, maxDepth: number | null, maxColors: number | null, callback: AsyncCallback<metadata.PictureMetadata>): void;
+        function getPictureAsync(path: string, type: number, maxWidth?: number, maxHeight?: number, maxDepth?: number, maxColors?: number): Promise<metadata.PictureMetadata>;
     }
 
 
