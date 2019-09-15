@@ -82,7 +82,7 @@ namespace flac_bindings {
             if(!maybeResult.IsEmpty()) {
                 auto res = maybeResult.ToLocalChecked();
                 if(res->IsPromise()) {
-                    self.defer(res.template As<Promise>(), e, [endMode] (auto &c, auto e, auto &info) {
+                    self.defer(res.template As<Promise>(), e, [endMode=endMode] (auto &c, auto e, auto &info) {
                         if(*e == '9' && endMode == "exception") {
                             c.reject(Nan::Error("Thrown :("));
                         }
