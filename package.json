@@ -8,7 +8,7 @@
     "test": "mocha",
     "install": "prebuild-install || cmake-js compile",
     "compile": "cmake-js compile",
-    "prebuild": "prebuild --backend cmake-js -t 8.16.0 -t 10.16.0 -t 12.9.0 --strip",
+    "prebuild": "prebuild --backend cmake-js -t 8.16.0 -t 10.16.0 -t 12.10.0 --strip",
     "lint": "eslint -c .eslintrc.json lib/**/*.js test/**/*.js"
   },
   "keywords": [
@@ -22,7 +22,7 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "nan": "^2.14.0",
-    "prebuild-install": "^5.3.0",
+    "prebuild-install": "^5.3.2",
     "cmake-js": "^5.3.2"
   },
   "devDependencies": {
