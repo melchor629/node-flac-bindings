@@ -49,17 +49,42 @@ jobs:
       image: node:12-buster
       env:
         CI: true
+        COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_REPO_TOKEN }}"
+        COVERALLS_GIT_BRANCH: "${{ github.ref }}"
+        COVERALLS_PARALLEL: "true"
     steps:
     - uses: actions/checkout@v1
     - name: Prepare
       run: |
         apt-get update
-        apt-get install -y cmake libflac-dev flac
+        apt-get install -y cmake libflac-dev flac lcov
     - name: Install
       run: npm install
     - name: Build
-      run: npm run cmake-js -- build
+      run: npm run cmake-js -- build --debug --CDCOVERAGE
     - name: Lint
       run: npm run lint
     - name: Test
-      run: npm test
+      run: |
+        export PATH="$PATH:$PWD/node_modules/.bin"
+        mkdir coverage
+        nyc mocha
+        nyc report --reporter=text-lcov > coverage/js.info
+        lcov -c --quiet --directory build/CMakeFiles/flac-bindings.dir/src --base-directory src -o coverage/cpp.info --no-external
+    - name: Coveralls (js)
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        parallel: true
+        path-to-lcov: ./coverage/js.info
+    - name: Coveralls (C++)
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        parallel: true
+        path-to-lcov: ./coverage/cpp.info
+    - name: Coveralls (finish)
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        parallel-finished: true
