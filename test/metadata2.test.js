@@ -12,6 +12,18 @@ const pathForFile = (...file) => path.join(__dirname, 'data', 'tags', ...file);
 
 use(require('./helper/async-chai-extensions.js'));
 
+const whence = (p, np, w, f) => {
+    if(w === 'set') {
+        return Promise.resolve(np);
+    }
+    if(w === 'cur') {
+        return Promise.resolve(p + np);
+    }
+    if(w === 'end') {
+        return f.stat().then((s) => s.size + np);
+    }
+};
+
 describe('Chain & Iterator', function() {
 
     describe('read', function() {
@@ -80,24 +92,20 @@ describe('Chain & Iterator', function() {
 
     describe('readWithCallbacks', function() {
 
-        const whence = (p, np, w, f) => {
-            if(w === 'set') {
-                return Promise.resolve(np);
-            }
-            if(w === 'cur') {
-                return Promise.resolve(p + np);
-            }
-            if(w === 'end') {
-                return f.stat().then((s) => s.size + np);
-            }
-        };
-
         it('throws if the first argument is not an object', async function() {
             await assert.throwsAsync(() => new Chain().readWithCallbacks(7));
         });
 
+        it('throws if the first argument is not an object (ogg version)', async function() {
+            await assert.throwsAsync(() => new Chain().readOggWithCallbacks(7));
+        });
+
         it('throws if the lacks callbacks', async function() {
             await assert.throwsAsync(() => new Chain().readWithCallbacks({}));
+        });
+
+        it('throws if the lacks callbacks (ogg version)', async function() {
+            await assert.throwsAsync(() => new Chain().readOggWithCallbacks({}));
         });
 
         it('returns works if the file can be read', async function() {
@@ -326,7 +334,7 @@ describe('Chain & Iterator', function() {
                 ]
             );
 
-            ch.sortPadding();
+            ch.mergePadding();
 
             assert.deepEqual(
                 Array.from(ch.createIterator()).map((i) => i.type),
@@ -334,8 +342,8 @@ describe('Chain & Iterator', function() {
                     format.MetadataType.STREAMINFO,
                     format.MetadataType.APPLICATION,
                     format.MetadataType.PICTURE,
-                    format.MetadataType.VORBIS_COMMENT,
                     format.MetadataType.PADDING,
+                    format.MetadataType.VORBIS_COMMENT,
                 ]
             );
         });
@@ -576,6 +584,16 @@ describe('Chain & Iterator', function() {
             );
         });
 
+    });
+
+    describe('other', function() {
+        it('checkIfTempFileIsNeeded() should work', async function() {
+            const filePath = pathForFile('vc-cs.flac');
+            const ch = new Chain();
+            await ch.readAsync(filePath);
+
+            assert.isFalse(ch.checkIfTempFileIsNeeded());
+        });
     });
 
     describe('gc', function() {
