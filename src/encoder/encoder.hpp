@@ -106,8 +106,8 @@ namespace flac_bindings {
         explicit EncoderWorkRequest(EncoderWorkRequest::Type type);
     };
 
-    typedef AsyncBackgroundTask<bool, EncoderWorkRequest> AsyncEncoderWorkBase;
-    typedef PromisifiedAsyncBackgroundTask<bool, EncoderWorkRequest> PromisifiedAsyncEncoderWorkBase;
+    typedef AsyncBackgroundTask<bool, EncoderWorkRequest*> AsyncEncoderWorkBase;
+    typedef PromisifiedAsyncBackgroundTask<bool, EncoderWorkRequest*> PromisifiedAsyncEncoderWorkBase;
 
     class StreamEncoder: public Nan::ObjectWrap {
         static NAN_METHOD(setOggSerialNumber);
@@ -187,7 +187,7 @@ namespace flac_bindings {
     };
 
 #ifdef MAKE_FRIENDS
-    static void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, const EncoderWorkRequest *data);
+    static void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, EncoderWorkRequest* const* data);
     template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
     static inline WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
@@ -202,7 +202,7 @@ namespace flac_bindings {
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
 #ifdef MAKE_FRIENDS
-        friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, const EncoderWorkRequest *data);
+        friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, EncoderWorkRequest* const* data);
         template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
         friend WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
@@ -226,7 +226,7 @@ namespace flac_bindings {
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
 #ifdef MAKE_FRIENDS
-        friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, const EncoderWorkRequest *data);
+        friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, EncoderWorkRequest* const* data);
         friend class AsyncEncoderWork;
         template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
         friend WorkerBase* newWorker(Nan::Callback* callback, Args... args);

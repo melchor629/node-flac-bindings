@@ -284,7 +284,7 @@ namespace flac_bindings {
 
 
 
-    static void encoderDoWork(const StreamEncoder* enc, AsyncEncoderWorkBase::ExecutionContext &c, const EncoderWorkRequest *data) {
+    static void encoderDoWork(const StreamEncoder* enc, AsyncEncoderWorkBase::ExecutionContext &c, EncoderWorkRequest* const* dataPtr) {
         using namespace v8;
         using namespace Nan;
         using namespace node;
@@ -294,6 +294,7 @@ namespace flac_bindings {
         Nan::MaybeLocal<Value> result;
         Nan::TryCatch tryCatch;
 
+        auto data = *dataPtr;
         auto functionForReturnNumber = functionGeneratorForReturnNumber(enc, data);
         auto functionForReturnObject = functionGeneratorForReturnObject(enc, data);
 
@@ -354,13 +355,13 @@ namespace flac_bindings {
             auto theGoodResult = result.ToLocalChecked();
             if(theGoodResult->IsPromise()) {
                 auto promise = theGoodResult.As<Promise>();
-                c.defer(promise, data, [processResult] (auto &c, auto data, auto &info) {
+                c.defer(promise, nullptr, [processResult, data] (auto &c, auto _, auto &info) {
                     if(processResult && !info[0].IsEmpty()) {
                         processResult(info[0]);
                     }
 
                     data->notifyWorkDone();
-                }, [] (auto &c, auto data, auto &info) { c.reject(info[0]); data->notifyWorkDone(); });
+                }, [data] (auto &c, auto _, auto &info) { c.reject(info[0]); data->notifyWorkDone(); });
             } else {
                 if(processResult && !result.IsEmpty()) processResult(result.ToLocalChecked());
                 data->notifyWorkDone();

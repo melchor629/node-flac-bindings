@@ -602,13 +602,14 @@ namespace flac_bindings {
 };
 
 
-static int doAsyncWork(flac_bindings::StreamEncoder* enc, flac_bindings::EncoderWorkRequest &ewr, int errorReturnValue) {
+static int doAsyncWork(flac_bindings::StreamEncoder* enc, flac_bindings::EncoderWorkRequest *ewr, int errorReturnValue) {
     int returnValue = errorReturnValue;
-    ewr.returnValue = &returnValue;
+    ewr->returnValue = &returnValue;
 
     enc->asyncExecutionContext->sendProgress(ewr);
-    ewr.waitForWorkDone();
+    ewr->waitForWorkDone();
 
+    delete ewr;
     return returnValue;
 }
 
@@ -616,9 +617,9 @@ int encoder_read_callback(const FLAC__StreamEncoder* enc, char buffer[], size_t*
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        EncoderWorkRequest ewr(EncoderWorkRequest::Type::Read);
-        ewr.buffer = buffer;
-        ewr.bytes = bytes;
+        EncoderWorkRequest* ewr = new EncoderWorkRequest(EncoderWorkRequest::Type::Read);
+        ewr->buffer = buffer;
+        ewr->bytes = bytes;
         return doAsyncWork(cbks, ewr, 2);
     }
 
@@ -657,11 +658,11 @@ int encoder_write_callback(const FLAC__StreamEncoder* enc, const char buffer[], 
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        EncoderWorkRequest ewr(EncoderWorkRequest::Type::Write);
-        ewr.constBuffer = buffer;
-        ewr.bytes = &bytes;
-        ewr.samples = samples;
-        ewr.frame = frame;
+        EncoderWorkRequest* ewr = new EncoderWorkRequest(EncoderWorkRequest::Type::Write);
+        ewr->constBuffer = buffer;
+        ewr->bytes = &bytes;
+        ewr->samples = samples;
+        ewr->frame = frame;
         return doAsyncWork(cbks, ewr, 1);
     }
 
@@ -687,8 +688,8 @@ int encoder_seek_callback(const FLAC__StreamEncoder* enc, uint64_t offset, void*
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        EncoderWorkRequest ewr(EncoderWorkRequest::Type::Seek);
-        ewr.offset = &offset;
+        EncoderWorkRequest* ewr = new EncoderWorkRequest(EncoderWorkRequest::Type::Seek);
+        ewr->offset = &offset;
         return doAsyncWork(cbks, ewr, 1);
     }
 
@@ -710,8 +711,8 @@ int encoder_tell_callback(const FLAC__StreamEncoder* enc, uint64_t* offset, void
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        EncoderWorkRequest ewr(EncoderWorkRequest::Type::Tell);
-        ewr.offset = offset;
+        EncoderWorkRequest* ewr = new EncoderWorkRequest(EncoderWorkRequest::Type::Tell);
+        ewr->offset = offset;
         return doAsyncWork(cbks, ewr, 1);
     }
 
@@ -746,8 +747,8 @@ void encoder_metadata_callback(const FLAC__StreamEncoder* enc, const FLAC__Strea
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        EncoderWorkRequest ewr(EncoderWorkRequest::Type::Metadata);
-        ewr.metadata = metadata;
+        EncoderWorkRequest* ewr = new EncoderWorkRequest(EncoderWorkRequest::Type::Metadata);
+        ewr->metadata = metadata;
         doAsyncWork(cbks, ewr, 0);
         return;
     }
@@ -769,11 +770,11 @@ void encoder_progress_callback(const FLAC__StreamEncoder* enc, uint64_t bytes_wr
     flac_bindings::StreamEncoder* cbks = (flac_bindings::StreamEncoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        EncoderWorkRequest ewr(EncoderWorkRequest::Type::Progress);
-        ewr.progress.bytesWritten = bytes_written;
-        ewr.progress.samplesWritten = samples_written;
-        ewr.progress.framesWritten = frames_written;
-        ewr.progress.totalFramesEstimate = total_frames_estimate;
+        EncoderWorkRequest* ewr = new EncoderWorkRequest(EncoderWorkRequest::Type::Progress);
+        ewr->progress.bytesWritten = bytes_written;
+        ewr->progress.samplesWritten = samples_written;
+        ewr->progress.framesWritten = frames_written;
+        ewr->progress.totalFramesEstimate = total_frames_estimate;
         doAsyncWork(cbks, ewr, 0);
         return;
     }
