@@ -68,7 +68,7 @@ jobs:
         nyc mocha
         nyc report --reporter=text-lcov > coverage/js.info
         lcov -c --quiet --directory build/CMakeFiles/flac-bindings.dir/src --base-directory src -o coverage/cpp.info --no-external
-        cat coverage/js.info coverage/cpp.info > converage/combined.info
+        cat coverage/js.info coverage/cpp.info > coverage/combined.info
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
