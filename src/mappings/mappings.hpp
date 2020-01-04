@@ -27,10 +27,19 @@ namespace flac_bindings {
     static T* jsToStruct(const Local<Value> &m) {
         Nan::HandleScope scope;
         MaybeLocal<Object> maybeObj = Nan::To<Object>(m);
-        if(maybeObj.IsEmpty()) { Nan::ThrowError("Expected type to be object"); return nullptr; }
+        if(maybeObj.IsEmpty()) {
+            Nan::ThrowError("Expected type to be object");
+            return nullptr;
+        }
+
         Local<Object> obj = maybeObj.ToLocalChecked();
-        if(obj->InternalFieldCount() == 0) { Nan::ThrowError("Object does not seem to be valid"); return nullptr; }
-        return Nan::ObjectWrap::Unwrap<WrappedObject<T>>(obj)->get();
+        if(obj->InternalFieldCount() == 0) {
+            Nan::ThrowError("Object does not seem to be valid");
+            return nullptr;
+        }
+
+        WrappedObject<T>* ptr = Nan::ObjectWrap::Unwrap<WrappedObject<T>>(obj);
+        return ptr->get();
     }
 
     template<typename T>

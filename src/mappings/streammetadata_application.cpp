@@ -32,9 +32,6 @@ namespace flac_bindings {
 
     V8_SETTER(ApplicationMetadata::data) {
         unwrap(ApplicationMetadata);
-        auto o1 = info.Data();
-        Nan::Utf8String str(Nan::ToDetailString(o1).ToLocalChecked());
-        printf("%s\n", *str);
         checkValueIsBuffer() {
             FLAC__byte* buffer = (FLAC__byte*) Buffer::Data(value);
             size_t bufferLength = Buffer::Length(value);

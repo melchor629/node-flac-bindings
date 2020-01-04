@@ -74,13 +74,10 @@ namespace flac_bindings {
             return;
         }
 
-        if(!info[0]->IsObject()) {
-            Nan::ThrowTypeError("Expected argument to be a Metadata object");
-            return;
+        FLAC__StreamMetadata* otherMetadata = jsToStruct<FLAC__StreamMetadata>(info[0]);
+        if(otherMetadata != nullptr) {
+            info.GetReturnValue().Set(Nan::New<Boolean>(FLAC__metadata_object_is_equal(self->metadata, otherMetadata)));
         }
-
-        Metadata* other = Nan::ObjectWrap::Unwrap<Metadata>(Nan::To<Object>(info[0]).ToLocalChecked());
-        info.GetReturnValue().Set(Nan::New<Boolean>(FLAC__metadata_object_is_equal(self->metadata, other->metadata)));
     }
 
     Nan::Persistent<Function> Metadata::metadataJs;
