@@ -1,6 +1,6 @@
 name: Node CI
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build-8:
@@ -68,20 +68,9 @@ jobs:
         nyc mocha
         nyc report --reporter=text-lcov > coverage/js.info
         lcov -c --quiet --directory build/CMakeFiles/flac-bindings.dir/src --base-directory src -o coverage/cpp.info --no-external
-    - name: Coveralls (js)
+        cat coverage/js.info coverage/cpp.info > converage/combined.info
+    - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel: true
-        path-to-lcov: ./coverage/js.info
-    - name: Coveralls (C++)
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel: true
-        path-to-lcov: ./coverage/cpp.info
-    - name: Coveralls (finish)
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        parallel-finished: true
+        path-to-lcov: ./coverage/combined.info
