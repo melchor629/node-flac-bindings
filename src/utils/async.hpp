@@ -97,7 +97,7 @@ namespace flac_bindings {
                 auto context = new PromiseContext {
                     resolve ? std::bind(resolve, *this, _1, _2) : PromiseCallback(nullptr),
                     reject ? std::bind(reject, *this, _1, _2) : PromiseCallback(nullptr),
-                    new P(*data),
+                    data != nullptr ? new P(*data) : nullptr,
                     self
                 };
                 auto contextBuffer = WrapPointer(context).ToLocalChecked();
