@@ -106,8 +106,8 @@ namespace flac_bindings {
         explicit DecoderWorkRequest(DecoderWorkRequest::Type type);
     };
 
-    typedef AsyncBackgroundTask<bool, DecoderWorkRequest> AsyncDecoderWorkBase;
-    typedef PromisifiedAsyncBackgroundTask<bool, DecoderWorkRequest> PromisifiedAsyncDecoderWorkBase;
+    typedef AsyncBackgroundTask<bool, DecoderWorkRequest*> AsyncDecoderWorkBase;
+    typedef PromisifiedAsyncBackgroundTask<bool, DecoderWorkRequest*> PromisifiedAsyncDecoderWorkBase;
 
     class StreamDecoder: public Nan::ObjectWrap {
 
@@ -178,7 +178,7 @@ namespace flac_bindings {
     };
 
 #ifdef MAKE_FRIENDS
-    static void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, const DecoderWorkRequest *data);
+    static void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, DecoderWorkRequest* const* data);
     template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
     static inline WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
@@ -193,7 +193,7 @@ namespace flac_bindings {
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
 #ifdef MAKE_FRIENDS
-        friend void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, const DecoderWorkRequest *data);
+        friend void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, DecoderWorkRequest* const* data);
         template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
         friend WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
@@ -221,7 +221,7 @@ namespace flac_bindings {
         inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
 
 #ifdef MAKE_FRIENDS
-        friend void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, const DecoderWorkRequest *data);
+        friend void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, DecoderWorkRequest* const* data);
         friend class AsyncDecoderWork;
         template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
         friend WorkerBase* newWorker(Nan::Callback* callback, Args... args);

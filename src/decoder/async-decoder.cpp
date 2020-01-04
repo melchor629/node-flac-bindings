@@ -60,7 +60,7 @@ namespace flac_bindings {
         const char* name,
         StreamDecoder* dec,
         Callback* callback
-    ): AsyncBackgroundTask<bool, DecoderWorkRequest>(
+    ): AsyncBackgroundTask<bool, DecoderWorkRequest*>(
         decorate(dec, function, [dec] () { return FLAC__stream_decoder_get_resolved_state_string(dec->dec); }),
         std::bind(decoderDoWork, dec, _1, _2),
         name,
@@ -183,7 +183,7 @@ namespace flac_bindings {
 
 
 
-    void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, const DecoderWorkRequest *data) {
+    void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, DecoderWorkRequest* const* dataPtr) {
         using namespace v8;
         using namespace Nan;
         using namespace node;
@@ -193,6 +193,7 @@ namespace flac_bindings {
         Nan::MaybeLocal<Value> result;
         Nan::TryCatch tryCatch;
 
+        auto data = *dataPtr;
         auto functionForReturnNumber = functionGeneratorForReturnNumber(dec, data);
         auto functionForReturnObject = functionGeneratorForReturnObject(dec, data);
 
@@ -272,13 +273,13 @@ namespace flac_bindings {
             auto theGoodResult = result.ToLocalChecked();
             if(theGoodResult->IsPromise()) {
                 auto promise = theGoodResult.As<Promise>();
-                w.defer(promise, data, [processResult] (auto &w, auto data, auto &info) {
+                w.defer(promise, nullptr, [processResult, data] (auto &w, auto _, auto &info) {
                     if(processResult && !info[0].IsEmpty()) {
                         processResult(info[0]);
                     }
 
                     data->notifyWorkDone();
-                }, [] (auto &w, auto data, auto &info) { w.reject(info[0]); data->notifyWorkDone(); });
+                }, [data] (auto &w, auto _, auto &info) { w.reject(info[0]); data->notifyWorkDone(); });
             } else {
                 if(processResult && !result.IsEmpty()) processResult(result.ToLocalChecked());
                 data->notifyWorkDone();

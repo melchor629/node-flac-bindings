@@ -689,13 +689,14 @@ namespace flac_bindings {
 }
 
 
-static int doAsyncWork(flac_bindings::StreamDecoder* dec, flac_bindings::DecoderWorkRequest &dwr, int errorReturnValue) {
+static int doAsyncWork(flac_bindings::StreamDecoder* dec, flac_bindings::DecoderWorkRequest *dwr, int errorReturnValue) {
     int returnValue = errorReturnValue;
-    dwr.returnValue = &returnValue;
+    dwr->returnValue = &returnValue;
 
     dec->asyncExecutionContext->sendProgress(dwr);
-    dwr.waitForWorkDone();
+    dwr->waitForWorkDone();
 
+    delete dwr;
     return returnValue;
 }
 
@@ -703,9 +704,9 @@ int decoder_read_callback(const FLAC__StreamDecoder* dec, FLAC__byte buffer[], s
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Read);
-        dwr.buffer = buffer;
-        dwr.bytes = bytes;
+        DecoderWorkRequest* dwr = new DecoderWorkRequest(DecoderWorkRequest::Type::Read);
+        dwr->buffer = buffer;
+        dwr->bytes = bytes;
         return doAsyncWork(cbks, dwr, 2);
     }
 
@@ -744,8 +745,8 @@ int decoder_seek_callback(const FLAC__StreamDecoder* dec, uint64_t offset, void*
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Seek);
-        dwr.offset = &offset;
+        DecoderWorkRequest *dwr = new DecoderWorkRequest(DecoderWorkRequest::Type::Seek);
+        dwr->offset = &offset;
         return doAsyncWork(cbks, dwr, 1);
     }
 
@@ -772,8 +773,8 @@ int decoder_tell_callback(const FLAC__StreamDecoder* dec, uint64_t* offset, void
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Tell);
-        dwr.offset = offset;
+        DecoderWorkRequest *dwr = new DecoderWorkRequest(DecoderWorkRequest::Type::Tell);
+        dwr->offset = offset;
         return doAsyncWork(cbks, dwr, 1);
     }
 
@@ -805,8 +806,8 @@ int decoder_length_callback(const FLAC__StreamDecoder* dec, uint64_t* length, vo
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Read);
-        dwr.offset = length;
+        DecoderWorkRequest *dwr = new DecoderWorkRequest(DecoderWorkRequest::Type::Read);
+        dwr->offset = length;
         return doAsyncWork(cbks, dwr, 1);
     }
 
@@ -844,7 +845,7 @@ FLAC__bool decoder_eof_callback(const FLAC__StreamDecoder* dec, void* data) {
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Eof);
+        DecoderWorkRequest* dwr = new DecoderWorkRequest(DecoderWorkRequest::Type::Eof);
         return doAsyncWork(cbks, dwr, true);
     }
 
@@ -869,9 +870,9 @@ int decoder_write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* fr
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Write);
-        dwr.frame = frame;
-        dwr.samples = buffer;
+        DecoderWorkRequest *dwr = new DecoderWorkRequest(DecoderWorkRequest::Type::Write);
+        dwr->frame = frame;
+        dwr->samples = buffer;
         return doAsyncWork(cbks, dwr, 1);
     }
 
@@ -904,8 +905,8 @@ void decoder_metadata_callback(const FLAC__StreamDecoder* dec, const FLAC__Strea
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Metadata);
-        dwr.metadata = metadata;
+        DecoderWorkRequest *dwr = new DecoderWorkRequest(DecoderWorkRequest::Type::Metadata);
+        dwr->metadata = metadata;
         doAsyncWork(cbks, dwr, 0);
         return;
     }
@@ -927,8 +928,8 @@ void decoder_error_callback(const FLAC__StreamDecoder* dec, int error, void* dat
     flac_bindings::StreamDecoder* cbks = (flac_bindings::StreamDecoder*) data;
     if(cbks->asyncExecutionContext) {
         using namespace flac_bindings;
-        DecoderWorkRequest dwr(DecoderWorkRequest::Type::Error);
-        dwr.errorCode = error;
+        DecoderWorkRequest *dwr = new DecoderWorkRequest(DecoderWorkRequest::Type::Error);
+        dwr->errorCode = error;
         doAsyncWork(cbks, dwr, 0);
         return;
     }
