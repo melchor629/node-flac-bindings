@@ -18,7 +18,7 @@ jobs:
     - name: Install
       run: npm install
     - name: Build
-      run: npm run compile
+      run: npm run cmake-js -- build
     - name: Lint
       run: npm run lint
 
@@ -37,7 +37,7 @@ jobs:
     - name: Install
       run: npm install
     - name: Build
-      run: npm run compile
+      run: npm run cmake-js -- build
     - name: Lint
       run: npm run lint
     - name: Test
@@ -58,7 +58,7 @@ jobs:
     - name: Install
       run: npm install
     - name: Build
-      run: npm run compile
+      run: npm run cmake-js -- build
     - name: Lint
       run: npm run lint
     - name: Test

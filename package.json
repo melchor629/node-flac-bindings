@@ -7,7 +7,7 @@
   "scripts": {
     "test": "mocha",
     "install": "prebuild-install || cmake-js compile",
-    "compile": "cmake-js compile",
+    "cmake-js": "cmake-js",
     "prebuild": "prebuild --backend cmake-js -t 8.16.0 -t 10.16.0 -t 12.10.0 --strip",
     "lint": "eslint -c .eslintrc.json lib/**/*.js test/**/*.js"
   },
