@@ -49,9 +49,6 @@ jobs:
       image: node:12-buster
       env:
         CI: true
-        COVERALLS_REPO_TOKEN: "${{ secrets.COVERALLS_REPO_TOKEN }}"
-        COVERALLS_GIT_BRANCH: "${{ github.ref }}"
-        COVERALLS_PARALLEL: "true"
     steps:
     - uses: actions/checkout@v1
     - name: Prepare
