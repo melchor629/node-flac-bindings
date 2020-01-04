@@ -1,6 +1,6 @@
 /* eslint-disable prefer-arrow-callback */
 /// <reference path="../lib/index.d.ts" />
-const { format } = require('../lib/index').api;
+const { format, metadata } = require('../lib/index').api;
 const { assert } = require('chai');
 
 describe('format', function() {
@@ -58,6 +58,39 @@ describe('format', function() {
 
     it('vorbiscommentEntryValueIsLegal() should return false if the argument is not string', function() {
         assert.isFalse(format.vorbiscommentEntryValueIsLegal(Buffer));
+    });
+
+    it('seektableIsLegal() should work', function() {
+        assert.isTrue(format.seektableIsLegal(new metadata.SeekTableMetadata()));
+    });
+
+    it('seektableIsLegal() with value not SeekTableMetadata should throw', function() {
+        assert.throws(() => format.seektableIsLegal(new metadata.ApplicationMetadata()), /is not of type SeekTable/);
+    });
+
+    it('seektableSort() should work', function() {
+        assert.equal(format.seektableSort(new metadata.SeekTableMetadata()), 0);
+    });
+
+    it('seektableSort() with value not SeekTableMetadata should throw', function() {
+        assert.throws(() => format.seektableSort(new metadata.ApplicationMetadata()), /is not of type SeekTable/);
+    });
+
+    it('cuesheetIsLegal() should work', function() {
+        const cuesheet = new metadata.CueSheetMetadata();
+        assert.isString(format.cuesheetIsLegal(cuesheet));
+    });
+
+    it('cuesheetIsLegal() with value not CueSheetMetadata should throw', function() {
+        assert.throws(() => format.cuesheetIsLegal(new metadata.ApplicationMetadata()), /is not of type CueSheet/);
+    });
+
+    it('pictureIsLegal() should work', function() {
+        assert.isTrue(format.pictureIsLegal(new metadata.PictureMetadata()));
+    });
+
+    it('pictureIsLegal() with value not PictureMetadata should throw', function() {
+        assert.throws(() => format.pictureIsLegal(new metadata.ApplicationMetadata()), /is not of type Picture/);
     });
 
 });
