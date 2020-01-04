@@ -10,7 +10,7 @@ namespace flac_bindings {
         std::function<bool(void*, FLAC__IOCallbacks)> f,
         const char* name,
         Local<Object> &obj
-    ): PromisifiedAsyncBackgroundTask<bool, FlacIOWorkRequest>(
+    ): PromisifiedAsyncBackgroundTask<bool, FlacIOWorkRequest*>(
         [this, f] (auto &c) {
             this->ptr1 = std::make_tuple(&this->cbk1, &c);
             return f(&this->ptr1, this->cbk1.generateIOCallbacks());
@@ -25,7 +25,7 @@ namespace flac_bindings {
         const char* name,
         Local<Object> &obj1,
         Local<Object> &obj2
-    ): PromisifiedAsyncBackgroundTask<bool, FlacIOWorkRequest>(
+    ): PromisifiedAsyncBackgroundTask<bool, FlacIOWorkRequest*>(
         [this, f] (auto &c) {
             this->ptr1 = std::make_tuple(&this->cbk1, &c);
             this->ptr2 = std::make_tuple(&this->cbk2, &c);
@@ -74,11 +74,12 @@ namespace flac_bindings {
         };
     }
 
-    void AsyncFlacIOWork::doAsyncWork(AsyncFlacIOWork::ExecutionContext &c, const FlacIOWorkRequest* w) {
+    void AsyncFlacIOWork::doAsyncWork(AsyncFlacIOWork::ExecutionContext &c, FlacIOWorkRequest* const* wPtr) {
         auto async = (Nan::AsyncResource*) c.getTask()->getAsyncResource();
         std::function<void (Local<Value> result)> processResult;
         Nan::MaybeLocal<Value> result;
         Nan::TryCatch tryCatch;
+        auto w = *wPtr;
         AsyncFlacIOWork::IOCallbacks* io = (AsyncFlacIOWork::IOCallbacks*) w->cbks;
 
         switch(w->type) {
@@ -145,13 +146,13 @@ namespace flac_bindings {
             auto theGoodResult = result.ToLocalChecked();
             if(theGoodResult->IsPromise()) {
                 auto promise = theGoodResult.As<Promise>();
-                c.defer(promise, w, [processResult] (auto &c, auto w, auto &info) {
+                c.defer(promise, nullptr, [processResult, w] (auto &c, auto _, auto &info) {
                     if(processResult && !info[0].IsEmpty()) {
                         processResult(info[0]);
                     }
 
                     w->notifyWorkDone();
-                }, [] (auto &c, auto w, auto &info) { c.reject(info[0]); w->notifyWorkDone(); });
+                }, [w] (auto &c, auto _, auto &info) { c.reject(info[0]); w->notifyWorkDone(); });
             } else {
                 if(processResult && !result.IsEmpty()) processResult(result.ToLocalChecked());
                 w->notifyWorkDone();
@@ -166,79 +167,103 @@ namespace flac_bindings {
     static size_t flacIORead(void* ptr, size_t size, size_t numberOfMembers, void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest req(FlacIOWorkRequest::Read);
-        req.cbks = std::get<0>(ctx);
+        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Read);
         size_t bytes = size * numberOfMembers;
-        req.ptr = ptr;
-        req.bytes = &bytes;
-        req.nitems = numberOfMembers;
-        req.sizeOfItem = size;
+
+        req->cbks = std::get<0>(ctx);
+        req->ptr = ptr;
+        req->bytes = &bytes;
+        req->nitems = numberOfMembers;
+        req->sizeOfItem = size;
+
         ec->sendProgress(&req);
-        req.waitForWorkDone();
+        req->waitForWorkDone();
+
+        delete req;
         return bytes / size;
     }
 
     static size_t flacIOWrite(const void* ptr, size_t size, size_t numberOfMembers, void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest req(FlacIOWorkRequest::Write);
-        req.cbks = std::get<0>(ctx);
+        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Write);
         size_t bytes = size * numberOfMembers;
-        req.ptr = (void*) ptr;
-        req.bytes = &bytes;
-        req.nitems = numberOfMembers;
-        req.sizeOfItem = size;
+
+        req->cbks = std::get<0>(ctx);
+        req->ptr = (void*) ptr;
+        req->bytes = &bytes;
+        req->nitems = numberOfMembers;
+        req->sizeOfItem = size;
+
         ec->sendProgress(&req);
-        req.waitForWorkDone();
+        req->waitForWorkDone();
+
+        delete req;
         return bytes / size;
     }
 
     static int flacIOSeek(void* c, int64_t offset, int whence) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest req(FlacIOWorkRequest::Seek);
-        req.cbks = std::get<0>(ctx);
+        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Seek);
         int ret = whence;
-        req.offset = &offset;
-        req.genericReturn = &ret;
+
+        req->cbks = std::get<0>(ctx);
+        req->offset = &offset;
+        req->genericReturn = &ret;
+
         ec->sendProgress(&req);
-        req.waitForWorkDone();
+        req->waitForWorkDone();
+
+        delete req;
         return ret;
     }
 
     static int64_t flacIOTell(void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest req(FlacIOWorkRequest::Tell);
-        req.cbks = std::get<0>(ctx);
+        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Tell);
         int64_t offset = -1;
-        req.offset = &offset;
+
+        req->cbks = std::get<0>(ctx);
+        req->offset = &offset;
+
         ec->sendProgress(&req);
-        req.waitForWorkDone();
+        req->waitForWorkDone();
+
+        delete req;
         return offset;
     }
 
     static int flacIOEof(void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest req(FlacIOWorkRequest::Eof);
-        req.cbks = std::get<0>(ctx);
+        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Eof);
         int ret = 0;
-        req.genericReturn = &ret;
+
+        req->cbks = std::get<0>(ctx);
+        req->genericReturn = &ret;
+
         ec->sendProgress(&req);
-        req.waitForWorkDone();
+        req->waitForWorkDone();
+
+        delete req;
         return ret;
     }
 
     static int flacIOClose(void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest req(FlacIOWorkRequest::Close);
-        req.cbks = std::get<0>(ctx);
+        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Close);
         int ret = 0;
-        req.genericReturn = &ret;
+
+        req->cbks = std::get<0>(ctx);
+        req->genericReturn = &ret;
+
         ec->sendProgress(&req);
-        req.waitForWorkDone();
+        req->waitForWorkDone();
+
+        delete req;
         return ret;
     }
 

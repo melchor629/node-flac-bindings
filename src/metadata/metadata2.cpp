@@ -439,7 +439,7 @@ namespace flac_bindings {
             }
             FLAC__bool r = FLAC__metadata_iterator_set_block(m, n);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
-            markDeleteObjectTo<Metadata>(info[0], false);
+            markDeleteObjectTo<FLAC__StreamMetadata>(info[0], false);
         }
 
         static NAN_METHOD(deleteBlock) {
@@ -458,7 +458,7 @@ namespace flac_bindings {
             }
             FLAC__bool r = FLAC__metadata_iterator_insert_block_before(m, n);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
-            markDeleteObjectTo<Metadata>(info[0], false);
+            markDeleteObjectTo<FLAC__StreamMetadata>(info[0], false);
         }
 
         static NAN_METHOD(insertBlockAfter) {
@@ -470,7 +470,7 @@ namespace flac_bindings {
             }
             FLAC__bool r = FLAC__metadata_iterator_insert_block_after(m, n);
             info.GetReturnValue().Set(Nan::New<Boolean>(r));
-            markDeleteObjectTo<Metadata>(info[0], false);
+            markDeleteObjectTo<FLAC__StreamMetadata>(info[0], false);
         }
 
     public:
