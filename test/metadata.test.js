@@ -70,12 +70,40 @@ describe('metadata', function() {
             assert.equal(csi.number, 0);
         });
 
+        it('create a new object with offset not being a number should throw', function() {
+            assert.throws(() => new CueSheetIndex(null, 0), /First argument/);
+        });
+
+        it('create a new object with number not being a number should throw', function() {
+            assert.throws(() => new CueSheetIndex(1, null), /Second argument/);
+        });
+
         it('use of bigint in offset should work', function() {
             const csi = new CueSheetIndex();
 
             csi.offset = 9007199254740993n;
 
             assert.equal(csi.offset, 9007199254740993n);
+        });
+
+        it('set offset is not a number should throw', function() {
+            const csi = new CueSheetIndex();
+
+            assert.throws(() => csi.offset = null);
+        });
+
+        it('set number should work', function() {
+            const csi = new CueSheetIndex();
+
+            csi.number = 10;
+
+            assert.equal(csi.number, 10);
+        });
+
+        it('set number is not a number should throw', function() {
+            const csi = new CueSheetIndex();
+
+            assert.throws(() => csi.number = null);
         });
 
     });
@@ -206,6 +234,12 @@ describe('metadata', function() {
             assert.equal(cst.leadIn, 12345678900987654321n);
         });
 
+        it('leadIn should throw if not a number nor bigint', function() {
+            const cst = new CueSheetMetadata();
+
+            assert.throw(() => cst.leadIn = 'sad');
+        });
+
         it('tracks should contain the expected tracks', function() {
             const cs = getCuesheet(pathForFile('vc-cs.flac'));
 
@@ -280,8 +314,9 @@ describe('metadata', function() {
             it('insertBlankTrack() should fail if the index is invalid', function() {
                 const cs = new CueSheetMetadata();
 
-                assert.throws(() => cs.insertBlankTrack(1));
-                assert.throws(() => cs.insertBlankTrack(-1));
+                assert.throws(() => cs.insertBlankTrack(1), /Invalid index/);
+                assert.throws(() => cs.insertBlankTrack(-1), /Invalid index/);
+                assert.throws(() => cs.insertBlankTrack(null), /Expected first/);
             });
 
             it('insertTrack() should insert the track', function() {
@@ -308,8 +343,15 @@ describe('metadata', function() {
                 const cs = new CueSheetMetadata();
                 const cst = new CueSheetTrack();
 
-                assert.throws(() => cs.insertTrack(-1, cst));
-                assert.throws(() => cs.insertTrack(11, cst));
+                assert.throws(() => cs.insertTrack(-1, cst), /Invalid index/);
+                assert.throws(() => cs.insertTrack(11, cst), /Invalid index/);
+                assert.throws(() => cs.insertTrack(null, cst), /Expected first/);
+            });
+
+            it('insertTrack() should throw if the track is not a CueSheetTrack', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.insertTrack(-1, null), /Expected second/);
             });
 
             it('setTrack() should replace the track', function() {
@@ -328,10 +370,17 @@ describe('metadata', function() {
                 const cs = new CueSheetMetadata();
                 const cst = new CueSheetTrack();
 
-                assert.throws(() => cs.setTrack(0, cst));
+                assert.throws(() => cs.setTrack(0, cst), /Invalid index/);
                 assert.isTrue(cs.insertBlankTrack(0));
-                assert.throws(() => cs.setTrack(1, cst));
-                assert.throws(() => cs.setTrack(-1, cst));
+                assert.throws(() => cs.setTrack(1, cst), /Invalid index/);
+                assert.throws(() => cs.setTrack(-1, cst), /Invalid index/);
+                assert.throws(() => cs.setTrack(null, cst), /Expected first/);
+            });
+
+            it('setTrack() should throw if the track is not CueSheetTrack', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.setTrack(0, null), /Expected second/);
             });
 
             it('deleteTrack() should remove the track', function() {
@@ -346,10 +395,11 @@ describe('metadata', function() {
             it('deleteTrack() should throw if the index is invalid', function() {
                 const cs = new CueSheetMetadata();
 
-                assert.throws(() => cs.deleteTrack(0));
+                assert.throws(() => cs.deleteTrack(0), /Invalid index/);
                 assert.isTrue(cs.insertBlankTrack(0));
-                assert.throws(() => cs.deleteTrack(-1));
-                assert.throws(() => cs.deleteTrack(11));
+                assert.throws(() => cs.deleteTrack(-1), /Invalid index/);
+                assert.throws(() => cs.deleteTrack(11), /Invalid index/);
+                assert.throws(() => cs.deleteTrack(null), /Expected first/);
             });
 
             it('resizeTracks() should work', function() {
@@ -359,6 +409,12 @@ describe('metadata', function() {
                 assert.equal(cs.tracks.length, 10);
                 assert.isTrue(cs.resizeTracks(1));
                 assert.equal(cs.tracks.length, 1);
+            });
+
+            it('resizeTracks() should throw if size is not a number', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.resizeTracks('1'), /Expected first/);
             });
 
         });
@@ -378,10 +434,22 @@ describe('metadata', function() {
             it('trackResizeIndices() should throw if the index is invalid', function() {
                 const cs = new CueSheetMetadata();
 
-                assert.throws(() => cs.trackResizeIndices(0, 1));
+                assert.throws(() => cs.trackResizeIndices(0, 1), /Invalid track position/);
                 assert.isTrue(cs.insertBlankTrack(0));
-                assert.throws(() => cs.trackResizeIndices(11, 1));
-                assert.throws(() => cs.trackResizeIndices(-1, 1));
+                assert.throws(() => cs.trackResizeIndices(11, 1), /Invalid track position/);
+                assert.throws(() => cs.trackResizeIndices(-1, 1), /Invalid track position/);
+            });
+
+            it('trackResizeIndices() should throw if the track number is not a number', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.trackResizeIndices({}, 1), /Expected first/);
+            });
+
+            it('trackResizeIndices() should throw if the indices size is not a number', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.trackResizeIndices(0, {}), /Expected second/);
             });
 
             it('trackInsertIndex() should work if the indices are valid', function() {
@@ -397,10 +465,10 @@ describe('metadata', function() {
                 const cs = new CueSheetMetadata();
                 const csi = new CueSheetIndex(1n, 2);
 
-                assert.throws(() => cs.trackInsertIndex(0, 0, csi));
+                assert.throws(() => cs.trackInsertIndex(0, 0, csi), /Invalid track position/);
                 assert.isTrue(cs.insertBlankTrack(0));
-                assert.throws(() => cs.trackInsertIndex(11, 0, csi));
-                assert.throws(() => cs.trackInsertIndex(-1, 0, csi));
+                assert.throws(() => cs.trackInsertIndex(11, 0, csi), /Invalid track position/);
+                assert.throws(() => cs.trackInsertIndex(-1, 0, csi), /Invalid track position/);
             });
 
             it('trackInsertIndex() should throw if the index index is invalid', function() {
@@ -408,8 +476,26 @@ describe('metadata', function() {
                 const csi = new CueSheetIndex(1n, 2);
                 cs.insertBlankTrack(0);
 
-                assert.throws(() => cs.trackInsertIndex(0, 99, csi));
-                assert.throws(() => cs.trackInsertIndex(0, -1, csi));
+                assert.throws(() => cs.trackInsertIndex(0, 99, csi), /Invalid index position/);
+                assert.throws(() => cs.trackInsertIndex(0, -1, csi), /Invalid index position/);
+            });
+
+            it('trackInsertIndex() should throw if the track number is not a number', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.trackInsertIndex(null, 99, null));
+            });
+
+            it('trackInsertIndex() should throw if the index number is not a number', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.trackInsertIndex(0, null, null));
+            });
+
+            it('trackInsertIndex() should throw if the index object is not CueSheetIndex', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.trackInsertIndex(0, 1, null));
             });
 
             it('trackInsertBlankIndex() should work if the indices are valid', function() {
@@ -424,18 +510,30 @@ describe('metadata', function() {
             it('trackInsertBlankIndex() should throw if the track index is invalid', function() {
                 const cs = new CueSheetMetadata();
 
-                assert.throws(() => cs.trackInsertBlankIndex(0, 0));
+                assert.throws(() => cs.trackInsertBlankIndex(0, 0), /Invalid track position/);
                 assert.isTrue(cs.insertBlankTrack(0));
-                assert.throws(() => cs.trackInsertBlankIndex(11, 0));
-                assert.throws(() => cs.trackInsertBlankIndex(-1, 0));
+                assert.throws(() => cs.trackInsertBlankIndex(11, 0), /Invalid track position/);
+                assert.throws(() => cs.trackInsertBlankIndex(-1, 0), /Invalid track position/);
             });
 
             it('trackInsertBlankIndex() should throw if the index index is invalid', function() {
                 const cs = new CueSheetMetadata();
                 cs.insertBlankTrack(0);
 
-                assert.throws(() => cs.trackInsertBlankIndex(0, 99));
-                assert.throws(() => cs.trackInsertBlankIndex(0, -1));
+                assert.throws(() => cs.trackInsertBlankIndex(0, 99), /Invalid index position/);
+                assert.throws(() => cs.trackInsertBlankIndex(0, -1), /Invalid index position/);
+            });
+
+            it('trackInsertBlankIndex() should throw if the track index is not a number', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.trackInsertBlankIndex(null), /Expected first/);
+            });
+
+            it('trackInsertBlankIndex() should throw if the index index is not a number', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.trackInsertBlankIndex(0, null), /Expected second/);
             });
 
             it('trackDeleteIndex() should work if the indices are valid', function() {
@@ -451,18 +549,30 @@ describe('metadata', function() {
             it('trackDeleteIndex() should throw if the track index is invalid', function() {
                 const cs = new CueSheetMetadata();
 
-                assert.throws(() => cs.trackDeleteIndex(0, 0));
+                assert.throws(() => cs.trackDeleteIndex(0, 0), /Invalid track position/);
                 assert.isTrue(cs.insertBlankTrack(0));
-                assert.throws(() => cs.trackDeleteIndex(34, 0));
-                assert.throws(() => cs.trackDeleteIndex(-1, 0));
+                assert.throws(() => cs.trackDeleteIndex(34, 0), /Invalid track position/);
+                assert.throws(() => cs.trackDeleteIndex(-1, 0), /Invalid track position/);
             });
 
             it('trackDeleteIndex() should throw if the index index is invalid', function() {
                 const cs = new CueSheetMetadata();
                 assert.isTrue(cs.insertBlankTrack(0));
 
-                assert.throws(() => cs.trackDeleteIndex(0, 12));
-                assert.throws(() => cs.trackDeleteIndex(0, -1));
+                assert.throws(() => cs.trackDeleteIndex(0, 12), /Invalid index position/);
+                assert.throws(() => cs.trackDeleteIndex(0, -1), /Invalid index position/);
+            });
+
+            it('trackDeleteIndex() should throw if the track index is not a number', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.trackDeleteIndex(null), /Expected first/);
+            });
+
+            it('trackDeleteIndex() should throw if the index index is not a number', function() {
+                const cs = new CueSheetMetadata();
+
+                assert.throws(() => cs.trackDeleteIndex(0, null), /Expected second/);
             });
 
         });
@@ -505,6 +615,76 @@ describe('metadata', function() {
             const p = new PictureMetadata();
 
             assert.equal(p.type, MetadataType.PICTURE);
+        });
+
+        it('pictureType should change', function() {
+            const p = new PictureMetadata();
+
+            p.pictureType = 2;
+
+            assert.equal(p.pictureType, 2);
+        });
+
+        it('pictureType should throw if not a number', function() {
+            const p = new PictureMetadata();
+
+            assert.throws(() => p.pictureType = null);
+        });
+
+        it('width should change', function() {
+            const p = new PictureMetadata();
+
+            p.width = 100;
+
+            assert.equal(p.width, 100);
+        });
+
+        it('width should throw if not a number', function() {
+            const p = new PictureMetadata();
+
+            assert.throws(() => p.width = null);
+        });
+
+        it('height should change', function() {
+            const p = new PictureMetadata();
+
+            p.height = 100;
+
+            assert.equal(p.height, 100);
+        });
+
+        it('height should throw if not a number', function() {
+            const p = new PictureMetadata();
+
+            assert.throws(() => p.height = null);
+        });
+
+        it('depth should change', function() {
+            const p = new PictureMetadata();
+
+            p.depth = 32;
+
+            assert.equal(p.depth, 32);
+        });
+
+        it('depth should throw if not a number', function() {
+            const p = new PictureMetadata();
+
+            assert.throws(() => p.depth = null);
+        });
+
+        it('colors should change', function() {
+            const p = new PictureMetadata();
+
+            p.colors = 1;
+
+            assert.equal(p.colors, 1);
+        });
+
+        it('colors should throw if not a number', function() {
+            const p = new PictureMetadata();
+
+            assert.throws(() => p.colors = null);
         });
 
         it('change mimeType should work', function() {
@@ -585,6 +765,48 @@ describe('metadata', function() {
             assert.equal(sp.frameSamples, 333);
         });
 
+        it('set sampleNumber should work', function() {
+            const sp = new SeekPoint();
+
+            sp.sampleNumber = 1;
+
+            assert.equal(sp.sampleNumber, 1);
+        });
+
+        it('set sampleNumber should throw if not a number', function() {
+            const sp = new SeekPoint();
+
+            assert.throws(() => sp.sampleNumber = null);
+        });
+
+        it('set streamOffset should work', function() {
+            const sp = new SeekPoint();
+
+            sp.streamOffset = 2;
+
+            assert.equal(sp.streamOffset, 2);
+        });
+
+        it('set streamOffset should throw if not a number', function() {
+            const sp = new SeekPoint();
+
+            assert.throws(() => sp.streamOffset = null);
+        });
+
+        it('set frameSamples should work', function() {
+            const sp = new SeekPoint();
+
+            sp.frameSamples = 3;
+
+            assert.equal(sp.frameSamples, 3);
+        });
+
+        it('set frameSamples should throw if not a number', function() {
+            const sp = new SeekPoint();
+
+            assert.throws(() => sp.frameSamples = null);
+        });
+
     });
 
     describe('SeekTableMetadata', function() {
@@ -647,6 +869,12 @@ describe('metadata', function() {
             assert.equal(st.points.length, 1);
         });
 
+        it('resizePoints() should throw if size is not a number', function() {
+            const st = new SeekTableMetadata();
+
+            assert.throws(() => st.resizePoints(null), /Expected first argument/);
+        });
+
         it('insertPoint() should insert a point if the position is valid', function() {
             const st = new SeekTableMetadata();
 
@@ -658,10 +886,22 @@ describe('metadata', function() {
         it('insertPoint() should throw if the position is invalid', function() {
             const st = new SeekTableMetadata();
 
-            assert.throws(() => st.insertPoint(11, new SeekPoint()));
-            assert.throws(() => st.insertPoint(-1, new SeekPoint()));
+            assert.throws(() => st.insertPoint(11, new SeekPoint()), /Point position is invalid/);
+            assert.throws(() => st.insertPoint(-1, new SeekPoint()), /Point position is invalid/);
 
             assert.equal(st.points.length, 0);
+        });
+
+        it('insertPoint() should throw if the position is not a number', function() {
+            const st = new SeekTableMetadata();
+
+            assert.throws(() => st.insertPoint(null, new SeekPoint()), /Expected first/);
+        });
+
+        it('insertPoint() should throw if the point is not a SeekPoint', function() {
+            const st = new SeekTableMetadata();
+
+            assert.throws(() => st.insertPoint(1, null), /Expected second/);
         });
 
         it('setPoint() should replace a point if the position is valid', function() {
@@ -678,10 +918,22 @@ describe('metadata', function() {
         it('setPoint() should throw if the position is invalid', function() {
             const st = new SeekTableMetadata();
 
-            assert.throws(() => st.setPoint(0, new SeekPoint()));
+            assert.throws(() => st.setPoint(0, new SeekPoint()), /Point position is invalid/);
             st.insertPoint(0, new SeekPoint());
-            assert.throws(() => st.setPoint(91, new SeekPoint()));
-            assert.throws(() => st.setPoint(-1, new SeekPoint()));
+            assert.throws(() => st.setPoint(91, new SeekPoint()), /Point position is invalid/);
+            assert.throws(() => st.setPoint(-1, new SeekPoint()), /Point position is invalid/);
+        });
+
+        it('setPoint() should throw if the position is not a number', function() {
+            const st = new SeekTableMetadata();
+
+            assert.throws(() => st.setPoint(null, new SeekPoint()), /Expected first/);
+        });
+
+        it('setPoint() should throw if the point is not a SeekPoint', function() {
+            const st = new SeekTableMetadata();
+
+            assert.throws(() => st.setPoint(1, null), /Expected second/);
         });
 
         it('deletePoint() should delete a point if the position is valid', function() {
@@ -696,10 +948,16 @@ describe('metadata', function() {
         it('deletePoint() should throw if the position is invalid', function() {
             const st = new SeekTableMetadata();
 
-            assert.throws(() => st.deletePoint(0, new SeekPoint()));
+            assert.throws(() => st.deletePoint(0), /Point position is invalid/);
             st.insertPoint(0, new SeekPoint());
-            assert.throws(() => st.deletePoint(91, new SeekPoint()));
-            assert.throws(() => st.deletePoint(-1, new SeekPoint()));
+            assert.throws(() => st.deletePoint(91), /Point position is invalid/);
+            assert.throws(() => st.deletePoint(-1), /Point position is invalid/);
+        });
+
+        it('deletePoint() should throw if the position is not a number', function() {
+            const st = new SeekTableMetadata();
+
+            assert.throws(() => st.deletePoint(null), /Expected first/);
         });
 
         it('templateAppendPlaceholders() should insert points at the end', function() {
@@ -710,6 +968,12 @@ describe('metadata', function() {
 
             assert.equal(st.points.length, 11);
             assert.equal(st.points[0].sampleNumber, 998877665544332211n);
+        });
+
+        it('templateAppendPlaceholders() should throw if count is not a number', function() {
+            const st = new SeekTableMetadata();
+
+            assert.throws(() => st.templateAppendPlaceholders(null), /Expected first/);
         });
 
         it('templateAppendPoint() should append a new point to the end', function() {
@@ -723,6 +987,12 @@ describe('metadata', function() {
             assert.equal(st.points[1].sampleNumber, 675n);
         });
 
+        it('templateAppendPoint() should throw if sampleNumber is not a number', function() {
+            const st = new SeekTableMetadata();
+
+            assert.throws(() => st.templateAppendPoint(null), /Expected first/);
+        });
+
         it('templateAppendPoints() should append some new points to the end', function() {
             const st = new SeekTableMetadata();
             st.insertPoint(0, new SeekPoint(998877665544332211n));
@@ -734,6 +1004,18 @@ describe('metadata', function() {
             assert.equal(st.points[1].sampleNumber, 675n);
             assert.equal(st.points[2].sampleNumber, 879n);
             assert.equal(st.points[3].sampleNumber, 213n);
+        });
+
+        it('templateAppendPoints() should throw if sampleNumbers is not an array', function() {
+            const st = new SeekTableMetadata();
+
+            assert.throws(() => st.templateAppendPoints(null), /Expected first/);
+        });
+
+        it('templateAppendPoints() should throw if sampleNumbers array contains a non-number value', function() {
+            const st = new SeekTableMetadata();
+
+            assert.throws(() => st.templateAppendPoints([ 1, false, 3 ]), /Element at position \d+ is not a number/);
         });
 
         it('templateAppendSpacedPoints() should append some new points to the end', function() {
@@ -752,7 +1034,15 @@ describe('metadata', function() {
         });
 
         it('templateAppendSpacedPoints() should throw if totalSamples is 0', function() {
-            assert.throws(() => new SeekTableMetadata().templateAppendSpacedPoints(1, 0n));
+            assert.throws(() => new SeekTableMetadata().templateAppendSpacedPoints(1, 0n), /Total samples is 0/);
+        });
+
+        it('templateAppendSpacedPoints() should throw if num is not a number', function() {
+            assert.throws(() => new SeekTableMetadata().templateAppendSpacedPoints(null, 0n), /Expected first/);
+        });
+
+        it('templateAppendSpacedPoints() should throw if totalSamples is not a number', function() {
+            assert.throws(() => new SeekTableMetadata().templateAppendSpacedPoints(0, null), /Expected second/);
         });
 
         it('templateAppendSpacedPointsBySamples() should append some new points to the end', function() {
@@ -771,11 +1061,19 @@ describe('metadata', function() {
         });
 
         it('templateAppendSpacedPointsBySamples() should throw if samples is 0', function() {
-            assert.throws(() => new SeekTableMetadata().templateAppendSpacedPointsBySamples(0, 25n));
+            assert.throws(() => new SeekTableMetadata().templateAppendSpacedPointsBySamples(0, 25n), /samples is 0/);
         });
 
         it('templateAppendSpacedPointsBySamples() should throw if totalSamples is 0', function() {
-            assert.throws(() => new SeekTableMetadata().templateAppendSpacedPointsBySamples(5, 0n));
+            assert.throws(() => new SeekTableMetadata().templateAppendSpacedPointsBySamples(5, 0n), /totalSamples is 0/);
+        });
+
+        it('templateAppendSpacedPointsBySamples() should throw if num is not a number', function() {
+            assert.throws(() => new SeekTableMetadata().templateAppendSpacedPointsBySamples(null, 0n), /Expected first/);
+        });
+
+        it('templateAppendSpacedPointsBySamples() should throw if totalSamples is not a number', function() {
+            assert.throws(() => new SeekTableMetadata().templateAppendSpacedPointsBySamples(0, null), /Expected second/);
         });
 
         it('templateSort() sorts the points', function() {
@@ -836,6 +1134,138 @@ describe('metadata', function() {
             assert.equal(st.type, MetadataType.STREAMINFO);
         });
 
+        it('set minBlocksize should work', function() {
+            const st = new StreamInfoMetadata();
+
+            st.minBlocksize = 1024;
+
+            assert.equal(st.minBlocksize, 1024);
+        });
+
+        it('set minBlocksize should throw if value is not a number', function() {
+            const st = new StreamInfoMetadata();
+
+            assert.throws(() => st.minBlocksize = null);
+        });
+
+        it('set maxBlocksize should work', function() {
+            const st = new StreamInfoMetadata();
+
+            st.maxBlocksize = 1024;
+
+            assert.equal(st.maxBlocksize, 1024);
+        });
+
+        it('set maxBlocksize should throw if value is not a number', function() {
+            const st = new StreamInfoMetadata();
+
+            assert.throws(() => st.maxBlocksize = null);
+        });
+
+        it('set minFramesize should work', function() {
+            const st = new StreamInfoMetadata();
+
+            st.minFramesize = 1024;
+
+            assert.equal(st.minFramesize, 1024);
+        });
+
+        it('set minFramesize should throw if value is not a number', function() {
+            const st = new StreamInfoMetadata();
+
+            assert.throws(() => st.minFramesize = null);
+        });
+
+        it('set maxFramesize should work', function() {
+            const st = new StreamInfoMetadata();
+
+            st.maxFramesize = 1024;
+
+            assert.equal(st.maxFramesize, 1024);
+        });
+
+        it('set maxFramesize should throw if value is not a number', function() {
+            const st = new StreamInfoMetadata();
+
+            assert.throws(() => st.maxFramesize = null);
+        });
+
+        it('set channels should work', function() {
+            const st = new StreamInfoMetadata();
+
+            st.channels = 2;
+
+            assert.equal(st.channels, 2);
+        });
+
+        it('set channels should throw if value is not a number', function() {
+            const st = new StreamInfoMetadata();
+
+            assert.throws(() => st.channels = null);
+        });
+
+        it('set bitsPerSample should work', function() {
+            const st = new StreamInfoMetadata();
+
+            st.bitsPerSample = 16;
+
+            assert.equal(st.bitsPerSample, 16);
+        });
+
+        it('set bitsPerSample should throw if value is not a number', function() {
+            const st = new StreamInfoMetadata();
+
+            assert.throws(() => st.bitsPerSample = null);
+        });
+
+        it('set sampleRate should work', function() {
+            const st = new StreamInfoMetadata();
+
+            st.sampleRate = 44100;
+
+            assert.equal(st.sampleRate, 44100);
+        });
+
+        it('set sampleRate should throw if value is not a number', function() {
+            const st = new StreamInfoMetadata();
+
+            assert.throws(() => st.sampleRate = null);
+        });
+
+        it('set totalSamples should work', function() {
+            const st = new StreamInfoMetadata();
+
+            st.totalSamples = 441000n;
+
+            assert.equal(st.totalSamples, 441000n);
+        });
+
+        it('set totalSamples should throw if value is not a number', function() {
+            const st = new StreamInfoMetadata();
+
+            assert.throws(() => st.totalSamples = null);
+        });
+
+        it('set md5sum should work', function() {
+            const st = new StreamInfoMetadata();
+
+            st.md5sum = Buffer.allocUnsafe(16);
+
+            assert.isTrue(Buffer.isBuffer(st.md5sum));
+        });
+
+        it('set md5sum should throw if value is not a buffer', function() {
+            const st = new StreamInfoMetadata();
+
+            assert.throws(() => st.md5sum = 123456789);
+        });
+
+        it('set md5sum should throw if value buffer is less than 16 bytes', function() {
+            const st = new StreamInfoMetadata();
+
+            assert.throws(() => st.md5sum = Buffer.alloc(10));
+        });
+
     });
 
     describe('UnknownMetadata', function() {
@@ -866,6 +1296,12 @@ describe('metadata', function() {
             const st = new UnknownMetadata(MetadataType.MAX_METADATA_TYPE * 38);
 
             assert.equal(st.type, MetadataType.MAX_METADATA_TYPE);
+        });
+
+        it('data is a buffer', function() {
+            const st = new UnknownMetadata();
+
+            assert.isTrue(Buffer.isBuffer(st.data));
         });
 
     });
@@ -962,6 +1398,12 @@ describe('metadata', function() {
             assert.equal(vc.comments.length, 10);
             assert.isTrue(vc.resizeComments(1));
             assert.equal(vc.comments.length, 1);
+        });
+
+        it('resizeComments() should throw if size is not a number', function() {
+            const vc = new VorbisCommentMetadata();
+
+            assert.throws(() => vc.resizeComments(null), /Expected first/);
         });
 
         it('setComment() should replace the comment entry if the position is valid', function() {
@@ -1077,11 +1519,11 @@ describe('metadata', function() {
         });
 
         it('findEntryFrom() should throw if the first argument is not a number', function() {
-            assert.throws(() => new VorbisCommentMetadata().findEntryFrom(NaN));
+            assert.throws(() => new VorbisCommentMetadata().findEntryFrom(null), /Expected first/);
         });
 
         it('findEntryFrom() should throw if the second argument is not a string', function() {
-            assert.throws(() => new VorbisCommentMetadata().findEntryFrom(0, undefined));
+            assert.throws(() => new VorbisCommentMetadata().findEntryFrom(0, undefined), /Expected second/);
         });
 
         it('removeEntryMatching() should return 0 if no entries has been removed', function() {
@@ -1139,7 +1581,13 @@ describe('metadata', function() {
     describe('Metadata', function() {
 
         it('create metadata object should throw', function() {
-            assert.throws(() => new Metadata(1));
+            assert.throws(() => new Metadata(1), /The Metadata class is abstract/);
+        });
+
+        it('get isLast should work', function() {
+            const m = new ApplicationMetadata();
+
+            assert.isFalse(m.isLast);
         });
 
         it('isEqual() returns true if the objects are similar', function() {
@@ -1160,6 +1608,14 @@ describe('metadata', function() {
 
             assert.isFalse(am1.isEqual(am2));
             assert.isFalse(am2.isEqual(am1));
+        });
+
+        it('isEqual() throws if first argument is not provided', function() {
+            assert.throws(() => new ApplicationMetadata().isEqual(), /Expected one argument/);
+        });
+
+        it('isEqual() throws if first argument is not Metadata object', function() {
+            assert.throws(() => new ApplicationMetadata().isEqual({}), /Object does not seem to be valid/);
         });
 
         it('clone() should create a different object but equal', function() {
