@@ -204,25 +204,40 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__format_seektable_is_legal) {
-        FLAC__StreamMetadata_SeekTable* table = jsToStruct<FLAC__StreamMetadata_SeekTable>(info[0]);
+        FLAC__StreamMetadata* table = jsToStruct<FLAC__StreamMetadata>(info[0]);
         if(table == nullptr) return;
-        FLAC__bool ret = FLAC__format_seektable_is_legal(table);
+        if(table->type != FLAC__METADATA_TYPE_SEEKTABLE) {
+            Nan::ThrowTypeError("Metadata is not of type SeekTable");
+            return;
+        }
+
+        FLAC__bool ret = FLAC__format_seektable_is_legal(&table->data.seek_table);
         info.GetReturnValue().Set(Nan::New<Boolean>(ret));
     }
 
     NAN_METHOD(node_FLAC__format_seektable_sort) {
-        FLAC__StreamMetadata_SeekTable* table = jsToStruct<FLAC__StreamMetadata_SeekTable>(info[0]);
+        FLAC__StreamMetadata* table = jsToStruct<FLAC__StreamMetadata>(info[0]);
         if(table == nullptr) return;
-        unsigned numberOfPlaceholdersConvertedToTemplates = FLAC__format_seektable_sort(table);
+        if(table->type != FLAC__METADATA_TYPE_SEEKTABLE) {
+            Nan::ThrowTypeError("Metadata is not of type SeekTable");
+            return;
+        }
+
+        unsigned numberOfPlaceholdersConvertedToTemplates = FLAC__format_seektable_sort(&table->data.seek_table);
         info.GetReturnValue().Set(numberToJs(numberOfPlaceholdersConvertedToTemplates));
     }
 
     NAN_METHOD(node_FLAC__format_cuesheet_is_legal) {
-        FLAC__StreamMetadata_CueSheet* cue = jsToStruct<FLAC__StreamMetadata_CueSheet>(info[0]);
+        FLAC__StreamMetadata* cue = jsToStruct<FLAC__StreamMetadata>(info[0]);
         if(cue == nullptr) return;
+        if(cue->type != FLAC__METADATA_TYPE_CUESHEET) {
+            Nan::ThrowTypeError("Metadata is not of type CueSheet");
+            return;
+        }
+
         bool check = Nan::To<int>(info[1].As<Boolean>()).FromJust();
         const char* violation = NULL;
-        FLAC__bool ret = FLAC__format_cuesheet_is_legal(cue, check, &violation);
+        FLAC__bool ret = FLAC__format_cuesheet_is_legal(&cue->data.cue_sheet, check, &violation);
         if(ret) {
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         } else {
@@ -231,10 +246,15 @@ namespace flac_bindings {
     }
 
     NAN_METHOD(node_FLAC__format_picture_is_legal) {
-        FLAC__StreamMetadata_Picture* picture = jsToStruct<FLAC__StreamMetadata_Picture>(info[0]);
+        FLAC__StreamMetadata* picture = jsToStruct<FLAC__StreamMetadata>(info[0]);
         if(picture == nullptr) return;
+        if(picture->type != FLAC__METADATA_TYPE_PICTURE) {
+            Nan::ThrowTypeError("Metadata is not of type Picture");
+            return;
+        }
+
         const char* violation = NULL;
-        FLAC__bool ret = FLAC__format_picture_is_legal(picture, &violation);
+        FLAC__bool ret = FLAC__format_picture_is_legal(&picture->data.picture, &violation);
         if(ret) {
             info.GetReturnValue().Set(Nan::New<Boolean>(ret));
         } else {
