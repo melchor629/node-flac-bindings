@@ -17,7 +17,8 @@ const totalSamples = 992250 / 3 / 2;
 
 const pathForFile = (...file) => path.join(__dirname, 'data', '*coder', ...file);
 const promisifyEvent = (t, event) => new Promise((resolve, reject) => t.on(event, resolve).on('error', reject));
-const readFlacUsingCommand = (file) => cp.spawnSync('flac', [ '-d', '-c', file ], { encoding: 'buffer' }).stdout;
+const readFlacUsingCommand = (file, ogg) =>
+    cp.spawnSync('flac', [ '-d', '-c', file, ogg ? '--ogg' : '--no-ogg' ], { encoding: 'buffer' }).stdout;
 const getPCMData = (buffer) => {
     const pos = buffer.indexOf('data', buffer.indexOf('WAVE')) + 4;
     const length = buffer.readUInt32LE(pos);
@@ -25,8 +26,8 @@ const getPCMData = (buffer) => {
 };
 
 const okData = getPCMData(fs.readFileSync(pathForFile('loop.wav')));
-const comparePCM = (flacFile, bitsPerSample=16) => {
-    const convertedData = Buffer.isBuffer(flacFile) ? flacFile : getPCMData(readFlacUsingCommand(flacFile));
+const comparePCM = (flacFile, bitsPerSample = 16, ogg = false) => {
+    const convertedData = Buffer.isBuffer(flacFile) ? flacFile : getPCMData(readFlacUsingCommand(flacFile, ogg));
 
     const sampleSize = bitsPerSample / 8;
     const wavSampleSize = 3;
@@ -235,7 +236,7 @@ describe('encode & decode', function() {
         comparePCM(tmpFile.path, 24);
     });
 
-    it('encode using file and file-bit input', async function() {
+    it('encode using file and 24-bit input', async function() {
         const file = tmpFile.path;
         const enc = new FileEncoder({
             samplerate: 44100,
@@ -277,6 +278,157 @@ describe('encode & decode', function() {
         assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000);
         assert.equal(enc._processedSamples, totalSamples);
         comparePCM(tmpFile.path, 24);
+    });
+
+    it('stream decoder should read properties', async function() {
+        const input = fs.createReadStream(pathForFile('loop.flac'));
+        const dec = new StreamDecoder({ outputAs32: true });
+
+        input.pipe(dec);
+        await promisifyEvent(dec, 'data');
+
+        assert.equal(dec.getBitsPerSample(), 24);
+        assert.equal(dec.getChannels(), 2);
+        assert.equal(dec.getChannelAssignment(), 3);
+        assert.equal(dec.getTotalSamples(), totalSamples);
+
+        dec.on('data', () => undefined);
+        await promisifyEvent(dec, 'end');
+    });
+
+    it('file decoder should read properties', async function() {
+        const dec = new FileDecoder({ outputAs32: true, file: pathForFile('loop.flac') });
+
+        await promisifyEvent(dec, 'data');
+
+        assert.equal(dec.getBitsPerSample(), 24);
+        assert.equal(dec.getChannels(), 2);
+        assert.equal(dec.getChannelAssignment(), 3);
+        assert.equal(dec.getTotalSamples(), totalSamples);
+
+        dec.on('data', () => undefined);
+        await promisifyEvent(dec, 'end');
+    });
+
+    it('stream decoder should emit metadata when required', async function() {
+        const input = fs.createReadStream(pathForFile('loop.flac'));
+        const dec = new StreamDecoder({ outputAs32: true, metadata: true });
+        const metadataBlocks = [];
+
+        dec.on('metadata', (metadata) => metadataBlocks.push(metadata));
+        input.pipe(dec);
+        dec.on('data', () => undefined);
+        await promisifyEvent(dec, 'end');
+
+        assert.isNotEmpty(metadataBlocks);
+        assert.equal(metadataBlocks.length, 1);
+    });
+
+    it('file decoder should emit metadata when required', async function() {
+        const dec = new FileDecoder({ outputAs32: true, metadata: true, file: pathForFile('loop.flac') });
+        const metadataBlocks = [];
+
+        dec.on('metadata', (metadata) => metadataBlocks.push(metadata));
+        dec.on('data', () => undefined);
+        await promisifyEvent(dec, 'end');
+
+        assert.isNotEmpty(metadataBlocks);
+        assert.equal(metadataBlocks.length, 1);
+    });
+
+    it('file decoder should fail if file does not exist', async function() {
+        const dec = new FileDecoder({ file: pathForFile('does not exist.flac') });
+
+        dec.on('data', () => undefined);
+        const e = await promisifyEvent(dec, 'error');
+
+        assert.equal(e.message, 'Could not open the file');
+    });
+
+    it('file encoder should fail if file cannot write', async function() {
+        const enc = new FileEncoder({
+            file: pathForFile('does/not/exist.flac'),
+            channels: 1,
+            bitsPerSample: 16,
+            samplerate: 44100,
+            totalSamplesEstimate: 44100,
+        });
+
+        enc.write(Buffer.alloc(1000 * 2));
+        const e = await promisifyEvent(enc, 'error');
+
+        assert.equal(e.message, 'FLAC__STREAM_ENCODER_IO_ERROR');
+    });
+
+    it('encode using ogg (stream)', async function() {
+        const dec = new StreamDecoder({ outputAs32: false });
+        const enc = new StreamEncoder({
+            isOggStream: true,
+            oggSerialNumber: 0x123456,
+            samplerate: 44100,
+            channels: 2,
+            bitsPerSample: 24,
+            compressionLevel: 9,
+            inputAs32: false,
+        });
+        const input = fs.createReadStream(pathForFile('loop.flac'));
+        const output = fs.createWriteStream(tmpFile.path);
+
+        input.pipe(dec);
+        dec.pipe(enc);
+        enc.pipe(output);
+        await promisifyEvent(output, 'close');
+
+        assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000);
+        assert.equal(dec._processedSamples, totalSamples);
+        assert.equal(enc._processedSamples, totalSamples);
+        comparePCM(tmpFile.path, 24, true);
+    });
+
+    it('encode using ogg (file)', async function() {
+        const dec = new FileDecoder({ file: pathForFile('loop.flac'), outputAs32: false });
+        const enc = new FileEncoder({
+            file: tmpFile.path,
+            isOggStream: true,
+            oggSerialNumber: 0x6543321,
+            samplerate: 44100,
+            channels: 2,
+            bitsPerSample: 24,
+            compressionLevel: 9,
+            inputAs32: false,
+        });
+
+        dec.pipe(enc);
+        await promisifyEvent(enc, 'finish');
+
+        assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000);
+        assert.equal(dec._processedSamples, totalSamples);
+        assert.equal(enc._processedSamples, totalSamples);
+        comparePCM(tmpFile.path, 24, true);
+    });
+
+    it('encoder options should not throw exception', function() {
+        const enc = new StreamEncoder({
+            bitsPerSample: 16,
+            channels: 2,
+            samplerate: 48000,
+            apodization: 'tukey(0.5);partial_tukey(2);punchout_tukey(3)',
+            blocksize: 1024,
+            doExhaustiveModelSearch: false,
+            doMidSideStereo: true,
+            doQlpCoeffPrecSearch: false,
+            looseMidSideStereo: false,
+            maxLpcOrder: 12,
+            maxResidualPartitionOrder: 6,
+            minResidualPartitionOrder: 0,
+            qlpCoeffPrecision: 0,
+            totalSamplesEstimate: 48000,
+            metadata: [],
+        });
+
+        enc.write(Buffer.alloc(1000 * 2 * 2));
+        enc.end();
+        enc.on('data', () => undefined);
     });
 
     it('gc should work', function() {
@@ -339,6 +491,7 @@ describe('encode & decode: manual version', function() {
         assert.isTrue(e);
         const f = await dec.processUntilEndOfStreamAsync();
         assert.isTrue(f);
+        await dec.finishAsync();
 
         const [ finalBuffer, samples ] = joinIntoInterleaved(allBuffers);
         assert.equal(samples, totalSamples);
@@ -363,6 +516,7 @@ describe('encode & decode: manual version', function() {
         assert.isTrue(e);
         const f = await dec.processUntilEndOfStreamAsync();
         assert.isTrue(f);
+        await dec.finishAsync();
 
         const [ finalBuffer, samples ] = joinIntoInterleaved(allBuffers);
         assert.equal(samples, totalSamples);
@@ -418,6 +572,7 @@ describe('encode & decode: manual version', function() {
     });
 
     it('encode using file', async function() {
+        const progressCallbackValues = [];
         const enc = new api.Encoder();
         enc.setBitsPerSample(24);
         enc.setChannels(2);
@@ -425,7 +580,7 @@ describe('encode & decode: manual version', function() {
         enc.setSampleRate(44100);
         await enc.initFileAsync(
             tmpFile.path,
-            null
+            (...args) => progressCallbackValues.push(args),
         );
 
         const chunkazo = Buffer.allocUnsafe(totalSamples * 4 * 2);
@@ -436,6 +591,114 @@ describe('encode & decode: manual version', function() {
         await enc.finishAsync();
 
         comparePCM(tmpFile.path, 24);
+        assert.equal(progressCallbackValues.length, 42);
+    });
+
+});
+
+describe('encode & decode: manual version (sync)', function() {
+
+    it('decode using stream', function() {
+        const fd = fs.openSync(pathForFile('loop.flac'), 'r');
+        const dec = new api.Decoder();
+        const allBuffers = [];
+        dec.initStream(
+            (buffer) => ({ bytes: fs.readSync(fd, buffer, 0, buffer.length, null), returnValue: 0 }),
+            (offset) => fs.readSync(fd, Buffer.alloc(1), 0, 1, offset - 1) === 1 ? 0 : 2,
+            () => ({ returnValue: api.Decoder.TellStatus.UNSUPPORTED, offset: BigInt(0) }),
+            () => ({ length: fs.statSync(pathForFile('loop.flac')).size, returnValue: 0 }),
+            () => false,
+            (_, buffers) => {
+                allBuffers.push(buffers.map((b) => Buffer.from(b)));
+                return 0;
+            },
+            null,
+            // eslint-disable-next-line no-console
+            (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+        );
+
+        const e = dec.processUntilEndOfMetadata();
+        assert.isTrue(e);
+        const f = dec.processUntilEndOfStream();
+        assert.isTrue(f);
+        dec.finish();
+
+        const [ finalBuffer, samples ] = joinIntoInterleaved(allBuffers);
+        assert.equal(samples, totalSamples);
+        comparePCM(finalBuffer, 32);
+    });
+
+    it('decode using file', function() {
+        const dec = new api.Decoder();
+        const allBuffers = [];
+        dec.initFile(
+            pathForFile('loop.flac'),
+            (_, buffers) => {
+                allBuffers.push(buffers.map((b) => Buffer.from(b)));
+                return 0;
+            },
+            null,
+            // eslint-disable-next-line no-console
+            (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+        );
+
+        const e = dec.processUntilEndOfMetadata();
+        assert.isTrue(e);
+        const f = dec.processUntilEndOfStream();
+        assert.isTrue(f);
+        dec.finish();
+
+        const [ finalBuffer, samples ] = joinIntoInterleaved(allBuffers);
+        assert.equal(samples, totalSamples);
+        comparePCM(finalBuffer, 32);
+    });
+
+    it('encode using stream', function() {
+        const enc = new api.Encoder();
+        const fd = fs.openSync(tmpFile.path, 'w');
+        enc.setBitsPerSample(24);
+        enc.setChannels(2);
+        enc.setCompressionLevel(9);
+        enc.setSampleRate(44100);
+        enc.initStream(
+            (buffer) => fs.writeSync(fd, buffer, 0, buffer.length, null) === buffer.length ? 0 : 2,
+            (offset) => fs.writeSync(fd, Buffer.alloc(1), 0, 0, offset),
+            () => ({ offset: BigInt(0), returnValue: api.Encoder.TellStatus.UNSUPPORTED }),
+            null,
+        );
+
+        const chunkazo = Buffer.allocUnsafe(totalSamples * 4 * 2);
+        for(let i = 0; i < totalSamples * 2; i++) {
+            chunkazo.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+        }
+        enc.processInterleaved(chunkazo);
+        enc.finish();
+
+        comparePCM(tmpFile.path, 24);
+    });
+
+    it('encode using file', function() {
+        const progressCallbackValues = [];
+        const enc = new api.Encoder();
+        enc.setBitsPerSample(24);
+        enc.setChannels(2);
+        enc.setCompressionLevel(9);
+        enc.setSampleRate(44100);
+        enc.setMetadata([ new api.metadata.VorbisCommentMetadata() ]);
+        enc.initFile(
+            tmpFile.path,
+            (...args) => progressCallbackValues.push(args),
+        );
+
+        const chunkazo = Buffer.allocUnsafe(totalSamples * 4 * 2);
+        for(let i = 0; i < totalSamples * 2; i++) {
+            chunkazo.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+        }
+        enc.processInterleaved(chunkazo);
+        enc.finish();
+
+        comparePCM(tmpFile.path, 24);
+        assert.equal(progressCallbackValues.length, 41);
     });
 
 });
