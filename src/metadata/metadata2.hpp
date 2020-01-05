@@ -30,7 +30,7 @@ namespace flac_bindings {
         FlacIOWorkRequest(FlacIOWorkRequest::Type type): SyncronizableWorkRequest(), type(type) {}
     };
 
-    class AsyncFlacIOWork: public PromisifiedAsyncBackgroundTask<bool, FlacIOWorkRequest*> {
+    class AsyncFlacIOWork: public AsyncBackgroundTask<bool, FlacIOWorkRequest*> {
         struct IOCallbacks {
             Nan::Callback* readCallback = nullptr;
             Nan::Callback* writeCallback = nullptr;

@@ -124,6 +124,10 @@ namespace flac_bindings {
 
         ExecutionContext* executionContext = nullptr;
 
+        inline v8::Local<v8::Promise::Resolver> getResolver() const {
+            return this->GetFromPersistent("promiseResolver").template As<v8::Promise::Resolver>();
+        }
+
     protected:
         FunctionCallback function;
         ProgressCallback progress;
@@ -137,10 +141,11 @@ namespace flac_bindings {
             FunctionCallback function,
             ProgressCallback progress,
             const char* name,
-            ToV8ConverterFunction convertFunction,
-            Nan::Callback* callback
-        ): Nan::AsyncProgressQueueWorker<P>(callback, name), function(function), progress(progress), convertFunction(convertFunction) {
+            ToV8ConverterFunction convertFunction
+        ): Nan::AsyncProgressQueueWorker<P>(((Nan::Callback*) 0x1), name), function(function), progress(progress), convertFunction(convertFunction) {
+            auto resolver = v8::Promise::Resolver::New(Nan::GetCurrentContext()).ToLocalChecked();
             asyncContext = node::EmitAsyncInit(v8::Isolate::GetCurrent(), Nan::New<v8::Object>(), name);
+            this->SaveToPersistent("promiseResolver", resolver);
         }
 
         ~AsyncBackgroundTask() {
@@ -151,8 +156,13 @@ namespace flac_bindings {
             node::EmitAsyncDestroy(v8::Isolate::GetCurrent(), asyncContext);
         }
 
+        inline v8::Local<v8::Promise> getPromise() const {
+            Nan::EscapableHandleScope scope;
+            return scope.Escape(this->getResolver()->GetPromise());
+        }
+
         virtual inline v8::Local<v8::Value> getReturnValue() const {
-            return Nan::Undefined();
+            return getPromise();
         }
 
         virtual void Execute(const ExecutionProgress &progress) override {
@@ -190,70 +200,6 @@ namespace flac_bindings {
         bool completed = false;
 
         virtual void HandleOKCallback() override {
-            Nan::HandleScope scope;
-
-            if(returnValue.IsJust() && convertFunction) {
-                v8::Local<v8::Value> argv[] = {
-                    Nan::Undefined(),
-                    convertFunction(returnValue.FromJust())
-                };
-                this->callback->Call(2, argv, this->async_resource);
-            } else {
-                this->callback->Call(0, NULL, this->async_resource);
-            }
-        }
-
-        virtual void HandleErrorCallback() override {
-            Nan::HandleScope scope;
-
-            if(exceptionValue.IsEmpty()) {
-                v8::Local<v8::Value> argv[] = {
-                    v8::Exception::Error(Nan::New<v8::String>(this->ErrorMessage()).ToLocalChecked())
-                };
-                this->callback->Call(1, argv, this->async_resource);
-            } else {
-                v8::Local<v8::Value> argv[] = {
-                    Nan::New(exceptionValue)
-                };
-                this->callback->Call(1, argv, this->async_resource);
-            }
-        }
-
-    };
-
-    template<typename T, typename P = char>
-    class PromisifiedAsyncBackgroundTask: public AsyncBackgroundTask<T, P> {
-
-        inline v8::Local<v8::Promise::Resolver> getResolver() const {
-            return this->GetFromPersistent("promiseResolver").template As<v8::Promise::Resolver>();
-        }
-
-    public:
-        typedef typename AsyncBackgroundTask<T, P>::ProgressCallback ProgressCallback;
-        typedef typename AsyncBackgroundTask<T, P>::FunctionCallback FunctionCallback;
-        typedef typename AsyncBackgroundTask<T, P>::ToV8ConverterFunction ToV8ConverterFunction;
-
-        explicit PromisifiedAsyncBackgroundTask(
-            FunctionCallback function,
-            ProgressCallback progress,
-            const char* name,
-            ToV8ConverterFunction convertFunction = nullptr
-        ): AsyncBackgroundTask<T, P>(function, progress, name, convertFunction, (Nan::Callback*) (0x1)) {
-            auto resolver = v8::Promise::Resolver::New(Nan::GetCurrentContext()).ToLocalChecked();
-            this->SaveToPersistent("promiseResolver", resolver);
-        }
-
-        inline v8::Local<v8::Promise> getPromise() const {
-            Nan::EscapableHandleScope scope;
-            return scope.Escape(this->getResolver()->GetPromise());
-        }
-
-        virtual inline v8::Local<v8::Value> getReturnValue() const override {
-            return getPromise();
-        }
-
-    protected:
-        virtual void HandleOKCallback() override {
             this->callback = nullptr;
             Nan::HandleScope scope;
             auto resolver = this->getResolver();
@@ -287,26 +233,6 @@ namespace flac_bindings {
 
     };
 
-
-    template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
-    static inline WorkerBase* newWorker(
-        Nan::Callback* callback,
-        Args... args
-    ) {
-        if(callback) {
-            return new Worker(std::forward<Args>(args)..., callback);
-        } else {
-            return new PromisifiedWorker(std::forward<Args>(args)...);
-        }
-    }
-
-    template<typename Worker, class PromisifiedWorker, class... Args>
-    static inline Worker* newWorker(
-        Nan::Callback* callback,
-        Args... args
-    ) {
-        return newWorker<Worker, Worker, PromisifiedWorker, Args...>(callback, std::forward<Args>(args)...);
-    }
 
     static inline Nan::Callback* newCallback(v8::Local<v8::Value> value) {
         if(value.IsEmpty() || !value->IsFunction()) {

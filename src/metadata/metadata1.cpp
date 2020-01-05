@@ -62,11 +62,10 @@ namespace flac_bindings {
             void* it,
             std::vector<Local<Value>> p,
             const char* name, std::function<R()> impl,
-            Nan::Callback* cbk, std::function<Local<Value>(R)> conv = booleanToJs<R>
+            std::function<Local<Value>(R)> conv = booleanToJs<R>
         ) {
             Nan::EscapableHandleScope scope;
-            auto* worker = newWorker<AsyncBackgroundTask<R>, PromisifiedAsyncBackgroundTask<R>>(
-                cbk,
+            auto* worker = new AsyncBackgroundTask<R>(
                 [it, impl] (auto &c) {
                     R v = impl();
                     if(v) {
@@ -168,11 +167,9 @@ namespace flac_bindings {
                 } else {
                     using ReturnType = std::pair<FLAC__StreamMetadata*, bool>;
                     using AsyncTask = AsyncBackgroundTask<ReturnType>;
-                    using PAsyncTask = PromisifiedAsyncBackgroundTask<ReturnType>;
                     auto self = info.This();
                     AsyncTask** ptrToWorker = new AsyncTask*;
-                    auto worker = newWorker<AsyncTask, PAsyncTask>(
-                        nullptr,
+                    auto worker = new AsyncTask(
                         [it, rollbacked] (auto &c) {
                             if(!rollbacked) {
                                 while(FLAC__metadata_simple_iterator_prev(it));
@@ -245,8 +242,7 @@ namespace flac_bindings {
                 it,
                 { info.This() },
                 "flac_bindings:metadata1:initAsync",
-                [it, fileName, read_only, preserve] () { return FLAC__metadata_simple_iterator_init(it, fileName.c_str(), read_only, preserve); },
-                newCallback(info[3])
+                [it, fileName, read_only, preserve] () { return FLAC__metadata_simple_iterator_init(it, fileName.c_str(), read_only, preserve); }
             ));
         }
 
@@ -269,7 +265,6 @@ namespace flac_bindings {
                 { info.This() },
                 "flac_bindings:metadata1:nextAsync",
                 [it] () { return new bool(FLAC__metadata_simple_iterator_next(it)); },
-                newCallback(info[0]),
                 [] (bool* b) { bool bb = *b; delete b; return booleanToJs(bb); }
             ));
         }
@@ -287,7 +282,6 @@ namespace flac_bindings {
                 { info.This() },
                 "flac_bindings:metadata1:prevAsync",
                 [it] () { return new bool(FLAC__metadata_simple_iterator_prev(it)); },
-                newCallback(info[0]),
                 [] (bool* b) { bool bb = *b; delete b; return booleanToJs(bb); }
             ));
         }
@@ -339,7 +333,6 @@ namespace flac_bindings {
                     if(FLAC__metadata_simple_iterator_get_application_id(it, id)) return id;
                     return nullptr;
                 },
-                newCallback(info[0]),
                 [] (FLAC__byte* b) {
                     auto v = node::Buffer::Copy(Isolate::GetCurrent(), (const char*) b, 4);
                     delete[] b;
@@ -362,7 +355,6 @@ namespace flac_bindings {
                 { info.This() },
                 "flac_bindings:metadata1:getBlockAsync",
                 [it] () { return FLAC__metadata_simple_iterator_get_block(it); },
-                newCallback(info[0]),
                 std::bind(structToJs<FLAC__StreamMetadata>, _1, true)
             ));
         }
@@ -391,8 +383,7 @@ namespace flac_bindings {
                 it,
                 { info.This(), info[0] },
                 "flac_bindings:metadata1:setBlockAsync",
-                [it, m, pad] () { return FLAC__metadata_simple_iterator_set_block(it, m, pad); },
-                newCallback(info[2])
+                [it, m, pad] () { return FLAC__metadata_simple_iterator_set_block(it, m, pad); }
             ));
         }
 
@@ -420,8 +411,7 @@ namespace flac_bindings {
                 it,
                 { info.This(), info[0] },
                 "flac_bindings:metadata1:insertBlockAfterAsync",
-                [it, m, pad] () { return FLAC__metadata_simple_iterator_insert_block_after(it, m, pad); },
-                newCallback(info[2])
+                [it, m, pad] () { return FLAC__metadata_simple_iterator_insert_block_after(it, m, pad); }
             ));
         }
 
@@ -439,8 +429,7 @@ namespace flac_bindings {
                 it,
                 { info.This() },
                 "flac_bindings:metadata1:deleteBlockAsync",
-                [it, pad] () { return FLAC__metadata_simple_iterator_delete_block(it, pad); },
-                newCallback(info[1])
+                [it, pad] () { return FLAC__metadata_simple_iterator_delete_block(it, pad); }
             ));
         }
 

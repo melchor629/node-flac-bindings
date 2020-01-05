@@ -76,7 +76,7 @@ namespace flac_bindings {
     decorate(EncoderOrDecoder* ed, std::function<bool(AsyncWorkBaseExecutionContext &)> func, std::function<const char*()> getError) {
         return [ed, func, getError] (auto &c) {
             if(ed->async != nullptr) {
-                c.reject("There's already an operation on this object");
+                c.reject("There is already an async operation on this object");
                 return;
             }
 
@@ -90,26 +90,6 @@ namespace flac_bindings {
             ed->async = nullptr;
             ed->asyncExecutionContext = nullptr;
         };
-    }
-
-    template<typename DecBase, class Decoder, typename std::enable_if_t<std::is_same<Decoder, class StreamDecoder>::value, int> = 0>
-    static inline DecBase* newWorker(
-        std::function<bool(typename DecBase::ExecutionContext &)> function,
-        const char* name,
-        Decoder* dec,
-        Nan::Callback* callback
-    ) {
-        return newWorker<DecBase, class AsyncDecoderWork, class PromisifiedAsyncDecoderWork>(callback, function, name, dec);
-    }
-
-    template<typename EncBase, class Encoder, typename std::enable_if_t<std::is_same<Encoder, class StreamEncoder>::value, int> = 0>
-    static inline EncBase* newWorker(
-        std::function<bool(typename EncBase::ExecutionContext &)> function,
-        const char* name,
-        Encoder* dec,
-        Nan::Callback* callback
-    ) {
-        return newWorker<EncBase, class AsyncEncoderWork, class PromisifiedAsyncEncoderWork>(callback, function, name, dec);
     }
 
 }

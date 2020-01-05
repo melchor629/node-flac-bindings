@@ -44,7 +44,7 @@ describe('Chain & Iterator', function() {
 
             assert.isFalse(ret);
             assert.equal(ch.status(), Chain.Status.ERROR_OPENING_FILE);
-            await assert.throwsAsync(() => fs.access(filePath), 'The file should not exist');
+            await assert.throwsAsync(() => fs.access(filePath), /^ENOENT: no such file or directory/);
         });
 
         it('returns true if the file exists', async function() {
@@ -75,7 +75,7 @@ describe('Chain & Iterator', function() {
 
             await assert.throwsAsync(() => ch.readAsync(filePath), /^ERROR_OPENING_FILE$/);
 
-            await assert.throwsAsync(() => fs.access(filePath), 'The file should not exist');
+            await assert.throwsAsync(() => fs.access(filePath), /^ENOENT: no such file or directory/);
         });
 
         it('returns true if the file exists', async function() {

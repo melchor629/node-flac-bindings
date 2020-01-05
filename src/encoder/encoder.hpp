@@ -107,7 +107,6 @@ namespace flac_bindings {
     };
 
     typedef AsyncBackgroundTask<bool, EncoderWorkRequest*> AsyncEncoderWorkBase;
-    typedef PromisifiedAsyncBackgroundTask<bool, EncoderWorkRequest*> PromisifiedAsyncEncoderWorkBase;
 
     class StreamEncoder: public Nan::ObjectWrap {
         static NAN_METHOD(setOggSerialNumber);
@@ -188,36 +187,9 @@ namespace flac_bindings {
 
 #ifdef MAKE_FRIENDS
     static void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, EncoderWorkRequest* const* data);
-    template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
-    static inline WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
     class AsyncEncoderWork: public AsyncEncoderWorkBase {
         AsyncEncoderWork(
-            std::function<bool(AsyncEncoderWorkBase::ExecutionContext &)> function,
-            const char* name,
-            StreamEncoder* enc,
-            Nan::Callback* callback
-        );
-
-        inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
-
-#ifdef MAKE_FRIENDS
-        friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, EncoderWorkRequest* const* data);
-        template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
-        friend WorkerBase* newWorker(Nan::Callback* callback, Args... args);
-#endif
-    public:
-        static AsyncEncoderWorkBase* forFinish(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-        static AsyncEncoderWorkBase* forProcess(v8::Local<v8::Value> buffers, v8::Local<v8::Value> samples, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-        static AsyncEncoderWorkBase* forProcessInterleaved(v8::Local<v8::Value> buffer, v8::Local<v8::Value> samples, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-        static AsyncEncoderWorkBase* forInitStream(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-        static AsyncEncoderWorkBase* forInitOggStream(StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-        static AsyncEncoderWorkBase* forInitFile(v8::Local<v8::Value> path, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-        static AsyncEncoderWorkBase* forInitOggFile(v8::Local<v8::Value> path, StreamEncoder* enc, Nan::Callback* cbk = nullptr);
-    };
-
-    class PromisifiedAsyncEncoderWork: public PromisifiedAsyncEncoderWorkBase {
-        PromisifiedAsyncEncoderWork(
             std::function<bool(AsyncEncoderWorkBase::ExecutionContext &)> function,
             const char* name,
             StreamEncoder* enc
@@ -227,11 +199,17 @@ namespace flac_bindings {
 
 #ifdef MAKE_FRIENDS
         friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, EncoderWorkRequest* const* data);
-        friend class AsyncEncoderWork;
-        template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
-        friend WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
+    public:
+        static AsyncEncoderWorkBase* forFinish(StreamEncoder* enc);
+        static AsyncEncoderWorkBase* forProcess(v8::Local<v8::Value> buffers, v8::Local<v8::Value> samples, StreamEncoder* enc);
+        static AsyncEncoderWorkBase* forProcessInterleaved(v8::Local<v8::Value> buffer, v8::Local<v8::Value> samples, StreamEncoder* enc);
+        static AsyncEncoderWorkBase* forInitStream(StreamEncoder* enc);
+        static AsyncEncoderWorkBase* forInitOggStream(StreamEncoder* enc);
+        static AsyncEncoderWorkBase* forInitFile(v8::Local<v8::Value> path, StreamEncoder* enc);
+        static AsyncEncoderWorkBase* forInitOggFile(v8::Local<v8::Value> path, StreamEncoder* enc);
     };
+
 }
 
 int encoder_read_callback(const FLAC__StreamEncoder*, char[], size_t*, void*);

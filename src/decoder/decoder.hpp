@@ -107,7 +107,6 @@ namespace flac_bindings {
     };
 
     typedef AsyncBackgroundTask<bool, DecoderWorkRequest*> AsyncDecoderWorkBase;
-    typedef PromisifiedAsyncBackgroundTask<bool, DecoderWorkRequest*> PromisifiedAsyncDecoderWorkBase;
 
     class StreamDecoder: public Nan::ObjectWrap {
 
@@ -179,40 +178,9 @@ namespace flac_bindings {
 
 #ifdef MAKE_FRIENDS
     static void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, DecoderWorkRequest* const* data);
-    template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
-    static inline WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
     class AsyncDecoderWork: public AsyncDecoderWorkBase {
         AsyncDecoderWork(
-            std::function<bool(AsyncDecoderWorkBase::ExecutionContext &)> function,
-            const char* name,
-            StreamDecoder* dec,
-            Nan::Callback* callback
-        );
-
-        inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
-
-#ifdef MAKE_FRIENDS
-        friend void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, DecoderWorkRequest* const* data);
-        template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
-        friend WorkerBase* newWorker(Nan::Callback* callback, Args... args);
-#endif
-    public:
-        static AsyncDecoderWorkBase* forFinish(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-        static AsyncDecoderWorkBase* forFlush(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-        static AsyncDecoderWorkBase* forProcessSingle(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-        static AsyncDecoderWorkBase* forProcessUntilEndOfMetadata(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-        static AsyncDecoderWorkBase* forProcessUntilEndOfStream(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-        static AsyncDecoderWorkBase* forSkipSingleFrame(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-        static AsyncDecoderWorkBase* forSeekAbsolute(uint64_t value, StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-        static AsyncDecoderWorkBase* forInitStream(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-        static AsyncDecoderWorkBase* forInitOggStream(StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-        static AsyncDecoderWorkBase* forInitFile(const std::string &filePath, StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-        static AsyncDecoderWorkBase* forInitOggFile(const std::string &filePath, StreamDecoder* dec, Nan::Callback* cbk = nullptr);
-    };
-
-    class PromisifiedAsyncDecoderWork: public PromisifiedAsyncDecoderWorkBase {
-        PromisifiedAsyncDecoderWork(
             std::function<bool(AsyncDecoderWorkBase::ExecutionContext &)> function,
             const char* name,
             StreamDecoder* dec
@@ -222,10 +190,19 @@ namespace flac_bindings {
 
 #ifdef MAKE_FRIENDS
         friend void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, DecoderWorkRequest* const* data);
-        friend class AsyncDecoderWork;
-        template<typename WorkerBase, class Worker, class PromisifiedWorker, class... Args>
-        friend WorkerBase* newWorker(Nan::Callback* callback, Args... args);
 #endif
+    public:
+        static AsyncDecoderWorkBase* forFinish(StreamDecoder* dec);
+        static AsyncDecoderWorkBase* forFlush(StreamDecoder* dec);
+        static AsyncDecoderWorkBase* forProcessSingle(StreamDecoder* dec);
+        static AsyncDecoderWorkBase* forProcessUntilEndOfMetadata(StreamDecoder* dec);
+        static AsyncDecoderWorkBase* forProcessUntilEndOfStream(StreamDecoder* dec);
+        static AsyncDecoderWorkBase* forSkipSingleFrame(StreamDecoder* dec);
+        static AsyncDecoderWorkBase* forSeekAbsolute(uint64_t value, StreamDecoder* dec);
+        static AsyncDecoderWorkBase* forInitStream(StreamDecoder* dec);
+        static AsyncDecoderWorkBase* forInitOggStream(StreamDecoder* dec);
+        static AsyncDecoderWorkBase* forInitFile(const std::string &filePath, StreamDecoder* dec);
+        static AsyncDecoderWorkBase* forInitOggFile(const std::string &filePath, StreamDecoder* dec);
     };
 }
 

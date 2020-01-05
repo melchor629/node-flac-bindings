@@ -95,8 +95,7 @@ namespace flac_bindings {
             }
         };
 
-        AsyncBackgroundTask<bool, char>* worker = newWorker<AsyncBackgroundTask<bool, char>, PromisifiedAsyncBackgroundTask<bool, char>>(
-            newCallback(info[2]),
+        AsyncBackgroundTask<bool, char>* worker = new AsyncBackgroundTask<bool, char>(
             asyncFunction,
             asyncFUNction,
             "flac:testAsync",

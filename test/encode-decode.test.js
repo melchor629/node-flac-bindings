@@ -591,7 +591,56 @@ describe('encode & decode: manual version', function() {
         await enc.finishAsync();
 
         comparePCM(tmpFile.path, 24);
-        assert.equal(progressCallbackValues.length, 42);
+        assert.equal(progressCallbackValues.length, 41);
+    });
+
+    it('encoder should throw if another async method is running', async function() {
+        const enc = new api.Encoder();
+        enc.setBitsPerSample(24);
+        enc.setChannels(2);
+        enc.setCompressionLevel(9);
+        enc.setSampleRate(44100);
+        await enc.initFileAsync(
+            tmpFile.path,
+            null,
+        );
+
+        const chunkazo = Buffer.allocUnsafe(totalSamples * 4 * 2);
+        for(let i = 0; i < totalSamples * 2; i++) {
+            chunkazo.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+        }
+        const promise = enc.processInterleavedAsync(chunkazo);
+
+        await assert.throwsAsync(() => enc.processInterleavedAsync(chunkazo), /There is still an async operation/);
+
+        await promise;
+        await enc.finishAsync();
+    });
+
+    it('decoder should throw if another async method is running', async function() {
+        const dec = new api.Decoder();
+        const allBuffers = [];
+        await dec.initFileAsync(
+            pathForFile('loop.flac'),
+            (_, buffers) => {
+                allBuffers.push(buffers.map((b) => Buffer.from(b)));
+                return 0;
+            },
+            null,
+            // eslint-disable-next-line no-console
+            (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+        );
+
+        const e = await dec.processUntilEndOfMetadataAsync();
+        assert.isTrue(e);
+
+        const promise = dec.processSingleAsync();
+        await assert.throwsAsync(() => dec.processSingleAsync(), /There is still an async operation/);
+
+        await promise;
+        const f = await dec.processUntilEndOfStreamAsync();
+        assert.isTrue(f);
+        await dec.finishAsync();
     });
 
 });

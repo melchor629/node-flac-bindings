@@ -124,10 +124,9 @@ namespace flac_bindings {
             info.GetReturnValue().Set(Nan::New<Boolean>(s));
         }
 
-        static Local<Value> simpleAsyncImpl(void* m, Local<Value> This, Nan::Callback* cbk, const char* name, std::function<bool()> impl) {
+        static Local<Value> simpleAsyncImpl(void* m, Local<Value> This, const char* name, std::function<bool()> impl) {
             Nan::EscapableHandleScope scope;
-            auto* worker = newWorker<AsyncBackgroundTask<bool>, PromisifiedAsyncBackgroundTask<bool>>(
-                cbk,
+            auto* worker = new AsyncBackgroundTask<bool>(
                 [m, impl] (auto &c) {
                     if(impl()) {
                         c.resolve(true);
@@ -156,7 +155,6 @@ namespace flac_bindings {
             info.GetReturnValue().Set(simpleAsyncImpl(
                 m,
                 info.This(),
-                newCallback(info[1]),
                 "flac_bindings:metadata2:readAsync",
                 [m, path] () { return FLAC__metadata_chain_read(m, path.c_str()); }
             ));
@@ -186,7 +184,6 @@ namespace flac_bindings {
             info.GetReturnValue().Set(simpleAsyncImpl(
                 m,
                 info.This(),
-                newCallback(info[1]),
                 "flac_bindings:metadata2:readOggAsync",
                 [m, path] () { return FLAC__metadata_chain_read_ogg(m, path.c_str()); }
             ));
@@ -243,7 +240,6 @@ namespace flac_bindings {
             info.GetReturnValue().Set(simpleAsyncImpl(
                 m,
                 info.This(),
-                newCallback(info[2]),
                 "flac_bindings:metadata2:writeAsync",
                 [m, padding, preserve] () { return FLAC__metadata_chain_write(m, padding, preserve); }
             ));

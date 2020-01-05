@@ -43,10 +43,9 @@ namespace flac_bindings {
         }
     }
 
-    static Local<Value> asyncImpl(Nan::Callback* cbk, const char* name, std::function<FLAC__StreamMetadata*()> impl) {
+    static Local<Value> asyncImpl(const char* name, std::function<FLAC__StreamMetadata*()> impl) {
         Nan::EscapableHandleScope scope;
-        auto* worker = newWorker<AsyncBackgroundTask<FLAC__StreamMetadata*>, PromisifiedAsyncBackgroundTask<FLAC__StreamMetadata*>>(
-            cbk,
+        auto* worker = new AsyncBackgroundTask<FLAC__StreamMetadata*>(
             [impl] (auto &c) {
                 FLAC__StreamMetadata* metadata = impl();
                 if(metadata != nullptr) {
@@ -73,7 +72,6 @@ namespace flac_bindings {
         Nan::Utf8String filename(info[0]);
         std::string fileName = *filename;
         info.GetReturnValue().Set(asyncImpl(
-            newCallback(info[1]),
             "flac_bindings:metadata0:getStreaminfoAsync",
             [fileName] () {
                 FLAC__StreamMetadata metadata;
@@ -108,7 +106,6 @@ namespace flac_bindings {
         Nan::Utf8String filename(info[0]);
         std::string fileName = *filename;
         info.GetReturnValue().Set(asyncImpl(
-            newCallback(info[1]),
             "flac_bindings:metadata0:getTagsAsync",
             [fileName] () {
                 FLAC__StreamMetadata* metadata = nullptr;
@@ -143,7 +140,6 @@ namespace flac_bindings {
         Nan::Utf8String filename(info[0]);
         std::string fileName = *filename;
         info.GetReturnValue().Set(asyncImpl(
-            newCallback(info[1]),
             "flac_bindings:metadata0:getCuesheetAsync",
             [fileName] () {
                 FLAC__StreamMetadata* metadata = nullptr;
@@ -205,7 +201,6 @@ namespace flac_bindings {
         unsigned max_depth = numberFromJs<unsigned>(info[6]).FromMaybe(-1);
         unsigned max_colors = numberFromJs<unsigned>(info[7]).FromMaybe(-1);
         info.GetReturnValue().Set(asyncImpl(
-            newCallback(info[1]),
             "flac_bindings:metadata0:getPictureAsync",
             [=] () {
                 FLAC__StreamMetadata* metadata;

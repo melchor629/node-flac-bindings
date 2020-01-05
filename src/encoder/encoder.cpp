@@ -38,7 +38,7 @@ NAN_METHOD(StreamEncoder:: jsFn) { \
 }
 
 #define CHECK_ASYNC_IS_NULL \
-if(self->async != nullptr) { Nan::ThrowError("Multiple calls to some methods of the Encoder are not allowed"); return; }
+if(self->async != nullptr) { Nan::ThrowError("There is still an async operation on this object"); return; }
 
 namespace flac_bindings {
 
@@ -339,7 +339,7 @@ namespace flac_bindings {
         CHECK_ASYNC_IS_NULL
         (void) enc;
 
-        AsyncEncoderWorkBase* w = AsyncEncoderWork::forFinish(self, newCallback(info[0]));
+        AsyncEncoderWorkBase* w = AsyncEncoderWork::forFinish(self);
         if(w == nullptr) return; //Exception thrown inside the work "constructor"
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
@@ -351,7 +351,7 @@ namespace flac_bindings {
         CHECK_ASYNC_IS_NULL
         (void) enc;
 
-        AsyncEncoderWorkBase* w = AsyncEncoderWork::forProcess(info[0], info[1], self, newCallback(info[2]));
+        AsyncEncoderWorkBase* w = AsyncEncoderWork::forProcess(info[0], info[1], self);
         if(w == nullptr) return; //Exception thrown inside the work "constructor"
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
@@ -366,7 +366,7 @@ namespace flac_bindings {
         Local<Value> buffers = info[0];
         Local<Value> samples = info[1]->IsFunction() ? static_cast<Local<Value>>(Nan::Undefined()) : info[1];
         Local<Value> callback = info[2]->IsFunction() ? info[2] : info[1];
-        AsyncEncoderWorkBase* w = AsyncEncoderWork::forProcessInterleaved(buffers, samples, self, newCallback(callback));
+        AsyncEncoderWorkBase* w = AsyncEncoderWork::forProcessInterleaved(buffers, samples, self);
         if(w == nullptr) return; //Exception thrown inside the work "constructor"
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
@@ -383,7 +383,7 @@ namespace flac_bindings {
         if(info[2]->IsFunction()) self->tellCbk.reset(new Nan::Callback(info[2].As<Function>()));
         if(info[3]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[3].As<Function>()));
 
-        AsyncEncoderWorkBase* w = AsyncEncoderWork::forInitStream(self, newCallback(info[4]));
+        AsyncEncoderWorkBase* w = AsyncEncoderWork::forInitStream(self);
         if(w == nullptr) return;
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
@@ -401,7 +401,7 @@ namespace flac_bindings {
         if(info[3]->IsFunction()) self->tellCbk.reset(new Nan::Callback(info[3].As<Function>()));
         if(info[4]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[4].As<Function>()));
 
-        AsyncEncoderWorkBase* w = AsyncEncoderWork::forInitOggStream(self, newCallback(info[5]));
+        AsyncEncoderWorkBase* w = AsyncEncoderWork::forInitOggStream(self);
         if(w == nullptr) return;
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
@@ -415,7 +415,7 @@ namespace flac_bindings {
 
         if(info[1]->IsFunction()) self->progressCbk.reset(new Nan::Callback(info[1].As<Function>()));
 
-        AsyncEncoderWorkBase* w = AsyncEncoderWork::forInitFile(info[0], self, newCallback(info[1]));
+        AsyncEncoderWorkBase* w = AsyncEncoderWork::forInitFile(info[0], self);
         if(w == nullptr) return;
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
@@ -429,7 +429,7 @@ namespace flac_bindings {
 
         if(info[1]->IsFunction()) self->progressCbk.reset(new Nan::Callback(info[1].As<Function>()));
 
-        AsyncEncoderWorkBase* w = AsyncEncoderWork::forInitOggFile(info[0], self, newCallback(info[1]));
+        AsyncEncoderWorkBase* w = AsyncEncoderWork::forInitOggFile(info[0], self);
         if(w == nullptr) return;
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());

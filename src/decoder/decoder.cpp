@@ -38,7 +38,7 @@ NAN_METHOD(StreamDecoder:: jsFn) { \
 }
 
 #define CHECK_ASYNC_IS_NULL \
-if(self->async != nullptr) { Nan::ThrowError("Multiple calls to some methods of the Decoder are not allowed"); return; }
+if(self->async != nullptr) { Nan::ThrowError("There is still an async operation running on this object"); return; }
 
 
 namespace flac_bindings {
@@ -360,7 +360,7 @@ namespace flac_bindings {
         CHECK_ASYNC_IS_NULL
         (void) dec;
 
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forFinish(self, newCallback(info[0]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forFinish(self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);
@@ -371,7 +371,7 @@ namespace flac_bindings {
         CHECK_ASYNC_IS_NULL
         (void) dec;
 
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forFlush(self, newCallback(info[0]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forFlush(self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);
@@ -382,7 +382,7 @@ namespace flac_bindings {
         CHECK_ASYNC_IS_NULL
         (void) dec;
 
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forProcessSingle(self, newCallback(info[0]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forProcessSingle(self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);
@@ -393,7 +393,7 @@ namespace flac_bindings {
         CHECK_ASYNC_IS_NULL
         (void) dec;
 
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forProcessUntilEndOfMetadata(self, newCallback(info[0]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forProcessUntilEndOfMetadata(self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);
@@ -405,7 +405,7 @@ namespace flac_bindings {
         CHECK_ASYNC_IS_NULL
         (void) dec;
 
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forProcessUntilEndOfStream(self, newCallback(info[0]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forProcessUntilEndOfStream(self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);
@@ -416,7 +416,7 @@ namespace flac_bindings {
         CHECK_ASYNC_IS_NULL
         (void) dec;
 
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forSkipSingleFrame(self, newCallback(info[0]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forSkipSingleFrame(self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);
@@ -434,7 +434,7 @@ namespace flac_bindings {
         }
 
         uint16_t p = maybeOffset.FromJust();
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forSeekAbsolute(p, self, newCallback(info[1]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forSeekAbsolute(p, self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);
@@ -454,7 +454,7 @@ namespace flac_bindings {
         if(info[6]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[6].As<Function>()));
         if(info[7]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[7].As<Function>()));
 
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forInitStream(self, newCallback(info[8]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forInitStream(self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);
@@ -474,7 +474,7 @@ namespace flac_bindings {
         if(info[6]->IsFunction()) self->metadataCbk.reset(new Nan::Callback(info[6].As<Function>()));
         if(info[7]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[7].As<Function>()));
 
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forInitOggStream(self, newCallback(info[8]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forInitOggStream(self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);
@@ -496,7 +496,7 @@ namespace flac_bindings {
         if(info[3]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[3].As<Function>()));
         Nan::Utf8String fileName(fileNameJs);
 
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forInitFile(*fileName, self, newCallback(info[4]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forInitFile(*fileName, self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);
@@ -518,7 +518,7 @@ namespace flac_bindings {
         if(info[3]->IsFunction()) self->errorCbk.reset(new Nan::Callback(info[3].As<Function>()));
         Nan::Utf8String fileName(fileNameJs);
 
-        AsyncDecoderWorkBase* w = AsyncDecoderWork::forInitOggFile(*fileName, self, newCallback(info[4]));
+        AsyncDecoderWorkBase* w = AsyncDecoderWork::forInitOggFile(*fileName, self);
         info.GetReturnValue().Set(w->getReturnValue());
         w->SaveToPersistent("this", info.This());
         AsyncQueueWorker(w);

@@ -10,7 +10,7 @@ namespace flac_bindings {
         std::function<bool(void*, FLAC__IOCallbacks)> f,
         const char* name,
         Local<Object> &obj
-    ): PromisifiedAsyncBackgroundTask<bool, FlacIOWorkRequest*>(
+    ): AsyncBackgroundTask<bool, FlacIOWorkRequest*>(
         [this, f] (auto &c) {
             this->ptr1 = std::make_tuple(&this->cbk1, &c);
             return f(&this->ptr1, this->cbk1.generateIOCallbacks());
@@ -25,7 +25,7 @@ namespace flac_bindings {
         const char* name,
         Local<Object> &obj1,
         Local<Object> &obj2
-    ): PromisifiedAsyncBackgroundTask<bool, FlacIOWorkRequest*>(
+    ): AsyncBackgroundTask<bool, FlacIOWorkRequest*>(
         [this, f] (auto &c) {
             this->ptr1 = std::make_tuple(&this->cbk1, &c);
             this->ptr2 = std::make_tuple(&this->cbk2, &c);
