@@ -1,7 +1,7 @@
 # flac-bindings
 Nodejs bindings to [libFLAC](https://xiph.org/flac/download.html)
 
-[![Coverage Status](https://coveralls.io/repos/github/melchor629/node-flac-bindings/badge.svg?branch=ci/add-coverage)](https://coveralls.io/github/melchor629/node-flac-bindings?branch=ci/add-coverage)
+[![Coverage Status](https://coveralls.io/repos/github/melchor629/node-flac-bindings/badge.svg?branch=master)](https://coveralls.io/github/melchor629/node-flac-bindings?branch=master)
 
 ## What can this binding do for me?
 You can use all the functions from encoder and decoder modules inside Javascript with struct-to-js (and viceversa) conversions. The FLAC library will load dynamically on runtime or with some help, you can tell where the library is. Also, any chunk of data that the FLAC API needs is solved by a simple node Buffer. And it has some beautiful js classes for encoder and decoder too.
