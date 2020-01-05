@@ -84,14 +84,14 @@ namespace flac_bindings {
                 if(res->IsPromise()) {
                     self.defer(res.template As<Promise>(), e, [endMode=endMode] (auto &c, auto e, auto &info) {
                         if(*e == '9' && endMode == "exception") {
-                            c.reject(Nan::Error("Thrown :("));
+                            Nan::ThrowError(Nan::Error("Thrown :("));
                         }
                     });
                     return;
                 }
             }
             if(*e == '9' && endMode == "exception") {
-                self.reject(Nan::Error("Thrown :("));
+                Nan::ThrowError(Nan::Error("Thrown :("));
             }
         };
 

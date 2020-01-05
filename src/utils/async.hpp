@@ -94,6 +94,7 @@ namespace flac_bindings {
 
             void defer(v8::Local<v8::Promise> promise, const P* data, FullPromiseCallback resolve = nullptr, FullPromiseCallback reject = nullptr) {
                 using namespace std::placeholders;
+                Nan::HandleScope scope;
                 auto context = new PromiseContext {
                     resolve ? std::bind(resolve, *this, _1, _2) : PromiseCallback(nullptr),
                     reject ? std::bind(reject, *this, _1, _2) : PromiseCallback(nullptr),
@@ -144,7 +145,7 @@ namespace flac_bindings {
             ToV8ConverterFunction convertFunction
         ): Nan::AsyncProgressQueueWorker<P>(((Nan::Callback*) 0x1), name), function(function), progress(progress), convertFunction(convertFunction) {
             auto resolver = v8::Promise::Resolver::New(Nan::GetCurrentContext()).ToLocalChecked();
-            asyncContext = node::EmitAsyncInit(v8::Isolate::GetCurrent(), Nan::New<v8::Object>(), name);
+            asyncContext = node::EmitAsyncInit(v8::Isolate::GetCurrent(), resolver, name);
             this->SaveToPersistent("promiseResolver", resolver);
         }
 
@@ -179,7 +180,7 @@ namespace flac_bindings {
             if(this->progress) {
                 Nan::HandleScope scope;
                 //Workaround https://github.com/nodejs/node/issues/5691 - This allows to handle promises without any warnings from node
-                node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), Nan::New<v8::Object>(), asyncContext);
+                node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), this->getResolver(), asyncContext);
                 Nan::TryCatch tryCatch;
                 this->progress(*executionContext, data, size);
                 if(tryCatch.HasCaught()) {
@@ -205,12 +206,12 @@ namespace flac_bindings {
             auto resolver = this->getResolver();
             //Workaround https://github.com/nodejs/node/issues/5691
             node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), resolver, this->asyncContext);
-            auto context = Nan::GetCurrentContext();
+            auto context = resolver->CreationContext();
 
             if(this->returnValue.IsJust() && this->convertFunction) {
                 resolver->Resolve(context, this->convertFunction(this->returnValue.FromJust())).FromJust();
             } else {
-                resolver->Resolve(context, Nan::Null()).FromJust();
+                resolver->Resolve(context, Nan::Undefined()).FromJust();
             }
         }
 
@@ -220,10 +221,10 @@ namespace flac_bindings {
             auto resolver = this->getResolver();
             //Workaround https://github.com/nodejs/node/issues/5691
             node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), resolver, this->asyncContext);
-            auto context = Nan::GetCurrentContext();
+            auto context = resolver->CreationContext();
 
             if(this->exceptionValue.IsEmpty()) {
-                auto exception = v8::Exception::Error(Nan::New<v8::String>(this->ErrorMessage()).ToLocalChecked());
+                auto exception = Nan::Error(Nan::New<v8::String>(this->ErrorMessage()).ToLocalChecked());
                 resolver->Reject(context, exception).FromJust();
             } else {
                 auto exception = Nan::New(this->exceptionValue);
