@@ -16,6 +16,7 @@
 
 #include <string>
 #include <stdexcept>
+#include <unordered_map>
 
 class Library {
 private:
@@ -24,6 +25,8 @@ private:
 #else
     void* lib = NULL;
 #endif
+
+    std::unordered_map<std::string, void*> cache;
 
     Library(
 #ifdef WIN32
@@ -75,14 +78,27 @@ public:
 
     template<typename Type>
     Type getSymbolAddress(const char* symbol) {
-        void* ptr;
+        void* ptr = nullptr;
+        std::string symbolStr = symbol;
+        auto it = cache.find(symbolStr);
+        if(it != cache.end()) {
+            ptr = it->second;
+        } else {
 #ifdef WIN32
-        GetLastError();
-        ptr = GetProcAddress(lib, symbol);
+            GetLastError();
+            ptr = GetProcAddress(lib, symbol);
 #else
-        dlerror();
-        ptr = dlsym(lib, symbol);
+            dlerror();
+            ptr = dlsym(lib, symbol);
 #endif
+            auto errorMessage = getLastError();
+            if(!errorMessage.empty()) {
+                fprintf(stderr, "Could not load symbol %s: %s\n", symbol, errorMessage.c_str());
+                assert(ptr != nullptr);
+            }
+            cache[symbolStr] = ptr;
+        }
+
         return reinterpret_cast<Type>(ptr);
     }
 
@@ -90,10 +106,10 @@ public:
         std::string error;
 #ifdef WIN32
         LPVOID lpMsgBuf;
-        DWORD dw = GetLastError(); 
+        DWORD dw = GetLastError();
 
         FormatMessage(
-            FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+            FORMAT_MESSAGE_ALLOCATE_BUFFER |
             FORMAT_MESSAGE_FROM_SYSTEM |
             FORMAT_MESSAGE_IGNORE_INSERTS,
             NULL,
@@ -104,7 +120,8 @@ public:
         error = (char*) lpMsgBuf;
         LocalFree(lpMsgBuf);
 #else
-        error = dlerror();
+        const char* ptr = dlerror();
+        error = ptr != nullptr ? ptr : "";
 #endif
         return error;
     }

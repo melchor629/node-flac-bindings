@@ -6,7 +6,7 @@
 #include "nan.h"
 
 #include "pointer.hpp"
-#include "../format/format.h"
+#include "../flac/format.h"
 
 #define __stringify__(f) #f
 #define _stringify(f) __stringify__(f)

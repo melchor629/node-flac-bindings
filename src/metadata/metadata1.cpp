@@ -1,57 +1,20 @@
 #include <vector>
 #include <nan.h>
-#include "../utils/dl.hpp"
+#include "../flac/format.h"
+#include "../flac/metadata1.hpp"
 
 using namespace v8;
 using namespace node;
 #include "../utils/pointer.hpp"
-#include "../format/format.h"
 #include "../utils/defs.hpp"
 #include "../mappings/mappings.hpp"
 #include "../utils/async.hpp"
-
-#define _JOIN(a, b) a##b
-#define _JOIN2(a,b,c) a##b##c
-
-#define metadataFunction(ret, name, ...) \
-typedef ret (*_JOIN2(FLAC__metadata_simple_iterator_, name, _t))(__VA_ARGS__); \
-static _JOIN2(FLAC__metadata_simple_iterator_, name, _t) _JOIN(FLAC__metadata_simple_iterator_, name);
-
-extern "C" {
-    typedef void FLAC__Metadata_SimpleIterator;
-    enum  	FLAC__Metadata_SimpleIteratorStatus {
-      FLAC__METADATA_SIMPLE_ITERATOR_STATUS_OK = 0, FLAC__METADATA_SIMPLE_ITERATOR_STATUS_ILLEGAL_INPUT, FLAC__METADATA_SIMPLE_ITERATOR_STATUS_ERROR_OPENING_FILE, FLAC__METADATA_SIMPLE_ITERATOR_STATUS_NOT_A_FLAC_FILE,
-      FLAC__METADATA_SIMPLE_ITERATOR_STATUS_NOT_WRITABLE, FLAC__METADATA_SIMPLE_ITERATOR_STATUS_BAD_METADATA, FLAC__METADATA_SIMPLE_ITERATOR_STATUS_READ_ERROR, FLAC__METADATA_SIMPLE_ITERATOR_STATUS_SEEK_ERROR,
-      FLAC__METADATA_SIMPLE_ITERATOR_STATUS_WRITE_ERROR, FLAC__METADATA_SIMPLE_ITERATOR_STATUS_RENAME_ERROR, FLAC__METADATA_SIMPLE_ITERATOR_STATUS_UNLINK_ERROR, FLAC__METADATA_SIMPLE_ITERATOR_STATUS_MEMORY_ALLOCATION_ERROR,
-      FLAC__METADATA_SIMPLE_ITERATOR_STATUS_INTERNAL_ERROR
-    };
-    metadataFunction(FLAC__Metadata_SimpleIterator*, new, void);
-    metadataFunction(void, delete, FLAC__Metadata_SimpleIterator *iterator);
-    metadataFunction(FLAC__Metadata_SimpleIteratorStatus, status, FLAC__Metadata_SimpleIterator *iterator);
-    metadataFunction(FLAC__bool, init, FLAC__Metadata_SimpleIterator *iterator, const char *filename, FLAC__bool read_only, FLAC__bool preserve_file_stats);
-    metadataFunction(FLAC__bool, is_writable, const FLAC__Metadata_SimpleIterator *iterator);
-    metadataFunction(FLAC__bool, next, FLAC__Metadata_SimpleIterator *iterator);
-    metadataFunction(FLAC__bool, prev, FLAC__Metadata_SimpleIterator *iterator);
-    metadataFunction(FLAC__bool, is_last, const FLAC__Metadata_SimpleIterator *iterator);
-    metadataFunction(off_t, get_block_offset, const FLAC__Metadata_SimpleIterator *iterator);
-    metadataFunction(FLAC__MetadataType, get_block_type, const FLAC__Metadata_SimpleIterator *iterator);
-    metadataFunction(unsigned, get_block_length, const FLAC__Metadata_SimpleIterator *iterator);
-    metadataFunction(FLAC__bool, get_application_id, FLAC__Metadata_SimpleIterator *iterator, FLAC__byte *id);
-    metadataFunction(FLAC__StreamMetadata*, get_block, FLAC__Metadata_SimpleIterator *iterator);
-    metadataFunction(FLAC__bool, set_block, FLAC__Metadata_SimpleIterator *iterator, FLAC__StreamMetadata *block, FLAC__bool use_padding);
-    metadataFunction(FLAC__bool, insert_block_after, FLAC__Metadata_SimpleIterator *iterator, FLAC__StreamMetadata *block, FLAC__bool use_padding);
-    metadataFunction(FLAC__bool, delete_block, FLAC__Metadata_SimpleIterator *iterator, FLAC__bool use_padding);
-
-    const char* const* FLAC__Metadata_SimpleIteratorStatusString;
-}
 
 #define UNWRAP_IT \
 SimpleIterator* self = Nan::ObjectWrap::Unwrap<SimpleIterator>(info.Holder()); \
 FLAC__Metadata_SimpleIterator* it = self->it;
 
 namespace flac_bindings {
-
-    extern Library* libFlac;
 
     class SimpleIterator: public Nan::ObjectWrap {
 
@@ -92,7 +55,7 @@ namespace flac_bindings {
                 SimpleIterator* si = new SimpleIterator;
                 si->it = it;
                 si->Wrap(info.This());
-                Nan::Set(info.This(), Symbol::GetIterator(info.GetIsolate()), Nan::New<Function>(jsIterator));
+                Nan::Set(info.This(), v8::Symbol::GetIterator(info.GetIsolate()), Nan::New<Function>(jsIterator));
 
                 auto script = Nan::CompileScript(Nan::New("Symbol.asyncIterator").ToLocalChecked());
                 if(!script.IsEmpty()) {
@@ -468,15 +431,9 @@ namespace flac_bindings {
         classFunction->SetClassName(Nan::New("SimpleIterator").ToLocalChecked());
         classFunction->InstanceTemplate()->SetInternalFieldCount(1);
 
-        #define loadFunction(fn) \
-        _JOIN(FLAC__metadata_simple_iterator_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__metadata_simple_iterator_, fn, _t)>("FLAC__metadata_simple_iterator_" #fn); \
-        if(_JOIN(FLAC__metadata_simple_iterator_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
         #define setMethod(fn, jsFn) \
-        Nan::SetPrototypeMethod(classFunction, #jsFn, jsFn); \
-        loadFunction(fn)
+        Nan::SetPrototypeMethod(classFunction, #jsFn, jsFn);
 
-        loadFunction(new);
-        loadFunction(delete);
         setMethod(status, status);
         setMethod(init, init);
         setMethod(is_writable, isWritable);
@@ -491,7 +448,6 @@ namespace flac_bindings {
         setMethod(set_block, setBlock);
         setMethod(insert_block_after, insertBlockAfter);
         setMethod(delete_block, deleteBlock);
-        FLAC__Metadata_SimpleIteratorStatusString = libFlac->getSymbolAddress<const char* const*>("FLAC__Metadata_SimpleIteratorStatusString");
 
         Nan::SetPrototypeMethod(classFunction, "initAsync", initAsync);
         Nan::SetPrototypeMethod(classFunction, "nextAsync", nextAsync);

@@ -1,10 +1,8 @@
 #include <memory>
 #include <nan.h>
-#include "../utils/dl.hpp"
 
 using namespace v8;
 using namespace node;
-#define DECODER_IMPL
 #include "decoder.hpp"
 #include "../utils/pointer.hpp"
 #include "../mappings/mappings.hpp"
@@ -42,8 +40,6 @@ if(self->async != nullptr) { Nan::ThrowError("There is still an async operation 
 
 
 namespace flac_bindings {
-
-    extern Library* libFlac;
 
     FLAC_SETTER_METHOD(long, number, ogg_serial_number, setOggSerialNumber);
     FLAC_GETTER_METHOD(FLAC__bool, boolean, md5_checking, getMd5Checking);
@@ -619,16 +615,9 @@ namespace flac_bindings {
         obj->SetClassName(Nan::New("StreamDecoder").ToLocalChecked());
         obj->InstanceTemplate()->SetInternalFieldCount(1);
 
-        #define loadFunction(fn) \
-        _JOIN(FLAC__stream_decoder_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__stream_decoder_, fn, _t)>("FLAC__stream_decoder_" #fn); \
-        if(_JOIN(FLAC__stream_decoder_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
-
         #define setMethod(fn, jsFn) \
-        Nan::SetPrototypeMethod(obj, #jsFn, jsFn); \
-        loadFunction(fn)
+        Nan::SetPrototypeMethod(obj, #jsFn, jsFn);
 
-        loadFunction(new);
-        loadFunction(delete);
         setMethod(set_ogg_serial_number, setOggSerialNumber);
         setMethod(set_md5_checking, setMd5Checking);
         setMethod(set_metadata_respond, setMetadataRespond);
@@ -878,7 +867,7 @@ int decoder_write_callback(const FLAC__StreamDecoder* dec, const FLAC__Frame* fr
 
     Nan::HandleScope scope;
     Local<Array> buffers = Nan::New<Array>();
-    unsigned channels = FLAC__stream_decoder_get_channels(dec);
+    unsigned channels = flac_bindings::FLAC__stream_decoder_get_channels(const_cast<FLAC__StreamDecoder*>(dec));
     for(uint32_t i = 0; i < channels; i++)
         Nan::Set(buffers, i, WrapPointer(buffer[i], frame->header.blocksize * sizeof(int32_t)).ToLocalChecked());
 

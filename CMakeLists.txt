@@ -16,7 +16,7 @@ if(SANITIZE)
     message("-- Enabled sanitizers")
 endif()
 
-file(GLOB SOURCE_FILES "src/**/*.cpp" "src/**/*.hpp" "src/**/*.h" "src/index.cpp")
+file(GLOB_RECURSE SOURCE_FILES "src/**/*.cpp" "src/**/*.hpp" "src/**/*.h" "src/index.cpp")
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_JS_INC})

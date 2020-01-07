@@ -1,5 +1,5 @@
 #include "mappings.hpp"
-#include "../metadata/metadata.hpp"
+#include "../flac/metadata.hpp"
 
 namespace flac_bindings {
 
@@ -74,7 +74,7 @@ namespace flac_bindings {
 
         nativeProperty(info.This(), "vendorString", vendorString);
         nativeReadOnlyProperty(info.This(), "comments", comments);
-        info.This()->Set(Symbol::GetIterator(info.GetIsolate()), Nan::GetFunction(Nan::New<FunctionTemplate>(commentsIterator)).ToLocalChecked());
+        info.This()->Set(v8::Symbol::GetIterator(info.GetIsolate()), Nan::GetFunction(Nan::New<FunctionTemplate>(commentsIterator)).ToLocalChecked());
 
         info.GetReturnValue().Set(info.This());
     }

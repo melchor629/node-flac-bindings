@@ -1,131 +1,11 @@
 #include "nan.h"
-#include "../utils/dl.hpp"
+#include "../flac/format.hpp"
 
 using namespace v8;
 using namespace node;
 #include "../utils/pointer.hpp"
-#include "../format/format.h"
 #include "../utils/defs.hpp"
 #include "../mappings/mappings.hpp"
-
-namespace flac_bindings {
-    extern Library* libFlac;
-}
-
-#define _JOIN(a, b) a##b
-
-extern "C" {
-    const char *FLAC__VERSION_STRING;
-    const char *FLAC__VENDOR_STRING;
-    const char * const* FLAC__EntropyCodingMethodTypeString;
-    const char * const* FLAC__SubframeTypeString;
-    const char * const* FLAC__ChannelAssignmentString;
-    const char * const* FLAC__FrameNumberTypeString;
-    const char * const* FLAC__MetadataTypeString;
-    const char * const* FLAC__StreamMetadata_Picture_TypeString;
-
-    FLAC__bool FLAC__format_sample_rate_is_valid(unsigned sample_rate) {
-        static FLAC__bool (*func)(unsigned) = NULL;
-        if(func == NULL) {
-            func = flac_bindings::libFlac->getSymbolAddress<FLAC__bool (*)(unsigned)>("FLAC__format_sample_rate_is_valid");
-            if(func == NULL) printf("%s\n", flac_bindings::libFlac->getLastError().c_str());
-        }
-        if(func != NULL) return func(sample_rate);
-        return false;
-    }
-
-    FLAC__bool FLAC__format_blocksize_is_subset(unsigned blocksize, unsigned sample_rate) {
-        static FLAC__bool (*func)(unsigned, unsigned) = NULL;
-        if(func == NULL) {
-            func = flac_bindings::libFlac->getSymbolAddress<FLAC__bool (*)(unsigned, unsigned)>("FLAC__format_blocksize_is_subset");
-            if(func == NULL) printf("%s\n", flac_bindings::libFlac->getLastError().c_str());
-        }
-        if(func != NULL) return func(blocksize, sample_rate);
-        return false;
-    }
-
-    FLAC__bool FLAC__format_sample_rate_is_subset(unsigned sample_rate) {
-        static FLAC__bool (*func)(unsigned) = NULL;
-        if(func == NULL) {
-            func = flac_bindings::libFlac->getSymbolAddress<FLAC__bool (*)(unsigned)>("FLAC__format_sample_rate_is_subset");
-            if(func == NULL) printf("%s\n", flac_bindings::libFlac->getLastError().c_str());
-        }
-        if(func != NULL) return func(sample_rate);
-        return false;
-    }
-
-    FLAC__bool FLAC__format_vorbiscomment_entry_name_is_legal(const char *name) {
-        static FLAC__bool (*func)(const char*) = NULL;
-        if(func == NULL) {
-            func = flac_bindings::libFlac->getSymbolAddress<FLAC__bool (*)(const char*)>("FLAC__format_vorbiscomment_entry_name_is_legal");
-            if(func == NULL) printf("%s\n", flac_bindings::libFlac->getLastError().c_str());
-        }
-        if(func != NULL) return func(name);
-        return false;
-    }
-
-    FLAC__bool FLAC__format_vorbiscomment_entry_value_is_legal(const FLAC__byte *value, unsigned length) {
-        static FLAC__bool (*func)(const FLAC__byte*, unsigned) = NULL;
-        if(func == NULL) {
-            func = flac_bindings::libFlac->getSymbolAddress<FLAC__bool (*)(const FLAC__byte*, unsigned)>("FLAC__format_vorbiscomment_entry_value_is_legal");
-            if(func == NULL) printf("%s\n", flac_bindings::libFlac->getLastError().c_str());
-        }
-        if(func != NULL) return func(value, length);
-        return false;
-    }
-
-    FLAC__bool FLAC__format_vorbiscomment_entry_is_legal(const FLAC__byte *entry, unsigned length) {
-        static FLAC__bool (*func)(const FLAC__byte*, unsigned) = NULL;
-        if(func == NULL) {
-            func = flac_bindings::libFlac->getSymbolAddress<FLAC__bool (*)(const FLAC__byte*, unsigned)>("FLAC__format_vorbiscomment_entry_is_legal");
-            if(func == NULL) printf("%s\n", flac_bindings::libFlac->getLastError().c_str());
-        }
-        if(func != NULL) return func(entry, length);
-        return false;
-    }
-
-    FLAC__bool FLAC__format_seektable_is_legal(const FLAC__StreamMetadata_SeekTable *seek_table) {
-        static FLAC__bool (*func)(const FLAC__StreamMetadata_SeekTable*) = NULL;
-        if(func == NULL) {
-            func = flac_bindings::libFlac->getSymbolAddress<FLAC__bool (*)(const FLAC__StreamMetadata_SeekTable*)>("FLAC__format_seektable_is_legal");
-            if(func == NULL) printf("%s\n", flac_bindings::libFlac->getLastError().c_str());
-        }
-        if(func != NULL) return func(seek_table);
-        return false;
-    }
-
-    unsigned FLAC__format_seektable_sort(FLAC__StreamMetadata_SeekTable *seek_table) {
-        static FLAC__bool (*func)(FLAC__StreamMetadata_SeekTable*) = NULL;
-        if(func == NULL) {
-            func = flac_bindings::libFlac->getSymbolAddress<FLAC__bool (*)(FLAC__StreamMetadata_SeekTable*)>("FLAC__format_seektable_sort");
-            if(func == NULL) printf("%s\n", flac_bindings::libFlac->getLastError().c_str());
-        }
-        if(func != NULL) return func(seek_table);
-        return false;
-    }
-
-    FLAC__bool FLAC__format_cuesheet_is_legal(const FLAC__StreamMetadata_CueSheet *cue_sheet, FLAC__bool check_cd_da_subset, const char **violation) {
-        static FLAC__bool (*func)(const FLAC__StreamMetadata_CueSheet*,FLAC__bool, const char**) = NULL;
-        if(func == NULL) {
-            func = flac_bindings::libFlac->getSymbolAddress<FLAC__bool (*)(const FLAC__StreamMetadata_CueSheet*,FLAC__bool, const char**)>("FLAC__format_cuesheet_is_legal");
-            if(func == NULL) printf("%s\n", flac_bindings::libFlac->getLastError().c_str());
-        }
-        if(func != NULL) return func(cue_sheet, check_cd_da_subset, violation);
-        return false;
-    }
-
-    FLAC__bool FLAC__format_picture_is_legal(const FLAC__StreamMetadata_Picture *picture, const char **violation) {
-        static FLAC__bool (*func)(const FLAC__StreamMetadata_Picture*, const char**) = NULL;
-        if(func == NULL) {
-            func = flac_bindings::libFlac->getSymbolAddress<FLAC__bool (*)(const FLAC__StreamMetadata_Picture*, const char**)>("FLAC__format_picture_is_legal");
-            if(func == NULL) printf("%s\n", flac_bindings::libFlac->getLastError().c_str());
-        }
-        if(func != NULL) return func(picture, violation);
-        return false;
-    }
-
-}
-
 
 namespace flac_bindings {
 
@@ -344,13 +224,9 @@ namespace flac_bindings {
     NAN_MODULE_INIT(initFormat) {
         Local<Object> obj = Nan::New<Object>();
 
-        FLAC__VERSION_STRING = *libFlac->getSymbolAddress<const char**>("FLAC__VERSION_STRING");
-        if(FLAC__VERSION_STRING == nullptr) printf("%s\n", libFlac->getLastError().c_str());
-        FLAC__VENDOR_STRING = *libFlac->getSymbolAddress<const char**>("FLAC__VENDOR_STRING");
-        if(FLAC__VENDOR_STRING == nullptr) printf("%s\n", libFlac->getLastError().c_str());
-
         Nan::Set(obj, Nan::New("FLAC__VERSION_STRING").ToLocalChecked(), Nan::New<String>(FLAC__VERSION_STRING).ToLocalChecked());
         Nan::Set(obj, Nan::New("FLAC__VENDOR_STRING").ToLocalChecked(), Nan::New<String>(FLAC__VENDOR_STRING).ToLocalChecked());
+
         Nan::SetMethod(obj, "sampleRateIsValid", node_FLAC__format_sample_rate_is_valid);
         Nan::SetMethod(obj, "blocksizeIsSubset", node_FLAC__format_blocksize_is_subset);
         Nan::SetMethod(obj, "sampleRateIsSubset", node_FLAC__format_sample_rate_is_subset);

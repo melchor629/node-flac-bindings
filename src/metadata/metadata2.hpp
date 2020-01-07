@@ -1,19 +1,8 @@
 #include <nan.h>
 
+#include "../flac/metadata2.hpp"
 #include "../utils/async.hpp"
 #include "../utils/defs.hpp"
-
-extern "C" {
-    typedef void* FLAC__IOHandle;
-    typedef struct FLAC__IOCallbacks {
-        size_t(*read)(void *ptr, size_t size, size_t nmemb, FLAC__IOHandle handle);
-        size_t(*write)(const void *ptr, size_t size, size_t nmemb, FLAC__IOHandle handle);
-        int(*seek)(FLAC__IOHandle handle, int64_t offset, int whence);
-        int64_t(*tell)(FLAC__IOHandle handle);
-        int(*eof)(FLAC__IOHandle handle);
-        int(*close)(FLAC__IOHandle handle);
-    } FLAC__IOCallbacks;
-}
 
 namespace flac_bindings {
     struct FlacIOWorkRequest: SyncronizableWorkRequest {

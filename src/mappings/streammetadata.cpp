@@ -1,5 +1,5 @@
 #include "mappings.hpp"
-#include "../metadata/metadata.hpp"
+#include "../flac/metadata.hpp"
 
 namespace flac_bindings {
 

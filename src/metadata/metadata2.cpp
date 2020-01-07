@@ -1,59 +1,13 @@
 #include <nan.h>
 #include "metadata2.hpp"
-#include "../utils/dl.hpp"
+#include "../flac/format.h"
 
 using namespace v8;
 using namespace node;
 #include "../utils/pointer.hpp"
-#include "../format/format.h"
 #include "../utils/defs.hpp"
 #include "../mappings/mappings.hpp"
 #include "../utils/async.hpp"
-
-#define _JOIN(a, b) a##b
-#define _JOIN2(a,b,c) a##b##c
-
-#define metadataFunction(ret, name, ...) \
-typedef ret (*_JOIN2(FLAC__metadata_, name, _t))(__VA_ARGS__); \
-static _JOIN2(FLAC__metadata_, name, _t) _JOIN(FLAC__metadata_, name);
-
-extern "C" {
-    typedef void FLAC__Metadata_Chain;
-    typedef void FLAC__Metadata_Iterator;
-    enum FLAC__Metadata_ChainStatus {
-        FLAC__METADATA_CHAIN_STATUS_OK = 0, FLAC__METADATA_CHAIN_STATUS_ILLEGAL_INPUT, FLAC__METADATA_CHAIN_STATUS_ERROR_OPENING_FILE, FLAC__METADATA_CHAIN_STATUS_NOT_A_FLAC_FILE,
-        FLAC__METADATA_CHAIN_STATUS_NOT_WRITABLE, FLAC__METADATA_CHAIN_STATUS_BAD_METADATA, FLAC__METADATA_CHAIN_STATUS_READ_ERROR, FLAC__METADATA_CHAIN_STATUS_SEEK_ERROR,
-        FLAC__METADATA_CHAIN_STATUS_WRITE_ERROR, FLAC__METADATA_CHAIN_STATUS_RENAME_ERROR, FLAC__METADATA_CHAIN_STATUS_UNLINK_ERROR, FLAC__METADATA_CHAIN_STATUS_MEMORY_ALLOCATION_ERROR,
-        FLAC__METADATA_CHAIN_STATUS_INTERNAL_ERROR, FLAC__METADATA_CHAIN_STATUS_INVALID_CALLBACKS, FLAC__METADATA_CHAIN_STATUS_READ_WRITE_MISMATCH, FLAC__METADATA_CHAIN_STATUS_WRONG_WRITE_CALL
-    };
-
-    metadataFunction(FLAC__Metadata_Chain*, chain_new, void);
-    metadataFunction(void, chain_delete, FLAC__Metadata_Chain *chain);
-    metadataFunction(FLAC__Metadata_ChainStatus, chain_status, FLAC__Metadata_Chain *chain);
-    metadataFunction(FLAC__bool, chain_read, FLAC__Metadata_Chain *chain, const char *filename);
-    metadataFunction(FLAC__bool, chain_read_ogg, FLAC__Metadata_Chain *chain, const char *filename);
-    metadataFunction(FLAC__bool, chain_read_with_callbacks, FLAC__Metadata_Chain *chain, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks);
-    metadataFunction(FLAC__bool, chain_read_ogg_with_callbacks, FLAC__Metadata_Chain *chain, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks);
-    metadataFunction(FLAC__bool, chain_check_if_tempfile_needed, FLAC__Metadata_Chain *chain, FLAC__bool use_padding);
-    metadataFunction(FLAC__bool, chain_write, FLAC__Metadata_Chain *chain, FLAC__bool use_padding, FLAC__bool preserve_file_stats);
-    metadataFunction(FLAC__bool, chain_write_with_callbacks, FLAC__Metadata_Chain *chain, FLAC__bool use_padding, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks);
-    metadataFunction(FLAC__bool, chain_write_with_callbacks_and_tempfile, FLAC__Metadata_Chain *chain, FLAC__bool use_padding, FLAC__IOHandle handle, FLAC__IOCallbacks callbacks, FLAC__IOHandle temp_handle, FLAC__IOCallbacks temp_callbacks);
-    metadataFunction(void, chain_merge_padding, FLAC__Metadata_Chain *chain);
-    metadataFunction(void, chain_sort_padding, FLAC__Metadata_Chain *chain);
-    metadataFunction(FLAC__Metadata_Iterator*, iterator_new, void);
-    metadataFunction(void, iterator_delete, FLAC__Metadata_Iterator *iterator);
-    metadataFunction(void, iterator_init, FLAC__Metadata_Iterator *iterator, FLAC__Metadata_Chain *chain);
-    metadataFunction(FLAC__bool, iterator_next, FLAC__Metadata_Iterator *iterator);
-    metadataFunction(FLAC__bool, iterator_prev, FLAC__Metadata_Iterator *iterator);
-    metadataFunction(FLAC__MetadataType, iterator_get_block_type, const FLAC__Metadata_Iterator *iterator);
-    metadataFunction(FLAC__StreamMetadata*, iterator_get_block, FLAC__Metadata_Iterator *iterator);
-    metadataFunction(FLAC__bool, iterator_set_block, FLAC__Metadata_Iterator *iterator, FLAC__StreamMetadata *block);
-    metadataFunction(FLAC__bool, iterator_delete_block, FLAC__Metadata_Iterator *iterator, FLAC__bool replace_with_padding);
-    metadataFunction(FLAC__bool, iterator_insert_block_before, FLAC__Metadata_Iterator *iterator, FLAC__StreamMetadata *block);
-    metadataFunction(FLAC__bool, iterator_insert_block_after, FLAC__Metadata_Iterator *iterator, FLAC__StreamMetadata *block);
-
-    const char* const* FLAC__Metadata_ChainStatusString;
-}
 
 #define UNWRAP_CHAIN \
 Chain* self = Nan::ObjectWrap::Unwrap<Chain>(info.Holder()); \
@@ -64,8 +18,6 @@ Iterator* self = Nan::ObjectWrap::Unwrap<Iterator>(info.Holder()); \
 FLAC__Metadata_Iterator* m = self->m;
 
 namespace flac_bindings {
-
-    extern Library* libFlac;
 
     static std::function<bool(void*, FLAC__IOCallbacks)>
     asyncWrap(FLAC__Metadata_Chain* m, std::function<bool(FLAC__IOCallbacks, void*)> f) {
@@ -351,7 +303,7 @@ namespace flac_bindings {
                 Iterator* it = new Iterator;
                 it->m = m;
                 it->Wrap(info.This());
-                Nan::Set(info.This(), Symbol::GetIterator(info.GetIsolate()), Nan::New<Function>(jsIterator));
+                Nan::Set(info.This(), v8::Symbol::GetIterator(info.GetIsolate()), Nan::New<Function>(jsIterator));
                 info.GetReturnValue().Set(info.This());
             } else {
                 Nan::ThrowError("Cannot allocate memory");
@@ -488,32 +440,14 @@ namespace flac_bindings {
     }
 
 
-#define loadFunction(fn) \
-_JOIN(FLAC__metadata_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__metadata_, fn, _t)>("FLAC__metadata_" #fn); \
-if(_JOIN(FLAC__metadata_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
-
 #define setMethod(fn, jsFn) \
-Nan::SetPrototypeMethod(obj, #jsFn, jsFn); \
-loadFunction(fn)
-
-#define propertyGetter(func, jsName) \
-Local<ObjectTemplate> _JOIN(func, Var) = Nan::New<ObjectTemplate>(); \
-Nan::SetNamedPropertyHandler(_JOIN(func, Var), jsName, nullptr, nullptr, nullptr, jsName); \
-Nan::Set(functionClass, Nan::New(#jsName).ToLocalChecked(), Nan::NewInstance(_JOIN(func, Var)).ToLocalChecked());
-
-#define indexGetter(func, jsName) \
-_JOIN(FLAC__Metadata_, func) = libFlac->getSymbolAddress<const char* const*>("FLAC__Metadata_" #func); \
-Local<ObjectTemplate> _JOIN(func, _template) = Nan::New<ObjectTemplate>(); \
-Nan::SetIndexedPropertyHandler(_JOIN(func, _template), jsName, nullptr, nullptr, nullptr, jsName); \
-Nan::Set(functionClass, Nan::New(#jsName).ToLocalChecked(), Nan::NewInstance(_JOIN(func, _template)).ToLocalChecked());
+Nan::SetPrototypeMethod(obj, #jsFn, jsFn);
 
     NAN_MODULE_INIT(Chain::initMetadata2) {
         Local<FunctionTemplate> obj = Nan::New<FunctionTemplate>(create);
         obj->SetClassName(Nan::New("Chain").ToLocalChecked());
         obj->InstanceTemplate()->SetInternalFieldCount(1);
 
-        loadFunction(chain_new);
-        loadFunction(chain_delete);
         setMethod(chain_status, status);
         setMethod(chain_read, read);
         setMethod(chain_read_ogg, readOgg);
@@ -530,8 +464,6 @@ Nan::Set(functionClass, Nan::New(#jsName).ToLocalChecked(), Nan::NewInstance(_JO
         Nan::SetPrototypeMethod(obj, "readOggAsync", readOggAsync);
         Nan::SetPrototypeMethod(obj, "writeAsync", writeAsync);
 
-        FLAC__Metadata_ChainStatusString = libFlac->getSymbolAddress<const char**>("FLAC__Metadata_ChainStatusString");
-
         Local<Function> functionClass = Nan::GetFunction(obj).ToLocalChecked();
 
         flacEnum_declareInObject(functionClass, Status, createStatusEnum());
@@ -545,8 +477,6 @@ Nan::Set(functionClass, Nan::New(#jsName).ToLocalChecked(), Nan::NewInstance(_JO
         obj->SetClassName(Nan::New("Iterator").ToLocalChecked());
         obj->InstanceTemplate()->SetInternalFieldCount(1);
 
-        loadFunction(iterator_new);
-        loadFunction(iterator_delete);
         setMethod(iterator_init, init);
         setMethod(iterator_next, next);
         setMethod(iterator_prev, prev);

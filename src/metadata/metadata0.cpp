@@ -1,31 +1,17 @@
 #include <nan.h>
-#include "../utils/dl.hpp"
 
 using namespace v8;
 using namespace node;
 #include "../utils/pointer.hpp"
-#include "../format/format.h"
+#include "../flac/format.h"
+#include "../flac/metadata0.hpp"
 #include "../mappings/mappings.hpp"
-#include "metadata.hpp"
+#include "../flac/metadata.hpp"
 #include "../utils/async.hpp"
 
 #define _JOIN(a, b) a##b
-#define _JOIN2(a,b,c) a##b##c
-
-#define metadataFunction(ret, name, ...) \
-typedef ret (*_JOIN2(FLAC__metadata_, name, _t))(__VA_ARGS__); \
-static _JOIN2(FLAC__metadata_, name, _t) _JOIN(FLAC__metadata_, name);
-
-extern "C" {
-    metadataFunction(FLAC__bool, get_streaminfo, const char *filename, FLAC__StreamMetadata *streaminfo);
-    metadataFunction(FLAC__bool, get_tags, const char *filename, FLAC__StreamMetadata **tags);
-    metadataFunction(FLAC__bool, get_cuesheet, const char *filename, FLAC__StreamMetadata **cuesheet);
-    metadataFunction(FLAC__bool, get_picture, const char *filename, FLAC__StreamMetadata **picture, FLAC__StreamMetadata_Picture_Type type, const char *mime_type, const FLAC__byte *description, unsigned max_width, unsigned max_height, unsigned max_depth, unsigned max_colors);
-}
 
 namespace flac_bindings {
-
-    extern Library* libFlac;
 
     static NAN_METHOD(getStreaminfo) {
         if(info[0].IsEmpty() || !info[0]->IsString()) {
@@ -222,11 +208,10 @@ namespace flac_bindings {
 
     NAN_MODULE_INIT(initMetadata0) {
         Local<Object> obj = Nan::New<Object>();
+
         #define setMethod(fn, jsFunction) \
         Nan::SetMethod(obj, #jsFunction, jsFunction); \
-        Nan::SetMethod(obj, #jsFunction "Async", _JOIN(jsFunction, Async));\
-        _JOIN(FLAC__metadata_, fn) = libFlac->getSymbolAddress<_JOIN2(FLAC__metadata_, fn, _t)>("FLAC__metadata_" #fn); \
-        if(_JOIN(FLAC__metadata_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
+        Nan::SetMethod(obj, #jsFunction "Async", _JOIN(jsFunction, Async));
 
         setMethod(get_streaminfo, getStreaminfo);
         setMethod(get_tags, getTags);

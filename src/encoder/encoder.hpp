@@ -5,83 +5,10 @@
 #include <condition_variable>
 #include <nan.h>
 
+#include "../flac/format.h"
+#include "../flac/encoder.hpp"
 #include "../utils/async.hpp"
-#include "../format/format.h"
 #include "../utils/defs.hpp"
-
-
-#define _JOIN(a, b) a##b
-#define _JOIN2(a,b,c) a##b##c
-
-#ifdef ENCODER_IMPL
-#define _extern
-#else
-#define _extern extern
-#endif
-
-#define FLAC_FUNC(returnType, fn, ...) \
-    typedef returnType (*_JOIN2(FLAC__stream_encoder_, fn, _t))(__VA_ARGS__); \
-    _extern _JOIN2(FLAC__stream_encoder_, fn, _t) _JOIN(FLAC__stream_encoder_, fn);
-
-#define FLAC_GETTER(type, fn) FLAC_FUNC(type, _JOIN(get_, fn), const FLAC__StreamEncoder*);
-
-#define FLAC_SETTER(type, fn) FLAC_FUNC(FLAC__bool, _JOIN(set_, fn), FLAC__StreamEncoder*, type)
-
-#define FLAC_GETTER_SETTER(type, fn) \
-FLAC_GETTER(type, fn); \
-FLAC_SETTER(type, fn);
-
-extern "C" {
-    typedef int (*FLAC__StreamEncoderReadCallback)(const FLAC__StreamEncoder *encoder, char buffer[], size_t *bytes, void *client_data);
-    typedef int (*FLAC__StreamEncoderWriteCallback)(const FLAC__StreamEncoder *encoder, const char buffer[], size_t bytes, unsigned samples, unsigned current_frame, void *client_data);
-    typedef int (*FLAC__StreamEncoderSeekCallback)(const FLAC__StreamEncoder *encoder, uint64_t absolute_byte_offset, void *client_data);
-    typedef int (*FLAC__StreamEncoderTellCallback)(const FLAC__StreamEncoder *encoder, uint64_t *absolute_byte_offset, void *client_data);
-    typedef void(*FLAC__StreamEncoderMetadataCallback)(const FLAC__StreamEncoder *encoder, const FLAC__StreamMetadata *metadata, void *client_data);
-    typedef void(*FLAC__StreamEncoderProgressCallback)(const FLAC__StreamEncoder *encoder, uint64_t bytes_written, uint64_t samples_written, unsigned frames_written, unsigned total_frames_estimate, void *client_data);
-
-    FLAC_FUNC(FLAC__StreamEncoder*, new, void);
-    FLAC_FUNC(void, delete, FLAC__StreamEncoder*);
-    FLAC_FUNC(int, init_stream, FLAC__StreamEncoder*, FLAC__StreamEncoderWriteCallback, FLAC__StreamEncoderSeekCallback, FLAC__StreamEncoderTellCallback, FLAC__StreamEncoderMetadataCallback, void*);
-    FLAC_FUNC(int, init_ogg_stream, FLAC__StreamEncoder*, FLAC__StreamEncoderReadCallback, FLAC__StreamEncoderWriteCallback, FLAC__StreamEncoderSeekCallback, FLAC__StreamEncoderTellCallback, FLAC__StreamEncoderMetadataCallback, void*);
-    FLAC_FUNC(int, init_file, FLAC__StreamEncoder*, const char*, FLAC__StreamEncoderProgressCallback, void*);
-    FLAC_FUNC(int, init_ogg_file, FLAC__StreamEncoder*, const char*, FLAC__StreamEncoderProgressCallback, void*);
-    FLAC_FUNC(FLAC__bool, finish, FLAC__StreamEncoder*);
-    FLAC_FUNC(FLAC__bool, process, FLAC__StreamEncoder*, const int32_t* const [], unsigned);
-    FLAC_FUNC(FLAC__bool, process_interleaved, FLAC__StreamEncoder*, const int32_t [], unsigned);
-    FLAC_FUNC(FLAC__bool, set_apodization, FLAC__StreamEncoder*, const char*);
-    FLAC_FUNC(const char*, get_resolved_state_string, const FLAC__StreamEncoder*);
-    FLAC_FUNC(void, get_verify_decoder_error_stats, const FLAC__StreamEncoder*, uint64_t*, unsigned*, unsigned*, unsigned*, int32_t*, int32_t*);
-    FLAC_FUNC(FLAC__bool, set_metadata, FLAC__StreamEncoder*, FLAC__StreamMetadata**, unsigned);
-
-    FLAC_SETTER(long, ogg_serial_number);
-    FLAC_GETTER_SETTER(FLAC__bool, verify);
-    FLAC_GETTER_SETTER(FLAC__bool, streamable_subset);
-    FLAC_GETTER_SETTER(unsigned, channels);
-    FLAC_GETTER_SETTER(unsigned, bits_per_sample);
-    FLAC_GETTER_SETTER(unsigned, sample_rate);
-    FLAC_SETTER(unsigned, compression_level);
-    FLAC_GETTER_SETTER(unsigned, blocksize);
-    FLAC_GETTER_SETTER(FLAC__bool, do_mid_side_stereo);
-    FLAC_GETTER_SETTER(FLAC__bool, loose_mid_side_stereo);
-    FLAC_GETTER_SETTER(unsigned, max_lpc_order);
-    FLAC_GETTER_SETTER(unsigned, qlp_coeff_precision);
-    FLAC_GETTER_SETTER(FLAC__bool, do_qlp_coeff_prec_search);
-    FLAC_GETTER_SETTER(FLAC__bool, do_escape_coding);
-    FLAC_GETTER_SETTER(FLAC__bool, do_exhaustive_model_search);
-    FLAC_GETTER_SETTER(unsigned, min_residual_partition_order);
-    FLAC_GETTER_SETTER(unsigned, max_residual_partition_order);
-    FLAC_GETTER_SETTER(unsigned, rice_parameter_search_dist);
-    FLAC_GETTER_SETTER(uint64_t, total_samples_estimate);
-    FLAC_GETTER(int, state);
-    FLAC_GETTER(int, verify_decoder_state);
-}
-
-#undef _JOIN
-#undef _JOIN2
-#undef FLAC_FUNC
-#undef FLAC_GETTER
-#undef FLAC_SETTER
-#undef FLAC_GETTER_SETTER
 
 namespace flac_bindings {
     struct EncoderWorkRequest: SyncronizableWorkRequest {

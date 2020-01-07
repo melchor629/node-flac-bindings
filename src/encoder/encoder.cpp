@@ -1,10 +1,8 @@
 #include <memory>
 #include <nan.h>
-#include "../utils/dl.hpp"
 
 using namespace v8;
 using namespace node;
-#define ENCODER_IMPL
 #include "encoder.hpp"
 #include "../utils/pointer.hpp"
 #include "../mappings/mappings.hpp"
@@ -41,8 +39,6 @@ NAN_METHOD(StreamEncoder:: jsFn) { \
 if(self->async != nullptr) { Nan::ThrowError("There is still an async operation on this object"); return; }
 
 namespace flac_bindings {
-
-    extern Library* libFlac;
 
     FLAC_SETTER_METHOD(long, number, ogg_serial_number, setOggSerialNumber);
     FLAC_GETTER_METHOD(FLAC__bool, boolean, verify, getVerify);
@@ -519,13 +515,8 @@ namespace flac_bindings {
         obj->SetClassName(Nan::New("StreamEncoder").ToLocalChecked());
         obj->InstanceTemplate()->SetInternalFieldCount(1);
 
-        #define loadFunction(fn) \
-        _JOIN(FLAC__stream_encoder_, fn) =  libFlac->getSymbolAddress<_JOIN2(FLAC__stream_encoder_, fn, _t)>("FLAC__stream_encoder_" #fn); \
-        if(_JOIN(FLAC__stream_encoder_, fn) == nullptr) printf("%s\n", libFlac->getLastError().c_str());
-
         #define setMethod(fn, jsFn) \
-        Nan::SetPrototypeMethod(obj, #jsFn, jsFn); \
-        loadFunction(fn)
+        Nan::SetPrototypeMethod(obj, #jsFn, jsFn);
 
         setMethod(set_ogg_serial_number, setOggSerialNumber);
         setMethod(set_verify, setVerify);
@@ -576,8 +567,6 @@ namespace flac_bindings {
         setMethod(finish, finish);
         setMethod(process, process);
         setMethod(process_interleaved, processInterleaved);
-        loadFunction(new);
-        loadFunction(delete);
 
         Nan::SetPrototypeMethod(obj, "finishAsync", finishAsync);
         Nan::SetPrototypeMethod(obj, "processAsync", processAsync);
