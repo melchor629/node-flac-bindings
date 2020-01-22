@@ -4,11 +4,13 @@
 #include "../utils/defer.hpp"
 #include "../utils/encoder_decoder_utils.hpp"
 
+#define DEFER_SYNCHRONIZED(f) DEFER(runLocked([&] () { f; }));
+
 namespace flac_bindings {
 
     FunctionReference StreamEncoder::constructor;
 
-    static std::vector<int32_t*>&& getBuffersFromArray(const Napi::Value&, unsigned, unsigned);
+    static std::vector<int32_t*> getBuffersFromArray(const Napi::Value&, unsigned, unsigned);
     static int32_t* getInterleavedBufferFromArgs(const CallbackInfo&, unsigned, unsigned&);
 
     Function StreamEncoder::init(const Napi::Env& env) {
@@ -380,7 +382,7 @@ namespace flac_bindings {
         maybeFunctionIntoRef(ctx->metadataCbk, info[3]);
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::initStream");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_encoder_init_stream(
             enc,
@@ -405,7 +407,7 @@ namespace flac_bindings {
         maybeFunctionIntoRef(ctx->metadataCbk, info[4]);
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::initOggFile");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_encoder_init_ogg_stream(
             enc,
@@ -428,7 +430,7 @@ namespace flac_bindings {
         maybeFunctionIntoRef(ctx->progressCbk, info[1]);
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::initFile");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_encoder_init_file(
             enc,
@@ -448,7 +450,7 @@ namespace flac_bindings {
         maybeFunctionIntoRef(ctx->progressCbk, info[1]);
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::initOggFile");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_encoder_init_ogg_file(
             enc,
@@ -464,7 +466,7 @@ namespace flac_bindings {
         checkIsInitialized(info.Env());
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::finish");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_encoder_finish(enc);
         ctx = nullptr;
@@ -480,7 +482,7 @@ namespace flac_bindings {
         auto buffers = getBuffersFromArray(info[0], samples, channels);
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::process");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_encoder_process(enc, buffers.data(), samples);
         return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
@@ -495,7 +497,7 @@ namespace flac_bindings {
         int32_t* buffer = getInterleavedBufferFromArgs(info, channels, samples);
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::processInterleaved");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_encoder_process_interleaved(enc, buffer, samples);
         return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
@@ -503,6 +505,7 @@ namespace flac_bindings {
 
 
     Napi::Value StreamEncoder::finishAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -511,6 +514,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::processAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -523,6 +527,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::processInterleavedAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -540,6 +545,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::initStreamAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -554,6 +560,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::initOggStreamAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -569,6 +576,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::initFileAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -581,6 +589,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::initOggFileAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -846,7 +855,7 @@ namespace flac_bindings {
     }
 
 
-    static std::vector<int32_t*>&& getBuffersFromArray(const Napi::Value& value, unsigned samples, unsigned channels) {
+    static std::vector<int32_t*> getBuffersFromArray(const Napi::Value& value, unsigned samples, unsigned channels) {
         auto bufferSizeTuples = arrayFromJs<std::tuple<int32_t*, size_t>>(value, pointer::fromBuffer<int32_t>);
         if(bufferSizeTuples.size() < channels) {
             throw RangeError::New(
@@ -872,7 +881,7 @@ namespace flac_bindings {
             buffers.push_back(buffer);
         }
 
-        return std::move(buffers);
+        return buffers;
     }
 
     static int32_t* getInterleavedBufferFromArgs(const CallbackInfo& info, unsigned channels, unsigned& samples) {

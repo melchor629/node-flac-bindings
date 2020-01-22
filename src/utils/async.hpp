@@ -16,7 +16,7 @@ namespace flac_bindings {
 
     template<typename DataType>
     struct ProgressRequest {
-        std::shared_ptr<DataType> data;
+        std::shared_ptr<DataType[]> data;
         size_t count = 0;
         std::shared_ptr<volatile bool> completed;
         std::shared_ptr<std::mutex> mutex;
@@ -272,9 +272,8 @@ namespace flac_bindings {
             Napi::Env env = this->Env();
             HandleScope scope(env);
             CallbackScope callbackScope(env, asyncContext);
-            if(!exceptionValue.IsEmpty()) {
-                resolver.Reject(exceptionValue.Value());
-            } else if(returnValue && converter) {
+            assert(exceptionValue.IsEmpty());
+            if(returnValue && converter) {
                 resolver.Resolve(converter(env, returnValue.value()));
             } else {
                 resolver.Resolve(env.Undefined());
@@ -302,11 +301,11 @@ namespace flac_bindings {
                 try {
                     context->currentProgressRequest = req;
                     progress(env, *context, req->data.get(), req->count);
-                    context->currentProgressRequest = nullptr;
                 } catch(const Error& e) {
                     context->reject(e);
                 }
 
+                context->currentProgressRequest = nullptr;
                 if(!*req->deferred) {
                     req->notifyCompleted();
                 }

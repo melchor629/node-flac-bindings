@@ -109,6 +109,11 @@ namespace flac_bindings {
             }
         }
 
+        inline void runLocked(const std::function<void()>& funcBody) {
+            std::lock_guard<std::mutex> lockGuard(this->mutex);
+            funcBody();
+        }
+
         void checkIsInitialized(const Napi::Env&);
         void checkIsNotInitialized(const Napi::Env&);
         Promise enqueueWork(AsyncEncoderWorkBase*);
@@ -135,6 +140,7 @@ namespace flac_bindings {
         AsyncEncoderWorkBase::ExecutionProgress* asyncExecutionProgress = nullptr;
         std::shared_ptr<EncoderWorkContext> ctx;
         ObjectReference metadataArrayRef;
+        std::mutex mutex;
 
     public:
 
