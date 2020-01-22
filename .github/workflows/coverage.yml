@@ -1,0 +1,60 @@
+name: Coverage
+
+on:
+  push:
+    branches:
+    - master
+    - dev
+  pull_request:
+    branches:
+    - '*'
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    container:
+      image: node:10-buster
+      env:
+        CI: true
+    steps:
+      - uses: actions/checkout@v1
+      - name: Prepare
+        run: |
+          apt-get update
+          apt-get install -y cmake libflac-dev flac lcov
+      - name: Install
+        run: npm install
+      - name: Build
+        run: npm run cmake-js -- build --debug --CDCOVERAGE
+      - name: Test
+        run: |
+          export PATH="$PATH:$PWD/node_modules/.bin"
+          mkdir coverage
+          nyc mocha --recursive
+          nyc report --reporter=text-lcov > coverage/js.info
+          lcov -c --quiet --directory build/CMakeFiles/flac-bindings.dir/src --base-directory src -o coverage/cpp.info --no-external
+          cat coverage/js.info coverage/cpp.info > coverage/combined.info
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./coverage/combined.info
+
+  sanitizer:
+    runs-on: ubuntu-latest
+    container:
+      image: node:10-buster
+      env:
+        CI: true
+    steps:
+      - uses: actions/checkout@v1
+      - name: Prepare
+        run: |
+          apt-get update
+          apt-get install -y cmake libflac-dev flac
+      - name: Install
+        run: npm install
+      - name: Build
+        run: npm run cmake-js -- build --debug --CDSANITIZE
+      - name: Test
+        run: npm test

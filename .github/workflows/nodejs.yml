@@ -3,10 +3,13 @@ name: Node CI
 on: [push, pull_request]
 
 jobs:
-  build-10:
+  build:
+    strategy:
+      matrix:
+        node: [10, 12]
     runs-on: ubuntu-latest
     container:
-      image: node:10-buster
+      image: node:${{ matrix.node }}-buster
       env:
         CI: true
     steps:
@@ -23,35 +26,3 @@ jobs:
       run: npm run lint
     - name: Test
       run: npm test
-
-  build-12:
-    runs-on: ubuntu-latest
-    container:
-      image: node:12-buster
-      env:
-        CI: true
-    steps:
-    - uses: actions/checkout@v1
-    - name: Prepare
-      run: |
-        apt-get update
-        apt-get install -y cmake libflac-dev flac lcov
-    - name: Install
-      run: npm install
-    - name: Build
-      run: npm run cmake-js -- build --debug --CDCOVERAGE
-    - name: Lint
-      run: npm run lint
-    - name: Test
-      run: |
-        export PATH="$PATH:$PWD/node_modules/.bin"
-        mkdir coverage
-        nyc mocha
-        nyc report --reporter=text-lcov > coverage/js.info
-        lcov -c --quiet --directory build/CMakeFiles/flac-bindings.dir/src --base-directory src -o coverage/cpp.info --no-external
-        cat coverage/js.info coverage/cpp.info > coverage/combined.info
-    - name: Coveralls
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        path-to-lcov: ./coverage/combined.info
