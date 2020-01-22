@@ -6,6 +6,8 @@
 #include "../utils/defer.hpp"
 #include "../utils/encoder_decoder_utils.hpp"
 
+#define DEFER_SYNCHRONIZED(f) DEFER(runLocked([&] () { f; }));
+
 namespace flac_bindings {
 
     FunctionReference StreamDecoder::constructor;
@@ -166,7 +168,7 @@ namespace flac_bindings {
         maybeFunctionIntoRef(ctx->errorCbk, info[7]);
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::initStream");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_init_stream(
             dec,
@@ -199,7 +201,7 @@ namespace flac_bindings {
         maybeFunctionIntoRef(ctx->errorCbk, info[7]);
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::initOggStream");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_init_ogg_stream(
             dec,
@@ -228,7 +230,7 @@ namespace flac_bindings {
         maybeFunctionIntoRef(ctx->errorCbk, info[3]);
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::initFile");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_init_file(
             dec,
@@ -253,7 +255,7 @@ namespace flac_bindings {
         maybeFunctionIntoRef(ctx->errorCbk, info[3]);
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::initOggFile");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_init_ogg_file(
             dec,
@@ -272,7 +274,7 @@ namespace flac_bindings {
         checkIsInitialized(info.Env());
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::finish");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_finish(dec);
         ctx = nullptr;
@@ -284,7 +286,7 @@ namespace flac_bindings {
         checkIsInitialized(info.Env());
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::flush");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_flush(dec);
         return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
@@ -295,7 +297,7 @@ namespace flac_bindings {
         checkIsInitialized(info.Env());
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::reset");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_reset(dec);
         ctx = nullptr;
@@ -307,7 +309,7 @@ namespace flac_bindings {
         checkIsInitialized(info.Env());
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::processSingle");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_process_single(dec);
         return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
@@ -318,7 +320,7 @@ namespace flac_bindings {
         checkIsInitialized(info.Env());
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::processUntilEndOfMetadata");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_process_until_end_of_metadata(dec);
         return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
@@ -329,7 +331,7 @@ namespace flac_bindings {
         checkIsInitialized(info.Env());
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::processUntilEndOfStream");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_process_until_end_of_stream(dec);
         return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
@@ -340,7 +342,7 @@ namespace flac_bindings {
         checkIsInitialized(info.Env());
 
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::skipSingleFrame");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_skip_single_frame(dec);
         return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
@@ -352,7 +354,7 @@ namespace flac_bindings {
 
         auto offset = numberFromJs<uint64_t>(info[0]);
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::seekAbsolute");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_seek_absolute(dec, offset);
         return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
@@ -412,7 +414,7 @@ namespace flac_bindings {
 
         uint64_t pos;
         asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamDecoder::seekAbsolute");
-        DEFER({ delete asyncContext; asyncContext = nullptr; });
+        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_decoder_get_decode_position(dec, &pos);
         if(ret && !info.Env().IsExceptionPending()) {
@@ -423,6 +425,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::finishAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -431,6 +434,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::flushAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -439,6 +443,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::processSingleAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -447,6 +452,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::processUntilEndOfMetadataAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -455,6 +461,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::processUntilEndOfStreamAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -463,6 +470,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::skipSingleFrameAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -471,6 +479,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::seekAbsoluteAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -480,6 +489,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::initStreamAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -498,6 +508,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::initOggStreamAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -516,6 +527,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::initFileAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -530,6 +542,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamDecoder::initOggFileAsync(const CallbackInfo& info) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 

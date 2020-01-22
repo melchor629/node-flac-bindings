@@ -36,8 +36,10 @@ namespace flac_bindings {
         return [ctx, func] (ExecutionProgress& c) {
             ctx->enc->asyncExecutionProgress = &c;
 
-            DEFER(ctx->enc->asyncContext = nullptr);
-            DEFER(ctx->enc->asyncExecutionProgress = nullptr);
+            DEFER(ctx->enc->runLocked([&] () {
+                ctx->enc->asyncContext = nullptr;
+                ctx->enc->asyncExecutionProgress = nullptr;
+            }));
 
             int ok = func();
             if(!c.isCompleted()) {

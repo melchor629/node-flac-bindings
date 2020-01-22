@@ -91,11 +91,6 @@ namespace flac_bindings {
             fillExports(env, exports);
         }
 
-        /*napi_add_env_cleanup_hook(env, [] (auto) {
-            printf("Deleting stuff\n");
-            delete libFlac;
-        }, nullptr);*/
-
         return exports;
     }
 
