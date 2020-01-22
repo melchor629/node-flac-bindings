@@ -29,7 +29,7 @@ Almost every function/method expects his parameters in his right type. If it not
 
 Callbacks don't follow exactly the signature that shows in Encoder and Decoder sections, they don't need some of the parameters as in JS there are other ways to get the encoder/decoder instance and some context. The init functions don't receive any private data.
 
-You need node 8 or higher. Recommended to have 10.x series with `BigInt` support to have the number represented the right way (without truncation - `Number` can only store 53 bit integers! 🤨).
+You need node 10 or higher. Recommended use of `BigInt` when possible to have numbers be represented without truncation (`Number` can only store 53 bit integers! 🤨).
 
 ## How to install
 ```
