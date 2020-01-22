@@ -293,6 +293,7 @@ namespace flac_bindings {
         }
 
         virtual void OnProgress(const ProgressRequest<P>* req, size_t size) override {
+            (void) size; //In RELEASE this variable is not used :)
             assert(size == 1);
             if(progress) {
                 Napi::Env env = this->Env();
