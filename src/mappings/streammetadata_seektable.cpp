@@ -1,239 +1,152 @@
 #include "mappings.hpp"
+#include "native_iterator.hpp"
 #include "../flac/metadata.hpp"
 
 namespace flac_bindings {
 
-    using namespace node;
+    using namespace Napi;
 
-    V8_GETTER(SeekTableMetadata::points) {
-        unwrap(SeekTableMetadata);
-        Local<Array> arr = Nan::New<Array>();
-        for(uint32_t i = 0; i < self->metadata->data.seek_table.num_points; i++) {
-            Nan::Set(arr, i, structToJs(&self->metadata->data.seek_table.points[i]));
-        }
-        info.GetReturnValue().Set(arr);
-    }
+    FunctionReference SeekTableMetadata::constructor;
 
-    NAN_METHOD(SeekTableMetadata::pointsIterator) {
-        Local<Object> obj = Nan::New<Object>();
-        Nan::Set(obj, Nan::New("it").ToLocalChecked(), info.This());
-        Nan::Set(obj, Nan::New("pos").ToLocalChecked(), Nan::New<Number>(0));
-        Nan::SetMethod(obj, "next", [] (Nan::NAN_METHOD_ARGS_TYPE info) -> void {
-            MaybeLocal<Value> parent = Nan::Get(info.This(), Nan::New("it").ToLocalChecked());
-            if(parent.IsEmpty() || !parent.ToLocalChecked()->IsObject()) {
-                Nan::ThrowTypeError("Unexpected this type for iterator");
-                return;
-            }
+    Function SeekTableMetadata::init(const Napi::Env& env) {
+        EscapableHandleScope scope(env);
 
-            Local<String> posKey = Nan::New("pos").ToLocalChecked();
-            SeekTableMetadata* self = Nan::ObjectWrap::Unwrap<SeekTableMetadata>(parent.ToLocalChecked().As<Object>());
-            Local<Value> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked();
-            uint32_t pos = numberFromJs<uint32_t>(jsPos).FromJust();
-            Local<Object> ret = Nan::New<Object>();
-            if(pos >= self->metadata->data.seek_table.num_points) {
-                Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
-            } else {
-                FLAC__StreamMetadata_SeekPoint point = self->metadata->data.seek_table.points[pos];
-                Nan::Set(ret, Nan::New("value").ToLocalChecked(), structToJs(&point));
-                Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::False());
-            }
-            Nan::Set(info.This(), posKey, Nan::New<Number>(pos + 1));
-            info.GetReturnValue().Set(ret);
+        Function constructor = DefineClass(env, "SeekTableMetadata", {
+            InstanceAccessor(
+                "count",
+                &SeekTableMetadata::getCount,
+                nullptr,
+                napi_property_attributes::napi_enumerable
+            ),
+            InstanceMethod(Napi::Symbol::WellKnown(env, "iterator"), &SeekTableMetadata::iterator),
+            InstanceMethod("resizePoints", &SeekTableMetadata::resizePoints),
+            InstanceMethod("setPoint", &SeekTableMetadata::setPoint),
+            InstanceMethod("insertPoint", &SeekTableMetadata::insertPoint),
+            InstanceMethod("deletePoint", &SeekTableMetadata::deletePoint),
+            InstanceMethod("isLegal", &SeekTableMetadata::isLegal),
+            InstanceMethod("templateAppendPlaceholders", &SeekTableMetadata::templateAppendPlaceholders),
+            InstanceMethod("templateAppendPoint", &SeekTableMetadata::templateAppendPoint),
+            InstanceMethod("templateAppendPoints", &SeekTableMetadata::templateAppendPoints),
+            InstanceMethod("templateAppendSpacedPoints", &SeekTableMetadata::templateAppendSpacedPoints),
+            InstanceMethod("templateAppendSpacedPointsBySamples", &SeekTableMetadata::templateAppendSpacedPointsBySamples),
+            InstanceMethod("templateSort", &SeekTableMetadata::templateSort),
         });
 
-        info.GetReturnValue().Set(obj);
+        SeekTableMetadata::constructor = Persistent(constructor);
+        SeekTableMetadata::constructor.SuppressDestruct();
+
+        return scope.Escape(constructor).As<Function>();
     }
 
-    NAN_METHOD(SeekTableMetadata::create) {
-        SeekTableMetadata* self = new SeekTableMetadata;
-        self->Wrap(info.This());
+    SeekTableMetadata::SeekTableMetadata(const CallbackInfo& info):
+        ObjectWrap<SeekTableMetadata>(info),
+        Metadata(info, FLAC__METADATA_TYPE_SEEKTABLE) {}
 
-        if(info.Length() > 0 && Buffer::HasInstance(info[0])) {
-            Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
-            if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
-        } else {
-            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_SEEKTABLE) };
-            if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
-        }
-
-        nativeReadOnlyProperty(info.This(), "points", points);
-        info.This()->Set(v8::Symbol::GetIterator(info.GetIsolate()), Nan::GetFunction(Nan::New<FunctionTemplate>(pointsIterator)).ToLocalChecked());
-
-        info.GetReturnValue().Set(info.This());
+    Napi::Value SeekTableMetadata::getCount(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.seek_table.num_points);
     }
 
-    NAN_METHOD(SeekTableMetadata::resizePoints) {
-        unwrap(SeekTableMetadata);
-        auto maybeNum = numberFromJs<unsigned>(info[0]);
-        if(maybeNum.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-        } else {
-            unsigned num = maybeNum.FromJust();
-            bool ret = FLAC__metadata_object_seektable_resize_points(self->metadata, num);
-            info.GetReturnValue().Set(Nan::New<Boolean>(ret));
-        }
-    }
+    Napi::Value SeekTableMetadata::iterator(const CallbackInfo& info) {
+        return NativeIterator::newIterator(info.Env(), [this] (auto env, auto pos) -> NativeIterator::IterationReturnValue {
+            EscapableHandleScope scope(env);
 
-    NAN_METHOD(SeekTableMetadata::setPoint) {
-        unwrap(SeekTableMetadata);
-        auto maybeNum = numberFromJs<unsigned>(info[0]);
-        if(maybeNum.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-        } else if(info[1].IsEmpty() || !info[1]->IsObject()) {
-            Nan::ThrowTypeError("Expected second argument to be a SeekTableMetadata");
-        } else {
-            unsigned pointNum = maybeNum.FromJust();
-            assertThrowing(self->metadata->data.seek_table.num_points > pointNum, "Point position is invalid");
-            SeekPoint* seekPoint = Nan::ObjectWrap::Unwrap<SeekPoint>(Nan::To<Object>(info[1]).ToLocalChecked());
-            FLAC__metadata_object_seektable_set_point(self->metadata, pointNum, seekPoint->point);
-        }
-    }
-
-    NAN_METHOD(SeekTableMetadata::insertPoint) {
-        unwrap(SeekTableMetadata);
-        auto maybeNum = numberFromJs<unsigned>(info[0]);
-        if(maybeNum.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-        } else if(info[1].IsEmpty() || !info[1]->IsObject()) {
-            Nan::ThrowTypeError("Expected second argument to be a SeekTableMetadata");
-        } else {
-            unsigned pointNum = maybeNum.FromJust();
-            assertThrowing(self->metadata->data.seek_table.num_points >= pointNum, "Point position is invalid");
-            SeekPoint* seekPoint = Nan::ObjectWrap::Unwrap<SeekPoint>(Nan::To<Object>(info[1]).ToLocalChecked());
-            bool r = FLAC__metadata_object_seektable_insert_point(self->metadata, pointNum, seekPoint->point);
-            info.GetReturnValue().Set(Nan::New<Boolean>(r));
-        }
-    }
-
-    NAN_METHOD(SeekTableMetadata::deletePoint) {
-        unwrap(SeekTableMetadata);
-        auto maybeNum = numberFromJs<unsigned>(info[0]);
-        if(maybeNum.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-        } else {
-            unsigned pointNum = maybeNum.FromJust();
-            assertThrowing(self->metadata->data.seek_table.num_points > pointNum, "Point position is invalid");
-            bool res = FLAC__metadata_object_seektable_delete_point(self->metadata, pointNum);
-            info.GetReturnValue().Set(Nan::New<Boolean>(res));
-        }
-    }
-
-    NAN_METHOD(SeekTableMetadata::isLegal) {
-        unwrap(SeekTableMetadata);
-        bool res = FLAC__metadata_object_seektable_is_legal(self->metadata);
-        info.GetReturnValue().Set(Nan::New<Boolean>(res));
-    }
-
-    NAN_METHOD(SeekTableMetadata::templateAppendPlaceholders) {
-        unwrap(SeekTableMetadata);
-        auto maybeNum = numberFromJs<unsigned>(info[0]);
-        if(maybeNum.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-        } else {
-            unsigned num = maybeNum.FromJust();
-            bool res = FLAC__metadata_object_seektable_template_append_placeholders(self->metadata, num);
-            info.GetReturnValue().Set(Nan::New<Boolean>(res));
-        }
-    }
-
-    NAN_METHOD(SeekTableMetadata::templateAppendPoint) {
-        unwrap(SeekTableMetadata);
-        Nan::Maybe<uint64_t> maybeNum = numberFromJs<uint64_t>(info[0]);
-        if(info[0].IsEmpty() || maybeNum.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number or BigInt");
-        } else {
-            uint64_t num = maybeNum.FromJust();
-            bool res = FLAC__metadata_object_seektable_template_append_point(self->metadata, num);
-            info.GetReturnValue().Set(Nan::New<Boolean>(res));
-        }
-    }
-
-    NAN_METHOD(SeekTableMetadata::templateAppendPoints) {
-        unwrap(SeekTableMetadata);
-        if(info[0].IsEmpty() || !info[0]->IsArray()) {
-            Nan::ThrowTypeError("Expected first argument to be an Array");
-        } else {
-            Local<Array> points = info[0].As<Array>();
-            uint64_t* nums = new uint64_t[points->Length()];
-            for(size_t i = 0; i < points->Length(); i++) {
-                Nan::Maybe<uint64_t> maybeNum = numberFromJs<uint64_t>(Nan::Get(points, i));
-                if(maybeNum.IsNothing()) {
-                    std::string errorStr = "Element at position " + std::to_string(i) + " is not a number or BigInt";
-                    Nan::ThrowTypeError(errorStr.c_str());
-                    return;
-                }
-                nums[i] = maybeNum.FromJust();
+            if(pos >= data->data.seek_table.num_points) {
+                return {};
+            } else {
+                auto value = SeekPoint::toJs(env, data->data.seek_table.points + pos);
+                return {scope.Escape(value)};
             }
-            bool res = FLAC__metadata_object_seektable_template_append_points(self->metadata, nums, points->Length());
-            info.GetReturnValue().Set(Nan::New<Boolean>(res));
-            delete[] nums;
+        });
+    }
+
+    Napi::Value SeekTableMetadata::resizePoints(const CallbackInfo& info) {
+        auto size = numberFromJs<uint32_t>(info[0]);
+        FLAC__bool ret = FLAC__metadata_object_seektable_resize_points(data, size);
+        return booleanToJs(info.Env(), ret);
+    }
+
+    void SeekTableMetadata::setPoint(const CallbackInfo& info) {
+        auto pos = numberFromJs<uint32_t>(info[0]);
+        auto point = SeekPoint::fromJs(info[1]);
+        if(data->data.seek_table.num_points <= pos) {
+            throw RangeError::New(info.Env(), "Point position is invalid");
         }
+
+        FLAC__metadata_object_seektable_set_point(data, pos, *point);
     }
 
-    NAN_METHOD(SeekTableMetadata::templateAppendSpacedPoints) {
-        unwrap(SeekTableMetadata);
-        Nan::Maybe<unsigned> maybeNum = numberFromJs<unsigned>(info[0]);
-        Nan::Maybe<uint64_t> maybeSamples = numberFromJs<uint64_t>(info[1]);
-        if(info[0].IsEmpty() || maybeNum.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-        } else if(info[1].IsEmpty() || maybeSamples.IsNothing()) {
-            Nan::ThrowTypeError("Expected second argument to be number or BigInt");
-        } else {
-            unsigned num = maybeNum.FromJust();
-            uint64_t samples = maybeSamples.FromJust();
-            assertThrowing(samples > 0, "Total samples is 0");
-            bool res = FLAC__metadata_object_seektable_template_append_spaced_points(self->metadata, num, samples);
-            info.GetReturnValue().Set(Nan::New<Boolean>(res));
+    Napi::Value SeekTableMetadata::insertPoint(const CallbackInfo& info) {
+        auto pos = numberFromJs<uint32_t>(info[0]);
+        auto point = SeekPoint::fromJs(info[1]);
+        if(data->data.seek_table.num_points < pos) {
+            throw RangeError::New(info.Env(), "Point position is invalid");
         }
+
+        FLAC__bool ret = FLAC__metadata_object_seektable_insert_point(data, pos, *point);
+        return booleanToJs(info.Env(), ret);
     }
 
-    NAN_METHOD(SeekTableMetadata::templateAppendSpacedPointsBySamples) {
-        unwrap(SeekTableMetadata);
-        Nan::Maybe<unsigned> maybeNum = numberFromJs<unsigned>(info[0]);
-        Nan::Maybe<uint64_t> maybeSamples = numberFromJs<uint64_t>(info[1]);
-        if(info[0].IsEmpty() || maybeNum.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-        } else if(info[1].IsEmpty() || maybeSamples.IsNothing()) {
-            Nan::ThrowTypeError("Expected second argument to be number or BigInt");
-        } else {
-            unsigned samples = maybeNum.FromJust();
-            uint64_t totalSamples = maybeSamples.FromJust();
-            assertThrowing(samples > 0, "samples is 0");
-            assertThrowing(totalSamples > 0, "totalSamples is 0");
-            bool res = FLAC__metadata_object_seektable_template_append_spaced_points_by_samples(self->metadata, samples, totalSamples);
-            info.GetReturnValue().Set(Nan::New<Boolean>(res));
+    Napi::Value SeekTableMetadata::deletePoint(const CallbackInfo& info) {
+        auto pos = numberFromJs<uint32_t>(info[0]);
+        if(data->data.seek_table.num_points <= pos) {
+            throw RangeError::New(info.Env(), "Point position is invalid");
         }
+
+        FLAC__bool ret = FLAC__metadata_object_seektable_delete_point(data, pos);
+        return booleanToJs(info.Env(), ret);
     }
 
-    NAN_METHOD(SeekTableMetadata::templateSort) {
-        unwrap(SeekTableMetadata);
-        bool compact = Nan::To<bool>(info[0]).FromMaybe(false);
-        bool res = FLAC__metadata_object_seektable_template_sort(self->metadata, compact);
-        info.GetReturnValue().Set(Nan::New<Boolean>(res));
+    Napi::Value SeekTableMetadata::isLegal(const CallbackInfo& info) {
+        return booleanToJs(info.Env(), FLAC__metadata_object_seektable_is_legal(data));
     }
 
-    Nan::Persistent<Function> SeekTableMetadata::jsFunction;
-    NAN_MODULE_INIT(SeekTableMetadata::init) {
-        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
-        tpl->SetClassName(Nan::New("SeekTableMetadata").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1);
-        tpl->Inherit(Metadata::getProto());
+    Napi::Value SeekTableMetadata::templateAppendPlaceholders(const CallbackInfo& info) {
+        auto num = numberFromJs<uint32_t>(info[0]);
+        FLAC__bool res = FLAC__metadata_object_seektable_template_append_placeholders(data, num);
+        return booleanToJs(info.Env(), res);
+    }
 
-        Nan::SetPrototypeMethod(tpl, "resizePoints", resizePoints);
-        Nan::SetPrototypeMethod(tpl, "setPoint", setPoint);
-        Nan::SetPrototypeMethod(tpl, "insertPoint", insertPoint);
-        Nan::SetPrototypeMethod(tpl, "deletePoint", deletePoint);
-        Nan::SetPrototypeMethod(tpl, "isLegal", isLegal);
-        Nan::SetPrototypeMethod(tpl, "templateAppendPlaceholders", templateAppendPlaceholders);
-        Nan::SetPrototypeMethod(tpl, "templateAppendPoint", templateAppendPoint);
-        Nan::SetPrototypeMethod(tpl, "templateAppendPoints", templateAppendPoints);
-        Nan::SetPrototypeMethod(tpl, "templateAppendSpacedPoints", templateAppendSpacedPoints);
-        Nan::SetPrototypeMethod(tpl, "templateAppendSpacedPointsBySamples", templateAppendSpacedPointsBySamples);
-        Nan::SetPrototypeMethod(tpl, "templateSort", templateSort);
+    Napi::Value SeekTableMetadata::templateAppendPoint(const CallbackInfo& info) {
+        auto sampleNumber = numberFromJs<uint64_t>(info[0]);
+        FLAC__bool res = FLAC__metadata_object_seektable_template_append_point(data, sampleNumber);
+        return booleanToJs(info.Env(), res);
+    }
 
-        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
-        jsFunction.Reset(metadata);
-        Nan::Set(target, Nan::New("SeekTableMetadata").ToLocalChecked(), metadata);
+    Napi::Value SeekTableMetadata::templateAppendPoints(const CallbackInfo& info) {
+        auto samples = arrayFromJs<uint64_t>(info[0], numberFromJs<uint64_t>);
+        FLAC__bool res = FLAC__metadata_object_seektable_template_append_points(data, samples.data(), samples.size());
+        return booleanToJs(info.Env(), res);
+    }
+
+    Napi::Value SeekTableMetadata::templateAppendSpacedPoints(const CallbackInfo& info) {
+        auto num = numberFromJs<uint32_t>(info[0]);
+        auto totalSamples = numberFromJs<uint64_t>(info[1]);
+        if(totalSamples == 0) {
+            throw RangeError::New(info.Env(), "Total samples is 0");
+        }
+
+        FLAC__bool res = FLAC__metadata_object_seektable_template_append_spaced_points(data, num, totalSamples);
+        return booleanToJs(info.Env(), res);
+    }
+
+    Napi::Value SeekTableMetadata::templateAppendSpacedPointsBySamples(const CallbackInfo& info) {
+        auto samples = numberFromJs<uint32_t>(info[0]);
+        auto totalSamples = numberFromJs<uint64_t>(info[1]);
+        if(samples == 0) {
+            throw RangeError::New(info.Env(), "Samples is 0");
+        }
+        if(totalSamples == 0) {
+            throw RangeError::New(info.Env(), "Total samples is 0");
+        }
+
+        FLAC__bool res = FLAC__metadata_object_seektable_template_append_spaced_points_by_samples(data, samples, totalSamples);
+        return booleanToJs(info.Env(), res);
+    }
+
+    Napi::Value SeekTableMetadata::templateSort(const CallbackInfo& info) {
+        auto compact = maybeBooleanFromJs<bool>(info[0]).value_or(false);
+        FLAC__bool res = FLAC__metadata_object_seektable_template_sort(data, compact);
+        return booleanToJs(info.Env(), res);
     }
 
 }

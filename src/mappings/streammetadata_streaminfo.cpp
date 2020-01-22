@@ -2,157 +2,167 @@
 
 namespace flac_bindings {
 
-    using namespace node;
+    using namespace Napi;
 
-    V8_GETTER(StreamInfoMetadata::minBlocksize) {
-        unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.min_blocksize));
+    FunctionReference StreamInfoMetadata::constructor;
+
+    Function StreamInfoMetadata::init(const Napi::Env& env) {
+        EscapableHandleScope scope(env);
+
+        auto attributes = napi_property_attributes::napi_enumerable;
+        Function constructor = DefineClass(env, "StreamInfoMetadata", {
+            InstanceAccessor(
+                "minBlocksize",
+                &StreamInfoMetadata::getMinBlocksize,
+                &StreamInfoMetadata::setMinBlocksize,
+                attributes
+            ),
+            InstanceAccessor(
+                "maxBlocksize",
+                &StreamInfoMetadata::getMaxBlocksize,
+                &StreamInfoMetadata::setMaxBlocksize,
+                attributes
+            ),
+            InstanceAccessor(
+                "minFramesize",
+                &StreamInfoMetadata::getMinFramesize,
+                &StreamInfoMetadata::setMinFramesize,
+                attributes
+            ),
+            InstanceAccessor(
+                "maxFramesize",
+                &StreamInfoMetadata::getMaxFramesize,
+                &StreamInfoMetadata::setMaxFramesize,
+                attributes
+            ),
+            InstanceAccessor(
+                "channels",
+                &StreamInfoMetadata::getChannels,
+                &StreamInfoMetadata::setChannels,
+                attributes
+            ),
+            InstanceAccessor(
+                "bitsPerSample",
+                &StreamInfoMetadata::getBitsPerSample,
+                &StreamInfoMetadata::setBitsPerSample,
+                attributes
+            ),
+            InstanceAccessor(
+                "sampleRate",
+                &StreamInfoMetadata::getSampleRate,
+                &StreamInfoMetadata::setSampleRate,
+                attributes
+            ),
+            InstanceAccessor(
+                "totalSamples",
+                &StreamInfoMetadata::getTotalSamples,
+                &StreamInfoMetadata::setTotalSamples,
+                attributes
+            ),
+            InstanceAccessor(
+                "md5sum",
+                &StreamInfoMetadata::getMd5sum,
+                &StreamInfoMetadata::setMd5sum,
+                attributes
+            ),
+        });
+
+        StreamInfoMetadata::constructor = Persistent(constructor);
+        StreamInfoMetadata::constructor.SuppressDestruct();
+
+        return scope.Escape(constructor).As<Function>();
     }
 
-    V8_SETTER(StreamInfoMetadata::minBlocksize) {
-        unwrap(StreamInfoMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.stream_info.min_blocksize = newValue;
+    StreamInfoMetadata::StreamInfoMetadata(const CallbackInfo& info):
+        ObjectWrap<StreamInfoMetadata>(info),
+        Metadata(info, FLAC__METADATA_TYPE_STREAMINFO) {}
+
+    Napi::Value StreamInfoMetadata::getMinBlocksize(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.stream_info.min_blocksize);
+    }
+
+    void StreamInfoMetadata::setMinBlocksize(const CallbackInfo&, const Napi::Value& value) {
+        auto newValue = numberFromJs<uint32_t>(value);
+        data->data.stream_info.min_blocksize = newValue;
+    }
+
+    Napi::Value StreamInfoMetadata::getMaxBlocksize(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.stream_info.max_blocksize);
+    }
+
+    void StreamInfoMetadata::setMaxBlocksize(const CallbackInfo&, const Napi::Value& value) {
+        auto newValue = numberFromJs<uint32_t>(value);
+        data->data.stream_info.max_blocksize = newValue;
+    }
+
+    Napi::Value StreamInfoMetadata::getMinFramesize(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.stream_info.min_framesize);
+    }
+
+    void StreamInfoMetadata::setMinFramesize(const CallbackInfo&, const Napi::Value& value) {
+        auto newValue = numberFromJs<uint32_t>(value);
+        data->data.stream_info.min_framesize = newValue;
+    }
+
+    Napi::Value StreamInfoMetadata::getMaxFramesize(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.stream_info.max_framesize);
+    }
+
+    void StreamInfoMetadata::setMaxFramesize(const CallbackInfo&, const Napi::Value& value) {
+        auto newValue = numberFromJs<uint32_t>(value);
+        data->data.stream_info.max_framesize = newValue;
+    }
+
+    Napi::Value StreamInfoMetadata::getChannels(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.stream_info.channels);
+    }
+
+    void StreamInfoMetadata::setChannels(const CallbackInfo&, const Napi::Value& value) {
+        auto newValue = numberFromJs<uint32_t>(value);
+        data->data.stream_info.channels = newValue;
+    }
+
+    Napi::Value StreamInfoMetadata::getBitsPerSample(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.stream_info.bits_per_sample);
+    }
+
+    void StreamInfoMetadata::setBitsPerSample(const CallbackInfo&, const Napi::Value& value) {
+        auto newValue = numberFromJs<uint32_t>(value);
+        data->data.stream_info.bits_per_sample = newValue;
+    }
+
+    Napi::Value StreamInfoMetadata::getSampleRate(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.stream_info.sample_rate);
+    }
+
+    void StreamInfoMetadata::setSampleRate(const CallbackInfo&, const Napi::Value& value) {
+        auto newValue = numberFromJs<uint32_t>(value);
+        data->data.stream_info.sample_rate = newValue;
+    }
+
+    Napi::Value StreamInfoMetadata::getTotalSamples(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.stream_info.total_samples);
+    }
+
+    void StreamInfoMetadata::setTotalSamples(const CallbackInfo&, const Napi::Value& value) {
+        auto newValue = numberFromJs<uint64_t>(value);
+        data->data.stream_info.total_samples = newValue;
+    }
+
+    Napi::Value StreamInfoMetadata::getMd5sum(const CallbackInfo& info) {
+        return pointer::wrap(info.Env(), data->data.stream_info.md5sum, 16);
+    }
+
+    void StreamInfoMetadata::setMd5sum(const CallbackInfo& info, const Napi::Value& value) {
+        FLAC__byte* ptr;
+        size_t length;
+        std::tie(ptr, length) = pointer::fromBuffer<FLAC__byte>(value);
+
+        if(length < 16) {
+            throw RangeError::New(info.Env(), "Data length is less than 16 bytes");
         }
-    }
 
-    V8_GETTER(StreamInfoMetadata::maxBlocksize) {
-        unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.max_blocksize));
-    }
-
-    V8_SETTER(StreamInfoMetadata::maxBlocksize) {
-        unwrap(StreamInfoMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.stream_info.max_blocksize = newValue;
-        }
-    }
-
-    V8_GETTER(StreamInfoMetadata::minFramesize) {
-        unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.min_framesize));
-    }
-
-    V8_SETTER(StreamInfoMetadata::minFramesize) {
-        unwrap(StreamInfoMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.stream_info.min_framesize = newValue;
-        }
-    }
-
-    V8_GETTER(StreamInfoMetadata::maxFramesize) {
-        unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.max_framesize));
-    }
-
-    V8_SETTER(StreamInfoMetadata::maxFramesize) {
-        unwrap(StreamInfoMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.stream_info.max_framesize = newValue;
-        }
-    }
-
-    V8_GETTER(StreamInfoMetadata::channels) {
-        unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.channels));
-    }
-
-    V8_SETTER(StreamInfoMetadata::channels) {
-        unwrap(StreamInfoMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.stream_info.channels = newValue;
-        }
-    }
-
-    V8_GETTER(StreamInfoMetadata::bitsPerSample) {
-        unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.bits_per_sample));
-    }
-
-    V8_SETTER(StreamInfoMetadata::bitsPerSample) {
-        unwrap(StreamInfoMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.stream_info.bits_per_sample = newValue;
-        }
-    }
-
-    V8_GETTER(StreamInfoMetadata::sampleRate) {
-        unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.sample_rate));
-    }
-
-    V8_SETTER(StreamInfoMetadata::sampleRate) {
-        unwrap(StreamInfoMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.stream_info.sample_rate = newValue;
-        }
-    }
-
-    V8_GETTER(StreamInfoMetadata::totalSamples) {
-        unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(numberToJs(self->metadata->data.stream_info.total_samples));
-    }
-
-    V8_SETTER(StreamInfoMetadata::totalSamples) {
-        unwrap(StreamInfoMetadata);
-        checkValueIsNumber(uint64_t) {
-            self->metadata->data.stream_info.total_samples = newValue;
-        }
-    }
-
-    V8_GETTER(StreamInfoMetadata::md5sum) {
-        unwrap(StreamInfoMetadata);
-        info.GetReturnValue().Set(WrapPointer(self->metadata->data.stream_info.md5sum, 16).ToLocalChecked());
-    }
-
-    V8_SETTER(StreamInfoMetadata::md5sum) {
-        unwrap(StreamInfoMetadata);
-        checkValueIsBuffer() {
-            FLAC__byte* data = (FLAC__byte*) Buffer::Data(value);
-            size_t dataLength = Buffer::Length(value);
-            if(dataLength >= 16) {
-                memcpy(self->metadata->data.stream_info.md5sum, data, 16);
-            } else {
-                Nan::ThrowError("Buffer must be of 16 bytes length");
-            }
-        }
-    }
-
-    NAN_METHOD(StreamInfoMetadata::create) {
-        StreamInfoMetadata* self = new StreamInfoMetadata;
-        self->Wrap(info.This());
-
-        if(info.Length() > 0 && Buffer::HasInstance(info[0])) {
-            Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
-            if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
-        } else {
-            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_STREAMINFO) };
-            if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
-        }
-
-        nativeProperty(info.This(), "minBlocksize", minBlocksize);
-        nativeProperty(info.This(), "maxBlocksize", maxBlocksize);
-        nativeProperty(info.This(), "minFramesize", minFramesize);
-        nativeProperty(info.This(), "maxFramesize", maxFramesize);
-        nativeProperty(info.This(), "channels", channels);
-        nativeProperty(info.This(), "bitsPerSample", bitsPerSample);
-        nativeProperty(info.This(), "sampleRate", sampleRate);
-        nativeProperty(info.This(), "totalSamples", totalSamples);
-        nativeProperty(info.This(), "md5sum", md5sum);
-
-        info.GetReturnValue().Set(info.This());
-    }
-
-    Nan::Persistent<Function> StreamInfoMetadata::jsFunction;
-    NAN_MODULE_INIT(StreamInfoMetadata::init) {
-        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
-        tpl->SetClassName(Nan::New("StreamInfoMetadata").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1);
-        tpl->Inherit(Metadata::getProto());
-
-        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
-        jsFunction.Reset(metadata);
-        Nan::Set(target, Nan::New("StreamInfoMetadata").ToLocalChecked(), metadata);
+        memcpy(data->data.stream_info.md5sum, ptr, 16 * sizeof(FLAC__byte));
     }
 
 }

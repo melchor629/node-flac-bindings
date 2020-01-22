@@ -1,170 +1,177 @@
 #include "mappings.hpp"
+#include "native_iterator.hpp"
 #include "../flac/metadata.hpp"
 
 namespace flac_bindings {
 
-    using namespace node;
+    using namespace Napi;
 
-    V8_GETTER(CueSheetTrack::offset) {
-        unwrap(CueSheetTrack);
-        info.GetReturnValue().Set(numberToJs(self->track->offset));
-    }
+    template<>
+    Value Mapping<FLAC__StreamMetadata_CueSheet_Track>::toJs(const Env&, FLAC__StreamMetadata_CueSheet_Track*, bool);
 
-    V8_SETTER(CueSheetTrack::offset) {
-        unwrap(CueSheetTrack);
-        checkValueIsNumber(uint64_t) {
-            self->track->offset = newValue;
-        }
-    }
+    FunctionReference CueSheetTrack::constructor;
 
-    V8_GETTER(CueSheetTrack::number) {
-        unwrap(CueSheetTrack);
-        info.GetReturnValue().Set(numberToJs(self->track->number));
-    }
+    Function CueSheetTrack::init(const Napi::Env& env) {
+        EscapableHandleScope scope(env);
 
-    V8_SETTER(CueSheetTrack::number) {
-        unwrap(CueSheetTrack);
-        checkValueIsNumber(uint32_t) {
-            self->track->number = newValue & 0xFF;
-        }
-    }
-
-    V8_GETTER(CueSheetTrack::isrc) {
-        unwrap(CueSheetTrack);
-        info.GetReturnValue().Set(Nan::New(self->track->isrc).ToLocalChecked());
-    }
-
-    V8_SETTER(CueSheetTrack::isrc) {
-        unwrap(CueSheetTrack);
-        checkValue(String) {
-            Nan::Utf8String isrc(_newValue.ToLocalChecked());
-            if(isrc.length() == 12) {
-                strcpy(self->track->isrc, *isrc);
-            } else {
-                Nan::ThrowError(Nan::Error("ISRC string must be 12 bytes length"));
-            }
-        }
-    }
-
-    V8_GETTER(CueSheetTrack::type) {
-        unwrap(CueSheetTrack);
-        info.GetReturnValue().Set(numberToJs(self->track->type));
-    }
-
-    V8_SETTER(CueSheetTrack::type) {
-        unwrap(CueSheetTrack);
-        checkValueIsNumber(uint32_t) {
-            self->track->type = newValue & 1;
-        }
-    }
-
-    V8_GETTER(CueSheetTrack::preEmphasis) {
-        unwrap(CueSheetTrack);
-        info.GetReturnValue().Set(Nan::New<Boolean>(self->track->pre_emphasis));
-    }
-
-    V8_SETTER(CueSheetTrack::preEmphasis) {
-        unwrap(CueSheetTrack);
-        checkValue(Boolean) {
-            self->track->pre_emphasis = getValue(bool);
-        }
-    }
-
-    V8_GETTER(CueSheetTrack::indices) {
-        unwrap(CueSheetTrack);
-        Local<Array> array = Nan::New<Array>();
-        for(int i = 0; i < self->track->num_indices; i++) {
-            Nan::Set(array, i, structToJs(&self->track->indices[i]));
-        }
-        info.GetReturnValue().Set(array);
-    }
-
-    NAN_METHOD(CueSheetTrack::indicesIterator) {
-        Local<Object> obj = Nan::New<Object>();
-        Nan::Set(obj, Nan::New("it").ToLocalChecked(), info.This());
-        Nan::Set(obj, Nan::New("pos").ToLocalChecked(), Nan::New<Number>(0));
-        Nan::SetMethod(obj, "next", [] (Nan::NAN_METHOD_ARGS_TYPE info) -> void {
-            MaybeLocal<Value> parent = Nan::Get(info.This(), Nan::New("it").ToLocalChecked());
-            if(parent.IsEmpty() || !parent.ToLocalChecked()->IsObject()) {
-                Nan::ThrowTypeError("Unexpected this type for iterator");
-                return;
-            }
-
-            Local<String> posKey = Nan::New("pos").ToLocalChecked();
-            CueSheetTrack* self = Nan::ObjectWrap::Unwrap<CueSheetTrack>(parent.ToLocalChecked().As<Object>());
-            Local<Value> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked();
-            uint32_t pos = numberFromJs<uint32_t>(jsPos).FromJust();
-            Local<Object> ret = Nan::New<Object>();
-            if(pos >= self->track->num_indices) {
-                Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
-            } else {
-                FLAC__StreamMetadata_CueSheet_Index* index = &self->track->indices[pos];
-                Nan::Set(ret, Nan::New("value").ToLocalChecked(), structToJs(index));
-                Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::False());
-            }
-            Nan::Set(info.This(), posKey, Nan::New<Number>(pos + 1));
-            info.GetReturnValue().Set(ret);
+        napi_property_attributes attributes = napi_property_attributes::napi_enumerable;
+        Function constructor = DefineClass(env, "CueSheetTrack", {
+            InstanceAccessor(
+                "offset",
+                &CueSheetTrack::getOffset,
+                &CueSheetTrack::setOffset,
+                attributes
+            ),
+            InstanceAccessor(
+                "number",
+                &CueSheetTrack::getNumber,
+                &CueSheetTrack::setNumber,
+                attributes
+            ),
+            InstanceAccessor(
+                "isrc",
+                &CueSheetTrack::getIsrc,
+                &CueSheetTrack::setIsrc,
+                attributes
+            ),
+            InstanceAccessor(
+                "type",
+                &CueSheetTrack::getType,
+                &CueSheetTrack::setType,
+                attributes
+            ),
+            InstanceAccessor(
+                "preEmphasis",
+                &CueSheetTrack::getPreEmphasis,
+                &CueSheetTrack::setPreEmphasis,
+                attributes
+            ),
+            InstanceAccessor(
+                "count",
+                &CueSheetTrack::getCount,
+                nullptr,
+                attributes
+            ),
+            InstanceMethod(Napi::Symbol::WellKnown(env, "iterator"), &CueSheetTrack::iterator),
+            InstanceMethod("clone", &CueSheetTrack::clone),
         });
 
-        info.GetReturnValue().Set(obj);
+        CueSheetTrack::constructor = Persistent(constructor);
+        CueSheetTrack::constructor.SuppressDestruct();
+
+        return scope.Escape(constructor).As<Function>();
     }
 
-    NAN_METHOD(CueSheetTrack::clone) {
-        unwrap(CueSheetTrack);
-        FLAC__StreamMetadata_CueSheet_Track* newTrack = FLAC__metadata_object_cuesheet_track_clone(self->track);
-        Local<Value> args[] = { WrapPointer(newTrack).ToLocalChecked(), Nan::True() };
-        auto metadata = Nan::NewInstance(CueSheetTrack::getFunction(), 2, args);
-        info.GetReturnValue().Set(metadata.ToLocalChecked());
-    }
-
-    NAN_METHOD(CueSheetTrack::create) {
-        if(throwIfNotConstructorCall(info)) return;
-        CueSheetTrack* cueSheetTrack = new CueSheetTrack;
-        cueSheetTrack->Wrap(info.This());
-
-        if(!info[0].IsEmpty() && info[0]->IsObject() && Buffer::HasInstance(info[0].As<Object>())) {
-            cueSheetTrack->track = UnwrapPointer<FLAC__StreamMetadata_CueSheet_Track>(info[0]);
-            cueSheetTrack->hintToDelete = Nan::To<bool>(info[1]).FromMaybe(false);
-        } else {
-            cueSheetTrack->track = FLAC__metadata_object_cuesheet_track_new();
-            cueSheetTrack->hintToDelete = true;
+    CueSheetTrack::CueSheetTrack(const CallbackInfo& info):
+        ObjectWrap<CueSheetTrack>(info),
+        Mapping<FLAC__StreamMetadata_CueSheet_Track>(info) {
+        if(data == nullptr) {
+            data = FLAC__metadata_object_cuesheet_track_new();
+            shouldBeDeleted = true;
         }
-
-        nativeProperty(info.This(), "offset", offset);
-        nativeProperty(info.This(), "number", number);
-        nativeProperty(info.This(), "isrc", isrc);
-        nativeProperty(info.This(), "type", type);
-        nativeProperty(info.This(), "preEmphasis", preEmphasis);
-        nativeReadOnlyProperty(info.This(), "indices", indices);
-        info.This()->Set(v8::Symbol::GetIterator(info.GetIsolate()), Nan::GetFunction(Nan::New<FunctionTemplate>(indicesIterator)).ToLocalChecked());
-
-        info.GetReturnValue().Set(info.This());
-    }
-
-    Nan::Persistent<Function> CueSheetTrack::jsFunction;
-    NAN_MODULE_INIT(CueSheetTrack::init) {
-        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
-        tpl->SetClassName(Nan::New("CueSheetTrack").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1);
-
-        Nan::SetPrototypeMethod(tpl, "clone", clone);
-
-        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
-        jsFunction.Reset(metadata);
-        Nan::Set(target, Nan::New("CueSheetTrack").ToLocalChecked(), metadata);
     }
 
     CueSheetTrack::~CueSheetTrack() {
-        if(hintToDelete && track != nullptr) {
-            FLAC__metadata_object_cuesheet_track_delete(track);
+        if(shouldBeDeleted) {
+            FLAC__metadata_object_cuesheet_track_delete(data);
         }
     }
 
+    Napi::Value CueSheetTrack::getOffset(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->offset);
+    }
+
+    void CueSheetTrack::setOffset(const CallbackInfo&, const Napi::Value& value) {
+        auto offset = numberFromJs<uint64_t>(value);
+        data->offset = offset;
+    }
+
+    Napi::Value CueSheetTrack::getNumber(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->number);
+    }
+
+    void CueSheetTrack::setNumber(const CallbackInfo&, const Napi::Value& value) {
+        auto number = numberFromJs<FLAC__byte>(value);
+        data->number = number;
+    }
+
+    Napi::Value CueSheetTrack::getIsrc(const CallbackInfo& info) {
+        return String::New(info.Env(), data->isrc);
+    }
+
+    void CueSheetTrack::setIsrc(const CallbackInfo& info, const Napi::Value& value) {
+        auto string = stringFromJs(value);
+        if(string.length() != 12) {
+            throw RangeError::New(info.Env(), "Expected string to be 12 bytes length");
+        }
+
+        strcpy(data->isrc, string.c_str());
+    }
+
+    Napi::Value CueSheetTrack::getType(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->type);
+    }
+
+    void CueSheetTrack::setType(const CallbackInfo&, const Napi::Value& value) {
+        auto type = numberFromJs<uint8_t>(value);
+        data->type = type & 0x1;
+    }
+
+    Napi::Value CueSheetTrack::getPreEmphasis(const CallbackInfo& info) {
+        return booleanToJs(info.Env(), data->pre_emphasis);
+    }
+
+    void CueSheetTrack::setPreEmphasis(const CallbackInfo&, const Napi::Value& value) {
+        auto preEmphasis = booleanFromJs<FLAC__bool>(value);
+        data->pre_emphasis = preEmphasis;
+    }
+
+    Napi::Value CueSheetTrack::getCount(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->num_indices);
+    }
+
+    Napi::Value CueSheetTrack::iterator(const CallbackInfo& info) {
+        return NativeIterator::newIterator(info.Env(), [this] (auto env, auto pos) -> NativeIterator::IterationReturnValue {
+            EscapableHandleScope scope(env);
+
+            if(pos >= data->num_indices) {
+                return {};
+            } else {
+                auto object = CueSheetIndex::toJs(env, data->indices + pos);
+                return{scope.Escape(object)};
+            }
+        });
+    }
+
+    Napi::Value CueSheetTrack::clone(const CallbackInfo& info) {
+        auto newTrack = FLAC__metadata_object_cuesheet_track_clone(data);
+        return CueSheetTrack::toJs(info.Env(), newTrack, true);
+    }
+
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_CueSheet_Track* track, bool deleteHint) {
-        Local<Value> args[] = { WrapPointer(track).ToLocalChecked(), deleteHint ? Nan::True() : Nan::False() };
-        auto metadata = Nan::NewInstance(CueSheetTrack::getFunction(), 2, args);
-        return metadata.ToLocalChecked();
+    Mapping<FLAC__StreamMetadata_CueSheet_Track>& Mapping<FLAC__StreamMetadata_CueSheet_Track>::fromJs(const Value& value) {
+        if(!value.IsObject()) {
+            throw Napi::TypeError::New(value.Env(), "Expected "s + value.ToString().Utf8Value() + " to be object"s);
+        }
+
+        auto object = value.As<Object>();
+        if(!object.InstanceOf(CueSheetTrack::getConstructor())) {
+            throw Napi::TypeError::New(value.Env(), "Object is not an instance of CueSheetTrack");
+        }
+
+        return *CueSheetTrack::Unwrap(value.As<Object>());
+    }
+
+    template<>
+    Value Mapping<FLAC__StreamMetadata_CueSheet_Track>::toJs(
+        const Env& env,
+        FLAC__StreamMetadata_CueSheet_Track* track,
+        bool deleteHint
+    ) {
+        EscapableHandleScope scope(env);
+        Function constructor = CueSheetTrack::getConstructor();
+        auto object = constructor.New({pointer::wrap(env, track), booleanToJs(env, deleteHint)});
+        return scope.Escape(object);
     }
 
 }

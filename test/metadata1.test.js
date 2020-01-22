@@ -4,7 +4,7 @@ const { SimpleIterator, metadata, format } = require('../lib/index').api;
 const { assert, use } = require('chai');
 const { promises: fs, ...oldfs } = require('fs');
 const path = require('path');
-const temp = require('temp');
+const temp = require('temp').track();
 
 temp.track();
 use(require('./helper/async-chai-extensions.js'));
@@ -53,7 +53,7 @@ describe('SimpleIterator', function() {
             const filePath = pathForFile('el.flac');
             const it = new SimpleIterator();
 
-            await assert.throwsAsync(() => it.initAsync(filePath));
+            assert.isFalse(await it.initAsync(filePath));
 
             await assert.throwsAsync(() => fs.access(filePath));
         });
@@ -431,7 +431,7 @@ describe('SimpleIterator', function() {
 
             it.initAsync(tmpFile.path);
 
-            await assert.throwsAsync(() => it.setBlockAsync(new metadata.ApplicationMetadata()));
+            assert.isFalse(await  it.setBlockAsync(new metadata.ApplicationMetadata()));
         });
 
         it('replace any block should effectively replace it', async function() {
@@ -476,7 +476,7 @@ describe('SimpleIterator', function() {
 
             await it.initAsync(tmpFile.path);
 
-            await assert.throwsAsync(() => it.deleteBlockAsync());
+            assert.isFalse(await it.deleteBlockAsync());
         });
 
         it('delete any other block should effectively delete it', async function() {

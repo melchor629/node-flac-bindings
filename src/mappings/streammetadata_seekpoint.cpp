@@ -1,88 +1,116 @@
 #include "mappings.hpp"
+#include "../utils/pointer.hpp"
 
 namespace flac_bindings {
 
-    using namespace node;
+    using namespace Napi;
 
-    V8_GETTER(SeekPoint::sampleNumber) {
-        unwrap(SeekPoint);
-        info.GetReturnValue().Set(numberToJs(self->point.sample_number));
+    FunctionReference SeekPoint::constructor;
+
+    Function SeekPoint::init(const Napi::Env& env) {
+        EscapableHandleScope scope(env);
+
+        auto attributes = napi_property_attributes::napi_enumerable;
+        Function constructor = DefineClass(env, "SeekPoint", {
+            InstanceAccessor(
+                "sampleNumber",
+                &SeekPoint::getSampleNumber,
+                &SeekPoint::setSampleNumber,
+                attributes
+            ),
+            InstanceAccessor(
+                "streamOffset",
+                &SeekPoint::getStreamOffset,
+                &SeekPoint::setStreamOffset,
+                attributes
+            ),
+            InstanceAccessor(
+                "frameSamples",
+                &SeekPoint::getFrameSamples,
+                &SeekPoint::setFrameSamples,
+                attributes
+            ),
+        });
+
+        SeekPoint::constructor = Persistent(constructor);
+        SeekPoint::constructor.SuppressDestruct();
+
+        return scope.Escape(constructor).As<Function>();
     }
 
-    V8_SETTER(SeekPoint::sampleNumber) {
-        unwrap(SeekPoint);
-        checkValueIsNumber(uint64_t) {
-            self->point.sample_number = newValue;
+    SeekPoint::SeekPoint(const CallbackInfo& info):
+        ObjectWrap<SeekPoint>(info),
+        Mapping<FLAC__StreamMetadata_SeekPoint>(info) {
+        if(data == nullptr) {
+            data = new FLAC__StreamMetadata_SeekPoint;
+            shouldBeDeleted = true;
+            memset(data, 0, sizeof(*data));
+        }
+
+        if(info.Length() > 0 && !info[0].IsExternal()) {
+            data->sample_number = numberFromJs<uint64_t>(info[0]);
+            if(info.Length() > 1) {
+                data->stream_offset = numberFromJs<uint64_t>(info[1]);
+            }
+            if(info.Length() > 2) {
+                data->frame_samples = numberFromJs<uint32_t>(info[2]);
+            }
         }
     }
 
-    V8_GETTER(SeekPoint::streamOffset) {
-        unwrap(SeekPoint);
-        info.GetReturnValue().Set(numberToJs(self->point.stream_offset));
-    }
-
-    V8_SETTER(SeekPoint::streamOffset) {
-        unwrap(SeekPoint);
-        checkValueIsNumber(uint64_t) {
-            self->point.stream_offset = newValue;
+    SeekPoint::~SeekPoint() {
+        if(shouldBeDeleted) {
+            delete data;
         }
     }
 
-    V8_GETTER(SeekPoint::frameSamples) {
-        unwrap(SeekPoint);
-        info.GetReturnValue().Set(numberToJs(self->point.frame_samples));
+    Napi::Value SeekPoint::getSampleNumber(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->sample_number);
     }
 
-    V8_SETTER(SeekPoint::frameSamples) {
-        unwrap(SeekPoint);
-        checkValueIsNumber(uint32_t) {
-            self->point.frame_samples = newValue;
-        }
+    void SeekPoint::setSampleNumber(const CallbackInfo&, const Napi::Value& value) {
+        auto sampleNumber = numberFromJs<uint64_t>(value);
+        data->sample_number = sampleNumber;
     }
 
-    NAN_METHOD(SeekPoint::create) {
-        if(throwIfNotConstructorCall(info)) return;
-        SeekPoint* seekPoint = new SeekPoint;
-        seekPoint->Wrap(info.This());
-
-        if(!info[0].IsEmpty() && info[0]->IsObject() && Buffer::HasInstance(info[0].As<Object>())) {
-            memcpy(
-                &seekPoint->point,
-                UnwrapPointer<FLAC__StreamMetadata_SeekPoint>(info[0]),
-                sizeof(FLAC__StreamMetadata_SeekPoint)
-            );
-        } else if(!info[0].IsEmpty()) {
-            auto maybeSampleNumber = numberFromJs<uint64_t>(info[0]);
-            auto maybeStreamoffset = numberFromJs<uint64_t>(info[1]);
-            auto maybeframeSamples = numberFromJs<uint32_t>(info[2]);
-            seekPoint->point.sample_number = maybeSampleNumber.FromMaybe(0ul);
-            seekPoint->point.stream_offset = maybeStreamoffset.FromMaybe(0ul);
-            seekPoint->point.frame_samples = maybeframeSamples.FromMaybe(0u);
-        }
-
-        nativeProperty(info.This(), "sampleNumber", sampleNumber);
-        nativeProperty(info.This(), "streamOffset", streamOffset);
-        nativeProperty(info.This(), "frameSamples", frameSamples);
-
-        info.GetReturnValue().Set(info.This());
+    Napi::Value SeekPoint::getStreamOffset(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->stream_offset);
     }
 
-    Nan::Persistent<Function> SeekPoint::jsFunction;
-    NAN_MODULE_INIT(SeekPoint::init) {
-        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
-        tpl->SetClassName(Nan::New("SeekPoint").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1);
+    void SeekPoint::setStreamOffset(const CallbackInfo&, const Napi::Value& value) {
+        auto sampleOffset = numberFromJs<uint64_t>(value);
+        data->stream_offset = sampleOffset;
+    }
 
-        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
-        jsFunction.Reset(metadata);
-        Nan::Set(target, Nan::New("SeekPoint").ToLocalChecked(), metadata);
+    Napi::Value SeekPoint::getFrameSamples(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->frame_samples);
+    }
+
+    void SeekPoint::setFrameSamples(const CallbackInfo&, const Napi::Value& value) {
+        auto frameSamples = numberFromJs<uint32_t>(value);
+        data->frame_samples = frameSamples;
     }
 
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_SeekPoint* point, bool deleteHint) {
-        Local<Value> args[] = { WrapPointer(point).ToLocalChecked() };
-        auto metadata = Nan::NewInstance(SeekPoint::getFunction(), 1, args);
-        return metadata.ToLocalChecked();
+    Mapping<FLAC__StreamMetadata_SeekPoint>& Mapping<FLAC__StreamMetadata_SeekPoint>::fromJs(const Value& value) {
+        if(!value.IsObject()) {
+            throw Napi::TypeError::New(value.Env(), "Expected "s + value.ToString().Utf8Value() + " to be object"s);
+        }
+
+        auto object = value.As<Object>();
+        if(!object.InstanceOf(SeekPoint::getConstructor())) {
+            throw Napi::TypeError::New(value.Env(), "Object is not an instance of SeekPoint");
+        }
+
+        return *SeekPoint::Unwrap(value.As<Object>());
+    }
+
+    template<>
+    Value Mapping<FLAC__StreamMetadata_SeekPoint>::toJs(const Env& env, FLAC__StreamMetadata_SeekPoint* point, bool deleteHint) {
+        EscapableHandleScope scope(env);
+        Function constructor = SeekPoint::getConstructor();
+        auto object = constructor.New({pointer::wrap(env, point), booleanToJs(env, deleteHint)});
+        return scope.Escape(object);
     }
 
 }

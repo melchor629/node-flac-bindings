@@ -4,281 +4,312 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
-#include <nan.h>
+#include <optional>
+#include <napi.h>
 
-#include "./pointer.hpp"
+#include "pointer.hpp"
+#include "js_utils.hpp"
 
 namespace flac_bindings {
 
-    template<typename T, typename P = char>
-    class AsyncBackgroundTask: public Nan::AsyncProgressQueueWorker<P> {
-    public:
-        typedef typename Nan::AsyncProgressQueueWorker<P>::ExecutionProgress ExecutionProgress;
+    using namespace Napi;
 
-        class ExecutionContext {
+    template<typename DataType>
+    struct ProgressRequest {
+        std::shared_ptr<DataType> data;
+        size_t count = 0;
+        std::shared_ptr<volatile bool> completed;
+        std::shared_ptr<std::mutex> mutex;
+        std::shared_ptr<std::condition_variable> cond;
+        std::shared_ptr<volatile bool> deferred;
+
+        inline ProgressRequest() {}
+
+        inline ProgressRequest(const DataType* data, size_t count): count(count) {
+            this->data.reset(new DataType[count]);
+            std::copy(data, data + count, this->data.get());
+            completed = std::make_shared<volatile bool>(false);
+            mutex = std::make_shared<std::mutex>();
+            cond = std::make_shared<std::condition_variable>();
+            deferred = std::make_shared<volatile bool>(false);
+        }
+
+        inline void notifyCompleted() const {
+            std::lock_guard<std::mutex> lg(*mutex);
+            *completed = true;
+            cond->notify_one();
+        }
+
+        inline void wait() const {
+            std::unique_lock<std::mutex> ul(*mutex);
+            cond->wait(ul, [this] () { return *completed; });
+        }
+    };
+
+    template<typename T, typename P = char>
+    class AsyncBackgroundTask: public AsyncProgressWorker<ProgressRequest<P>> {
+    public:
+        typedef typename AsyncProgressWorker<ProgressRequest<P>>::ExecutionProgress NapiExecutionProgress;
+
+        class ExecutionProgress {
             AsyncBackgroundTask<T, P>* self;
-            const ExecutionProgress &progress;
+            const NapiExecutionProgress& progress;
+            volatile bool completed = false;
+            const ProgressRequest<P>* currentProgressRequest = nullptr;
 
             friend class AsyncBackgroundTask<T, P>;
 
-            typedef typename std::function<void(const P*, Nan::NAN_METHOD_ARGS_TYPE)> PromiseCallback;
-            typedef typename std::function<void(ExecutionContext &, const P*, Nan::NAN_METHOD_ARGS_TYPE)> FullPromiseCallback;
+            typedef typename std::function<void(const CallbackInfo&, const P*)> PromiseCallback;
+            typedef typename std::function<void(ExecutionProgress &, const CallbackInfo&, const P*)> FullPromiseCallback;
             struct PromiseContext {
                 PromiseCallback resolve, reject;
-                P* data;
+                ProgressRequest<P>* req = nullptr;
                 AsyncBackgroundTask<T, P>* self;
 
-                ~PromiseContext() { delete data; }
+                ~PromiseContext() {
+                    delete req;
+                }
             };
 
-            ExecutionContext(
-                AsyncBackgroundTask<T, P>* s,
-                const ExecutionProgress &progress
-            ): self(s), progress(progress) {}
+            ExecutionProgress(
+                AsyncBackgroundTask<T, P>* self,
+                const NapiExecutionProgress& progress
+            ): self(self), progress(progress) {}
 
-            static NAN_METHOD(promiseThen) {
-                auto* p = UnwrapPointer<PromiseContext>(info.Data());
-                //Workaround https://github.com/nodejs/node/issues/5691 - This allows to handle promises without any warnings from node
-                node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), Nan::New<v8::Object>(), p->self->asyncContext);
+            static Value promiseThen(const CallbackInfo& info) {
+                auto* p = (PromiseContext*) info.Data();
+                CallbackScope scope(info.Env(), p->self->asyncContext);
                 if(p->resolve) {
-                    p->resolve(p->data, info);
+                    try {
+                        p->resolve(info, p->req->data.get());
+                    } catch(const Error& error) {
+                        p->self->context->reject(error.Value());
+                    }
                 }
+
+                p->req->notifyCompleted();
                 delete p;
+                return info.Env().Undefined();
             }
 
-            static NAN_METHOD(promiseCatch) {
-                auto* p = UnwrapPointer<PromiseContext>(info.Data());
-                //Workaround https://github.com/nodejs/node/issues/5691 - This allows to handle promises without any warnings from node
-                node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), Nan::New<v8::Object>(), p->self->asyncContext);
+            static Value promiseCatch(const CallbackInfo& info) {
+                auto* p = (PromiseContext*) info.Data();
+                CallbackScope scope(info.Env(), p->self->asyncContext);
                 if(p->reject) {
-                    p->reject(p->data, info);
+                    try {
+                        p->reject(info, p->req->data.get());
+                    } catch(const Error& error) {
+                        p->self->context->reject(error.Value());
+                    }
+                } else if(info[0].IsObject()) {
+                    p->self->context->reject(info[0].template As<Object>());
                 } else {
-                    p->self->executionContext->reject(info[0]);
+                    p->self->context->reject(Error::New(info.Env(), info[0].ToString()));
                 }
+
+                p->req->notifyCompleted();
                 delete p;
+                return info.Env().Undefined();
             }
 
         public:
-            void resolve(const T &returnValue) {
-                if(!self->completed) {
-                    self->returnValue = Nan::Just(returnValue);
-                    self->completed = true;
+            void resolve(const T& returnValue) noexcept {
+                if(!completed) {
+                    self->returnValue = returnValue;
+                    completed = true;
                 }
             }
 
-            void reject(const std::string &message) {
-                if(!self->completed) {
-                    self->SetErrorMessage(message.c_str());
-                    self->completed = true;
+            void reject(const std::string& message) noexcept {
+                if(!completed) {
+                    self->SetError(message);
+                    completed = true;
                 }
             }
 
-            void reject(v8::Local<v8::Value> exception) {
-                assert(v8::Isolate::GetCurrent() != nullptr);
-                if(!self->completed) {
-                    self->exceptionValue.Reset(exception);
-                    self->SetErrorMessage("<mock>");
-                    self->completed = true;
+            void reject(const Object& errorValue) {
+                if(!completed) {
+                    self->SetError("<mock>");
+                    self->exceptionValue.Reset(errorValue, 1);
+                    completed = true;
+                }
+            }
+
+            void reject(const Error& error) {
+                if(!completed) {
+                    HandleScope scope(error.Env());
+                    self->SetError("<mock>");
+                    self->exceptionValue.Reset(error.Value(), 1);
+                    completed = true;
                 }
             }
 
             void sendProgress(const P* data, size_t count = 1) {
-                if(!self->completed) {
-                    progress.Send(data, count);
+                if(!completed) {
+                    ProgressRequest<P> req(data, count);
+                    progress.Send(&req, 1);
                 }
             }
 
-            inline void sendProgress(const P &data) {
+            inline void sendProgress(const P& data) {
                 sendProgress(&data);
             }
 
-            void defer(v8::Local<v8::Promise> promise, const P* data, FullPromiseCallback resolve = nullptr, FullPromiseCallback reject = nullptr) {
+            void sendProgressAndWait(const P* data, size_t count = 1) {
+                if(!completed) {
+                    ProgressRequest<P> req(data, count);
+                    progress.Send(&req, 1);
+                    req.wait();
+                }
+            }
+
+            inline void sendProgressAndWait(const P& data) {
+                sendProgressAndWait(&data);
+            }
+
+            void defer(
+                Promise promise,
+                FullPromiseCallback resolve = nullptr,
+                FullPromiseCallback reject = nullptr
+            ) {
                 using namespace std::placeholders;
-                Nan::HandleScope scope;
+                Napi::Env env = self->Env();
+                HandleScope scope(env);
+                CallbackScope callbackScope(env, self->asyncContext);
+
                 auto context = new PromiseContext {
                     resolve ? std::bind(resolve, *this, _1, _2) : PromiseCallback(nullptr),
                     reject ? std::bind(reject, *this, _1, _2) : PromiseCallback(nullptr),
-                    data != nullptr ? new P(*data) : nullptr,
+                    new ProgressRequest<P>(*currentProgressRequest),
                     self
                 };
-                auto contextBuffer = WrapPointer(context).ToLocalChecked();
-                auto thenFunction = Nan::New<v8::Function>(promiseThen, contextBuffer);
-                auto catchFunction = Nan::New<v8::Function>(promiseCatch, contextBuffer);
-                promise->Then(Nan::GetCurrentContext(), thenFunction)
-                    .ToLocalChecked()
-                    ->Catch(Nan::GetCurrentContext(), catchFunction)
-                    .IsEmpty();
+                auto thenFunction = Function::New(env, promiseThen, "asyncBackgroundTask_executionProgress_then", context);
+                auto catchFunction = Function::New(env, promiseCatch, "asyncBackgroundTask_executionProgress_catch", context);
+
+                handleAsync(
+                    promise,
+                    thenFunction,
+                    catchFunction
+                );
+
+                *currentProgressRequest->deferred = true;
             }
 
-            inline AsyncBackgroundTask<T, P>* getTask() {
+            inline AsyncBackgroundTask<T, P>* getTask() const {
                 return self;
             }
 
             inline bool isCompleted() {
-                return self->completed;
+                return completed;
             }
         };
 
-        typedef typename std::function<void (ExecutionContext &, const P *data, size_t size)> ProgressCallback;
-        typedef std::function<void (ExecutionContext &)> FunctionCallback;
-        typedef std::function<v8::Local<v8::Value> (T value)> ToV8ConverterFunction;
-
-        ExecutionContext* executionContext = nullptr;
-
-        inline v8::Local<v8::Promise::Resolver> getResolver() const {
-            return this->GetFromPersistent("promiseResolver").template As<v8::Promise::Resolver>();
-        }
+        typedef typename std::function<void(Napi::Env&, ExecutionProgress&, const P*, size_t)> ProgressCallback;
+        typedef std::function<void(ExecutionProgress&)> FunctionCallback;
+        typedef std::function<Value(Napi::Env, T)> ValueMapFunction;
 
     protected:
+        ExecutionProgress* context = nullptr;
+        Promise::Deferred resolver;
         FunctionCallback function;
         ProgressCallback progress;
-        ToV8ConverterFunction convertFunction;
-        Nan::Maybe<T> returnValue = Nan::Nothing<T>();
-        Nan::Persistent<v8::Value> exceptionValue;
-        node::async_context asyncContext;
+        ValueMapFunction converter;
+        std::optional<T> returnValue = std::nullopt;
+        Reference<Object> exceptionValue;
+        AsyncContext asyncContext;
+
+        static Value _doNothing(const CallbackInfo& i) { return i.Env().Undefined(); }
 
     public:
-        explicit AsyncBackgroundTask(
+        AsyncBackgroundTask(
+            const Napi::Env& env,
             FunctionCallback function,
             ProgressCallback progress,
             const char* name,
-            ToV8ConverterFunction convertFunction
-        ): Nan::AsyncProgressQueueWorker<P>(((Nan::Callback*) 0x1), name), function(function), progress(progress), convertFunction(convertFunction) {
-            auto resolver = v8::Promise::Resolver::New(Nan::GetCurrentContext()).ToLocalChecked();
-            asyncContext = node::EmitAsyncInit(v8::Isolate::GetCurrent(), resolver, name);
-            this->SaveToPersistent("promiseResolver", resolver);
-        }
+            ValueMapFunction converter
+        ): AsyncProgressWorker<ProgressRequest<P>>(Function::New(env, _doNothing, "_doNothing"), name),
+            resolver(Promise::Deferred::New(env)),
+            function(function),
+            progress(progress),
+            converter(converter),
+            asyncContext(env, name)
+        {}
 
         ~AsyncBackgroundTask() {
-            if(!this->exceptionValue.IsEmpty()) {
-                this->exceptionValue.Reset();
+            if(!exceptionValue.IsEmpty()) {
+                exceptionValue.Reset();
             }
-
-            node::EmitAsyncDestroy(v8::Isolate::GetCurrent(), asyncContext);
         }
 
-        inline v8::Local<v8::Promise> getPromise() const {
-            Nan::EscapableHandleScope scope;
-            return scope.Escape(this->getResolver()->GetPromise());
+        inline ExecutionProgress* getExecutionProgress() const {
+            return context;
         }
 
-        virtual inline v8::Local<v8::Value> getReturnValue() const {
-            return getPromise();
+        inline Promise getPromise() const {
+            EscapableHandleScope scope(this->Env());
+            return scope.Escape(resolver.Promise()).template As<Promise>();
         }
 
-        virtual void Execute(const ExecutionProgress &progress) override {
+        AsyncContext& getAsyncContext() {
+            return asyncContext;
+        }
+
+        const AsyncContext& getAsyncContext() const {
+            return asyncContext;
+        }
+
+        virtual void Execute(const NapiExecutionProgress& progress) override {
             if(function) {
-                executionContext = new ExecutionContext(this, progress);
-                function(*executionContext);
-                delete executionContext;
+                context = new ExecutionProgress(this, progress);
+                function(*context);
+                delete context;
             } else {
-                this->SetErrorMessage("Impl - No lambda function received in AsyncBackgroundTask");
+                this->SetError("No lambda function received in AsyncBackgroundTask");
             }
         }
 
-        virtual void HandleProgressCallback(const P *data, size_t size) override {
-            if(this->progress) {
-                Nan::HandleScope scope;
-                //Workaround https://github.com/nodejs/node/issues/5691 - This allows to handle promises without any warnings from node
-                node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), this->getResolver(), asyncContext);
-                Nan::TryCatch tryCatch;
-                this->progress(*executionContext, data, size);
-                if(tryCatch.HasCaught()) {
-                    executionContext->reject(tryCatch.Exception());
+        virtual void OnOK() override {
+            Napi::Env env = this->Env();
+            HandleScope scope(env);
+            CallbackScope callbackScope(env, asyncContext);
+            if(!exceptionValue.IsEmpty()) {
+                resolver.Reject(exceptionValue.Value());
+            } else if(returnValue && converter) {
+                resolver.Resolve(converter(env, returnValue.value()));
+            } else {
+                resolver.Resolve(env.Undefined());
+            }
+        }
+
+        virtual void OnError(const Error& error) override {
+            Napi::Env env = this->Env();
+            HandleScope scope(env);
+            CallbackScope callbackScope(env, asyncContext);
+            if(!exceptionValue.IsEmpty()) {
+                resolver.Reject(exceptionValue.Value());
+            } else {
+                resolver.Reject(error.Value());
+            }
+        }
+
+        virtual void OnProgress(const ProgressRequest<P>* req, size_t size) override {
+            assert(size == 1);
+            if(progress) {
+                Napi::Env env = this->Env();
+                HandleScope scope(env);
+
+                try {
+                    context->currentProgressRequest = req;
+                    progress(env, *context, req->data.get(), req->count);
+                    context->currentProgressRequest = nullptr;
+                } catch(const Error& e) {
+                    context->reject(e);
+                }
+
+                if(!*req->deferred) {
+                    req->notifyCompleted();
                 }
             }
-        }
-
-        Nan::AsyncResource* getAsyncResource() {
-            return this->async_resource;
-        }
-
-        const Nan::AsyncResource* getAsyncResource() const {
-            return this->async_resource;
-        }
-
-    protected:
-        bool completed = false;
-
-        virtual void HandleOKCallback() override {
-            this->callback = nullptr;
-            Nan::HandleScope scope;
-            auto resolver = this->getResolver();
-            //Workaround https://github.com/nodejs/node/issues/5691
-            node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), resolver, this->asyncContext);
-            auto context = resolver->CreationContext();
-
-            if(this->returnValue.IsJust() && this->convertFunction) {
-                resolver->Resolve(context, this->convertFunction(this->returnValue.FromJust())).FromJust();
-            } else {
-                resolver->Resolve(context, Nan::Undefined()).FromJust();
-            }
-        }
-
-        virtual void HandleErrorCallback() override {
-            this->callback = nullptr;
-            Nan::HandleScope scope;
-            auto resolver = this->getResolver();
-            //Workaround https://github.com/nodejs/node/issues/5691
-            node::CallbackScope callbackScope(v8::Isolate::GetCurrent(), resolver, this->asyncContext);
-            auto context = resolver->CreationContext();
-
-            if(this->exceptionValue.IsEmpty()) {
-                auto exception = Nan::Error(Nan::New<v8::String>(this->ErrorMessage()).ToLocalChecked());
-                resolver->Reject(context, exception).FromJust();
-            } else {
-                auto exception = Nan::New(this->exceptionValue);
-                resolver->Reject(context, exception).FromJust();
-            }
-        }
-
-    };
-
-
-    static inline Nan::Callback* newCallback(v8::Local<v8::Value> value) {
-        if(value.IsEmpty() || !value->IsFunction()) {
-            return nullptr;
-        } else {
-            return new Nan::Callback(v8::Local<v8::Function>::Cast(value));
-        }
-    }
-
-    static inline Nan::Callback* newCallback(Nan::MaybeLocal<v8::Value> maybeValue) {
-        if(maybeValue.IsEmpty()) {
-            return nullptr;
-        } else {
-            return newCallback(maybeValue.ToLocalChecked());
-        }
-    }
-
-
-    struct SyncronizableWorkRequest {
-        std::shared_ptr<std::atomic_bool> workDone = std::shared_ptr<std::atomic_bool>(new std::atomic_bool(false));
-        std::shared_ptr<std::mutex> mutex = std::shared_ptr<std::mutex>(new std::mutex);
-        std::shared_ptr<std::condition_variable> cond = std::shared_ptr<std::condition_variable>(new std::condition_variable);
-
-        inline SyncronizableWorkRequest() {}
-        inline SyncronizableWorkRequest(const SyncronizableWorkRequest &o) {
-            workDone = o.workDone;
-            mutex = o.mutex;
-            cond = o.cond;
-        }
-
-        inline void notifyWorkDone() const {
-            std::lock_guard<std::mutex> lg(*mutex);
-            workDone->store(true);
-            cond->notify_one();
-        }
-
-        inline void waitForWorkDone() const {
-            std::unique_lock<std::mutex> ul(*mutex);
-            cond->wait(ul, [this] () { return workDone->load(); });
-        }
-
-        ~SyncronizableWorkRequest() {
-            workDone.reset();
-            mutex.reset();
-            cond.reset();
         }
     };
 

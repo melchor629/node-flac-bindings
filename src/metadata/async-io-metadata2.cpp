@@ -1,173 +1,160 @@
 #include "metadata2.hpp"
 
-
 namespace flac_bindings {
 
-    using namespace v8;
-    using namespace node;
+    using namespace Napi;
+    using namespace std::placeholders;
 
     AsyncFlacIOWork::AsyncFlacIOWork(
-        std::function<bool(void*, FLAC__IOCallbacks)> f,
+        std::function<bool(FLAC__IOHandle, FLAC__IOCallbacks)> f,
         const char* name,
-        Local<Object> &obj
+        const Object& obj
     ): AsyncBackgroundTask<bool, FlacIOWorkRequest*>(
-        [this, f] (auto &c) {
+        obj.Env(),
+        [this, f] (auto c) {
             this->ptr1 = std::make_tuple(&this->cbk1, &c);
-            return f(&this->ptr1, this->cbk1.generateIOCallbacks());
+            auto ret = f(&this->ptr1, this->cbk1.generateIOCallbacks());
+            c.resolve(ret);
         },
-        std::bind(&AsyncFlacIOWork::doAsyncWork, this, std::placeholders::_1, std::placeholders::_2),
+        std::bind(&AsyncFlacIOWork::doAsyncWork, this, _1, _2, _3),
         name,
         booleanToJs<bool>
-    ), cbk1(obj), cbk2() { }
+    ), cbk1(obj), cbk2() {}
 
     AsyncFlacIOWork::AsyncFlacIOWork(
-        std::function<bool(void*, FLAC__IOCallbacks, void*, FLAC__IOCallbacks)> f,
+        std::function<bool(FLAC__IOHandle, FLAC__IOCallbacks, FLAC__IOHandle, FLAC__IOCallbacks)> f,
         const char* name,
-        Local<Object> &obj1,
-        Local<Object> &obj2
+        const Object& obj1,
+        const Object& obj2
     ): AsyncBackgroundTask<bool, FlacIOWorkRequest*>(
-        [this, f] (auto &c) {
+        obj1.Env(),
+        [this, f] (auto c) {
             this->ptr1 = std::make_tuple(&this->cbk1, &c);
             this->ptr2 = std::make_tuple(&this->cbk2, &c);
-            return f(&this->ptr1, this->cbk1.generateIOCallbacks(), &this->ptr2, this->cbk2.generateIOCallbacks());
+            auto ret = f(&this->ptr1, this->cbk1.generateIOCallbacks(), &this->ptr2, this->cbk2.generateIOCallbacks());
+            c.resolve(ret);
         },
-        std::bind(&AsyncFlacIOWork::doAsyncWork, this, std::placeholders::_1, std::placeholders::_2),
+        std::bind(&AsyncFlacIOWork::doAsyncWork, this, _1, _2, _3),
         name,
         booleanToJs<bool>
-    ), cbk1(obj1), cbk2(obj2) { }
+    ), cbk1(obj1), cbk2(obj2) {}
 
-    AsyncFlacIOWork::IOCallbacks::IOCallbacks() {}
-
-    AsyncFlacIOWork::IOCallbacks::IOCallbacks(Local<Object> &obj) {
-        this->readCallback = newCallback(Nan::Get(obj, Nan::New("read").ToLocalChecked()));
-        this->writeCallback = newCallback(Nan::Get(obj, Nan::New("write").ToLocalChecked()));
-        this->seekCallback = newCallback(Nan::Get(obj, Nan::New("seek").ToLocalChecked()));
-        this->tellCallback = newCallback(Nan::Get(obj, Nan::New("tell").ToLocalChecked()));
-        this->eofCallback = newCallback(Nan::Get(obj, Nan::New("eof").ToLocalChecked()));
-        this->closeCallback = newCallback(Nan::Get(obj, Nan::New("close").ToLocalChecked()));
-    }
-
-    AsyncFlacIOWork::IOCallbacks::~IOCallbacks() {
-        if(readCallback) delete readCallback;
-        if(writeCallback) delete writeCallback;
-        if(seekCallback) delete seekCallback;
-        if(tellCallback) delete tellCallback;
-        if(eofCallback) delete eofCallback;
-        if(closeCallback) delete closeCallback;
-    }
-
-    template<typename NumType>
-    static std::function<void (Local<Value> result)> processNumberResult(
-        AsyncFlacIOWork::ExecutionContext &c,
-        const char* op,
-        std::function<void(NumType)> setter
+    template<typename Type>
+    static std::function<void(const Napi::Value& result)> generateProcessResult(
+        const std::function<void(Type)>& setter
     ) {
-        return [op, &c, setter] (Local<Value> result) {
-            auto maybeReturnValue = numberFromJs<int>(result);
-            if(maybeReturnValue.IsNothing()) {
-                std::string errorMessage = std::string(op) + " - Expected number or bigint as return value";
-                c.reject(Nan::TypeError(errorMessage.c_str()));
-                return;
-            }
-
-            setter(maybeReturnValue.FromJust());
+        return [setter] (auto result) {
+            auto returnValue = numberFromJs<Type>(result);
+            setter(returnValue);
         };
     }
 
-    void AsyncFlacIOWork::doAsyncWork(AsyncFlacIOWork::ExecutionContext &c, FlacIOWorkRequest* const* wPtr) {
-        auto async = (Nan::AsyncResource*) c.getTask()->getAsyncResource();
-        std::function<void (Local<Value> result)> processResult;
-        Nan::MaybeLocal<Value> result;
-        Nan::TryCatch tryCatch;
-        auto w = *wPtr;
-        AsyncFlacIOWork::IOCallbacks* io = (AsyncFlacIOWork::IOCallbacks*) w->cbks;
+    void AsyncFlacIOWork::doAsyncWork(const Napi::Env& env, AsyncFlacIOWork::ExecutionProgress& prog, FlacIOWorkRequest* const* workPtr) {
+        auto& async = prog.getTask()->getAsyncContext();
+        auto& work = *workPtr;
+        Napi::Value result = env.Null();
+        std::function<void(const Napi::Value& result)> processResult;
+        auto io = (AsyncFlacIOWork::IOCallbacks*) work->cbks;
 
-        switch(w->type) {
+        switch(work->type) {
             case FlacIOWorkRequest::Read: {
-                Local<Value> args[] = {
-                    WrapPointer(w->ptr, *w->bytes).ToLocalChecked(),
-                    numberToJs(w->sizeOfItem),
-                    numberToJs(w->nitems)
-                };
-                result = io->readCallback->Call(3, args, async);
-                processResult = processNumberResult<size_t>(c, "FlacIO::Read", [w] (size_t v) { *w->bytes = v; });
+                result = io->readCallback.MakeCallback(env.Global(), {
+                    pointer::wrap(env, (uint8_t*) work->ptr, *work->bytes),
+                    numberToJs(env, work->sizeOfItem),
+                    numberToJs(env, work->nitems),
+                }, async);
+                processResult = generateProcessResult<size_t>([work] (auto v) { *work->bytes = v; });
                 break;
             }
 
             case FlacIOWorkRequest::Write: {
-                Local<Value> args[] = {
-                    WrapPointer(w->ptr, *w->bytes).ToLocalChecked(),
-                    numberToJs(w->sizeOfItem),
-                    numberToJs(w->nitems)
-                };
-                result = io->writeCallback->Call(3, args, async);
-                processResult = processNumberResult<size_t>(c, "FlacIO::Write", [w] (size_t v) { *w->bytes = v; });
+                result = io->writeCallback.MakeCallback(env.Global(), {
+                    pointer::wrap(env, (uint8_t*) work->ptr, *work->bytes),
+                    numberToJs(env, work->sizeOfItem),
+                    numberToJs(env, work->nitems),
+                }, async);
+                processResult = generateProcessResult<size_t>([work] (auto v) { *work->bytes = v; });
                 break;
             }
 
             case FlacIOWorkRequest::Seek: {
-                Local<String> dir;
-                switch(*w->genericReturn) {
-                    case SEEK_SET: dir = Nan::New("set").ToLocalChecked(); break;
-                    case SEEK_CUR: dir = Nan::New("cur").ToLocalChecked(); break;
-                    case SEEK_END: dir = Nan::New("end").ToLocalChecked(); break;
-                    default: dir = Nan::New("set").ToLocalChecked(); break;
+                String direction;
+                switch(*work->genericReturn) {
+                    case SEEK_SET: direction = String::New(env, "set"); break;
+                    case SEEK_CUR: direction = String::New(env, "cur"); break;
+                    case SEEK_END: direction = String::New(env, "end"); break;
+                    default: direction = String::New(env, "set");
                 }
 
-                Local<Value> args[] = { numberToJs(*w->offset), dir };
-                result = io->seekCallback->Call(2, args, async);
-                processResult = processNumberResult<int>(c, "FlacIO::Seek", [w] (int v) { *w->genericReturn = v; });
+                result = io->seekCallback.MakeCallback(env.Global(), {
+                    numberToJs(env, *work->offset),
+                    direction,
+                }, async);
+                processResult = generateProcessResult<int>([work] (auto v) { *work->genericReturn = v; });
                 break;
             }
 
             case FlacIOWorkRequest::Tell: {
-                result = io->tellCallback->Call(0, nullptr, async);
-                processResult = processNumberResult<int64_t>(c, "FlacIO::Tell", [w] (int64_t v) { *w->offset = v; });
+                result = io->tellCallback.MakeCallback(env.Global(), {}, async);
+                processResult = generateProcessResult<int64_t>([work] (auto v) { *work->offset = v; });
                 break;
             }
 
             case FlacIOWorkRequest::Eof: {
-                result = io->eofCallback->Call(0, nullptr, async);
-                processResult = processNumberResult<bool>(c, "FlacIO::Eof", [w] (bool v) { *w->genericReturn = v; }); //TODO
+                result = io->eofCallback.MakeCallback(env.Global(), {}, async);
+                processResult = generateProcessResult<bool>([work] (auto v) { *work->genericReturn = v; });
                 break;
             }
 
             case FlacIOWorkRequest::Close: {
-                result = io->closeCallback->Call(0, nullptr, async);
-                processResult = processNumberResult<int>(c, "FlacIO::Close", [w] (int v) { *w->genericReturn = v; });
+                result = io->closeCallback.MakeCallback(env.Global(), {}, async);
+                processResult = generateProcessResult<int>([work] (auto v) { *work->genericReturn = v; });
                 break;
             }
         }
 
-        if(tryCatch.HasCaught()) {
-            c.reject(tryCatch.Exception());
-            w->notifyWorkDone();
-        } else if(!result.IsEmpty()) {
-            auto theGoodResult = result.ToLocalChecked();
-            if(theGoodResult->IsPromise()) {
-                auto promise = theGoodResult.As<Promise>();
-                c.defer(promise, nullptr, [processResult, w] (auto &c, auto _, auto &info) {
-                    if(processResult && !info[0].IsEmpty()) {
+        if(!result.IsEmpty()) {
+            if(result.IsPromise()) {
+                prog.defer(result.As<Promise>(), [processResult] (auto&, auto& info, auto*) {
+                    if(processResult) {
                         processResult(info[0]);
                     }
-
-                    w->notifyWorkDone();
-                }, [w] (auto &c, auto _, auto &info) { c.reject(info[0]); w->notifyWorkDone(); });
+                });
             } else {
-                if(processResult && !result.IsEmpty()) processResult(result.ToLocalChecked());
-                w->notifyWorkDone();
+                if(processResult) {
+                    processResult(result);
+                }
             }
-        } else {
-            w->notifyWorkDone();
         }
     }
 
 
-    typedef std::tuple<void*, AsyncFlacIOWork::ExecutionContext*> FlacIOArg;
+    AsyncFlacIOWork::IOCallbacks::IOCallbacks() {}
+
+    AsyncFlacIOWork::IOCallbacks::IOCallbacks(const Object& obj) {
+        maybeFunctionIntoRef(this->readCallback, obj["read"]);
+        maybeFunctionIntoRef(this->writeCallback, obj["write"]);
+        maybeFunctionIntoRef(this->seekCallback, obj["seek"]);
+        maybeFunctionIntoRef(this->tellCallback, obj["tell"]);
+        maybeFunctionIntoRef(this->eofCallback, obj["eof"]);
+        maybeFunctionIntoRef(this->closeCallback, obj["close"]);
+    }
+
+    AsyncFlacIOWork::IOCallbacks::~IOCallbacks() {
+        if(!readCallback.IsEmpty()) readCallback.Reset();
+        if(!writeCallback.IsEmpty()) writeCallback.Reset();
+        if(!seekCallback.IsEmpty()) seekCallback.Reset();
+        if(!tellCallback.IsEmpty()) tellCallback.Reset();
+        if(!eofCallback.IsEmpty()) eofCallback.Reset();
+        if(!closeCallback.IsEmpty()) closeCallback.Reset();
+    }
+
+
+    typedef std::tuple<void*, AsyncFlacIOWork::ExecutionProgress*> FlacIOArg;
     static size_t flacIORead(void* ptr, size_t size, size_t numberOfMembers, void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
-        AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Read);
+        auto* ec = std::get<1>(ctx);
+        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Read);
         size_t bytes = size * numberOfMembers;
 
         req->cbks = std::get<0>(ctx);
@@ -176,8 +163,7 @@ namespace flac_bindings {
         req->nitems = numberOfMembers;
         req->sizeOfItem = size;
 
-        ec->sendProgress(&req);
-        req->waitForWorkDone();
+        ec->sendProgressAndWait(&req);
 
         delete req;
         return bytes / size;
@@ -185,8 +171,8 @@ namespace flac_bindings {
 
     static size_t flacIOWrite(const void* ptr, size_t size, size_t numberOfMembers, void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
-        AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Write);
+        auto* ec = std::get<1>(ctx);
+        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Write);
         size_t bytes = size * numberOfMembers;
 
         req->cbks = std::get<0>(ctx);
@@ -195,8 +181,7 @@ namespace flac_bindings {
         req->nitems = numberOfMembers;
         req->sizeOfItem = size;
 
-        ec->sendProgress(&req);
-        req->waitForWorkDone();
+        ec->sendProgressAndWait(&req);
 
         delete req;
         return bytes / size;
@@ -204,16 +189,15 @@ namespace flac_bindings {
 
     static int flacIOSeek(void* c, int64_t offset, int whence) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
-        AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Seek);
+        auto* ec = std::get<1>(ctx);
+        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Seek);
         int ret = whence;
 
         req->cbks = std::get<0>(ctx);
         req->offset = &offset;
         req->genericReturn = &ret;
 
-        ec->sendProgress(&req);
-        req->waitForWorkDone();
+        ec->sendProgressAndWait(&req);
 
         delete req;
         return ret;
@@ -221,15 +205,14 @@ namespace flac_bindings {
 
     static int64_t flacIOTell(void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
-        AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Tell);
+        auto* ec = std::get<1>(ctx);
+        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Tell);
         int64_t offset = -1;
 
         req->cbks = std::get<0>(ctx);
         req->offset = &offset;
 
-        ec->sendProgress(&req);
-        req->waitForWorkDone();
+        ec->sendProgressAndWait(&req);
 
         delete req;
         return offset;
@@ -237,15 +220,14 @@ namespace flac_bindings {
 
     static int flacIOEof(void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
-        AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Eof);
+        auto* ec = std::get<1>(ctx);
+        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Eof);
         int ret = 0;
 
         req->cbks = std::get<0>(ctx);
         req->genericReturn = &ret;
 
-        ec->sendProgress(&req);
-        req->waitForWorkDone();
+        ec->sendProgressAndWait(&req);
 
         delete req;
         return ret;
@@ -253,15 +235,14 @@ namespace flac_bindings {
 
     static int flacIOClose(void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
-        AsyncFlacIOWork::ExecutionContext* ec = std::get<1>(ctx);
-        FlacIOWorkRequest* req = new FlacIOWorkRequest(FlacIOWorkRequest::Close);
+        auto* ec = std::get<1>(ctx);
+        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Close);
         int ret = 0;
 
         req->cbks = std::get<0>(ctx);
         req->genericReturn = &ret;
 
-        ec->sendProgress(&req);
-        req->waitForWorkDone();
+        ec->sendProgressAndWait(&req);
 
         delete req;
         return ret;
@@ -270,12 +251,12 @@ namespace flac_bindings {
 
     FLAC__IOCallbacks AsyncFlacIOWork::IOCallbacks::generateIOCallbacks() {
         return {
-            this->readCallback ? flacIORead : nullptr,
-            this->writeCallback ? flacIOWrite : nullptr,
-            this->seekCallback ? flacIOSeek : nullptr,
-            this->tellCallback ? flacIOTell : nullptr,
-            this->eofCallback ? flacIOEof : nullptr,
-            this->closeCallback ? flacIOClose : nullptr
+            !readCallback.IsEmpty() ? flacIORead : nullptr,
+            !writeCallback.IsEmpty() ? flacIOWrite : nullptr,
+            !seekCallback.IsEmpty() ? flacIOSeek : nullptr,
+            !tellCallback.IsEmpty() ? flacIOTell : nullptr,
+            !eofCallback.IsEmpty() ? flacIOEof : nullptr,
+            !closeCallback.IsEmpty() ? flacIOClose : nullptr,
         };
     }
 

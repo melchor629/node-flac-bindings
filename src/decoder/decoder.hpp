@@ -1,15 +1,15 @@
 #pragma once
 
-#include <stdint.h>
-#include <nan.h>
-
 #include "../flac/format.h"
-#include "../flac/decoder.hpp"
 #include "../utils/async.hpp"
-#include "../utils/defs.hpp"
+#include "../utils/converters.hpp"
+#include "../utils/enum.hpp"
 
 namespace flac_bindings {
-    struct DecoderWorkRequest: SyncronizableWorkRequest {
+
+    using namespace Napi;
+
+    struct DecoderWorkRequest {
         enum Type { Read, Seek, Tell, Length, Eof, Write, Metadata, Error } type;
         uint8_t* buffer = nullptr;
         size_t* bytes = nullptr;
@@ -18,118 +18,148 @@ namespace flac_bindings {
         const int32_t *const* samples = nullptr;
         const FLAC__StreamMetadata* metadata = nullptr;
         int errorCode = 0;
-        int* returnValue = nullptr;
+        int returnValue = 0;
 
         DecoderWorkRequest();
         DecoderWorkRequest(const DecoderWorkRequest &);
         explicit DecoderWorkRequest(DecoderWorkRequest::Type type);
     };
 
-    typedef AsyncBackgroundTask<bool, DecoderWorkRequest*> AsyncDecoderWorkBase;
+    typedef AsyncBackgroundTask<int, DecoderWorkRequest*> AsyncDecoderWorkBase;
 
-    class StreamDecoder: public Nan::ObjectWrap {
+    struct DecoderWorkContext {
+        FunctionReference readCbk, seekCbk, tellCbk, lengthCbk, eofCbk, writeCbk, metadataCbk, errorCbk;
+        class StreamDecoder* dec;
 
-        static NAN_METHOD(setOggSerialNumber);
-        static NAN_METHOD(getMd5Checking);
-        static NAN_METHOD(setMd5Checking);
-        static NAN_METHOD(setMetadataRespond);
-        static NAN_METHOD(setMetadataIgnore);
-        static NAN_METHOD(getTotalSamples);
-        static NAN_METHOD(getChannels);
-        static NAN_METHOD(getChannelAssignment);
-        static NAN_METHOD(getBitsPerSample);
-        static NAN_METHOD(getSampleRate);
-        static NAN_METHOD(getBlocksize);
+        DecoderWorkContext(StreamDecoder* dec): dec(dec) {}
+    };
 
-        static NAN_METHOD(create);
-        static NAN_METHOD(initStream);
-        static NAN_METHOD(initOggStream);
-        static NAN_METHOD(initFile);
-        static NAN_METHOD(initOggFile);
-        static NAN_METHOD(finish);
-        static NAN_METHOD(flush);
-        static NAN_METHOD(reset);
-        static NAN_METHOD(processSingle);
-        static NAN_METHOD(processUntilEndOfMetadata);
-        static NAN_METHOD(processUntilEndOfStream);
-        static NAN_METHOD(skipSingleFrame);
-        static NAN_METHOD(seekAbsolute);
-        static NAN_METHOD(setMetadataRespondApplication);
-        static NAN_METHOD(setMetadataRespondAll);
-        static NAN_METHOD(setMetadataIgnoreApplication);
-        static NAN_METHOD(setMetadataIgnoreAll);
-        static NAN_METHOD(getState);
-        static NAN_METHOD(getResolvedStateString);
-        static NAN_METHOD(getDecodePosition);
+    class StreamDecoder: public ObjectWrap<StreamDecoder> {
 
-        static NAN_METHOD(finishAsync);
-        static NAN_METHOD(flushAsync);
-        static NAN_METHOD(processSingleAsync);
-        static NAN_METHOD(processUntilEndOfMetadataAsync);
-        static NAN_METHOD(processUntilEndOfStreamAsync);
-        static NAN_METHOD(skipSingleFrameAsync);
-        static NAN_METHOD(seekAbsoluteAsync);
-        static NAN_METHOD(initStreamAsync);
-        static NAN_METHOD(initOggStreamAsync);
-        static NAN_METHOD(initFileAsync);
-        static NAN_METHOD(initOggFileAsync);
+        friend class AsyncDecoderWork;
 
-        static FlacEnumDefineReturnType createStateEnum();
-        static FlacEnumDefineReturnType createInitStatusEnum();
-        static FlacEnumDefineReturnType createReadStatusEnum();
-        static FlacEnumDefineReturnType createSeekStatusEnum();
-        static FlacEnumDefineReturnType createTellStatusEnum();
-        static FlacEnumDefineReturnType createLengthStatusEnum();
-        static FlacEnumDefineReturnType createWriteStatusEnum();
-        static FlacEnumDefineReturnType createErrorStatusEnum();
+        void setOggSerialNumber(const CallbackInfo&);
+        Napi::Value getMd5Checking(const CallbackInfo&);
+        void setMd5Checking(const CallbackInfo&);
+        void setMetadataRespond(const CallbackInfo&);
+        void setMetadataIgnore(const CallbackInfo&);
+        Napi::Value getTotalSamples(const CallbackInfo&);
+        Napi::Value getChannels(const CallbackInfo&);
+        Napi::Value getChannelAssignment(const CallbackInfo&);
+        Napi::Value getBitsPerSample(const CallbackInfo&);
+        Napi::Value getSampleRate(const CallbackInfo&);
+        Napi::Value getBlocksize(const CallbackInfo&);
+
+        Napi::Value initStream(const CallbackInfo&);
+        Napi::Value initOggStream(const CallbackInfo&);
+        Napi::Value initFile(const CallbackInfo&);
+        Napi::Value initOggFile(const CallbackInfo&);
+        Napi::Value finish(const CallbackInfo&);
+        Napi::Value flush(const CallbackInfo&);
+        Napi::Value reset(const CallbackInfo&);
+        Napi::Value processSingle(const CallbackInfo&);
+        Napi::Value processUntilEndOfMetadata(const CallbackInfo&);
+        Napi::Value processUntilEndOfStream(const CallbackInfo&);
+        Napi::Value skipSingleFrame(const CallbackInfo&);
+        Napi::Value seekAbsolute(const CallbackInfo&);
+        void setMetadataRespondApplication(const CallbackInfo&);
+        void setMetadataRespondAll(const CallbackInfo&);
+        void setMetadataIgnoreApplication(const CallbackInfo&);
+        void setMetadataIgnoreAll(const CallbackInfo&);
+        Napi::Value getState(const CallbackInfo&);
+        Napi::Value getResolvedStateString(const CallbackInfo&);
+        Napi::Value getDecodePosition(const CallbackInfo&);
+
+        Napi::Value finishAsync(const CallbackInfo&);
+        Napi::Value flushAsync(const CallbackInfo&);
+        Napi::Value processSingleAsync(const CallbackInfo&);
+        Napi::Value processUntilEndOfMetadataAsync(const CallbackInfo&);
+        Napi::Value processUntilEndOfStreamAsync(const CallbackInfo&);
+        Napi::Value skipSingleFrameAsync(const CallbackInfo&);
+        Napi::Value seekAbsoluteAsync(const CallbackInfo&);
+        Napi::Value initStreamAsync(const CallbackInfo&);
+        Napi::Value initOggStreamAsync(const CallbackInfo&);
+        Napi::Value initFileAsync(const CallbackInfo&);
+        Napi::Value initOggFileAsync(const CallbackInfo&);
+
+        inline void checkPendingAsyncWork(const Napi::Env& env) {
+            if(asyncContext != nullptr) {
+                throw Error::New(env, "There is still an operation running on this object");
+            }
+        }
+
+        void checkIsInitialized(const Napi::Env&);
+        void checkIsNotInitialized(const Napi::Env&);
+        Promise enqueueWork(AsyncDecoderWorkBase*);
+        static int doAsyncWork(DecoderWorkContext* ctx, DecoderWorkRequest* req, int defaultReturnValue = 0);
+
+        static c_enum::DefineReturnType createStateEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createInitStatusEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createReadStatusEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createSeekStatusEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createTellStatusEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createLengthStatusEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createWriteStatusEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createErrorStatusEnum(const Napi::Env&);
+
+        static int readCallback(const FLAC__StreamDecoder*, FLAC__byte [], size_t*, void*);
+        static int seekCallback(const FLAC__StreamDecoder*, uint64_t, void*);
+        static int tellCallback(const FLAC__StreamDecoder*, uint64_t*, void*);
+        static int lengthCallback(const FLAC__StreamDecoder*, uint64_t*, void*);
+        static FLAC__bool eofCallback(const FLAC__StreamDecoder*, void*);
+        static int writeCallback(const FLAC__StreamDecoder*, const FLAC__Frame*, const int32_t *const [], void*);
+        static void metadataCallback(const FLAC__StreamDecoder*, const FLAC__StreamMetadata*, void*);
+        static void errorCallback(const FLAC__StreamDecoder*, int, void*);
+
+        static FunctionReference constructor;
+
+        FLAC__StreamDecoder* dec = nullptr;
+        AsyncContext* asyncContext = nullptr;
+        AsyncDecoderWorkBase::ExecutionProgress* asyncExecutionProgress = nullptr;
+        std::shared_ptr<DecoderWorkContext> ctx;
 
     public:
-        std::shared_ptr<Nan::Callback> readCbk, seekCbk, tellCbk, lengthCbk, eofCbk, writeCbk, metadataCbk, errorCbk;
-        Nan::Persistent<v8::Value> lastExceptionProcessed;
-        Nan::AsyncResource* async = nullptr;
-        AsyncDecoderWorkBase::ExecutionContext* asyncExecutionContext = nullptr;
-        void* dec = nullptr;
 
+        static Function init(const Napi::Env& env);
+
+        StreamDecoder(const CallbackInfo&);
         ~StreamDecoder();
-        static NAN_MODULE_INIT(initDecoder);
 
     };
 
-#ifdef MAKE_FRIENDS
-    static void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, DecoderWorkRequest* const* data);
-#endif
     class AsyncDecoderWork: public AsyncDecoderWorkBase {
+
         AsyncDecoderWork(
-            std::function<bool(AsyncDecoderWorkBase::ExecutionContext &)> function,
-            const char* name,
-            StreamDecoder* dec
+            const Object&,
+            std::function<int()>,
+            const char*,
+            DecoderWorkContext*,
+            std::function<Napi::Value(const Napi::Env&, int)> = booleanToJs<int>
         );
 
-        inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
+        void onProgress(
+            const DecoderWorkContext*,
+            Napi::Env&,
+            ExecutionProgress&,
+            DecoderWorkRequest* const*,
+            size_t
+        );
 
-#ifdef MAKE_FRIENDS
-        friend void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, DecoderWorkRequest* const* data);
-#endif
+        static FunctionCallback decorate(DecoderWorkContext*, const std::function<int()>&);
+
     public:
-        static AsyncDecoderWorkBase* forFinish(StreamDecoder* dec);
-        static AsyncDecoderWorkBase* forFlush(StreamDecoder* dec);
-        static AsyncDecoderWorkBase* forProcessSingle(StreamDecoder* dec);
-        static AsyncDecoderWorkBase* forProcessUntilEndOfMetadata(StreamDecoder* dec);
-        static AsyncDecoderWorkBase* forProcessUntilEndOfStream(StreamDecoder* dec);
-        static AsyncDecoderWorkBase* forSkipSingleFrame(StreamDecoder* dec);
-        static AsyncDecoderWorkBase* forSeekAbsolute(uint64_t value, StreamDecoder* dec);
-        static AsyncDecoderWorkBase* forInitStream(StreamDecoder* dec);
-        static AsyncDecoderWorkBase* forInitOggStream(StreamDecoder* dec);
-        static AsyncDecoderWorkBase* forInitFile(const std::string &filePath, StreamDecoder* dec);
-        static AsyncDecoderWorkBase* forInitOggFile(const std::string &filePath, StreamDecoder* dec);
-    };
-}
+        static AsyncDecoderWork* forFinish(const Object&, DecoderWorkContext*);
+        static AsyncDecoderWork* forFlush(const Object&, DecoderWorkContext*);
+        static AsyncDecoderWork* forProcessSingle(const Object&, DecoderWorkContext*);
+        static AsyncDecoderWork* forProcessUntilEndOfMetadata(const Object&, DecoderWorkContext*);
+        static AsyncDecoderWork* forProcessUntilEndOfStream(const Object&, DecoderWorkContext*);
+        static AsyncDecoderWork* forSkipSingleFrame(const Object&, DecoderWorkContext*);
+        static AsyncDecoderWork* forSeekAbsolute(const Object&, uint64_t, DecoderWorkContext*);
+        static AsyncDecoderWork* forInitStream(const Object&, DecoderWorkContext*);
+        static AsyncDecoderWork* forInitOggStream(const Object&, DecoderWorkContext*);
+        static AsyncDecoderWork* forInitFile(const Object&, const std::string&, DecoderWorkContext*);
+        static AsyncDecoderWork* forInitOggFile(const Object&, const std::string&, DecoderWorkContext*);
 
-int decoder_read_callback(const FLAC__StreamDecoder*, FLAC__byte [], size_t*, void*);
-int decoder_seek_callback(const FLAC__StreamDecoder*, uint64_t, void*);
-int decoder_tell_callback(const FLAC__StreamDecoder*, uint64_t*, void*);
-int decoder_length_callback(const FLAC__StreamDecoder*, uint64_t*, void*);
-FLAC__bool decoder_eof_callback(const FLAC__StreamDecoder*, void*);
-int decoder_write_callback(const FLAC__StreamDecoder*, const FLAC__Frame*, const int32_t *const [], void*);
-void decoder_metadata_callback(const FLAC__StreamDecoder*, const FLAC__StreamMetadata*, void*);
-void decoder_error_callback(const FLAC__StreamDecoder*, int, void*);
+    };
+
+}

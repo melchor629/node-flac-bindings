@@ -2,88 +2,95 @@
 
 namespace flac_bindings {
 
-    using namespace node;
+    using namespace Napi;
 
-    V8_GETTER(CueSheetIndex::offset) {
-        unwrap(CueSheetIndex);
-        info.GetReturnValue().Set(numberToJs(self->index.offset));
+    FunctionReference CueSheetIndex::constructor;
+
+    Function CueSheetIndex::init(const Napi::Env& env) {
+        EscapableHandleScope scope(env);
+
+        Function constructor = DefineClass(env, "CueSheetIndex", {
+            InstanceAccessor(
+                "offset",
+                &CueSheetIndex::getOffset,
+                &CueSheetIndex::setOffset,
+                napi_property_attributes::napi_enumerable
+            ),
+            InstanceAccessor(
+                "number",
+                &CueSheetIndex::getNumber,
+                &CueSheetIndex::setNumber,
+                napi_property_attributes::napi_enumerable
+            ),
+        });
+
+        CueSheetIndex::constructor = Persistent(constructor);
+        CueSheetIndex::constructor.SuppressDestruct();
+
+        return scope.Escape(constructor).As<Function>();
     }
 
-    V8_SETTER(CueSheetIndex::offset) {
-        unwrap(CueSheetIndex);
-        checkValueIsNumber(uint64_t) {
-            self->index.offset = newValue;
+    CueSheetIndex::CueSheetIndex(const CallbackInfo& info):
+        ObjectWrap<CueSheetIndex>(info),
+        Mapping<FLAC__StreamMetadata_CueSheet_Index>(info) {
+        if(data == nullptr) {
+            data = new FLAC__StreamMetadata_CueSheet_Index;
+            shouldBeDeleted = true;
+            memset(data, 0, sizeof(*data));
         }
-    }
 
-    V8_GETTER(CueSheetIndex::number) {
-        unwrap(CueSheetIndex);
-        info.GetReturnValue().Set(numberToJs(self->index.number));
-    }
-
-    V8_SETTER(CueSheetIndex::number) {
-        unwrap(CueSheetIndex);
-        checkValueIsNumber(uint32_t) {
-            self->index.number = newValue & 0xFF;
-        }
-    }
-
-    NAN_METHOD(CueSheetIndex::create) {
-        if(throwIfNotConstructorCall(info)) return;
-        CueSheetIndex* cueSheetIndex = new CueSheetIndex;
-        cueSheetIndex->Wrap(info.This());
-
-        if(!info[0].IsEmpty() && info[0]->IsObject() && Buffer::HasInstance(info[0].As<Object>())) {
-            memcpy(
-                &cueSheetIndex->index,
-                UnwrapPointer<FLAC__StreamMetadata_CueSheet_Index>(info[0]),
-                sizeof(FLAC__StreamMetadata_CueSheet_Index)
-            );
-        } else {
-            memset(&cueSheetIndex->index, 0, sizeof(FLAC__StreamMetadata_CueSheet_Index));
-            if(!info[0].IsEmpty() && !info[0]->IsUndefined()) {
-                auto maybeOffset = numberFromJs<uint64_t>(info[0]);
-                if(maybeOffset.IsJust()) {
-                    cueSheetIndex->index.offset = maybeOffset.FromJust();
-                } else {
-                    Nan::ThrowTypeError("First argument must be undefined, number or bigint");
-                    return;
-                }
-            }
-
-            if(!info[1].IsEmpty() && !info[1]->IsUndefined()) {
-                auto maybeNumber = numberFromJs<uint32_t>(info[1]);
-                if(maybeNumber.IsJust()) {
-                    cueSheetIndex->index.number = maybeNumber.FromJust() & 0xFF;
-                } else if(!info[1]->IsUndefined()) {
-                    Nan::ThrowTypeError("Second argument must be undefined, number or bigint");
-                    return;
-                }
+        if(info.Length() > 0 && !info[0].IsExternal()) {
+            data->offset = numberFromJs<uint64_t>(info[0]);
+            if(info.Length() > 1) {
+                data->number = numberFromJs<uint8_t>(info[1]);
             }
         }
-
-        nativeProperty(info.This(), "offset", offset);
-        nativeProperty(info.This(), "number", number);
-
-        info.GetReturnValue().Set(info.This());
     }
 
-    Nan::Persistent<Function> CueSheetIndex::jsFunction;
-    NAN_MODULE_INIT(CueSheetIndex::init) {
-        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
-        tpl->SetClassName(Nan::New("CueSheetIndex").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1);
+    CueSheetIndex::~CueSheetIndex() {
+        if(shouldBeDeleted) {
+            delete data;
+        }
+    }
 
-        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
-        jsFunction.Reset(metadata);
-        Nan::Set(target, Nan::New("CueSheetIndex").ToLocalChecked(), metadata);
+    Napi::Value CueSheetIndex::getOffset(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->offset);
+    }
+
+    void CueSheetIndex::setOffset(const CallbackInfo&, const Napi::Value& value) {
+        auto offset = numberFromJs<uint64_t>(value);
+        data->offset = offset;
+    }
+
+    Napi::Value CueSheetIndex::getNumber(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->number);
+    }
+
+    void CueSheetIndex::setNumber(const CallbackInfo&, const Napi::Value& value) {
+        auto number = numberFromJs<uint8_t>(value);
+        data->number = number;
     }
 
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata_CueSheet_Index* index, bool deleteHint) {
-        Local<Value> args[] = { WrapPointer(index).ToLocalChecked() };
-        auto metadata = Nan::NewInstance(CueSheetIndex::getFunction(), 1, args);
-        return metadata.ToLocalChecked();
+    Mapping<FLAC__StreamMetadata_CueSheet_Index>& Mapping<FLAC__StreamMetadata_CueSheet_Index>::fromJs(const Value& value) {
+        if(!value.IsObject()) {
+            throw Napi::TypeError::New(value.Env(), "Expected "s + value.ToString().Utf8Value() + " to be object"s);
+        }
+
+        auto object = value.As<Object>();
+        if(!object.InstanceOf(CueSheetIndex::getConstructor())) {
+            throw Napi::TypeError::New(value.Env(), "Object is not an instance of CueSheetIndex");
+        }
+
+        return *CueSheetIndex::Unwrap(value.As<Object>());
+    }
+
+    template<>
+    Value Mapping<FLAC__StreamMetadata_CueSheet_Index>::toJs(const Env& env, FLAC__StreamMetadata_CueSheet_Index* point, bool deleteHint) {
+        EscapableHandleScope scope(env);
+        Function constructor = CueSheetIndex::getConstructor();
+        auto object = constructor.New({pointer::wrap(env, point), booleanToJs(env, deleteHint)});
+        return scope.Escape(object);
     }
 
 }

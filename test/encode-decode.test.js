@@ -11,7 +11,7 @@ const { assert } = require('chai');
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
-const temp = require('temp');
+const temp = require('temp').track();
 
 const totalSamples = 992250 / 3 / 2;
 
@@ -321,7 +321,7 @@ describe('encode & decode', function() {
         await promisifyEvent(dec, 'end');
 
         assert.isNotEmpty(metadataBlocks);
-        assert.equal(metadataBlocks.length, 1);
+        assert.equal(metadataBlocks.length, 4);
     });
 
     it('file decoder should emit metadata when required', async function() {
@@ -333,7 +333,7 @@ describe('encode & decode', function() {
         await promisifyEvent(dec, 'end');
 
         assert.isNotEmpty(metadataBlocks);
-        assert.equal(metadataBlocks.length, 1);
+        assert.equal(metadataBlocks.length, 4);
     });
 
     it('file decoder should fail if file does not exist', async function() {
@@ -342,7 +342,7 @@ describe('encode & decode', function() {
         dec.on('data', () => undefined);
         const e = await promisifyEvent(dec, 'error');
 
-        assert.equal(e.message, 'Could not open the file');
+        assert.equal(e.message, 'Could not initialize decoder: ERROR_OPENING_FILE');
     });
 
     it('file encoder should fail if file cannot write', async function() {
@@ -357,7 +357,7 @@ describe('encode & decode', function() {
         enc.write(Buffer.alloc(1000 * 2));
         const e = await promisifyEvent(enc, 'error');
 
-        assert.equal(e.message, 'FLAC__STREAM_ENCODER_IO_ERROR');
+        assert.equal(e.message, 'Could not initialize encoder: IO_ERROR');
     });
 
     it('encode using ogg (stream)', async function() {
@@ -407,7 +407,7 @@ describe('encode & decode', function() {
         comparePCM(tmpFile.path, 24, true);
     });
 
-    it('encoder options should not throw exception', function() {
+    it('encoder options should not throw exception', async function() {
         const enc = new StreamEncoder({
             bitsPerSample: 16,
             channels: 2,
@@ -429,6 +429,7 @@ describe('encode & decode', function() {
         enc.write(Buffer.alloc(1000 * 2 * 2));
         enc.end();
         enc.on('data', () => undefined);
+        await promisifyEvent(enc, 'end');
     });
 
     it('gc should work', function() {
@@ -526,10 +527,10 @@ describe('encode & decode: manual version', function() {
     it('encode using stream', async function() {
         const enc = new api.Encoder();
         const fd = fs.openSync(tmpFile.path, 'w');
-        enc.setBitsPerSample(24);
-        enc.setChannels(2);
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
         enc.setCompressionLevel(9);
-        enc.setSampleRate(44100);
+        enc.sampleRate = 44100;
         await enc.initStreamAsync(
             (buffer) => fs.writeSync(fd, buffer, 0, buffer.length, null) === buffer.length ? 0 : 2,
             (offset) => fs.writeSync(fd, Buffer.alloc(1), 0, 0, offset),
@@ -550,10 +551,10 @@ describe('encode & decode: manual version', function() {
     it('encode with async callbacks using stream', async function() {
         const enc = new api.Encoder();
         const fh = await fs.promises.open(tmpFile.path, 'w');
-        enc.setBitsPerSample(24);
-        enc.setChannels(2);
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
         enc.setCompressionLevel(9);
-        enc.setSampleRate(44100);
+        enc.sampleRate = 44100;
         await enc.initStreamAsync(
             async (buffer) => (await fh.write(buffer, 0, buffer.length, null)).bytesWritten === buffer.length ? 0 : 2,
             async (offset) => (await fh.write(Buffer.alloc(1), 0, 0, offset)).bytesWritten,
@@ -574,10 +575,10 @@ describe('encode & decode: manual version', function() {
     it('encode using file', async function() {
         const progressCallbackValues = [];
         const enc = new api.Encoder();
-        enc.setBitsPerSample(24);
-        enc.setChannels(2);
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
         enc.setCompressionLevel(9);
-        enc.setSampleRate(44100);
+        enc.sampleRate = 44100;
         await enc.initFileAsync(
             tmpFile.path,
             (...args) => progressCallbackValues.push(args),
@@ -596,10 +597,10 @@ describe('encode & decode: manual version', function() {
 
     it('encoder should throw if another async method is running', async function() {
         const enc = new api.Encoder();
-        enc.setBitsPerSample(24);
-        enc.setChannels(2);
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
         enc.setCompressionLevel(9);
-        enc.setSampleRate(44100);
+        enc.sampleRate = 44100;
         await enc.initFileAsync(
             tmpFile.path,
             null,
@@ -611,7 +612,7 @@ describe('encode & decode: manual version', function() {
         }
         const promise = enc.processInterleavedAsync(chunkazo);
 
-        await assert.throwsAsync(() => enc.processInterleavedAsync(chunkazo), /There is still an async operation/);
+        await assert.throwsAsync(() => enc.processInterleavedAsync(chunkazo), /There is still an operation running/);
 
         await promise;
         await enc.finishAsync();
@@ -635,7 +636,7 @@ describe('encode & decode: manual version', function() {
         assert.isTrue(e);
 
         const promise = dec.processSingleAsync();
-        await assert.throwsAsync(() => dec.processSingleAsync(), /There is still an async operation/);
+        await assert.throwsAsync(() => dec.processSingleAsync(), /There is still an operation running/);
 
         await promise;
         const f = await dec.processUntilEndOfStreamAsync();
@@ -705,10 +706,10 @@ describe('encode & decode: manual version (sync)', function() {
     it('encode using stream', function() {
         const enc = new api.Encoder();
         const fd = fs.openSync(tmpFile.path, 'w');
-        enc.setBitsPerSample(24);
-        enc.setChannels(2);
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
         enc.setCompressionLevel(9);
-        enc.setSampleRate(44100);
+        enc.sampleRate = 44100;
         enc.initStream(
             (buffer) => fs.writeSync(fd, buffer, 0, buffer.length, null) === buffer.length ? 0 : 2,
             (offset) => fs.writeSync(fd, Buffer.alloc(1), 0, 0, offset),
@@ -729,10 +730,10 @@ describe('encode & decode: manual version (sync)', function() {
     it('encode using file', function() {
         const progressCallbackValues = [];
         const enc = new api.Encoder();
-        enc.setBitsPerSample(24);
-        enc.setChannels(2);
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
         enc.setCompressionLevel(9);
-        enc.setSampleRate(44100);
+        enc.sampleRate = 44100;
         enc.setMetadata([ new api.metadata.VorbisCommentMetadata() ]);
         enc.initFile(
             tmpFile.path,

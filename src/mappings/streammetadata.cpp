@@ -1,124 +1,141 @@
 #include "mappings.hpp"
 #include "../flac/metadata.hpp"
+#include "../utils/pointer.hpp"
 
 namespace flac_bindings {
 
-    using namespace node;
+    using namespace Napi;
 
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata* i, bool deleteHint);
+    Mapping<FLAC__StreamMetadata>& Mapping<FLAC__StreamMetadata>::fromJs(const Value&);
+    template<>
+    Value Mapping<FLAC__StreamMetadata>::toJs(const Env&, FLAC__StreamMetadata*, bool);
 
-    V8_GETTER(Metadata::type) {
-        unwrap(Metadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->type));
-    }
+    Metadata::Metadata(const CallbackInfo& info, FLAC__MetadataType type): Mapping<FLAC__StreamMetadata>(info) {
+        auto self = info.This().As<Object>();
 
-    V8_GETTER(Metadata::isLast) {
-        unwrap(Metadata);
-        info.GetReturnValue().Set(Nan::New<Boolean>(self->metadata->is_last));
-    }
-
-    V8_GETTER(Metadata::length) {
-        unwrap(Metadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->length));
-    }
-
-    NAN_METHOD(Metadata::create) {
-        if(info.IsConstructCall()) {
-            Nan::ThrowError("The Metadata class is abstract and cannot be instantiated");
-            return;
-        }
-
-        if(info.Length() >= 1) {
-            Metadata* metadata = Nan::ObjectWrap::Unwrap<Metadata>(info.This());
-            if(Buffer::HasInstance(info[0])) {
-                metadata->metadata = UnwrapPointer<FLAC__StreamMetadata>(info[0]);
-                metadata->hintToDelete = Nan::To<bool>(info[1]).FromMaybe(false);
-            } else if(info[0]->IsNumber()) {
-                int number = numberFromJs<int>(info[0]).FromJust();
-                FLAC__MetadataType type = (FLAC__MetadataType) number;
-                metadata->metadata = FLAC__metadata_object_new(type);
-                metadata->hintToDelete = true;
-            } else {
-                delete metadata;
-                Nan::ThrowTypeError("Expected number of Buffer as parameter");
-                return;
+        if(data == nullptr) {
+            data = FLAC__metadata_object_new(type);
+            shouldBeDeleted = true;
+            if(data == nullptr) {
+                throw Error::New(info.Env(), "No memory left - Could not create new metadata object");
             }
-
-            nativeReadOnlyProperty(info.This(), "type", type);
-            nativeReadOnlyProperty(info.This(), "isLast", isLast);
-            nativeReadOnlyProperty(info.This(), "length", length);
-
-            info.GetReturnValue().Set(info.This());
-        } else {
-            Nan::ThrowError("Expected one argument, 0 given");
         }
+
+        self.DefineProperties({
+            PropertyDescriptor::Accessor(info.Env(), self, "type", &Metadata::getType, napi_property_attributes::napi_enumerable, this),
+            PropertyDescriptor::Accessor(info.Env(), self, "isLast", &Metadata::getIsLast, napi_property_attributes::napi_enumerable, this),
+            PropertyDescriptor::Accessor(info.Env(), self, "length", &Metadata::getLength, napi_property_attributes::napi_enumerable, this),
+            PropertyDescriptor::Function(info.Env(), self, "clone", &Metadata::clone, napi_property_attributes::napi_default, this),
+            PropertyDescriptor::Function(info.Env(), self, "isEqual", &Metadata::isEqual, napi_property_attributes::napi_default, this),
+        });
     }
 
-    NAN_METHOD(Metadata::clone) {
-        unwrap(Metadata);
+    Value Metadata::getType(const CallbackInfo& info) {
+        Metadata* self = (Metadata*) info.Data();
+        return numberToJs(info.Env(), self->data->type);
+    }
 
-        FLAC__StreamMetadata* newMetadata = FLAC__metadata_object_clone(self->metadata);
+    Value Metadata::getIsLast(const CallbackInfo& info) {
+        Metadata* self = (Metadata*) info.Data();
+        return booleanToJs(info.Env(), self->data->is_last);
+    }
+
+    Value Metadata::getLength(const CallbackInfo& info) {
+        Metadata* self = (Metadata*) info.Data();
+        return numberToJs(info.Env(), self->data->length);
+    }
+
+    Value Metadata::clone(const CallbackInfo& info) {
+        Metadata* self = (Metadata*) info.Data();
+        auto newMetadata = FLAC__metadata_object_clone(self->data);
         if(newMetadata == nullptr) {
-            Nan::ThrowError("Could not clone: no enough memory");
-        } else {
-            auto newMetadataJs = structToJs(newMetadata, true);
-            info.GetReturnValue().Set(newMetadataJs);
+            throw Error::New(info.Env(), "No memory left - Could not clone metadata object");
         }
+
+        return Mapping::toJs(info.Env(), newMetadata, true);
     }
 
-    NAN_METHOD(Metadata::isEqual) {
-        unwrap(Metadata);
-        if(info.Length() == 0 || info[0].IsEmpty()) {
-            Nan::ThrowTypeError("Expected one argument of type Metadata, 0 given");
-            return;
-        }
-
-        FLAC__StreamMetadata* otherMetadata = jsToStruct<FLAC__StreamMetadata>(info[0]);
-        if(otherMetadata != nullptr) {
-            info.GetReturnValue().Set(Nan::New<Boolean>(FLAC__metadata_object_is_equal(self->metadata, otherMetadata)));
-        }
-    }
-
-    Nan::Persistent<Function> Metadata::metadataJs;
-    Nan::Persistent<FunctionTemplate> Metadata::metadataProtoJs;
-    Metadata::~Metadata() {
-        if(hintToDelete && metadata != nullptr) {
-            FLAC__metadata_object_delete(metadata);
-        }
-    }
-
-    NAN_MODULE_INIT(Metadata::init) {
-        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
-        tpl->SetClassName(Nan::New("Metadata").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1);
-
-        Nan::SetPrototypeMethod(tpl, "clone", clone);
-        Nan::SetPrototypeMethod(tpl, "isEqual", isEqual);
-
-        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
-        metadataJs.Reset(metadata);
-        metadataProtoJs.Reset(tpl);
-        Nan::Set(target, Nan::New("Metadata").ToLocalChecked(), metadata);
+    Value Metadata::isEqual(const CallbackInfo& info) {
+        Metadata* self = (Metadata*) info.Data();
+        auto other = fromJs(info[0]);
+        auto areEqual = FLAC__metadata_object_is_equal(self->data, other);
+        return booleanToJs(info.Env(), areEqual);
     }
 
     template<>
-    Local<Object> structToJs(const FLAC__StreamMetadata* i, bool deleteHint) {
-        Local<Function> classFunction;
-        switch(i->type) {
-            case FLAC__METADATA_TYPE_STREAMINFO: classFunction = StreamInfoMetadata::getFunction(); break;
-            case FLAC__METADATA_TYPE_PADDING: classFunction = PaddingMetadata::getFunction(); break;
-            case FLAC__METADATA_TYPE_APPLICATION: classFunction = ApplicationMetadata::getFunction(); break;
-            case FLAC__METADATA_TYPE_SEEKTABLE: classFunction = SeekTableMetadata::getFunction(); break;
-            case FLAC__METADATA_TYPE_VORBIS_COMMENT: classFunction = VorbisCommentMetadata::getFunction(); break;
-            case FLAC__METADATA_TYPE_CUESHEET: classFunction = CueSheetMetadata::getFunction(); break;
-            case FLAC__METADATA_TYPE_PICTURE: classFunction = PictureMetadata::getFunction(); break;
-            default: classFunction = UnknownMetadata::getFunction(); break;
+    Mapping<FLAC__StreamMetadata>& Mapping<FLAC__StreamMetadata>::fromJs(const Value& value) {
+        HandleScope scope(value.Env());
+        if(!value.IsObject()) {
+            throw Napi::TypeError::New(value.Env(), "Expected "s + value.ToString().Utf8Value() + " to be object"s);
         }
 
-        Local<Value> args[] = { WrapPointer(i).ToLocalChecked(), deleteHint ? Nan::True() : Nan::False() };
-        auto metadata = Nan::NewInstance(classFunction, 2, args);
-        return metadata.ToLocalChecked();
+        auto obj = value.As<Object>();
+        if(obj.InstanceOf(StreamInfoMetadata::getConstructor())) {
+            return *StreamInfoMetadata::Unwrap(obj);
+        } else if(obj.InstanceOf(PaddingMetadata::getConstructor())) {
+            return *PaddingMetadata::Unwrap(obj);
+        } else if(obj.InstanceOf(ApplicationMetadata::getConstructor())) {
+            return *ApplicationMetadata::Unwrap(obj);
+        } else if(obj.InstanceOf(SeekTableMetadata::getConstructor())) {
+            return *SeekTableMetadata::Unwrap(obj);
+        } else if(obj.InstanceOf(VorbisCommentMetadata::getConstructor())) {
+            return *VorbisCommentMetadata::Unwrap(obj);
+        } else if(obj.InstanceOf(CueSheetMetadata::getConstructor())) {
+            return *CueSheetMetadata::Unwrap(obj);
+        } else if(obj.InstanceOf(PictureMetadata::getConstructor())) {
+            return *PictureMetadata::Unwrap(obj);
+        } else if(obj.InstanceOf(UnknownMetadata::getConstructor())) {
+            return *UnknownMetadata::Unwrap(obj);
+        } else {
+            throw TypeError::New(value.Env(), "Expected "s + value.ToString().Utf8Value() + " to be an instance of Metadata");
+        }
+    }
+
+    template<>
+    Value Mapping<FLAC__StreamMetadata>::toJs(const Env& env, FLAC__StreamMetadata* metadata, bool deleteHint) {
+        if(metadata == nullptr) {
+            return env.Null();
+        }
+
+        EscapableHandleScope scope(env);
+        Function constructor;
+
+        switch(metadata->type) {
+            case FLAC__MetadataType::FLAC__METADATA_TYPE_STREAMINFO:
+                constructor = StreamInfoMetadata::getConstructor();
+                break;
+            case FLAC__MetadataType::FLAC__METADATA_TYPE_PADDING:
+                constructor = PaddingMetadata::getConstructor();
+                break;
+            case FLAC__MetadataType::FLAC__METADATA_TYPE_APPLICATION:
+                constructor = ApplicationMetadata::getConstructor();
+                break;
+            case FLAC__MetadataType::FLAC__METADATA_TYPE_SEEKTABLE:
+                constructor = SeekTableMetadata::getConstructor();
+                break;
+            case FLAC__MetadataType::FLAC__METADATA_TYPE_VORBIS_COMMENT:
+                constructor = VorbisCommentMetadata::getConstructor();
+                break;
+            case FLAC__MetadataType::FLAC__METADATA_TYPE_CUESHEET:
+                constructor = CueSheetMetadata::getConstructor();
+                break;
+            case FLAC__MetadataType::FLAC__METADATA_TYPE_PICTURE:
+                constructor = PictureMetadata::getConstructor();
+                break;
+            default:
+                constructor = UnknownMetadata::getConstructor();
+                break;
+        }
+
+        auto object = constructor.New({pointer::wrap(env, metadata), booleanToJs(env, deleteHint)});
+        return scope.Escape(object);
+    }
+
+    Metadata::~Metadata() {
+        if(shouldBeDeleted) {
+            FLAC__metadata_object_delete(data);
+        }
     }
 
 }

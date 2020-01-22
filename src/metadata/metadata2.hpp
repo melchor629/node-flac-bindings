@@ -1,11 +1,12 @@
-#include <nan.h>
-
 #include "../flac/metadata2.hpp"
 #include "../utils/async.hpp"
-#include "../utils/defs.hpp"
+#include "../utils/converters.hpp"
 
 namespace flac_bindings {
-    struct FlacIOWorkRequest: SyncronizableWorkRequest {
+
+    using namespace Napi;
+
+    struct FlacIOWorkRequest {
         enum Type { Read, Write, Seek, Tell, Eof, Close } type;
         void* cbks;
         void* ptr;
@@ -15,43 +16,43 @@ namespace flac_bindings {
         int64_t* offset;
         int* genericReturn;
 
-        FlacIOWorkRequest(): SyncronizableWorkRequest() {}
-        FlacIOWorkRequest(FlacIOWorkRequest::Type type): SyncronizableWorkRequest(), type(type) {}
+        FlacIOWorkRequest() {}
+        FlacIOWorkRequest(FlacIOWorkRequest::Type type): type(type) {}
     };
 
     class AsyncFlacIOWork: public AsyncBackgroundTask<bool, FlacIOWorkRequest*> {
         struct IOCallbacks {
-            Nan::Callback* readCallback = nullptr;
-            Nan::Callback* writeCallback = nullptr;
-            Nan::Callback* seekCallback = nullptr;
-            Nan::Callback* tellCallback = nullptr;
-            Nan::Callback* eofCallback = nullptr;
-            Nan::Callback* closeCallback = nullptr;
+            FunctionReference readCallback;
+            FunctionReference writeCallback;
+            FunctionReference seekCallback;
+            FunctionReference tellCallback;
+            FunctionReference eofCallback;
+            FunctionReference closeCallback;
 
             IOCallbacks();
-            IOCallbacks(v8::Local<v8::Object> &obj);
+            IOCallbacks(const Object &obj);
             ~IOCallbacks();
 
             FLAC__IOCallbacks generateIOCallbacks();
         } cbk1, cbk2;
 
-        std::tuple<IOCallbacks*, AsyncFlacIOWork::ExecutionContext*> ptr1;
-        std::tuple<IOCallbacks*, AsyncFlacIOWork::ExecutionContext*> ptr2;
+        std::tuple<IOCallbacks*, AsyncFlacIOWork::ExecutionProgress*> ptr1;
+        std::tuple<IOCallbacks*, AsyncFlacIOWork::ExecutionProgress*> ptr2;
 
-        void doAsyncWork(AsyncFlacIOWork::ExecutionContext &, FlacIOWorkRequest* const*);
+        void doAsyncWork(const Napi::Env&, AsyncFlacIOWork::ExecutionProgress&, FlacIOWorkRequest* const*);
 
     public:
         AsyncFlacIOWork(
-            std::function<bool(void*, FLAC__IOCallbacks)> f,
+            std::function<bool(FLAC__IOHandle, FLAC__IOCallbacks)> f,
             const char* name,
-            v8::Local<v8::Object> &obj
+            const Object &obj
         );
 
         AsyncFlacIOWork(
-            std::function<bool(void*, FLAC__IOCallbacks, void*, FLAC__IOCallbacks)> f,
+            std::function<bool(FLAC__IOHandle, FLAC__IOCallbacks, FLAC__IOHandle, FLAC__IOCallbacks)> f,
             const char* name,
-            v8::Local<v8::Object> &obj1,
-            v8::Local<v8::Object> &obj2
+            const Object &obj1,
+            const Object &obj2
         );
     };
 }
