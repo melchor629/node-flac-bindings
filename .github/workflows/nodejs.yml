@@ -3,25 +3,6 @@ name: Node CI
 on: [push, pull_request]
 
 jobs:
-  build-8:
-    runs-on: ubuntu-latest
-    container:
-      image: node:8-buster
-      env:
-        CI: true
-    steps:
-    - uses: actions/checkout@v1
-    - name: Prepare
-      run: |
-        apt-get update
-        apt-get install -y cmake libflac-dev flac
-    - name: Install
-      run: npm install
-    - name: Build
-      run: npm run cmake-js -- build
-    - name: Lint
-      run: npm run lint
-
   build-10:
     runs-on: ubuntu-latest
     container:
