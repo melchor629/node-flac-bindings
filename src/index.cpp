@@ -1,153 +1,108 @@
-#include <nan.h>
+#include <napi.h>
+#include "decoder/decoder.hpp"
+#include "encoder/encoder.hpp"
+#include "mappings/mappings.hpp"
+#include "mappings/native_iterator.hpp"
 #include "utils/dl.hpp"
-#include "utils/async.hpp"
-#include <thread>
-
-using namespace v8;
-using namespace node;
 
 namespace flac_bindings {
-    class StreamEncoder { public: static NAN_MODULE_INIT(initEncoder); };
-    class StreamDecoder { public: static NAN_MODULE_INIT(initDecoder); };
-    NAN_MODULE_INIT(initMetadata0);
-    class SimpleIterator { public: static NAN_MODULE_INIT(initMetadata1); };
-    class Chain { public: static NAN_MODULE_INIT(initMetadata2); };
-    class Iterator { public: static NAN_MODULE_INIT(initMetadata2); };
-    NAN_MODULE_INIT(initMetadataObjectMethods);
-    NAN_MODULE_INIT(initFormat);
 
-    bool isLibFlacLoaded = false;
-    Library* libFlac;
-    Nan::Persistent<Object> module;
+    using namespace Napi;
 
-    static void atExit(void*) {
-        if(isLibFlacLoaded) {
-            delete libFlac;
-        }
+    extern Promise testAsync(const CallbackInfo& info);
+    extern Object initFormat(const Env& env);
+    extern Object initMetadata0(const Env& env);
+    extern Function initMetadata1(const Env& env);
+    extern void initMetadata2(const Env& env, Object& exports);
+
+    Library* libFlac = nullptr;
+    ObjectReference module;
+
+    static Object initMetadata(const Env& env) {
+        EscapableHandleScope scope(env);
+        auto metadata = Object::New(env);
+        metadata["StreamInfoMetadata"] = StreamInfoMetadata::init(env);
+        metadata["PaddingMetadata"] = PaddingMetadata::init(env);
+        metadata["ApplicationMetadata"] = ApplicationMetadata::init(env);
+        metadata["SeekTableMetadata"] = SeekTableMetadata::init(env);
+        metadata["SeekPoint"] = SeekPoint::init(env);
+        metadata["VorbisCommentMetadata"] = VorbisCommentMetadata::init(env);
+        metadata["CueSheetMetadata"] = CueSheetMetadata::init(env);
+        metadata["CueSheetIndex"] = CueSheetIndex::init(env);
+        metadata["CueSheetTrack"] = CueSheetTrack::init(env);
+        metadata["PictureMetadata"] = PictureMetadata::init(env);
+        metadata["UnknownMetadata"] = UnknownMetadata::init(env);
+        return scope.Escape(objectFreeze(metadata)).As<Object>();
     }
 
-    NAN_METHOD(loadLibFlac) {
-        if(info[0]->IsUndefined()) {
-            Nan::ThrowError("Needs the path to the flac library");
-        } else if(!info[0]->IsString()) {
-            Nan::ThrowError("String needed representing the path to flac library");
+    static void fillExports(const Env& env, Object exports) {
+        HandleScope scope(env);
+        NativeIterator::init(env);
+
+        exports["napiVersion"] = Number::New(env, NAPI_VERSION);
+        exports["testAsync"] = Function::New(env, testAsync);
+        exports["Encoder"] = StreamEncoder::init(env);
+        exports["Decoder"] = StreamDecoder::init(env);
+        exports["format"] = initFormat(env);
+        exports["metadata"] = initMetadata(env);
+        exports["metadata0"] = initMetadata0(env);
+        exports["SimpleIterator"] = initMetadata1(env);
+        initMetadata2(env, exports);
+
+        if(exports.Has("load")) {
+            exports.Delete("load");
+        }
+
+        objectFreeze(exports);
+    }
+
+    static void load(const CallbackInfo& info) {
+        auto path = stringFromJs(info[0]);
+        auto ext = maybeStringFromJs(info[1]);
+
+        if(ext.has_value()) {
+            libFlac = Library::load(path, ext.value());
         } else {
-            Nan::Utf8String Path(info[0]);
-            libFlac = Library::load(*Path);
-            if(libFlac == nullptr) {
-                Nan::ThrowError("Could not load library: check path");
-            } else {
-                isLibFlacLoaded = true;
-                Handle<Object> obj = Nan::New(module);
-                StreamEncoder::initEncoder(obj);
-                StreamDecoder::initDecoder(obj);
-                initFormat(obj);
-                initMetadata0(obj);
-                SimpleIterator::initMetadata1(obj);
-                Chain::initMetadata2(obj);
-                Iterator::initMetadata2(obj);
-                initMetadataObjectMethods(obj);
-                Nan::Delete(obj, Nan::New("load").ToLocalChecked());
-                info.GetReturnValue().Set(obj);
-                AtExit(atExit);
-            }
+            libFlac = Library::load(path);
         }
-    }
 
-    NAN_METHOD(testAsync) {
-        using namespace std::chrono_literals;
-        Nan::Utf8String endModeJsStr(info[0]);
-        std::string endMode(*endModeJsStr);
-        AsyncBackgroundTask<bool, char>::FunctionCallback asyncFunction = [endMode] (auto &c) {
-            for(char ch = '0'; ch <= '9'; ch++) {
-                c.sendProgress(ch);
-                if(c.isCompleted()) return;
-                std::this_thread::sleep_for(5ms);
-            }
-
-            std::this_thread::sleep_for(10ms);
-
-            if(endMode == "reject") {
-                c.reject("Rejected :(");
-            } else if(endMode == "resolve") {
-                c.resolve(true);
-            }
-        };
-
-        AsyncBackgroundTask<bool, char>::ProgressCallback asyncFUNction = [endMode] (auto &self, const auto e, auto s) {
-            Nan::HandleScope scope;
-            auto func = self.getTask()->GetFromPersistent("cbk").template As<v8::Function>();
-            Local<Value> args[] = { Nan::New(e, 1).ToLocalChecked() };
-            auto maybeResult = Nan::Call(func, func, 1, args);
-            if(!maybeResult.IsEmpty()) {
-                auto res = maybeResult.ToLocalChecked();
-                if(res->IsPromise()) {
-                    self.defer(res.template As<Promise>(), e, [endMode=endMode] (auto &c, auto e, auto &info) {
-                        if(*e == '9' && endMode == "exception") {
-                            Nan::ThrowError(Nan::Error("Thrown :("));
-                        }
-                    });
-                    return;
-                }
-            }
-            if(*e == '9' && endMode == "exception") {
-                Nan::ThrowError(Nan::Error("Thrown :("));
-            }
-        };
-
-        AsyncBackgroundTask<bool, char>* worker = new AsyncBackgroundTask<bool, char>(
-            asyncFunction,
-            asyncFUNction,
-            "flac:testAsync",
-            [] (bool v) { return Nan::New<Boolean>(v); }
-        );
-        info.GetReturnValue().Set(worker->getReturnValue());
-        worker->SaveToPersistent("cbk", info[1]);
-        AsyncQueueWorker(worker);
-    }
-
-    NAN_MODULE_INIT(init) {
-        module.Reset(target);
-
-        Nan::Set(
-            target,
-            Nan::New("testAsync").ToLocalChecked(),
-            Nan::GetFunction(Nan::New<FunctionTemplate>(testAsync)).ToLocalChecked()
-        );
-
-        libFlac = Library::load("libFLAC", "so.8");
         if(libFlac == nullptr) {
-#ifdef __linux__
-            //Workaround for some Linux distros
-            libFlac = Library::load("libFLAC", "so.8");
-            if(libFlac == nullptr) {
-#endif
-#ifdef WIN32
-            libFlac = Library::load("FLAC", "dll");
-            if(libFlac == nullptr) {
-#endif
-            isLibFlacLoaded = false;
-            Nan::Set(target, Nan::New("load").ToLocalChecked(), Nan::GetFunction(Nan::New<FunctionTemplate>(loadLibFlac)).ToLocalChecked());
-            return;
-#if defined(__linux__) || defined(WIN32)
-            }
-#endif
+            throw Error::New(info.Env(), "Could not load library");
         }
 
-        isLibFlacLoaded = true;
-
-        StreamEncoder::initEncoder(target);
-        StreamDecoder::initDecoder(target);
-        initMetadata0(target);
-        SimpleIterator::initMetadata1(target);
-        Chain::initMetadata2(target);
-        Iterator::initMetadata2(target);
-        initMetadataObjectMethods(target);
-        initFormat(target);
-
-        AtExit(atExit);
+        fillExports(info.Env(), module.Value());
     }
 
-};
+    Object init(Env env, Object exports) {
+        module = Persistent(exports);
+        module.SuppressDestruct();
 
-NODE_MODULE(flac_bindings, flac_bindings::init)
+        exports["_helpers"] = Object::New(env);
+
+        libFlac = Library::load("libFLAC");
+        if(libFlac == nullptr) {
+            //Some distros only publish the suffxed shared library
+            libFlac = Library::load("libFLAC", LIBRARY_EXTENSION ".8");
+        }
+
+        if(libFlac == nullptr) {
+            exports["load"] = Function::New(env, load);
+        } else {
+            fillExports(env, exports);
+        }
+
+        /*napi_add_env_cleanup_hook(env, [] (auto) {
+            printf("Deleting stuff\n");
+            delete libFlac;
+        }, nullptr);*/
+
+        return exports;
+    }
+
+}
+
+static napi_value napi_init_module(napi_env env, napi_value exports) {
+    return Napi::RegisterModule(env, exports, flac_bindings::init);
+}
+
+NAPI_MODULE(flac, napi_init_module)

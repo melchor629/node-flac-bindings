@@ -1,25 +1,21 @@
-#include <functional>
-#include <memory>
-
-#define MAKE_FRIENDS
 #include "encoder.hpp"
+#include "../flac/encoder.hpp"
 #include "../mappings/mappings.hpp"
-#include "../utils/pointer.hpp"
-#include "../utils/encoder-decoder-async.hpp"
-
-using namespace v8;
-using namespace Nan;
-using namespace std::placeholders;
+#include "../utils/defer.hpp"
+#include "../utils/encoder_decoder_utils.hpp"
 
 namespace flac_bindings {
 
-    EncoderWorkRequest::EncoderWorkRequest(): SyncronizableWorkRequest() {}
+    using namespace Napi;
+    using namespace std::placeholders;
 
-    EncoderWorkRequest::EncoderWorkRequest(EncoderWorkRequest::Type type): EncoderWorkRequest() {
+    EncoderWorkRequest::EncoderWorkRequest() {}
+
+    EncoderWorkRequest::EncoderWorkRequest(EncoderWorkRequest::Type type) {
         this->type = type;
     }
 
-    EncoderWorkRequest::EncoderWorkRequest(const EncoderWorkRequest &d): SyncronizableWorkRequest(d) {
+    EncoderWorkRequest::EncoderWorkRequest(const EncoderWorkRequest &d) {
         type = d.type;
         returnValue = d.returnValue;
         buffer = d.buffer;
@@ -33,326 +29,195 @@ namespace flac_bindings {
     }
 
 
-    static inline Nan::Maybe<std::pair<int32_t**, uint32_t>> convertArgsForProcess(Local<Value> &buffers_, Local<Value> &samples, uint32_t ch) {
-        if(!buffers_->IsArray()) {
-            Nan::ThrowTypeError("Expected first argument to be an array");
-            return Nan::Nothing<std::pair<int32_t**, uint32_t>>();
-        }
+    AsyncEncoderWork::FunctionCallback AsyncEncoderWork::decorate(
+        EncoderWorkContext* ctx,
+        const std::function<int()>& func
+    ) {
+        return [ctx, func] (ExecutionProgress& c) {
+            ctx->enc->asyncExecutionProgress = &c;
 
-        auto buffers = buffers_.template As<Array>();
-        if(buffers->Length() < ch) {
-            std::string err = "The array must have " + std::to_string(ch) + " buffers";
-            Nan::ThrowError(err.c_str());
-            return Nan::Nothing<std::pair<int32_t**, uint32_t>>();
-        }
+            DEFER(ctx->enc->asyncContext = nullptr);
+            DEFER(ctx->enc->asyncExecutionProgress = nullptr);
 
-        auto samples2 = numberFromJs<uint32_t>(samples);
-        if(samples2.IsNothing()) {
-            Nan::ThrowTypeError("Expected second argument to be number or bigint");
-            return Nan::Nothing<std::pair<int32_t**, uint32_t>>();
-        }
-
-        int32_t** _buffers = new int32_t*[ch];
-        for(uint32_t i = 0; i < ch; i++) {
-            Local<Value> buff = Nan::Get(buffers, i).ToLocalChecked();
-            _buffers[i] = UnwrapPointer<int32_t>(buff);
-            if(_buffers[i] == nullptr) {
-                std::string err = "Expected element at " + std::to_string(i) + " to be a Buffer";
-                Nan::ThrowTypeError(err.c_str());
-                delete[] _buffers;
-                return Nan::Nothing<std::pair<int32_t**, uint32_t>>();
+            int ok = func();
+            if(!c.isCompleted()) {
+                c.resolve(ok);
             }
-
-            size_t buffLen = node::Buffer::Length(buff);
-            if(buffLen < samples2.FromJust() * ch * 4) {
-                std::string errorMessage = "Buffer at position " + std::to_string(i) + " has not enough bytes: " +
-                    "expected " + std::to_string(samples2.FromJust() * ch * 4) + " bytes (" +
-                    std::to_string(samples2.FromJust()) + " [int32_t] samples * " + std::to_string(ch) +
-                    " channels * 4 bytes per sample) but got " + std::to_string(node::Buffer::Length(buff)) + " bytes";
-                Nan::ThrowError(errorMessage.c_str());
-                delete[] _buffers;
-                return Nan::Nothing<std::pair<int32_t**, uint32_t>>();
-            }
-        }
-
-        return Nan::Just(std::make_pair(_buffers, samples2.FromJust()));
+        };
     }
-
-    static inline Nan::Maybe<std::pair<const int32_t*, uint32_t>> convertArgsForProcessInterleaved(Local<Value> &_buffer, Local<Value> &_samples, unsigned c) {
-        const int32_t* buffer = UnwrapPointer<const int32_t>(_buffer);
-        auto samples = numberFromJs<uint32_t>(_samples);
-
-        if(buffer == nullptr) {
-            Nan::ThrowTypeError("Expected first argument to be a Buffer");
-            return Nan::Nothing<std::pair<const int32_t*, uint32_t>>();
-        } else if(samples.IsNothing()) {
-            if(!_samples->IsUndefined() && !_samples->IsNull()) {
-                Nan::ThrowTypeError("Expected second argument to be a number");
-                return Nan::Nothing<std::pair<const int32_t*, uint32_t>>();
-            } else {
-                samples = Nan::Just<uint32_t>(node::Buffer::Length(_buffer) / c / 4);
-            }
-        }
-
-        if(node::Buffer::Length(_buffer) < samples.FromJust() * c * 4) {
-            std::string errorMessage = "Buffer has not enough bytes: expected " + std::to_string(samples.FromJust() * c * 4) +
-                " bytes (" + std::to_string(samples.FromJust()) + " [int32_t] samples * " + std::to_string(c) +
-                " channels * 4 bytes per sample) but got " + std::to_string(node::Buffer::Length(_buffer)) + " bytes";
-            Nan::ThrowError(errorMessage.c_str());
-            return Nan::Nothing<std::pair<const int32_t*, uint32_t>>();
-        }
-
-        return Nan::Just(std::make_pair(buffer, samples.FromJust()));
-    }
-
-    static bool captureInitErrorAndThrow(StreamEncoder* enc, AsyncEncoderWorkBase::ExecutionContext &c, int r) {
-        if(r == 0) {
-            return true;
-        }
-
-        const char* errorMessage = "Unknwon encoder error";
-        if(r == 1) { //ENCODER_ERROR
-            errorMessage = FLAC__stream_encoder_get_resolved_state_string(enc->enc);
-        } else if(r == 2) { //UNSUPPORTED_CONTAINER
-            errorMessage = "The library was not compiled with support for the given container format";
-        } else if(r == 3) { //INVALID_CALLBACKS
-            errorMessage = "A required callback was not supplied";
-        } else if(r == 4) { //INVALID_NUMBER_OF_CHANNELS
-            errorMessage = "Invalid number of channels";
-        } else if(r == 5) { //INVALID_BITS_PER_SAMPLE
-            errorMessage = "Invalid bits per sample (the reference encoder only supports up to 24 bit)";
-        } else if(r == 6) { //INVALID_SAMPLE_RATE
-            errorMessage = "Invalid sample rate";
-        } else if(r == 7) { //INVALID_BLOCK_SIZE
-            errorMessage = "Invalid block size";
-        } else if(r == 8) { //INVALID_MAX_LPC_ORDER
-            errorMessage = "Invalid maximum LPC order";
-        } else if(r == 9) { //INVALID_QLP_COEFF_PRECISION
-            errorMessage = "Invalid precision of the quantized linear predictor coefficient";
-        } else if(r == 10) { //BLOCK_SIZE_TOO_SMALL_FOR_LPC_ORDER
-            errorMessage = "The specified block size is less than the maximum LPC order";
-        } else if(r == 11) { //NOT_STREAMABLE
-            errorMessage = "The encoder is bound to the Subset but other settings violate it";
-        } else if(r == 12) { //INVALID_METADATA
-            errorMessage = "Any of the metadata blocks given are invalid or there are duplicated metadata blocks";
-        } else if(r == 13) { //ALREADY_INITIALIZED
-            errorMessage = "init*() method called when the encoder has already been initialized";
-        }
-
-        c.reject(errorMessage);
-        return true;
-    }
-
 
     AsyncEncoderWork::AsyncEncoderWork(
-        std::function<bool(AsyncEncoderWorkBase::ExecutionContext &)> function,
+        const StoreList& list,
+        std::function<int()> function,
         const char* name,
-        StreamEncoder* enc
+        EncoderWorkContext* ctx,
+        std::function<Napi::Value(const Napi::Env&, int)> convertFunction
     ): AsyncEncoderWorkBase(
-        decorate(enc, function, [enc] () { return FLAC__stream_encoder_get_resolved_state_string(enc->enc); }),
-        std::bind(encoderDoWork, enc, _1, _2),
+        list.begin()->Env(),
+        decorate(ctx, function),
+        std::bind(&AsyncEncoderWork::onProgress, this, ctx, _1, _2, _3, _4),
         name,
-        booleanToJs<bool>
-    ) {}
-
-    AsyncEncoderWorkBase* AsyncEncoderWork::forFinish(StreamEncoder* enc) {
-        auto workFunction = [enc] (AsyncEncoderWorkBase::ExecutionContext &c) { return FLAC__stream_encoder_finish(enc->enc); };
-        return new AsyncEncoderWork(workFunction, "flac_bindings::encoder::finishAsync", enc);
-    }
-
-    AsyncEncoderWorkBase* AsyncEncoderWork::forProcess(Local<Value> buffers_, Local<Value> samples, StreamEncoder* enc) {
-        assertThrowing2(FLAC__stream_encoder_get_state(enc->enc) == 0, "The encoder must be in OK state", nullptr);
-        auto result = convertArgsForProcess(buffers_, samples, FLAC__stream_encoder_get_channels(enc->enc));
-        if(result.IsNothing()) {
-            return nullptr;
+        convertFunction
+    ) {
+        this->Receiver().Set("this", list.begin()->Env());
+        for(auto it = list.begin() + 1; it != list.end(); it += 1) {
+            this->Receiver().Set(it - list.begin() - 1, *it);
         }
-
-        auto _buffers = std::get<0>(result.FromJust());
-        auto samples2 = std::get<1>(result.FromJust());
-        auto workFunction = [enc, _buffers, samples2] (AsyncEncoderWorkBase::ExecutionContext &c) {
-            bool ret = FLAC__stream_encoder_process(enc->enc, _buffers, samples2);
-            delete[] _buffers;
-            return ret;
-        };
-        auto work = new AsyncEncoderWork(workFunction, "flac_bindings::encoder::processAsync", enc);
-        work->SaveToPersistent("buffers", buffers_);
-        work->SaveToPersistent("samples", samples);
-        return work;
     }
 
-    AsyncEncoderWorkBase* AsyncEncoderWork::forProcessInterleaved(Local<Value> _buffer, Local<Value> _samples, StreamEncoder* enc) {
-        assertThrowing2(FLAC__stream_encoder_get_state(enc->enc) == 0, "The encoder must be in OK state", nullptr);
-        auto result = convertArgsForProcessInterleaved(_buffer, _samples, FLAC__stream_encoder_get_channels(enc->enc));
-        if(result.IsNothing()) {
-            return nullptr;
-        }
-
-        auto buffer = std::get<0>(result.FromJust());
-        auto samples = std::get<1>(result.FromJust());
-        auto workFunction = [enc, buffer, samples] (AsyncEncoderWorkBase::ExecutionContext &c) { return FLAC__stream_encoder_process_interleaved(enc->enc, buffer, samples); };
-        auto work = new AsyncEncoderWork(workFunction, "flac_bindings::encoder::processInterleavedAsync", enc);
-        work->SaveToPersistent("buffer", _buffer);
-        work->SaveToPersistent("samples", _samples);
-        return work;
-    }
-
-    AsyncEncoderWorkBase* AsyncEncoderWork::forInitStream(StreamEncoder* enc) {
-        auto workFunction = [enc] (AsyncEncoderWorkBase::ExecutionContext &c) {
-            return captureInitErrorAndThrow(enc, c, FLAC__stream_encoder_init_stream(
-                enc->enc,
-                !enc->writeCbk ? nullptr : encoder_write_callback,
-                !enc->seekCbk ? nullptr : encoder_seek_callback,
-                !enc->tellCbk ? nullptr : encoder_tell_callback,
-                !enc->metadataCbk ? nullptr : encoder_metadata_callback,
-                enc
-            ));
+    AsyncEncoderWork* AsyncEncoderWork::forFinish(const StoreList& list, EncoderWorkContext* ctx) {
+        auto workFunction = [ctx] () {
+            return FLAC__stream_encoder_finish(ctx->enc->enc);
         };
 
-        return new AsyncEncoderWork(workFunction, "flac_bindings::encoder::initStreamAsync", enc);
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::finishAsync", ctx);
     }
 
-    AsyncEncoderWorkBase* AsyncEncoderWork::forInitOggStream(StreamEncoder* enc) {
-        auto workFunction = [enc] (AsyncEncoderWorkBase::ExecutionContext &c) {
-            return captureInitErrorAndThrow(enc, c, FLAC__stream_encoder_init_ogg_stream(
-                enc->enc,
-                !enc->readCbk ? nullptr : encoder_read_callback,
-                !enc->writeCbk ? nullptr : encoder_write_callback,
-                !enc->seekCbk ? nullptr : encoder_seek_callback,
-                !enc->tellCbk ? nullptr : encoder_tell_callback,
-                !enc->metadataCbk ? nullptr : encoder_metadata_callback,
-                enc
-            ));
+    AsyncEncoderWork* AsyncEncoderWork::forProcess(const StoreList& list, const std::vector<int32_t*>& buffers, uint64_t samples, EncoderWorkContext* ctx) {
+        auto workFunction = [ctx, buffers, samples] () {
+            return FLAC__stream_encoder_process(ctx->enc->enc, buffers.data(), samples);
         };
 
-        return new AsyncEncoderWork(workFunction, "flac_bindings::encoder::initOggStreamAsync", enc);
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::processAsync", ctx);
     }
 
-    AsyncEncoderWorkBase* AsyncEncoderWork::forInitFile(Local<Value> path, StreamEncoder* enc) {
-        if(!path->IsString()) {
-            Nan::ThrowTypeError("Expected first argument to be string");
-            return nullptr;
-        }
-
-        Nan::Utf8String str(path);
-        std::string string(*str);
-        auto workFunction = [enc, string] (AsyncEncoderWorkBase::ExecutionContext &c) {
-            return captureInitErrorAndThrow(enc, c, FLAC__stream_encoder_init_file(
-                enc->enc,
-                string.c_str(),
-                enc->progressCbk ? encoder_progress_callback : nullptr,
-                enc
-            ));
+    AsyncEncoderWork* AsyncEncoderWork::forProcessInterleaved(const StoreList& list, int32_t* buffer, uint64_t samples, EncoderWorkContext* ctx) {
+        auto workFunction = [ctx, buffer, samples] () {
+            return FLAC__stream_encoder_process_interleaved(ctx->enc->enc, buffer, samples);
         };
 
-        return new AsyncEncoderWork(workFunction, "flac_bindings::encoder::initFileAsync", enc);
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::processInterleavedAsync", ctx);
     }
 
-    AsyncEncoderWorkBase* AsyncEncoderWork::forInitOggFile(Local<Value> path, StreamEncoder* enc) {
-        if(!path->IsString()) {
-            Nan::ThrowTypeError("Expected first argument to be string");
-            return nullptr;
-        }
-
-        Nan::Utf8String str(path);
-        std::string string(*str);
-        auto workFunction = [enc, string] (AsyncEncoderWorkBase::ExecutionContext &c) {
-            return captureInitErrorAndThrow(enc, c, FLAC__stream_encoder_init_ogg_file(
-                enc->enc,
-                string.c_str(),
-                enc->progressCbk ? encoder_progress_callback : nullptr,
-                enc
-            ));
+    static auto initConvertFunc = std::bind(numberToJs<int>, _1, _2, false);
+    AsyncEncoderWork* AsyncEncoderWork::forInitStream(const StoreList& list, EncoderWorkContext* ctx) {
+        auto workFunction = [ctx] () {
+            return FLAC__stream_encoder_init_stream(
+                ctx->enc->enc,
+                ctx->writeCbk.IsEmpty() ? nullptr : StreamEncoder::writeCallback,
+                ctx->seekCbk.IsEmpty() ? nullptr : StreamEncoder::seekCallback,
+                ctx->tellCbk.IsEmpty() ? nullptr : StreamEncoder::tellCallback,
+                ctx->metadataCbk.IsEmpty() ? nullptr : StreamEncoder::metadataCallback,
+                ctx
+            );
         };
 
-        return new AsyncEncoderWork(workFunction, "flac_bindings::encoder::initOggFileAsync", enc);
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initStreamAsync", ctx, initConvertFunc);
     }
 
+    AsyncEncoderWork* AsyncEncoderWork::forInitOggStream(const StoreList& list, EncoderWorkContext* ctx) {
+        auto workFunction = [ctx] () {
+            return FLAC__stream_encoder_init_ogg_stream(
+                ctx->enc->enc,
+                ctx->readCbk.IsEmpty() ? nullptr : StreamEncoder::readCallback,
+                ctx->writeCbk.IsEmpty() ? nullptr : StreamEncoder::writeCallback,
+                ctx->seekCbk.IsEmpty() ? nullptr : StreamEncoder::seekCallback,
+                ctx->tellCbk.IsEmpty() ? nullptr : StreamEncoder::tellCallback,
+                ctx->metadataCbk.IsEmpty() ? nullptr : StreamEncoder::metadataCallback,
+                ctx
+            );
+        };
 
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initOggStreamAsync", ctx, initConvertFunc);
+    }
 
-    static void encoderDoWork(const StreamEncoder* enc, AsyncEncoderWorkBase::ExecutionContext &c, EncoderWorkRequest* const* dataPtr) {
-        using namespace v8;
-        using namespace Nan;
-        using namespace node;
+    AsyncEncoderWork* AsyncEncoderWork::forInitFile(const StoreList& list, const std::string& path, EncoderWorkContext* ctx) {
+        auto workFunction = [ctx, path] () {
+            return FLAC__stream_encoder_init_file(
+                ctx->enc->enc,
+                path.c_str(),
+                ctx->progressCbk.IsEmpty() ? nullptr : StreamEncoder::progressCallback,
+                ctx
+            );
+        };
 
-        auto async = (Nan::AsyncResource*) c.getTask()->getAsyncResource();
-        std::function<void (Local<Value> result)> processResult;
-        Nan::MaybeLocal<Value> result;
-        Nan::TryCatch tryCatch;
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initFileAsync", ctx, initConvertFunc);
+    }
 
-        auto data = *dataPtr;
-        auto functionForReturnNumber = functionGeneratorForReturnNumber(enc, data);
-        auto functionForReturnObject = functionGeneratorForReturnObject(enc, data);
+    AsyncEncoderWork* AsyncEncoderWork::forInitOggFile(const StoreList& list, const std::string& path, EncoderWorkContext* ctx) {
+        auto workFunction = [ctx, path] () {
+            return FLAC__stream_encoder_init_ogg_file(
+                ctx->enc->enc,
+                path.c_str(),
+                ctx->progressCbk.IsEmpty() ? nullptr : StreamEncoder::progressCallback,
+                ctx
+            );
+        };
 
-        switch(data->type) {
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initOggFileAsync", ctx, initConvertFunc);
+    }
+
+    void AsyncEncoderWork::onProgress(
+        const EncoderWorkContext* ctx,
+        Napi::Env& env,
+        ExecutionProgress& prog,
+        EncoderWorkRequest* const* reqPtr,
+        size_t
+    ) {
+        auto& asyncContext = prog.getTask()->getAsyncContext();
+        std::function<void(Napi::Value result)> processResult;
+        Napi::Value result;
+        auto req = *reqPtr;
+
+        switch(req->type) {
             case EncoderWorkRequest::Type::Read: {
-                Local<Value> args[] { WrapPointer(data->buffer, *data->bytes).ToLocalChecked() };
-                result = enc->readCbk->Call(1, args, async);
-                processResult = functionForReturnObject("Encoder::ReadCallback", "bytes", [data] (auto v) { *data->bytes = v; });
+                auto jsBuffer = pointer::wrap(env, req->buffer, *req->bytes);
+                result = ctx->readCbk.MakeCallback(env.Global(), {jsBuffer}, asyncContext);
+                processResult = generateParseObjectResult(req->returnValue, "Encoder:ReadCallback", "bytes", *req->bytes);
                 break;
             }
 
             case EncoderWorkRequest::Type::Write: {
-                Local<Value> args[] {
-                    WrapPointer(data->constBuffer, *data->bytes).ToLocalChecked(),
-                    numberToJs(data->samples),
-                    numberToJs(data->frame)
-                };
-                result = enc->writeCbk->Call(3, args, async);
-                processResult = functionForReturnNumber("Encoder::WriteCallback");
+                auto jsBuffer = pointer::wrap(env, const_cast<char*>(req->constBuffer), *req->bytes);
+                result = ctx->writeCbk.MakeCallback(
+                    env.Global(),
+                    {jsBuffer, numberToJs(env, req->samples), numberToJs(env, req->frame)},
+                    asyncContext
+                );
+                processResult = generateParseNumberResult(req->returnValue, "Encoder:WriteCallback");
                 break;
             }
 
             case EncoderWorkRequest::Type::Seek: {
-                Local<Value> args[] { numberToJs(*data->offset) };
-                result = enc->seekCbk->Call(1, args, async);
-                processResult = functionForReturnNumber("Encoder::SeekCallback");
+                result = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, *req->offset)}, asyncContext);
+                processResult = generateParseNumberResult(req->returnValue, "Encoder:SeekCallback");
                 break;
             }
 
             case EncoderWorkRequest::Type::Tell: {
-                result = enc->tellCbk->Call(0, nullptr, async);
-                processResult = functionForReturnObject("Encoder::TellCallback", "offset", [data] (auto v) { *data->offset = v; });
+                result = ctx->tellCbk.MakeCallback(env.Global(), {}, asyncContext);
+                processResult = generateParseObjectResult(req->returnValue, "Encoder:TellCallback", "offset", *req->offset);
                 break;
             }
 
             case EncoderWorkRequest::Type::Metadata: {
-                Local<Value> args[] { structToJs(data->metadata) };
-                result = enc->metadataCbk->Call(1, args, async);
+                auto jsMetadata = Metadata::toJs(env, const_cast<FLAC__StreamMetadata*>(req->metadata));
+                result = ctx->metadataCbk.MakeCallback(env.Global(), {jsMetadata}, asyncContext);
                 break;
             }
 
             case EncoderWorkRequest::Type::Progress: {
-                Local<Value> args[] {
-                    numberToJs(data->progress.bytesWritten),
-                    numberToJs(data->progress.samplesWritten),
-                    numberToJs(data->progress.framesWritten),
-                    numberToJs(data->progress.totalFramesEstimate)
-                };
-                result = enc->progressCbk->Call(4, args, async);
+                result = ctx->progressCbk.MakeCallback(env.Global(), {
+                    numberToJs(env, req->progress.bytesWritten),
+                    numberToJs(env, req->progress.samplesWritten),
+                    numberToJs(env, req->progress.framesWritten),
+                    numberToJs(env, req->progress.totalFramesEstimate),
+                }, asyncContext);
                 break;
             }
         }
 
-        if(tryCatch.HasCaught()) {
-            c.reject(tryCatch.Exception());
-            data->notifyWorkDone();
-        } else if(!result.IsEmpty()) {
-            auto theGoodResult = result.ToLocalChecked();
-            if(theGoodResult->IsPromise()) {
-                auto promise = theGoodResult.As<Promise>();
-                c.defer(promise, nullptr, [processResult, data] (auto &c, auto _, auto &info) {
-                    if(processResult && !info[0].IsEmpty()) {
-                        processResult(info[0]);
-                    }
-
-                    data->notifyWorkDone();
-                }, [data] (auto &c, auto _, auto &info) { c.reject(info[0]); data->notifyWorkDone(); });
-            } else {
-                if(processResult && !result.IsEmpty()) processResult(result.ToLocalChecked());
-                data->notifyWorkDone();
-            }
+        if(result.IsPromise()) {
+            auto promise = result.As<Promise>();
+            prog.defer(promise, [processResult] (auto&, auto& info, auto) {
+                if(processResult) {
+                    processResult(info[0]);
+                }
+            });
         } else {
-            data->notifyWorkDone();
+            if(processResult) {
+                processResult(result);
+            }
         }
     }
 

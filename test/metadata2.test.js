@@ -4,7 +4,7 @@ const { Chain, Iterator, metadata, format } = require('../lib/index').api;
 const { assert, use } = require('chai');
 const { promises: fs, ...oldfs } = require('fs');
 const path = require('path');
-const temp = require('temp');
+const temp = require('temp').track();
 
 temp.track();
 
@@ -29,11 +29,11 @@ describe('Chain & Iterator', function() {
     describe('read', function() {
 
         it('throws if the first argument is not a Metadata', function() {
-            assert.throws(() => new Chain().read({}));
+            assert.throws(() => new Chain().read({}), /Expected .+? to be string/);
         });
 
         it('throws if the first argument is not a Metadata (ogg version)', function() {
-            assert.throws(() => new Chain().readOgg(() => 1));
+            assert.throws(() => new Chain().readOgg(() => 1), /Expected .+? to be string/);
         });
 
         it('returns false if the file does not exist', async function() {
@@ -62,19 +62,20 @@ describe('Chain & Iterator', function() {
     describe('readAsync', function() {
 
         it('throws if the first argument is not a string', async function() {
-            await assert.throwsAsync(() => new Chain().readAsync({}));
+            await assert.throwsAsync(() => new Chain().readAsync({}), /Expected .+? to be string/);
         });
 
         it('throws if the first argument is not a string (ogg version)', async function() {
-            await assert.throwsAsync(() => new Chain().readOggAsync(() => 1));
+            await assert.throwsAsync(() => new Chain().readOggAsync(() => 1), /Expected .+? to be string/);
         });
 
         it('throws if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
             const ch = new Chain();
 
-            await assert.throwsAsync(() => ch.readAsync(filePath), /^ERROR_OPENING_FILE$/);
+            assert.isFalse(await ch.readAsync(filePath));
 
+            assert.equal(Chain.StatusString[ch.status()], 'ERROR_OPENING_FILE');
             await assert.throwsAsync(() => fs.access(filePath), /^ENOENT: no such file or directory/);
         });
 
@@ -93,19 +94,19 @@ describe('Chain & Iterator', function() {
     describe('readWithCallbacks', function() {
 
         it('throws if the first argument is not an object', async function() {
-            await assert.throwsAsync(() => new Chain().readWithCallbacks(7));
+            await assert.throwsAsync(() => new Chain().readWithCallbacks(7), /Expected .+? to be object/);
         });
 
         it('throws if the first argument is not an object (ogg version)', async function() {
-            await assert.throwsAsync(() => new Chain().readOggWithCallbacks(7));
+            await assert.throwsAsync(() => new Chain().readOggWithCallbacks(7), /Expected .+? to be object/);
         });
 
-        it('throws if the lacks callbacks', async function() {
-            await assert.throwsAsync(() => new Chain().readWithCallbacks({}));
+        it('throws if the lacks callbacks (flac version)', async function() {
+            assert.isFalse(await new Chain().readWithCallbacks({}));
         });
 
         it('throws if the lacks callbacks (ogg version)', async function() {
-            await assert.throwsAsync(() => new Chain().readOggWithCallbacks({}));
+            assert.isFalse(await new Chain().readOggWithCallbacks({}));
         });
 
         it('returns works if the file can be read', async function() {
@@ -134,7 +135,7 @@ describe('Chain & Iterator', function() {
 
         it('it throws if the file cannot be read', async function() {
             const chain = new Chain();
-            await assert.throwsAsync(() => chain.readWithCallbacks({
+            assert.isFalse(await chain.readWithCallbacks({
                 read: () => 0,
                 seek: () => -1,
                 tell: () => BigInt(0),

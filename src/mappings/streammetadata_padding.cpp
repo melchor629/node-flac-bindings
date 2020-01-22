@@ -2,34 +2,27 @@
 
 namespace flac_bindings {
 
-    using namespace node;
+    using namespace Napi;
 
-    NAN_METHOD(PaddingMetadata::create) {
-        PaddingMetadata* self = new PaddingMetadata;
-        self->Wrap(info.This());
+    FunctionReference PaddingMetadata::constructor;
 
-        if(info.Length() > 0 && Buffer::HasInstance(info[0])) {
-            Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
-            if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
-        } else {
-            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_PADDING) };
-            if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
-            if(info.Length() > 0 && info[0]->IsNumber()) self->metadata->length += numberFromJs<uint32_t>(info[0]).FromMaybe(0);
-        }
+    Function PaddingMetadata::init(const Napi::Env& env) {
+        EscapableHandleScope scope(env);
 
-        info.GetReturnValue().Set(info.This());
+        Function constructor = DefineClass(env, "PaddingMetadata", {});
+
+        PaddingMetadata::constructor = Persistent(constructor);
+        PaddingMetadata::constructor.SuppressDestruct();
+
+        return scope.Escape(constructor).As<Function>();
     }
 
-    Nan::Persistent<Function> PaddingMetadata::paddingMetadataJs;
-    NAN_MODULE_INIT(PaddingMetadata::init) {
-        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
-        tpl->SetClassName(Nan::New("PaddingMetadata").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1);
-        tpl->Inherit(Metadata::getProto());
-
-        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
-        paddingMetadataJs.Reset(metadata);
-        Nan::Set(target, Nan::New("PaddingMetadata").ToLocalChecked(), metadata);
+    PaddingMetadata::PaddingMetadata(const CallbackInfo& info):
+        ObjectWrap<PaddingMetadata>(info),
+        Metadata(info, FLAC__METADATA_TYPE_PADDING) {
+        if(info.Length() > 0 && (info[0].IsNumber() || info[0].IsBigInt())) {
+            data->length += numberFromJs<uint32_t>(info[0]);
+        }
     }
 
 }

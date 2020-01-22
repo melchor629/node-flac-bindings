@@ -1,25 +1,21 @@
-#include <functional>
-#include <memory>
-
-#define MAKE_FRIENDS
 #include "decoder.hpp"
+#include "../flac/decoder.hpp"
 #include "../mappings/mappings.hpp"
-#include "../utils/pointer.hpp"
-#include "../utils/encoder-decoder-async.hpp"
-
-using namespace v8;
-using namespace Nan;
-using namespace std::placeholders;
+#include "../utils/defer.hpp"
+#include "../utils/encoder_decoder_utils.hpp"
 
 namespace flac_bindings {
 
-    DecoderWorkRequest::DecoderWorkRequest(): SyncronizableWorkRequest() {}
+    using namespace Napi;
+    using namespace std::placeholders;
+
+    DecoderWorkRequest::DecoderWorkRequest() {}
 
     DecoderWorkRequest::DecoderWorkRequest(DecoderWorkRequest::Type type): DecoderWorkRequest() {
         this->type = type;
     }
 
-    DecoderWorkRequest::DecoderWorkRequest(const DecoderWorkRequest &d): SyncronizableWorkRequest(d) {
+    DecoderWorkRequest::DecoderWorkRequest(const DecoderWorkRequest &d) {
         type = d.type;
         buffer = d.buffer;
         bytes = d.bytes;
@@ -32,247 +28,244 @@ namespace flac_bindings {
     }
 
 
-    static bool captureInitErrorAndThrow(StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &c, int r) {
-        if(r == 0) { //OK
-            return true;
-        }
+    AsyncDecoderWork::FunctionCallback AsyncDecoderWork::decorate(
+        DecoderWorkContext* ctx,
+        const std::function<int()>& func
+    ) {
+        return [ctx, func] (AsyncDecoderWork::ExecutionProgress& c) {
+            ctx->dec->asyncExecutionProgress = &c;
 
-        const char* errorMessage = "Unknwon decoder error";
-        if(r == 1) { //UNSUPPORTED_CONTAINER
-            errorMessage = "The library was not compiled with support for the given container format";
-        } else if(r == 2) { //INVALID_CALLBACKS
-            errorMessage = "A required callback was not supplied";
-        } else if(r == 3) { //MEMORY_ALLOCATION_ERROR
-            errorMessage = "An error occurred allocating memory";
-        } else if(r == 4) { //ERROR_OPENING_FILE
-            errorMessage = "Could not open the file";
-        } else if(r == 5) { //ALREADY_INITIALIZED
-            errorMessage = "init*() method called when the decoder has already been initialized";
-        }
+            DEFER(ctx->dec->asyncContext = nullptr);
+            DEFER(ctx->dec->asyncExecutionProgress = nullptr);
 
-        c.reject(errorMessage);
-        return true;
+            int ok = func();
+            if(!c.isCompleted()) {
+                c.resolve(ok);
+            }
+        };
     }
-
 
     AsyncDecoderWork::AsyncDecoderWork(
-        std::function<bool(AsyncDecoderWorkBase::ExecutionContext &)> function,
+        const Object& self,
+        std::function<int()> function,
         const char* name,
-        StreamDecoder* dec
-    ): AsyncBackgroundTask<bool, DecoderWorkRequest*>(
-        decorate(dec, function, [dec] () { return FLAC__stream_decoder_get_resolved_state_string(dec->dec); }),
-        std::bind(decoderDoWork, dec, _1, _2),
+        DecoderWorkContext* ctx,
+        std::function<Napi::Value(const Napi::Env&, int)> convertFunction
+    ): AsyncDecoderWorkBase(
+        self.Env(),
+        decorate(ctx, function),
+        std::bind(&AsyncDecoderWork::onProgress, this, ctx, _1, _2, _3, _4),
         name,
-        booleanToJs<bool>
-    ) {}
-
-    AsyncDecoderWorkBase* AsyncDecoderWork::forFinish(StreamDecoder* dec) {
-        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_finish(dec->dec); };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::finishAsync", dec);
+        convertFunction
+    ) {
+        this->Receiver().Set("this", self);
     }
 
-    AsyncDecoderWorkBase* AsyncDecoderWork::forFlush(StreamDecoder* dec) {
-        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_flush(dec->dec); };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::flushAsync", dec);
+    AsyncDecoderWork* AsyncDecoderWork::forFinish(const Object& self, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx] () { return FLAC__stream_decoder_finish(ctx->dec->dec); };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::finishAsync", ctx);
     }
 
-    AsyncDecoderWorkBase* AsyncDecoderWork::forProcessSingle(StreamDecoder* dec) {
-        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_process_single(dec->dec); };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::processSingleAsync", dec);
+    AsyncDecoderWork* AsyncDecoderWork::forFlush(const Object& self, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx] () { return FLAC__stream_decoder_flush(ctx->dec->dec); };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::flushAsync", ctx);
     }
 
-    AsyncDecoderWorkBase* AsyncDecoderWork::forProcessUntilEndOfMetadata(StreamDecoder* dec) {
-        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_process_until_end_of_metadata(dec->dec); };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::processUntilEndOfMetadataAsync", dec);
+    AsyncDecoderWork* AsyncDecoderWork::forProcessSingle(const Object& self, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx] () { return FLAC__stream_decoder_process_single(ctx->dec->dec); };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::processSingleAsync", ctx);
     }
 
-    AsyncDecoderWorkBase* AsyncDecoderWork::forProcessUntilEndOfStream(StreamDecoder* dec) {
-        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_process_until_end_of_stream(dec->dec); };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::processUntilEndOfStreamAsync", dec);
+    AsyncDecoderWork* AsyncDecoderWork::forProcessUntilEndOfMetadata(const Object& self, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx] () { return FLAC__stream_decoder_process_until_end_of_metadata(ctx->dec->dec); };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::processUntilEndOfMetadataAsync", ctx);
     }
 
-    AsyncDecoderWorkBase* AsyncDecoderWork::forSkipSingleFrame(StreamDecoder* dec) {
-        auto workFunction = [dec] (auto &c) { return FLAC__stream_decoder_skip_single_frame(dec->dec); };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::skipSingleFrameAsync", dec);
+    AsyncDecoderWork* AsyncDecoderWork::forProcessUntilEndOfStream(const Object& self, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx] () { return FLAC__stream_decoder_process_until_end_of_stream(ctx->dec->dec); };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::processUntilEndOfStreamAsync", ctx);
     }
 
-    AsyncDecoderWorkBase* AsyncDecoderWork::forSeekAbsolute(uint64_t value, StreamDecoder* dec) {
-        auto workFunction = [dec, value] (auto &c) { return FLAC__stream_decoder_seek_absolute(dec->dec, value); };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::seekAbsoluteAsync", dec);
+    AsyncDecoderWork* AsyncDecoderWork::forSkipSingleFrame(const Object& self, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx] () { return FLAC__stream_decoder_skip_single_frame(ctx->dec->dec); };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::skipSingleFrameAsync", ctx);
     }
 
-    AsyncDecoderWorkBase* AsyncDecoderWork::forInitStream(StreamDecoder* dec) {
-        auto workFunction = [dec] (auto &c) {
-            return captureInitErrorAndThrow(dec, c, FLAC__stream_decoder_init_stream(
-                dec->dec,
-                !dec->readCbk ? nullptr : decoder_read_callback,
-                !dec->seekCbk ? nullptr : decoder_seek_callback,
-                !dec->tellCbk ? nullptr : decoder_tell_callback,
-                !dec->lengthCbk ? nullptr : decoder_length_callback,
-                !dec->eofCbk ? nullptr : decoder_eof_callback,
-                !dec->writeCbk ? nullptr : decoder_write_callback,
-                !dec->metadataCbk ? nullptr : decoder_metadata_callback,
-                !dec->errorCbk ? nullptr : decoder_error_callback,
-                dec
-            ));
+    AsyncDecoderWork* AsyncDecoderWork::forSeekAbsolute(const Object& self, uint64_t value, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx, value] () { return FLAC__stream_decoder_seek_absolute(ctx->dec->dec, value); };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::seekAbsoluteAsync", ctx);
+    }
+
+    static auto initConvertFunc = std::bind(numberToJs<int>, _1, _2, false);
+    AsyncDecoderWork* AsyncDecoderWork::forInitStream(const Object& self, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx] () {
+            return FLAC__stream_decoder_init_stream(
+                ctx->dec->dec,
+                ctx->readCbk.IsEmpty() ? nullptr : StreamDecoder::readCallback,
+                ctx->seekCbk.IsEmpty() ? nullptr : StreamDecoder::seekCallback,
+                ctx->tellCbk.IsEmpty() ? nullptr : StreamDecoder::tellCallback,
+                ctx->lengthCbk.IsEmpty() ? nullptr : StreamDecoder::lengthCallback,
+                ctx->eofCbk.IsEmpty() ? nullptr : StreamDecoder::eofCallback,
+                ctx->writeCbk.IsEmpty() ? nullptr : StreamDecoder::writeCallback,
+                ctx->metadataCbk.IsEmpty() ? nullptr : StreamDecoder::metadataCallback,
+                ctx->errorCbk.IsEmpty() ? nullptr : StreamDecoder::errorCallback,
+                ctx
+            );
         };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::initStreamAsync", dec);
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initStreamAsync", ctx, initConvertFunc);
     }
 
-    AsyncDecoderWorkBase* AsyncDecoderWork::forInitOggStream(StreamDecoder* dec) {
-        auto workFunction = [dec] (auto &c) {
-            return captureInitErrorAndThrow(dec, c, FLAC__stream_decoder_init_ogg_stream(
-                dec->dec,
-                !dec->readCbk ? nullptr : decoder_read_callback,
-                !dec->seekCbk ? nullptr : decoder_seek_callback,
-                !dec->tellCbk ? nullptr : decoder_tell_callback,
-                !dec->lengthCbk ? nullptr : decoder_length_callback,
-                !dec->eofCbk ? nullptr : decoder_eof_callback,
-                !dec->writeCbk ? nullptr : decoder_write_callback,
-                !dec->metadataCbk ? nullptr : decoder_metadata_callback,
-                !dec->errorCbk ? nullptr : decoder_error_callback,
-                dec
-            ));
+    AsyncDecoderWork* AsyncDecoderWork::forInitOggStream(const Object& self, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx] () {
+            return FLAC__stream_decoder_init_ogg_stream(
+                ctx->dec->dec,
+                ctx->readCbk.IsEmpty() ? nullptr : StreamDecoder::readCallback,
+                ctx->seekCbk.IsEmpty() ? nullptr : StreamDecoder::seekCallback,
+                ctx->tellCbk.IsEmpty() ? nullptr : StreamDecoder::tellCallback,
+                ctx->lengthCbk.IsEmpty() ? nullptr : StreamDecoder::lengthCallback,
+                ctx->eofCbk.IsEmpty() ? nullptr : StreamDecoder::eofCallback,
+                ctx->writeCbk.IsEmpty() ? nullptr : StreamDecoder::writeCallback,
+                ctx->metadataCbk.IsEmpty() ? nullptr : StreamDecoder::metadataCallback,
+                ctx->errorCbk.IsEmpty() ? nullptr : StreamDecoder::errorCallback,
+                ctx
+            );
         };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::initOggStreamAsync", dec);
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initOggStreamAsync", ctx, initConvertFunc);
     }
 
 
-    AsyncDecoderWorkBase* AsyncDecoderWork::forInitFile(const std::string &filePath, StreamDecoder* dec) {
-        auto workFunction = [dec, filePath] (auto &c) {
-            return captureInitErrorAndThrow(dec, c, FLAC__stream_decoder_init_file(
-                dec->dec,
+    AsyncDecoderWork* AsyncDecoderWork::forInitFile(const Object& self, const std::string &filePath, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx, filePath] () {
+            return FLAC__stream_decoder_init_file(
+                ctx->dec->dec,
                 filePath.c_str(),
-                dec->writeCbk ? decoder_write_callback : nullptr,
-                dec->metadataCbk ? decoder_metadata_callback : nullptr,
-                dec->errorCbk ? decoder_error_callback : nullptr,
-                dec
-            ));
+                ctx->writeCbk.IsEmpty() ? nullptr : StreamDecoder::writeCallback,
+                ctx->metadataCbk.IsEmpty() ? nullptr : StreamDecoder::metadataCallback,
+                ctx->errorCbk.IsEmpty() ? nullptr : StreamDecoder::errorCallback,
+                ctx
+            );
         };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::initFileAsync", dec);
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initFileAsync", ctx, initConvertFunc);
     }
 
-    AsyncDecoderWorkBase* AsyncDecoderWork::forInitOggFile(const std::string &filePath, StreamDecoder* dec) {
-        auto workFunction = [dec, filePath] (auto &c) {
-            return captureInitErrorAndThrow(dec, c, FLAC__stream_decoder_init_ogg_file(
-                dec->dec,
+    AsyncDecoderWork* AsyncDecoderWork::forInitOggFile(const Object& self, const std::string &filePath, DecoderWorkContext* ctx) {
+        auto workFunction = [ctx, filePath] () {
+            return FLAC__stream_decoder_init_ogg_file(
+                ctx->dec->dec,
                 filePath.c_str(),
-                dec->writeCbk ? decoder_write_callback : nullptr,
-                dec->metadataCbk ? decoder_metadata_callback : nullptr,
-                dec->errorCbk ? decoder_error_callback : nullptr,
-                dec
-            ));
+                ctx->writeCbk.IsEmpty() ? nullptr : StreamDecoder::writeCallback,
+                ctx->metadataCbk.IsEmpty() ? nullptr : StreamDecoder::metadataCallback,
+                ctx->errorCbk.IsEmpty() ? nullptr : StreamDecoder::errorCallback,
+                ctx
+            );
         };
-        return new AsyncDecoderWork(workFunction, "flac_bindings::decoder::initOggFileAsync", dec);
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initOggFileAsync", ctx, initConvertFunc);
     }
 
+    void AsyncDecoderWork::onProgress(
+        const DecoderWorkContext* ctx,
+        Napi::Env& env,
+        AsyncDecoderWork::ExecutionProgress& prog,
+        DecoderWorkRequest* const* reqPtr,
+        size_t
+    ) {
+        auto& asyncContext = prog.getTask()->getAsyncContext();
+        std::function<void(Napi::Value result)> processResult;
+        Napi::Value result;
+        auto req = *reqPtr;
 
-
-    void decoderDoWork(const StreamDecoder* dec, AsyncDecoderWorkBase::ExecutionContext &w, DecoderWorkRequest* const* dataPtr) {
-        using namespace v8;
-        using namespace Nan;
-        using namespace node;
-
-        auto async = (Nan::AsyncResource*) w.getTask()->getAsyncResource();
-        std::function<void (Local<Value> result)> processResult;
-        Nan::MaybeLocal<Value> result;
-        Nan::TryCatch tryCatch;
-
-        auto data = *dataPtr;
-        auto functionForReturnNumber = functionGeneratorForReturnNumber(dec, data);
-        auto functionForReturnObject = functionGeneratorForReturnObject(dec, data);
-
-        switch(data->type) {
+        switch(req->type) {
             case DecoderWorkRequest::Type::Eof: {
-                result = dec->eofCbk->Call(0, nullptr, async);
-                processResult = [data, &w] (auto res) {
-                    auto maybeBoolean = booleanFromJs<int>(res);
-                    if(maybeBoolean.IsJust()) {
-                        *data->returnValue = maybeBoolean.FromJust();
-                    } else {
-                        w.reject(Nan::TypeError("Decoder::EofCallback - Expected boolean as return value"));
-                    }
-                };
+                result = ctx->eofCbk.MakeCallback(env.Global(), {}, asyncContext);
+                processResult = generateParseBooleanResult(req->returnValue, "Decoder:EofCallback");
                 break;
             }
 
             case DecoderWorkRequest::Type::Error: {
-                Local<Value> args[] { numberToJs(data->errorCode) };
-                result = dec->errorCbk->Call(1, args, async);
+                result = ctx->errorCbk.MakeCallback(env.Global(), {numberToJs(env, req->errorCode)}, asyncContext);
                 break;
             }
 
             case DecoderWorkRequest::Type::Length: {
-                result = dec->lengthCbk->Call(0, nullptr, async);
-                processResult = functionForReturnObject("Decoder::LengthCallback", "length", [data] (auto v) { *data->offset = v; });
+                result = ctx->lengthCbk.MakeCallback(env.Global(), {}, asyncContext);
+                processResult = generateParseObjectResult<>(
+                    req->returnValue,
+                    "Decoder:LengthCallback",
+                    "length",
+                    *req->offset
+                );
                 break;
             }
 
             case DecoderWorkRequest::Type::Metadata: {
-                Local<Value> elstru = structToJs(data->metadata);
-                Local<Value> args[] { elstru };
-                result = dec->metadataCbk->Call(1, args, async);
+                result = ctx->metadataCbk.MakeCallback(
+                    env.Global(),
+                    {Metadata::toJs(env, const_cast<FLAC__StreamMetadata*>(req->metadata))},
+                    asyncContext
+                );
                 break;
             }
 
             case DecoderWorkRequest::Type::Read: {
-                Local<Value> buffer = WrapPointer(data->buffer, *data->bytes).ToLocalChecked();
-                Local<Value> args[] { buffer };
-                result = dec->readCbk->Call(1, args, async);
-                processResult = functionForReturnObject("Decoder::ReadCallback", "bytes", [data] (auto v) { *data->bytes = (size_t) v; });
+                auto buffer = pointer::wrap(env, req->buffer, *req->bytes);
+                result = ctx->readCbk.MakeCallback(env.Global(), {buffer}, asyncContext);
+                processResult = generateParseObjectResult<size_t>(
+                    req->returnValue,
+                    "Decoder:ReadCallback",
+                    "bytes",
+                    *req->bytes
+                );
                 break;
             }
 
             case DecoderWorkRequest::Type::Seek: {
-                Local<Value> args[] { numberToJs(*data->offset) };
-                result = dec->seekCbk->Call(1, args, async);
-                processResult = functionForReturnNumber("Decoder::SeekCallback");
+                result = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, *req->offset)}, asyncContext);
+                processResult = generateParseNumberResult(req->returnValue, "Decoder:SeekCallback");
                 break;
             }
 
             case DecoderWorkRequest::Type::Tell: {
-                result = dec->tellCbk->Call(0, nullptr, async);
-                processResult = functionForReturnObject("Decoder::TellCallback", "offset", [data] (auto v) { *data->offset = v; });
+                result = ctx->tellCbk.MakeCallback(env.Global(), {}, asyncContext);
+                processResult = generateParseObjectResult(
+                    req->returnValue,
+                    "Decoder:TellCallback",
+                    "offset",
+                    *req->offset
+                );
                 break;
             }
 
             case DecoderWorkRequest::Type::Write: {
-                Local<Array> buffers = Nan::New<Array>();
-                unsigned channels = FLAC__stream_decoder_get_channels(dec->dec);
-                for(uint32_t i = 0; i < channels; i++) {
-                    auto leb = WrapPointer(data->samples[i], data->frame->header.blocksize * sizeof(int32_t)).ToLocalChecked();
-                    Nan::Set(buffers, i, leb);
+                Array buffers = Array::New(env);
+                uint32_t channels = FLAC__stream_decoder_get_channels(ctx->dec->dec);
+                for(uint32_t ch = 0; ch < channels; ch += 1) {
+                    auto buffer = pointer::wrap(
+                        env,
+                        const_cast<int32_t*>(req->samples[ch]),
+                        req->frame->header.blocksize
+                    );
+                    buffers[ch] = buffer;
                 }
 
-                Local<Value> args[] { structToJs(data->frame), buffers };
-                result = dec->writeCbk->Call(2, args, async);
-                processResult = functionForReturnNumber("Decoder::WriteCallback");
+                auto jsFrame = frameToJs(env, req->frame);
+                result = ctx->writeCbk.MakeCallback(env.Global(), {jsFrame, buffers}, asyncContext);
+                processResult = generateParseNumberResult(req->returnValue, "Decoder:WriteCallback");
                 break;
             }
         }
 
-        if(tryCatch.HasCaught()) {
-            w.reject(tryCatch.Exception());
-            data->notifyWorkDone();
-        } else if(!result.IsEmpty()) {
-            auto theGoodResult = result.ToLocalChecked();
-            if(theGoodResult->IsPromise()) {
-                auto promise = theGoodResult.As<Promise>();
-                w.defer(promise, nullptr, [processResult, data] (auto &w, auto _, auto &info) {
-                    if(processResult && !info[0].IsEmpty()) {
-                        processResult(info[0]);
-                    }
-
-                    data->notifyWorkDone();
-                }, [data] (auto &w, auto _, auto &info) { w.reject(info[0]); data->notifyWorkDone(); });
-            } else {
-                if(processResult && !result.IsEmpty()) processResult(result.ToLocalChecked());
-                data->notifyWorkDone();
-            }
+        if(result.IsPromise()) {
+            auto promise = result.As<Promise>();
+            prog.defer(promise, [processResult] (auto&, auto& info, auto) {
+                if(processResult) {
+                    processResult(info[0]);
+                }
+            });
         } else {
-            data->notifyWorkDone();
+            if(processResult) {
+                processResult(result);
+            }
         }
     }
-
 
 }

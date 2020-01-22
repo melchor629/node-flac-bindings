@@ -5,10 +5,10 @@
   "repository": "https://github.com/melchor629/node-flac-bindings/",
   "main": "./lib/index.js",
   "scripts": {
-    "test": "mocha",
+    "test": "mocha --recursive",
     "install": "prebuild-install || cmake-js compile",
     "cmake-js": "cmake-js",
-    "prebuild": "prebuild --backend cmake-js -t 8.16.0 -t 10.16.0 -t 12.10.0 --strip",
+    "prebuild": "prebuild --backend cmake-js --runtime napi --strip",
     "lint": "eslint -c .eslintrc.json lib/**/*.js test/**/*.js"
   },
   "keywords": [
@@ -21,9 +21,9 @@
   "license": "ISC",
   "dependencies": {
     "bindings": "^1.5.0",
-    "cmake-js": "^5.3.2",
-    "nan": "^2.14.0",
-    "prebuild-install": "^5.3.2"
+    "cmake-js": "^6.0.0",
+    "node-addon-api": "git+https://github.com/nodejs/node-addon-api.git",
+    "prebuild-install": "^5.3.3"
   },
   "devDependencies": {
     "@types/chai": "^4.2.7",
@@ -34,8 +34,13 @@
     "eslint-plugin-mocha": "^6.2.2",
     "mocha": "^6.2.2",
     "nyc": "^15.0.0",
-    "prebuild": "^9.1.1",
+    "prebuild": "^10.0.0",
     "temp": "^0.9.1"
   },
-  "types": "lib/index.d.ts"
+  "types": "lib/index.d.ts",
+  "binary": {
+    "napi_versions": [
+      4
+    ]
+  }
 }

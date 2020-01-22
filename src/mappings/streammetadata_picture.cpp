@@ -3,165 +3,182 @@
 
 namespace flac_bindings {
 
-    using namespace node;
+    using namespace Napi;
 
-    V8_GETTER(PictureMetadata::pictureType) {
-        unwrap(PictureMetadata);
-        info.GetReturnValue().Set(Nan::New((uint32_t) self->metadata->data.picture.type));
+    FunctionReference PictureMetadata::constructor;
+
+    Function PictureMetadata::init(const Napi::Env& env) {
+        EscapableHandleScope scope(env);
+
+        napi_property_attributes attributes = napi_property_attributes::napi_enumerable;
+        Function constructor = DefineClass(env, "PictureMetadata", {
+            InstanceAccessor(
+                "pictureType",
+                &PictureMetadata::getPictureType,
+                &PictureMetadata::setPictureType,
+                attributes
+            ),
+            InstanceAccessor(
+                "mimeType",
+                &PictureMetadata::getMimeType,
+                &PictureMetadata::setMimeType,
+                attributes
+            ),
+            InstanceAccessor(
+                "description",
+                &PictureMetadata::getDescription,
+                &PictureMetadata::setDescription,
+                attributes
+            ),
+            InstanceAccessor(
+                "width",
+                &PictureMetadata::getWidth,
+                &PictureMetadata::setWidth,
+                attributes
+            ),
+            InstanceAccessor(
+                "height",
+                &PictureMetadata::getHeight,
+                &PictureMetadata::setHeight,
+                attributes
+            ),
+            InstanceAccessor(
+                "depth",
+                &PictureMetadata::getDepth,
+                &PictureMetadata::setDepth,
+                attributes
+            ),
+            InstanceAccessor(
+                "colors",
+                &PictureMetadata::getColors,
+                &PictureMetadata::setColors,
+                attributes
+            ),
+            InstanceAccessor(
+                "data",
+                &PictureMetadata::getData,
+                &PictureMetadata::setData,
+                attributes
+            ),
+            InstanceMethod("isLegal", &PictureMetadata::isLegal),
+        });
+
+        PictureMetadata::constructor = Persistent(constructor);
+        PictureMetadata::constructor.SuppressDestruct();
+
+        return scope.Escape(constructor).As<Function>();
     }
 
-    V8_SETTER(PictureMetadata::pictureType) {
-        unwrap(PictureMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.picture.type = (FLAC__StreamMetadata_Picture_Type) newValue;
+    PictureMetadata::PictureMetadata(const CallbackInfo& info):
+        ObjectWrap<PictureMetadata>(info),
+        Metadata(info, FLAC__METADATA_TYPE_PICTURE) {}
+
+    Napi::Value PictureMetadata::getPictureType(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.picture.type);
+    }
+
+    void PictureMetadata::setPictureType(const CallbackInfo&, const Napi::Value& value) {
+        auto type = numberFromJs<FLAC__StreamMetadata_Picture_Type>(value);
+        data->data.picture.type = type;
+    }
+
+    Napi::Value PictureMetadata::getMimeType(const CallbackInfo& info) {
+        return String::New(info.Env(), data->data.picture.mime_type);
+    }
+
+    void PictureMetadata::setMimeType(const CallbackInfo& info, const Napi::Value& value) {
+        auto mimeType = stringFromJs(value);
+        auto ret = FLAC__metadata_object_picture_set_mime_type(data, const_cast<char*>(mimeType.c_str()), true);
+        if(!ret) {
+            throw Error::New(info.Env(), "Could not allocate memory to store the string");
         }
     }
 
-    V8_GETTER(PictureMetadata::mimeType) {
-        unwrap(PictureMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.picture.mime_type).ToLocalChecked());
+    Napi::Value PictureMetadata::getDescription(const CallbackInfo& info) {
+        return String::New(info.Env(), (const char*) data->data.picture.description);
     }
 
-    V8_SETTER(PictureMetadata::mimeType) {
-        unwrap(PictureMetadata);
-        checkValue(String) {
-            Nan::Utf8String mime(value);
-            bool ret = FLAC__metadata_object_picture_set_mime_type(self->metadata, *mime, true);
-            if(!ret) {
-                Nan::ThrowError("Could not allocate memory to store the string");
-            }
+    void PictureMetadata::setDescription(const CallbackInfo& info, const Napi::Value& value) {
+        auto description = stringFromJs(value);
+        auto ret = FLAC__metadata_object_picture_set_description(data, (FLAC__byte*) description.c_str(), true);
+        if(!ret) {
+            throw Error::New(info.Env(), "Could not allocate memory to store the string");
         }
     }
 
-    V8_GETTER(PictureMetadata::description) {
-        unwrap(PictureMetadata);
-        info.GetReturnValue().Set(Nan::New((char*) self->metadata->data.picture.description).ToLocalChecked());
+    Napi::Value PictureMetadata::getWidth(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.picture.width);
     }
 
-    V8_SETTER(PictureMetadata::description) {
-        unwrap(PictureMetadata);
-        checkValue(String) {
-            Nan::Utf8String descr(value);
-            bool ret = FLAC__metadata_object_picture_set_description(self->metadata, (FLAC__byte*) *descr, true);
-            if(!ret) {
-                Nan::ThrowError("Could not allocate memory to store the string");
-            }
+    void PictureMetadata::setWidth(const CallbackInfo&, const Napi::Value& value) {
+        auto width = numberFromJs<uint32_t>(value);
+        data->data.picture.width = width;
+    }
+
+    Napi::Value PictureMetadata::getHeight(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.picture.height);
+    }
+
+    void PictureMetadata::setHeight(const CallbackInfo&, const Napi::Value& value) {
+        auto height = numberFromJs<uint32_t>(value);
+        data->data.picture.height = height;
+    }
+
+    Napi::Value PictureMetadata::getDepth(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.picture.depth);
+    }
+
+    void PictureMetadata::setDepth(const CallbackInfo&, const Napi::Value& value) {
+        auto depth = numberFromJs<uint32_t>(value);
+        data->data.picture.depth = depth;
+    }
+
+    Napi::Value PictureMetadata::getColors(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.picture.colors);
+    }
+
+    void PictureMetadata::setColors(const CallbackInfo&, const Napi::Value& value) {
+        auto colors = numberFromJs<uint32_t>(value);
+        data->data.picture.colors = colors;
+    }
+
+    Napi::Value PictureMetadata::getData(const CallbackInfo& info) {
+        if(data->data.picture.data == nullptr) {
+            return info.Env().Null();
         }
+
+        return pointer::wrap(info.Env(), data->data.picture.data, data->data.picture.data_length);
     }
 
-    V8_GETTER(PictureMetadata::width) {
-        unwrap(PictureMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.picture.width));
-    }
-
-    V8_SETTER(PictureMetadata::width) {
-        unwrap(PictureMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.picture.width = newValue;
+    void PictureMetadata::setData(const CallbackInfo& info, const Napi::Value& value) {
+        FLAC__byte* ptr = nullptr;
+        size_t length = 0;
+        if(!value.IsNull() && !value.IsUndefined()) {
+            std::tie(ptr, length) = pointer::fromBuffer<FLAC__byte>(value);
         }
-    }
-
-    V8_GETTER(PictureMetadata::height) {
-        unwrap(PictureMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.picture.height));
-    }
-
-    V8_SETTER(PictureMetadata::height) {
-        unwrap(PictureMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.picture.height = newValue;
-        }
-    }
-
-    V8_GETTER(PictureMetadata::depth) {
-        unwrap(PictureMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.picture.depth));
-    }
-
-    V8_SETTER(PictureMetadata::depth) {
-        unwrap(PictureMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.picture.depth = newValue;
-        }
-    }
-
-    V8_GETTER(PictureMetadata::colors) {
-        unwrap(PictureMetadata);
-        info.GetReturnValue().Set(Nan::New(self->metadata->data.picture.colors));
-    }
-
-    V8_SETTER(PictureMetadata::colors) {
-        unwrap(PictureMetadata);
-        checkValueIsNumber(uint32_t) {
-            self->metadata->data.picture.colors = newValue;
-        }
-    }
-
-    V8_GETTER(PictureMetadata::data) {
-        unwrap(PictureMetadata);
-        info.GetReturnValue().Set(WrapPointer(self->metadata->data.picture.data, self->metadata->data.picture.data_length).ToLocalChecked());
-    }
-
-    V8_SETTER(PictureMetadata::data) {
-        unwrap(PictureMetadata);
-        checkValueIsBuffer() {
-            FLAC__byte* data = (FLAC__byte*) node::Buffer::Data(value);
-            size_t dataLength = node::Buffer::Length(value);
-            if(dataLength == 0) {
-                FLAC__metadata_object_picture_set_data(self->metadata, NULL, 0, false);
-            } else {
-                FLAC__metadata_object_picture_set_data(self->metadata, data, dataLength, true);
-            }
-        }
-    }
-
-    NAN_METHOD(PictureMetadata::create) {
-        PictureMetadata* self = new PictureMetadata;
-        self->Wrap(info.This());
-
-        if(info.Length() > 0 && Buffer::HasInstance(info[0])) {
-            Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
-            if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
+        if(length == 0) {
+            FLAC__metadata_object_picture_set_data(data, NULL, 0, false);
         } else {
-            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_PICTURE) };
-            if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
+            auto ret = FLAC__metadata_object_picture_set_data(
+                data,
+                ptr,
+                length,
+                true
+            );
+            if(!ret) {
+                throw Error::New(info.Env(), "Could not allocate memory to copy the data");
+            }
         }
-
-        nativeProperty(info.This(), "pictureType", pictureType);
-        nativeProperty(info.This(), "mimeType", mimeType);
-        nativeProperty(info.This(), "description", description);
-        nativeProperty(info.This(), "width", width);
-        nativeProperty(info.This(), "height", height);
-        nativeProperty(info.This(), "depth", depth);
-        nativeProperty(info.This(), "colors", colors);
-        nativeProperty(info.This(), "data", data);
-
-        info.GetReturnValue().Set(info.This());
     }
 
-    NAN_METHOD(PictureMetadata::isLegal) {
-        unwrap(PictureMetadata);
-        const char* violation = nullptr;
-        bool legal = FLAC__metadata_object_picture_is_legal(self->metadata, &violation);
-        if(legal) {
-            info.GetReturnValue().Set(Nan::True());
+    Napi::Value PictureMetadata::isLegal(const CallbackInfo& info) {
+        const char* sadness = nullptr;
+        FLAC__bool ret = FLAC__metadata_object_picture_is_legal(data, &sadness);
+        if(ret) {
+            return info.Env().Null();
         } else {
-            info.GetReturnValue().Set(Nan::New(violation).ToLocalChecked());
+            return String::New(info.Env(), sadness);
         }
-    }
-
-    Nan::Persistent<Function> PictureMetadata::jsFunction;
-    NAN_MODULE_INIT(PictureMetadata::init) {
-        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
-        tpl->SetClassName(Nan::New("PictureMetadata").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1);
-        tpl->Inherit(Metadata::getProto());
-
-        Nan::SetPrototypeMethod(tpl, "isLegal", isLegal);
-
-        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
-        jsFunction.Reset(metadata);
-        Nan::Set(target, Nan::New("PictureMetadata").ToLocalChecked(), metadata);
     }
 
 }

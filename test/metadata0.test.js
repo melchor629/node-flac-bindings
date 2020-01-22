@@ -17,27 +17,21 @@ describe('metadata0', function() {
             assert.throws(() => metadata0.getTags(Symbol.species));
         });
 
-        it('should return false if the file does not exist', async function() {
+        it('should return null if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
 
             const tags = metadata0.getTags(filePath);
 
-            assert.isFalse(tags);
-            let hasThrown = false;
-            try {
-                await fs.access(filePath);
-            } catch(e) {
-                hasThrown = true;
-            }
-            assert.isTrue(hasThrown, 'The file must not exist');
+            assert.isNull(tags);
+            await assert.throwsAsync(() => fs.access(filePath));
         });
 
-        it('should return false if the file does not have tags', async function() {
+        it('should return null if the file does not have tags', async function() {
             const filePath = pathForFile('no.flac');
 
             const tags = metadata0.getTags(filePath);
 
-            assert.isFalse(tags);
+            assert.isNull(tags);
             await fs.access(filePath);
         });
 
@@ -46,7 +40,7 @@ describe('metadata0', function() {
 
             const tags = metadata0.getTags(filePath);
 
-            assert.isNotFalse(tags);
+            assert.isNotNull(tags);
             assert.isTrue(tags instanceof metadata.VorbisCommentMetadata);
         });
 
@@ -71,17 +65,17 @@ describe('metadata0', function() {
             await assert.throwsAsync(() => metadata0.getTagsAsync(Symbol.species));
         });
 
-        it('should throw if the file does not exist', async function() {
+        it('should return null if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
 
-            await assert.throwsAsync(() => metadata0.getTagsAsync(filePath));
+            assert.isNull(await metadata0.getTagsAsync(filePath));
             await assert.throwsAsync(() => fs.access(filePath));
         });
 
-        it('should throw if the file does not have tags', async function() {
+        it('should return null if the file does not have tags', async function() {
             const filePath = pathForFile('no.flac');
 
-            await assert.throwsAsync(() => metadata0.getTagsAsync(filePath));
+            assert.isNull(await metadata0.getTagsAsync(filePath));
 
             await fs.access(filePath);
         });
@@ -91,7 +85,7 @@ describe('metadata0', function() {
 
             const tags = await metadata0.getTagsAsync(filePath);
 
-            assert.isNotFalse(tags);
+            assert.isNotNull(tags);
             assert.isTrue(tags instanceof metadata.VorbisCommentMetadata);
         });
 
@@ -121,14 +115,8 @@ describe('metadata0', function() {
 
             const picture = metadata0.getPicture(filePath);
 
-            assert.isFalse(picture);
-            let hasThrown = false;
-            try {
-                await fs.access(filePath);
-            } catch(e) {
-                hasThrown = true;
-            }
-            assert.isTrue(hasThrown, 'The file must not exist');
+            assert.isNull(picture);
+            await assert.throwsAsync(() => fs.access(filePath));
         });
 
         it('should return false if the file does not have a picture', async function() {
@@ -136,7 +124,7 @@ describe('metadata0', function() {
 
             const picture = metadata0.getPicture(filePath);
 
-            assert.isFalse(picture);
+            assert.isNull(picture);
             await fs.access(filePath);
         });
 
@@ -145,7 +133,7 @@ describe('metadata0', function() {
 
             const picture = metadata0.getPicture(filePath);
 
-            assert.isNotFalse(picture);
+            assert.isNotNull(picture);
             assert.isTrue(picture instanceof metadata.PictureMetadata);
         });
 
@@ -172,17 +160,17 @@ describe('metadata0', function() {
             await assert.throwsAsync(() => metadata0.getPictureAsync(Symbol.iterator));
         });
 
-        it('should throw if the file does not exist', async function() {
+        it('should return null if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
 
-            await assert.throwsAsync(() => metadata0.getPictureAsync(filePath));
+            assert.isNull(await metadata0.getPictureAsync(filePath));
             await assert.throwsAsync(() => fs.access(filePath));
         });
 
-        it('should throw if the file does not have a picture', async function() {
+        it('should return null if the file does not have a picture', async function() {
             const filePath = pathForFile('no.flac');
 
-            await assert.throwsAsync(() => metadata0.getPictureAsync(filePath));
+            assert.isNull(await metadata0.getPictureAsync(filePath));
             await fs.access(filePath);
         });
 
@@ -191,7 +179,7 @@ describe('metadata0', function() {
 
             const picture = await metadata0.getPictureAsync(filePath);
 
-            assert.isNotFalse(picture);
+            assert.isNotNull(picture);
             assert.isTrue(picture instanceof metadata.PictureMetadata);
         });
 
@@ -218,27 +206,21 @@ describe('metadata0', function() {
             assert.throws(() => metadata0.getCuesheet(Symbol.asyncIterator));
         });
 
-        it('should return false if the file does not exist', async function() {
+        it('should return null if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
 
             const cueSheet = metadata0.getCuesheet(filePath);
 
-            assert.isFalse(cueSheet);
-            let hasThrown = false;
-            try {
-                await fs.access(filePath);
-            } catch(e) {
-                hasThrown = true;
-            }
-            assert.isTrue(hasThrown, 'The file must not exist');
+            assert.isNull(cueSheet);
+            await assert.throwsAsync(() => fs.access(filePath));
         });
 
-        it('should return false if the file does not have a cue sheet', async function() {
+        it('should return null if the file does not have a cue sheet', async function() {
             const filePath = pathForFile('no.flac');
 
             const cueSheet = metadata0.getCuesheet(filePath);
 
-            assert.isFalse(cueSheet);
+            assert.isNull(cueSheet);
             await fs.access(filePath);
         });
 
@@ -247,7 +229,7 @@ describe('metadata0', function() {
 
             const cueSheet = metadata0.getCuesheet(filePath);
 
-            assert.isNotFalse(cueSheet);
+            assert.isNotNull(cueSheet);
             assert.isTrue(cueSheet instanceof metadata.CueSheetMetadata);
         });
 
@@ -256,22 +238,24 @@ describe('metadata0', function() {
 
             const cueSheet = metadata0.getCuesheet(filePath);
 
+            const tracks = Array.from(cueSheet);
+            const indices0 = Array.from(tracks[0]);
             assert.equal(cueSheet.mediaCatalogNumber, 0);
             assert.equal(cueSheet.leadIn, 88200);
             assert.equal(cueSheet.isCd, true);
-            assert.equal(cueSheet.tracks.length, 2);
-            assert.equal(cueSheet.tracks[0].offset, 0);
-            assert.equal(cueSheet.tracks[0].number, 1);
-            assert.equal(cueSheet.tracks[0].isrc, '');
-            assert.equal(cueSheet.tracks[0].type, 0);
-            assert.equal(cueSheet.tracks[0].preEmphasis, false);
-            assert.equal(cueSheet.tracks[0].indices.length, 2);
-            assert.equal(cueSheet.tracks[0].indices[0].offset, 0);
-            assert.equal(cueSheet.tracks[0].indices[0].number, 0);
-            assert.equal(cueSheet.tracks[0].indices[1].offset, 18816);
-            assert.equal(cueSheet.tracks[0].indices[1].number, 1);
-            assert.equal(cueSheet.tracks[1].offset, 441000);
-            assert.equal(cueSheet.tracks[1].number, 170);
+            assert.equal(tracks.length, 2);
+            assert.equal(tracks[0].offset, 0);
+            assert.equal(tracks[0].number, 1);
+            assert.equal(tracks[0].isrc, '');
+            assert.equal(tracks[0].type, 0);
+            assert.equal(tracks[0].preEmphasis, false);
+            assert.equal(indices0.length, 2);
+            assert.equal(indices0[0].offset, 0);
+            assert.equal(indices0[0].number, 0);
+            assert.equal(indices0[1].offset, 18816);
+            assert.equal(indices0[1].number, 1);
+            assert.equal(tracks[1].offset, 441000);
+            assert.equal(tracks[1].number, 170);
         });
 
     });
@@ -282,17 +266,17 @@ describe('metadata0', function() {
             await assert.throwsAsync(() => metadata0.getCuesheetAsync(Symbol.asyncIterator));
         });
 
-        it('should throw if the file does not exist', async function() {
+        it('should return null if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
 
-            await assert.throwsAsync(() => metadata0.getCuesheetAsync(filePath));
+            assert.isNull(await metadata0.getCuesheetAsync(filePath));
             await assert.throwsAsync(() => fs.access(filePath));
         });
 
-        it('should throw if the file does not have a cue sheet', async function() {
+        it('should return null if the file does not have a cue sheet', async function() {
             const filePath = pathForFile('no.flac');
 
-            await assert.throwsAsync(() => metadata0.getCuesheetAsync(filePath));
+            assert.isNull(await metadata0.getCuesheetAsync(filePath));
             await fs.access(filePath);
         });
 
@@ -301,7 +285,7 @@ describe('metadata0', function() {
 
             const cueSheet = await metadata0.getCuesheetAsync(filePath);
 
-            assert.isNotFalse(cueSheet);
+            assert.isNotNull(cueSheet);
             assert.isTrue(cueSheet instanceof metadata.CueSheetMetadata);
         });
 
@@ -310,22 +294,24 @@ describe('metadata0', function() {
 
             const cueSheet = await metadata0.getCuesheetAsync(filePath);
 
+            const tracks = Array.from(cueSheet);
+            const indices0 = Array.from(tracks[0]);
             assert.equal(cueSheet.mediaCatalogNumber, 0);
             assert.equal(cueSheet.leadIn, 88200);
             assert.equal(cueSheet.isCd, true);
-            assert.equal(cueSheet.tracks.length, 2);
-            assert.equal(cueSheet.tracks[0].offset, 0);
-            assert.equal(cueSheet.tracks[0].number, 1);
-            assert.equal(cueSheet.tracks[0].isrc, '');
-            assert.equal(cueSheet.tracks[0].type, 0);
-            assert.equal(cueSheet.tracks[0].preEmphasis, false);
-            assert.equal(cueSheet.tracks[0].indices.length, 2);
-            assert.equal(cueSheet.tracks[0].indices[0].offset, 0);
-            assert.equal(cueSheet.tracks[0].indices[0].number, 0);
-            assert.equal(cueSheet.tracks[0].indices[1].offset, 18816);
-            assert.equal(cueSheet.tracks[0].indices[1].number, 1);
-            assert.equal(cueSheet.tracks[1].offset, 441000);
-            assert.equal(cueSheet.tracks[1].number, 170);
+            assert.equal(tracks.length, 2);
+            assert.equal(tracks[0].offset, 0);
+            assert.equal(tracks[0].number, 1);
+            assert.equal(tracks[0].isrc, '');
+            assert.equal(tracks[0].type, 0);
+            assert.equal(tracks[0].preEmphasis, false);
+            assert.equal(indices0.length, 2);
+            assert.equal(indices0[0].offset, 0);
+            assert.equal(indices0[0].number, 0);
+            assert.equal(indices0[1].offset, 18816);
+            assert.equal(indices0[1].number, 1);
+            assert.equal(tracks[1].offset, 441000);
+            assert.equal(tracks[1].number, 170);
         });
 
     });
@@ -336,19 +322,13 @@ describe('metadata0', function() {
             assert.throws(() => metadata0.getStreaminfo(Symbol.toPrimitive));
         });
 
-        it('should return false if the file does not exist', async function() {
+        it('should return null if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
 
             const streamInfo = metadata0.getStreaminfo(filePath);
 
-            assert.isFalse(streamInfo);
-            let hasThrown = false;
-            try {
-                await fs.access(filePath);
-            } catch(e) {
-                hasThrown = true;
-            }
-            assert.isTrue(hasThrown, 'The file must not exist');
+            assert.isNull(streamInfo);
+            await assert.throwsAsync(() => fs.access(filePath));
         });
 
         it('StreamInfo should contain the right info for the file', function() {
@@ -378,10 +358,10 @@ describe('metadata0', function() {
             return assert.throwsAsync(() => metadata0.getStreaminfoAsync(Symbol.toPrimitive));
         });
 
-        it('should throw if the file does not exist', async function() {
+        it('should return null if the file does not exist', async function() {
             const filePath = pathForFile('el.flac');
 
-            await assert.throwsAsync(() => metadata0.getStreaminfoAsync(filePath));
+            assert.isNull(await metadata0.getStreaminfoAsync(filePath));
             await assert.throwsAsync(() => fs.access(filePath));
         });
 

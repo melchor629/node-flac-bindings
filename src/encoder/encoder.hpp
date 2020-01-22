@@ -1,19 +1,17 @@
 #pragma once
 
-#include <stdint.h>
-#include <mutex>
-#include <condition_variable>
-#include <nan.h>
-
 #include "../flac/format.h"
-#include "../flac/encoder.hpp"
 #include "../utils/async.hpp"
-#include "../utils/defs.hpp"
+#include "../utils/converters.hpp"
+#include "../utils/enum.hpp"
 
 namespace flac_bindings {
-    struct EncoderWorkRequest: SyncronizableWorkRequest {
+
+    using namespace Napi;
+
+    struct EncoderWorkRequest {
         enum Type { Read, Write, Seek, Tell, Metadata, Progress } type;
-        int* returnValue = nullptr;
+        int returnValue = 0;
         char* buffer = nullptr;
         size_t* bytes = nullptr;
         const char* constBuffer = nullptr;
@@ -22,10 +20,10 @@ namespace flac_bindings {
         uint64_t* offset = nullptr;
         const FLAC__StreamMetadata* metadata = nullptr;
         struct {
-            uint64_t bytesWritten;
-            uint64_t samplesWritten;
-            unsigned framesWritten;
-            unsigned totalFramesEstimate;
+            uint64_t bytesWritten = 0;
+            uint64_t samplesWritten = 0;
+            unsigned framesWritten = 0;
+            unsigned totalFramesEstimate = 0;
         } progress;
 
         EncoderWorkRequest();
@@ -33,115 +31,151 @@ namespace flac_bindings {
         explicit EncoderWorkRequest(EncoderWorkRequest::Type type);
     };
 
-    typedef AsyncBackgroundTask<bool, EncoderWorkRequest*> AsyncEncoderWorkBase;
+    typedef AsyncBackgroundTask<int, EncoderWorkRequest*> AsyncEncoderWorkBase;
 
-    class StreamEncoder: public Nan::ObjectWrap {
-        static NAN_METHOD(setOggSerialNumber);
-        static NAN_METHOD(getVerify);
-        static NAN_METHOD(setVerify);
-        static NAN_METHOD(getStreamableSubset);
-        static NAN_METHOD(setStreamableSubset);
-        static NAN_METHOD(getChannels);
-        static NAN_METHOD(setChannels);
-        static NAN_METHOD(getBitsPerSample);
-        static NAN_METHOD(setBitsPerSample);
-        static NAN_METHOD(getSampleRate);
-        static NAN_METHOD(setSampleRate);
-        static NAN_METHOD(setCompressionLevel);
-        static NAN_METHOD(getBlocksize);
-        static NAN_METHOD(setBlocksize);
-        static NAN_METHOD(getDoMidSideStereo);
-        static NAN_METHOD(setDoMidSideStereo);
-        static NAN_METHOD(getLooseMidSideStereo);
-        static NAN_METHOD(setLooseMidSideStereo);
-        static NAN_METHOD(getMaxLpcOrder);
-        static NAN_METHOD(setMaxLpcOrder);
-        static NAN_METHOD(getQlpCoeffPrecision);
-        static NAN_METHOD(setQlpCoeffPrecision);
-        static NAN_METHOD(getDoQlpCoeffPrecSearch);
-        static NAN_METHOD(setDoQlpCoeffPrecSearch);
-        static NAN_METHOD(getDoEscapeCoding);
-        static NAN_METHOD(setDoEscapeCoding);
-        static NAN_METHOD(getDoExhaustiveModelSearch);
-        static NAN_METHOD(setDoExhaustiveModelSearch);
-        static NAN_METHOD(getMinResidualPartitionOrder);
-        static NAN_METHOD(setMinResidualPartitionOrder);
-        static NAN_METHOD(getMaxResidualPartitionOrder);
-        static NAN_METHOD(setMaxResidualPartitionOrder);
-        static NAN_METHOD(getRiceParameterSearchDist);
-        static NAN_METHOD(setRiceParameterSearchDist);
-        static NAN_METHOD(getTotalSamplesEstimate);
-        static NAN_METHOD(setTotalSamplesEstimate);
-        static NAN_METHOD(getState);
-        static NAN_METHOD(getVerifyDecoderState);
-        static NAN_METHOD(create);
-        static NAN_METHOD(initStream);
-        static NAN_METHOD(initOggStream);
-        static NAN_METHOD(initFile);
-        static NAN_METHOD(initOggFile);
-        static NAN_METHOD(finish);
-        static NAN_METHOD(process);
-        static NAN_METHOD(processInterleaved);
-        static NAN_METHOD(setMetadata);
-        static NAN_METHOD(setApodization);
-        static NAN_METHOD(getResolvedStateString);
-        static NAN_METHOD(getVerifyDecoderErrorStats);
-        static NAN_METHOD(finishAsync);
-        static NAN_METHOD(processAsync);
-        static NAN_METHOD(processInterleavedAsync);
-        static NAN_METHOD(initStreamAsync);
-        static NAN_METHOD(initOggStreamAsync);
-        static NAN_METHOD(initFileAsync);
-        static NAN_METHOD(initOggFileAsync);
-        static FlacEnumDefineReturnType createStateEnum();
-        static FlacEnumDefineReturnType createInitStatusEnum();
-        static FlacEnumDefineReturnType createReadStatusEnum();
-        static FlacEnumDefineReturnType createWriteStatusEnum();
-        static FlacEnumDefineReturnType createSeekStatusEnum();
-        static FlacEnumDefineReturnType createTellStatusEnum();
+    struct EncoderWorkContext {
+        FunctionReference readCbk, writeCbk, seekCbk, tellCbk, metadataCbk, progressCbk;
+        class StreamEncoder* enc;
 
-    public:
-        static NAN_MODULE_INIT(initEncoder);
-
-        StreamEncoder();
-        ~StreamEncoder();
-
-        std::shared_ptr<Nan::Callback> readCbk, writeCbk, seekCbk, tellCbk, metadataCbk, progressCbk;
-        Nan::AsyncResource* async = nullptr;
-        FLAC__StreamEncoder* enc = nullptr;
-        AsyncEncoderWorkBase::ExecutionContext* asyncExecutionContext = nullptr;
+        EncoderWorkContext(StreamEncoder* enc): enc(enc) {}
     };
 
-#ifdef MAKE_FRIENDS
-    static void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, EncoderWorkRequest* const* data);
-#endif
+    class StreamEncoder: public ObjectWrap<StreamEncoder> {
+
+        friend class AsyncEncoderWork;
+
+        void setOggSerialNumber(const CallbackInfo&);
+        Napi::Value getVerify(const CallbackInfo&);
+        void setVerify(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getStreamableSubset(const CallbackInfo&);
+        void setStreamableSubset(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getChannels(const CallbackInfo&);
+        void setChannels(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getBitsPerSample(const CallbackInfo&);
+        void setBitsPerSample(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getSampleRate(const CallbackInfo&);
+        void setSampleRate(const CallbackInfo&, const Napi::Value&);
+        void setCompressionLevel(const CallbackInfo&);
+        Napi::Value getBlocksize(const CallbackInfo&);
+        void setBlocksize(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getDoMidSideStereo(const CallbackInfo&);
+        void setDoMidSideStereo(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getLooseMidSideStereo(const CallbackInfo&);
+        void setLooseMidSideStereo(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getMaxLpcOrder(const CallbackInfo&);
+        void setMaxLpcOrder(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getQlpCoeffPrecision(const CallbackInfo&);
+        void setQlpCoeffPrecision(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getDoQlpCoeffPrecSearch(const CallbackInfo&);
+        void setDoQlpCoeffPrecSearch(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getDoEscapeCoding(const CallbackInfo&);
+        void setDoEscapeCoding(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getDoExhaustiveModelSearch(const CallbackInfo&);
+        void setDoExhaustiveModelSearch(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getMinResidualPartitionOrder(const CallbackInfo&);
+        void setMinResidualPartitionOrder(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getMaxResidualPartitionOrder(const CallbackInfo&);
+        void setMaxResidualPartitionOrder(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getRiceParameterSearchDist(const CallbackInfo&);
+        void setRiceParameterSearchDist(const CallbackInfo&, const Napi::Value&);
+        Napi::Value getTotalSamplesEstimate(const CallbackInfo&);
+        void setTotalSamplesEstimate(const CallbackInfo&, const Napi::Value&);
+        void setMetadata(const CallbackInfo&);
+        void setApodization(const CallbackInfo&);
+        Napi::Value getState(const CallbackInfo&);
+        Napi::Value getVerifyDecoderState(const CallbackInfo&);
+        Napi::Value getResolvedStateString(const CallbackInfo&);
+        Napi::Value getVerifyDecoderErrorStats(const CallbackInfo&);
+
+        Napi::Value initStream(const CallbackInfo&);
+        Napi::Value initOggStream(const CallbackInfo&);
+        Napi::Value initFile(const CallbackInfo&);
+        Napi::Value initOggFile(const CallbackInfo&);
+        Napi::Value finish(const CallbackInfo&);
+        Napi::Value process(const CallbackInfo&);
+        Napi::Value processInterleaved(const CallbackInfo&);
+
+        Napi::Value finishAsync(const CallbackInfo&);
+        Napi::Value processAsync(const CallbackInfo&);
+        Napi::Value processInterleavedAsync(const CallbackInfo&);
+        Napi::Value initStreamAsync(const CallbackInfo&);
+        Napi::Value initOggStreamAsync(const CallbackInfo&);
+        Napi::Value initFileAsync(const CallbackInfo&);
+        Napi::Value initOggFileAsync(const CallbackInfo&);
+
+        inline void checkPendingAsyncWork(const Napi::Env& env) {
+            if(asyncContext != nullptr) {
+                throw Error::New(env, "There is still an operation running on this object");
+            }
+        }
+
+        void checkIsInitialized(const Napi::Env&);
+        void checkIsNotInitialized(const Napi::Env&);
+        Promise enqueueWork(AsyncEncoderWorkBase*);
+        static int doAsyncWork(EncoderWorkContext* ctx, EncoderWorkRequest* req, int defaultReturnValue = 0);
+
+        static c_enum::DefineReturnType createStateEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createInitStatusEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createReadStatusEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createWriteStatusEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createSeekStatusEnum(const Napi::Env&);
+        static c_enum::DefineReturnType createTellStatusEnum(const Napi::Env&);
+
+        static int readCallback(const FLAC__StreamEncoder*, char[], size_t*, void*);
+        static int writeCallback(const FLAC__StreamEncoder*, const char[], size_t, unsigned, unsigned, void*);
+        static int seekCallback(const FLAC__StreamEncoder*, uint64_t, void*);
+        static int tellCallback(const FLAC__StreamEncoder*, uint64_t*, void*);
+        static void metadataCallback(const FLAC__StreamEncoder*, const FLAC__StreamMetadata*, void*);
+        static void progressCallback(const FLAC__StreamEncoder*, uint64_t, uint64_t, unsigned, unsigned, void*);
+
+        static FunctionReference constructor;
+
+        FLAC__StreamEncoder* enc = nullptr;
+        AsyncContext* asyncContext = nullptr;
+        AsyncEncoderWorkBase::ExecutionProgress* asyncExecutionProgress = nullptr;
+        std::shared_ptr<EncoderWorkContext> ctx;
+        ObjectReference metadataArrayRef;
+
+    public:
+
+        static Function init(const Napi::Env&);
+
+        StreamEncoder(const CallbackInfo&);
+        ~StreamEncoder();
+
+    };
+
     class AsyncEncoderWork: public AsyncEncoderWorkBase {
+
+        typedef std::initializer_list<Napi::Value> StoreList;
+
         AsyncEncoderWork(
-            std::function<bool(AsyncEncoderWorkBase::ExecutionContext &)> function,
-            const char* name,
-            StreamEncoder* enc
+            const StoreList&,
+            std::function<int()>,
+            const char*,
+            EncoderWorkContext*,
+            std::function<Napi::Value(const Napi::Env&, int)> = booleanToJs<int>
         );
 
-        inline Nan::AsyncResource* getAsyncResource() const { return this->async_resource; }
+        void onProgress(
+            const EncoderWorkContext*,
+            Napi::Env&,
+            ExecutionProgress&,
+            EncoderWorkRequest* const*,
+            size_t
+        );
 
-#ifdef MAKE_FRIENDS
-        friend void encoderDoWork(const StreamEncoder* dec, AsyncEncoderWorkBase::ExecutionContext& w, EncoderWorkRequest* const* data);
-#endif
+        static FunctionCallback decorate(EncoderWorkContext*, const std::function<int()>&);
+
     public:
-        static AsyncEncoderWorkBase* forFinish(StreamEncoder* enc);
-        static AsyncEncoderWorkBase* forProcess(v8::Local<v8::Value> buffers, v8::Local<v8::Value> samples, StreamEncoder* enc);
-        static AsyncEncoderWorkBase* forProcessInterleaved(v8::Local<v8::Value> buffer, v8::Local<v8::Value> samples, StreamEncoder* enc);
-        static AsyncEncoderWorkBase* forInitStream(StreamEncoder* enc);
-        static AsyncEncoderWorkBase* forInitOggStream(StreamEncoder* enc);
-        static AsyncEncoderWorkBase* forInitFile(v8::Local<v8::Value> path, StreamEncoder* enc);
-        static AsyncEncoderWorkBase* forInitOggFile(v8::Local<v8::Value> path, StreamEncoder* enc);
+        static AsyncEncoderWork* forFinish(const StoreList&, EncoderWorkContext* ctx);
+        static AsyncEncoderWork* forProcess(const StoreList&, const std::vector<int32_t*>& buffers, uint64_t samples, EncoderWorkContext* ctx);
+        static AsyncEncoderWork* forProcessInterleaved(const StoreList&, int32_t* buffer, uint64_t samples, EncoderWorkContext* ctx);
+        static AsyncEncoderWork* forInitStream(const StoreList&, EncoderWorkContext* ctx);
+        static AsyncEncoderWork* forInitOggStream(const StoreList&, EncoderWorkContext* ctx);
+        static AsyncEncoderWork* forInitFile(const StoreList&, const std::string& path, EncoderWorkContext* ctx);
+        static AsyncEncoderWork* forInitOggFile(const StoreList&, const std::string& path, EncoderWorkContext* ctx);
+
     };
 
 }
-
-int encoder_read_callback(const FLAC__StreamEncoder*, char[], size_t*, void*);
-int encoder_write_callback(const FLAC__StreamEncoder*, const char[], size_t, unsigned, unsigned, void*);
-int encoder_seek_callback(const FLAC__StreamEncoder*, uint64_t, void*);
-int encoder_tell_callback(const FLAC__StreamEncoder*, uint64_t*, void*);
-void encoder_metadata_callback(const FLAC__StreamEncoder*, const FLAC__StreamMetadata*, void*);
-void encoder_progress_callback(const FLAC__StreamEncoder*, uint64_t, uint64_t, unsigned, unsigned, void*);

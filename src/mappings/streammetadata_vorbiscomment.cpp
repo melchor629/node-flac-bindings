@@ -1,281 +1,201 @@
 #include "mappings.hpp"
+#include "native_iterator.hpp"
 #include "../flac/metadata.hpp"
 
 namespace flac_bindings {
 
-    using namespace node;
+    using namespace Napi;
 
-    V8_GETTER(VorbisCommentMetadata::vendorString) {
-        unwrap(VorbisCommentMetadata);
-        info.GetReturnValue().Set(
-            Nan::New(
-                (char*) self->metadata->data.vorbis_comment.vendor_string.entry,
-                self->metadata->data.vorbis_comment.vendor_string.length
-            ).ToLocalChecked()
+    FunctionReference VorbisCommentMetadata::constructor;
+
+    Function VorbisCommentMetadata::init(const Napi::Env& env) {
+        EscapableHandleScope scope(env);
+
+        Function constructor = DefineClass(env, "VorbisCommentMetadata", {
+            InstanceAccessor(
+                "vendorString",
+                &VorbisCommentMetadata::getVendorString,
+                &VorbisCommentMetadata::setVendorString,
+                napi_property_attributes::napi_enumerable
+            ),
+            InstanceAccessor(
+                "count",
+                &VorbisCommentMetadata::getCount,
+                nullptr,
+                napi_property_attributes::napi_enumerable
+            ),
+            InstanceMethod(Napi::Symbol::WellKnown(env, "iterator"), &VorbisCommentMetadata::iterator),
+            InstanceMethod("resizeComments", &VorbisCommentMetadata::resizeComments),
+            InstanceMethod("setComment", &VorbisCommentMetadata::setComment),
+            InstanceMethod("insertComment", &VorbisCommentMetadata::insertComment),
+            InstanceMethod("appendComment", &VorbisCommentMetadata::appendComment),
+            InstanceMethod("replaceComment", &VorbisCommentMetadata::replaceComment),
+            InstanceMethod("deleteComment", &VorbisCommentMetadata::deleteComment),
+            InstanceMethod("findEntryFrom", &VorbisCommentMetadata::findEntryFrom),
+            InstanceMethod("removeEntryMatching", &VorbisCommentMetadata::removeEntryMatching),
+            InstanceMethod("removeEntriesMatching", &VorbisCommentMetadata::removeEntriesMatching),
+            InstanceMethod("get", &VorbisCommentMetadata::get),
+        });
+
+        VorbisCommentMetadata::constructor = Persistent(constructor);
+        VorbisCommentMetadata::constructor.SuppressDestruct();
+
+        return scope.Escape(constructor).As<Function>();
+    }
+
+    VorbisCommentMetadata::VorbisCommentMetadata(const CallbackInfo& info):
+        ObjectWrap<VorbisCommentMetadata>(info),
+        Metadata(info, FLAC__METADATA_TYPE_VORBIS_COMMENT) {}
+
+    static String entryToString(const Env& env, const FLAC__StreamMetadata_VorbisComment_Entry* e) {
+        return String::New(
+            env,
+            (const char*) e->entry,
+            e->length
         );
     }
 
-    V8_GETTER(VorbisCommentMetadata::comments) {
-        unwrap(VorbisCommentMetadata);
-        Local<Array> array = Nan::New<Array>();
-        for(uint32_t i = 0; i < self->metadata->data.vorbis_comment.num_comments; i++) {
-            Nan::Set(array, i,
-                Nan::New(
-                    (char*) self->metadata->data.vorbis_comment.comments[i].entry,
-                    self->metadata->data.vorbis_comment.comments[i].length
-                ).ToLocalChecked()
-            );
-        }
-        info.GetReturnValue().Set(array);
+    static FLAC__StreamMetadata_VorbisComment_Entry entryFromString(const Value& value) {
+        std::string strong = stringFromJs(value);
+        FLAC__StreamMetadata_VorbisComment_Entry entry{
+            (uint32_t) strong.length(),
+            (FLAC__byte*) strdup(strong.c_str()),
+        };
+
+        return entry;
     }
 
-    NAN_METHOD(VorbisCommentMetadata::commentsIterator) {
-        Local<Object> obj = Nan::New<Object>();
-        Nan::Set(obj, Nan::New("it").ToLocalChecked(), info.This());
-        Nan::Set(obj, Nan::New("pos").ToLocalChecked(), Nan::New<Number>(0));
-        Nan::SetMethod(obj, "next", [] (Nan::NAN_METHOD_ARGS_TYPE info) -> void {
-            MaybeLocal<Value> parent = Nan::Get(info.This(), Nan::New("it").ToLocalChecked());
-            if(parent.IsEmpty() || !parent.ToLocalChecked()->IsObject()) {
-                Nan::ThrowTypeError("Unexpected this type for iterator");
-                return;
-            }
-
-            Local<String> posKey = Nan::New("pos").ToLocalChecked();
-            VorbisCommentMetadata* self = Nan::ObjectWrap::Unwrap<VorbisCommentMetadata>(parent.ToLocalChecked().As<Object>());
-            Local<Value> jsPos = Nan::Get(info.This(), posKey).ToLocalChecked();
-            uint32_t pos = numberFromJs<uint32_t>(jsPos).FromJust();
-            Local<Object> ret = Nan::New<Object>();
-            if(pos >= self->metadata->data.vorbis_comment.num_comments) {
-                Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::True());
-            } else {
-                FLAC__StreamMetadata_VorbisComment_Entry entry = self->metadata->data.vorbis_comment.comments[pos];
-                Local<String> entryStr = Nan::New((char*) entry.entry, entry.length).ToLocalChecked();
-                Nan::Set(ret, Nan::New("value").ToLocalChecked(), entryStr);
-                Nan::Set(ret, Nan::New("done").ToLocalChecked(), Nan::False());
-            }
-            Nan::Set(info.This(), posKey, Nan::New<Number>(pos + 1));
-            info.GetReturnValue().Set(ret);
-        });
-
-        info.GetReturnValue().Set(obj);
+    Napi::Value VorbisCommentMetadata::getVendorString(const CallbackInfo& info) {
+        return entryToString(info.Env(), &data->data.vorbis_comment.vendor_string);
     }
 
-    NAN_METHOD(VorbisCommentMetadata::create) {
-        VorbisCommentMetadata* self = new VorbisCommentMetadata;
-        self->Wrap(info.This());
-
-        if(info.Length() > 0 && Buffer::HasInstance(info[0])) {
-            Local<Value> args[] = { info[0], info.Length() > 1 ? info[1] : static_cast<Local<Value>>(Nan::False()) };
-            if(Nan::Call(Metadata::getFunction(), info.This(), 2, args).IsEmpty()) return;
-        } else {
-            Local<Value> args[] = { numberToJs<int>(FLAC__MetadataType::FLAC__METADATA_TYPE_VORBIS_COMMENT) };
-            if(Nan::Call(Metadata::getFunction(), info.This(), 1, args).IsEmpty()) return;
-        }
-
-        nativeProperty(info.This(), "vendorString", vendorString);
-        nativeReadOnlyProperty(info.This(), "comments", comments);
-        info.This()->Set(v8::Symbol::GetIterator(info.GetIsolate()), Nan::GetFunction(Nan::New<FunctionTemplate>(commentsIterator)).ToLocalChecked());
-
-        info.GetReturnValue().Set(info.This());
-    }
-
-    static bool convertStringToEntry(const Local<Value> &obj, FLAC__StreamMetadata_VorbisComment_Entry &entry) {
-        if(obj.IsEmpty()) return false;
-        if(!obj->IsString()) {
-            Nan::ThrowTypeError("Expected comment entry argument to be string");
-            return false;
-        }
-        Nan::Utf8String vs(obj);
-        entry.entry = (FLAC__byte*) strdup(*vs);
-        entry.length = vs.length();
-
-        /*if(!FLAC__format_vorbiscomment_entry_value_is_legal(entry.entry, (unsigned) -1)) {
-            Nan::ThrowError("The comment entry is not valid");
-            return false;
-        }*/
-
-        return true;
-    }
-
-    V8_SETTER(VorbisCommentMetadata::vendorString) {
-        unwrap(VorbisCommentMetadata);
-        FLAC__StreamMetadata_VorbisComment_Entry n;
-        if(!convertStringToEntry(value, n)) return;
+    void VorbisCommentMetadata::setVendorString(const CallbackInfo& info, const Napi::Value& value) {
+        auto entry = entryFromString(value);
 
         //Tell FLAC API that the string we created is now under its ownership (false)
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_set_vendor_string(self->metadata, n, false);
+        FLAC__bool r = FLAC__metadata_object_vorbiscomment_set_vendor_string(data, entry, false);
         if(!r) {
-            Nan::ThrowError("Could not allocate memory to modify the vendor string");
+            free(entry.entry);
+            Error::New(info.Env(), "Invalid vendor string");
         }
     }
 
-    NAN_METHOD(VorbisCommentMetadata::resizeComments) {
-        unwrap(VorbisCommentMetadata);
-        auto maybeCount = numberFromJs<uint32_t>(info[0]);
-        if(maybeCount.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-            return;
-        }
-
-        uint32_t count = maybeCount.FromJust();
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_resize_comments(self->metadata, count);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+    Napi::Value VorbisCommentMetadata::getCount(const CallbackInfo& info) {
+        return numberToJs(info.Env(), data->data.vorbis_comment.num_comments);
     }
 
-    NAN_METHOD(VorbisCommentMetadata::setComment) {
-        unwrap(VorbisCommentMetadata);
-        auto maybePos = numberFromJs<uint32_t>(info[0]);
-        if(maybePos.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-            return;
-        }
+    Napi::Value VorbisCommentMetadata::iterator(const CallbackInfo& info) {
+        return NativeIterator::newIterator(info.Env(), [this] (auto env, auto pos) -> NativeIterator::IterationReturnValue {
+            EscapableHandleScope scope(env);
 
-        FLAC__StreamMetadata_VorbisComment_Entry n;
-        if(!convertStringToEntry(info[1], n)) return;
-
-        uint32_t commentNum = maybePos.FromJust();
-        assertThrowing(self->metadata->data.vorbis_comment.num_comments > commentNum, "Invalid comment number");
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_set_comment(self->metadata, commentNum, n, false);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+            if(pos >= data->data.vorbis_comment.num_comments) {
+                return {};
+            } else {
+                auto jsString = entryToString(env, data->data.vorbis_comment.comments + pos);
+                return {scope.Escape(jsString)};
+            }
+        });
     }
 
-    NAN_METHOD(VorbisCommentMetadata::insertComment) {
-        unwrap(VorbisCommentMetadata);
-        auto maybePos = numberFromJs<uint32_t>(info[0]);
-        if(maybePos.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-            return;
-        }
-
-        FLAC__StreamMetadata_VorbisComment_Entry n;
-        if(!convertStringToEntry(info[1], n)) return;
-
-        uint32_t commentNum = maybePos.FromJust();
-        assertThrowing(self->metadata->data.vorbis_comment.num_comments >= commentNum, "Invalid comment number");
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_insert_comment(self->metadata, commentNum, n, false);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+    Napi::Value VorbisCommentMetadata::resizeComments(const CallbackInfo& info) {
+        auto size = numberFromJs<uint32_t>(info[0]);
+        FLAC__bool res = FLAC__metadata_object_vorbiscomment_resize_comments(data, size);
+        return booleanToJs(info.Env(), res);
     }
 
-    NAN_METHOD(VorbisCommentMetadata::appendComment) {
-        unwrap(VorbisCommentMetadata);
-        FLAC__StreamMetadata_VorbisComment_Entry n;
-        if(!convertStringToEntry(info[0], n)) return;
-
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_append_comment(self->metadata, n, false);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
-    }
-
-    NAN_METHOD(VorbisCommentMetadata::replaceComment) {
-        unwrap(VorbisCommentMetadata);
-        FLAC__StreamMetadata_VorbisComment_Entry n;
-        if(!convertStringToEntry(info[0], n)) return;
-
-        bool all = Nan::To<bool>(info[1]).FromMaybe(false);
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_replace_comment(self->metadata, n, all, false);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
-    }
-
-    NAN_METHOD(VorbisCommentMetadata::deleteComment) {
-        unwrap(VorbisCommentMetadata);
-        auto maybePos = numberFromJs<uint32_t>(info[0]);
-        if(maybePos.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-            return;
+    Napi::Value VorbisCommentMetadata::setComment(const CallbackInfo& info) {
+        auto pos = numberFromJs<uint32_t>(info[0]);
+        if(data->data.vorbis_comment.num_comments <= pos) {
+            throw RangeError::New(info.Env(), "Invalid comment number");
         }
 
-        uint32_t commentNum = maybePos.FromJust();
-        assertThrowing(self->metadata->data.vorbis_comment.num_comments > commentNum, "Invalid comment number");
-        FLAC__bool r = FLAC__metadata_object_vorbiscomment_delete_comment(self->metadata, commentNum);
-        info.GetReturnValue().Set(Nan::New<Boolean>(r));
+        auto entry = entryFromString(info[1]);
+        FLAC__bool r = FLAC__metadata_object_vorbiscomment_set_comment(data, pos, entry, false);
+        if(!r) {
+            free(entry.entry);
+        }
+        return booleanToJs(info.Env(), r);
     }
 
-    NAN_METHOD(VorbisCommentMetadata::findEntryFrom) {
-        unwrap(VorbisCommentMetadata);
-        auto maybePos = numberFromJs<uint32_t>(info[0]);
-        if(maybePos.IsNothing()) {
-            Nan::ThrowTypeError("Expected first argument to be number");
-            return;
+    Napi::Value VorbisCommentMetadata::insertComment(const CallbackInfo& info) {
+        auto pos = numberFromJs<uint32_t>(info[0]);
+        if(data->data.vorbis_comment.num_comments < pos) {
+            throw RangeError::New(info.Env(), "Invalid comment number");
         }
 
-        MaybeLocal<String> maybeKey = Nan::To<String>(info[1]);
-        if(maybeKey.IsEmpty() || !info[1]->IsString()) {
-            Nan::ThrowTypeError("Expected second argument to be string");
-            return;
+        auto entry = entryFromString(info[1]);
+        FLAC__bool r = FLAC__metadata_object_vorbiscomment_insert_comment(data, pos, entry, false);
+        if(!r) {
+            free(entry.entry);
         }
-
-        uint32_t pos = maybePos.FromJust();
-        Nan::Utf8String key(maybeKey.ToLocalChecked());
-        int r = FLAC__metadata_object_vorbiscomment_find_entry_from(self->metadata, pos, *key);
-        info.GetReturnValue().Set(numberToJs(r));
+        return booleanToJs(info.Env(), r);
     }
 
-    NAN_METHOD(VorbisCommentMetadata::removeEntryMatching) {
-        unwrap(VorbisCommentMetadata);
-        MaybeLocal<String> maybeKey = Nan::To<String>(info[0]);
-        if(maybeKey.IsEmpty() || !info[0]->IsString()) {
-            Nan::ThrowTypeError("Expected first argument to be string");
-            return;
-        }
+    Napi::Value VorbisCommentMetadata::appendComment(const CallbackInfo& info) {
+        auto entry = entryFromString(info[0]);
 
-        Nan::Utf8String key(maybeKey.ToLocalChecked());
-        int r = FLAC__metadata_object_vorbiscomment_remove_entry_matching(self->metadata, *key);
-        info.GetReturnValue().Set(numberToJs(r));
+        FLAC__bool r = FLAC__metadata_object_vorbiscomment_append_comment(data, entry, false);
+        if(!r) {
+            free(entry.entry);
+        }
+        return booleanToJs(info.Env(), r);
     }
 
-    NAN_METHOD(VorbisCommentMetadata::removeEntriesMatching) {
-        unwrap(VorbisCommentMetadata);
-        MaybeLocal<String> maybeKey = Nan::To<String>(info[0]);
-        if(maybeKey.IsEmpty() || !info[0]->IsString()) {
-            Nan::ThrowTypeError("Expected first argument to be string");
-            return;
-        }
+    Napi::Value VorbisCommentMetadata::replaceComment(const CallbackInfo& info) {
+        auto entry = entryFromString(info[0]);
+        auto all = maybeBooleanFromJs<FLAC__bool>(info[1]).value_or(false);
 
-        Nan::Utf8String key(maybeKey.ToLocalChecked());
-        int r = FLAC__metadata_object_vorbiscomment_remove_entries_matching(self->metadata, *key);
-        info.GetReturnValue().Set(numberToJs(r));
+        FLAC__bool r = FLAC__metadata_object_vorbiscomment_replace_comment(data, entry, all, false);
+        if(!r) {
+            free(entry.entry);
+        }
+        return booleanToJs(info.Env(), r);
     }
 
-    NAN_METHOD(VorbisCommentMetadata::get) {
-        unwrap(VorbisCommentMetadata);
-        MaybeLocal<String> maybeKey = Nan::To<String>(info[0]);
-        if(maybeKey.IsEmpty() || !info[0]->IsString()) {
-            Nan::ThrowTypeError("Expected first argument to be string");
-            return;
+    Napi::Value VorbisCommentMetadata::deleteComment(const CallbackInfo& info) {
+        auto pos = numberFromJs<uint32_t>(info[0]);
+        if(data->data.vorbis_comment.num_comments <= pos) {
+            throw RangeError::New(info.Env(), "Invalid comment number");
         }
 
-        Nan::Utf8String key(maybeKey.ToLocalChecked());
-        int pos = FLAC__metadata_object_vorbiscomment_find_entry_from(self->metadata, 0, *key);
+        FLAC__bool r = FLAC__metadata_object_vorbiscomment_delete_comment(data, pos);
+        return booleanToJs(info.Env(), r);
+    }
+
+    Napi::Value VorbisCommentMetadata::findEntryFrom(const CallbackInfo& info) {
+        auto offset = numberFromJs<uint32_t>(info[0]);
+        auto key = stringFromJs(info[1]);
+
+        int pos = FLAC__metadata_object_vorbiscomment_find_entry_from(data, offset, key.c_str());
+        return numberToJs(info.Env(), pos);
+    }
+
+    Napi::Value VorbisCommentMetadata::removeEntryMatching(const CallbackInfo& info) {
+        auto key = stringFromJs(info[0]);
+
+        int pos = FLAC__metadata_object_vorbiscomment_remove_entry_matching(data, key.c_str());
+        return numberToJs(info.Env(), pos);
+    }
+
+    Napi::Value VorbisCommentMetadata::removeEntriesMatching(const CallbackInfo& info) {
+        auto key = stringFromJs(info[0]);
+
+        int pos = FLAC__metadata_object_vorbiscomment_remove_entries_matching(data, key.c_str());
+        return numberToJs(info.Env(), pos);
+    }
+
+    Napi::Value VorbisCommentMetadata::get(const CallbackInfo& info) {
+        auto key = stringFromJs(info[0]);
+
+        int pos = FLAC__metadata_object_vorbiscomment_find_entry_from(data, 0, key.c_str());
         if(pos == -1) {
-            info.GetReturnValue().SetNull();
+            return info.Env().Null();
         } else {
-            const char* entry = (const char*) self->metadata->data.vorbis_comment.comments[pos].entry;
-            const char* equalPosEntry = strchr(entry, '=');
-            info.GetReturnValue().Set(Nan::New(equalPosEntry != nullptr ? equalPosEntry + 1 : entry).ToLocalChecked());
+            const char* entry = (const char*) data->data.vorbis_comment.comments[pos].entry;
+            const char* equalPos = strchr(entry, '=');
+            auto jsString = String::New(info.Env(), equalPos ? equalPos + 1 : entry);
+            return jsString;
         }
-    }
-
-
-    Nan::Persistent<Function> VorbisCommentMetadata::jsFunction;
-    NAN_MODULE_INIT(VorbisCommentMetadata::init) {
-        Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(create);
-        tpl->SetClassName(Nan::New("VorbisCommentMetadata").ToLocalChecked());
-        tpl->InstanceTemplate()->SetInternalFieldCount(1);
-        tpl->Inherit(Metadata::getProto());
-
-        Nan::SetPrototypeMethod(tpl, "resizeComments", resizeComments);
-        Nan::SetPrototypeMethod(tpl, "setComment", setComment);
-        Nan::SetPrototypeMethod(tpl, "insertComment", insertComment);
-        Nan::SetPrototypeMethod(tpl, "appendComment", appendComment);
-        Nan::SetPrototypeMethod(tpl, "replaceComment", replaceComment);
-        Nan::SetPrototypeMethod(tpl, "deleteComment", deleteComment);
-        Nan::SetPrototypeMethod(tpl, "findEntryFrom", findEntryFrom);
-        Nan::SetPrototypeMethod(tpl, "removeEntryMatching", removeEntryMatching);
-        Nan::SetPrototypeMethod(tpl, "removeEntriesMatching", removeEntriesMatching);
-        Nan::SetPrototypeMethod(tpl, "get", get);
-
-        Local<Function> metadata = Nan::GetFunction(tpl).ToLocalChecked();
-        jsFunction.Reset(metadata);
-        Nan::Set(target, Nan::New("VorbisCommentMetadata").ToLocalChecked(), metadata);
     }
 
 }

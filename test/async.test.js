@@ -46,13 +46,13 @@ describe('async', function() {
                 }
             );
 
-            it(`should reject if the progress callback throws an exception end mode ${  endMode}`, async function() {
+            it(`should reject if the progress callback throws an exception end mode ${endMode}`, async function() {
                 await assert.throwsAsync(() => testAsync(endMode, (c) => {
                     throw new Error(c);
                 }));
             });
 
-            it(`should reject if the progress callback rejects the promise end mode ${  endMode}`, async function() {
+            it(`should reject if the progress callback rejects the promise end mode ${endMode}`, async function() {
                 await assert.throwsAsync(() => testAsync(endMode, (c) => Promise.reject(new Error(c))));
             });
         });
