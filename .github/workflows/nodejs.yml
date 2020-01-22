@@ -6,7 +6,7 @@ jobs:
   build:
     strategy:
       matrix:
-        node: [10, 12]
+        node: [10] # Disabled node 12 until crash is fixed
     runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node }}-buster
