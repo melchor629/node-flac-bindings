@@ -4,23 +4,14 @@ const { Chain, Iterator, metadata, format } = require('../lib/index').api;
 const { assert, use } = require('chai');
 const { promises: fs, ...oldfs } = require('fs');
 const temp = require('temp').track();
-const { pathForFile: { tags: pathForFile } } = require('./helper');
+const {
+    pathForFile: { tags: pathForFile },
+    generateFlacCallbacks,
+} = require('./helper');
 
 temp.track();
 
 use(require('./helper').asyncChaiExtensions);
-
-const whence = (p, np, w, f) => {
-    if(w === 'set') {
-        return Promise.resolve(np);
-    }
-    if(w === 'cur') {
-        return Promise.resolve(p + np);
-    }
-    if(w === 'end') {
-        return f.stat().then((s) => s.size + np);
-    }
-};
 
 describe('Chain & Iterator', function() {
 
@@ -108,27 +99,10 @@ describe('Chain & Iterator', function() {
         });
 
         it('returns works if the file can be read', async function() {
-            const file = await fs.open('test/data/tags/vc-cs.flac', 'r');
+            const callbacks = await generateFlacCallbacks.flacio(pathForFile('vc-cs.flac'), 'r');
             const chain = new Chain();
-            let pos = BigInt(0);
-            await chain.readWithCallbacks({
-                read: (b, s, n) => file.read(b, 0, s * n)
-                    .then(({ bytesRead }) => {
-                        pos += bytesRead;
-                        return bytesRead;
-                    })
-                    .catch(() => -1),
-                seek: (p, w) => whence(pos, p, w, file)
-                    .then((newPos) => file.read(Buffer.alloc(0), 0, 0, newPos)
-                        .then(() => pos = newPos)
-                        .then(() => 0)
-                    )
-                    .catch(() => -1),
-                tell: () => pos,
-                close: () => file.close().then(() => 0)
-                    .catch(() => -1),
-            })
-                .finally(() => file.close());
+            await chain.readWithCallbacks(callbacks)
+                .finally(() => callbacks.close());
         });
 
         it('it throws if the file cannot be read', async function() {
