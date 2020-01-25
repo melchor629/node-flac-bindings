@@ -3,7 +3,7 @@
 const { testAsync } = require('../lib/index').api;
 const { assert, use } = require('chai');
 
-use(require('./helper/async-chai-extensions.js'));
+use(require('./helper').asyncChaiExtensions);
 const progressValues = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' ];
 
 describe('async', function() {

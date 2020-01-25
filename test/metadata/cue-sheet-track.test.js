@@ -3,9 +3,7 @@
 const { CueSheetTrack, CueSheetIndex } = require('../../lib/index').api.metadata;
 const { getCuesheet } = require('../../lib/index').api.metadata0;
 const { assert } = require('chai');
-const path = require('path');
-
-const pathForFile = (...file) => path.join(__dirname, '..', 'data', 'tags', ...file);
+const { pathForFile: { tags: pathForFile } } = require('../helper');
 
 describe('CueSheetTrack', function() {
     it('create a new object should work', function() {

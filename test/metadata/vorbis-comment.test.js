@@ -4,9 +4,7 @@ const { VorbisCommentMetadata } = require('../../lib/index').api.metadata;
 const { getTags } = require('../../lib/index').api.metadata0;
 const { MetadataType } = require('../../lib/index').api.format;
 const { assert } = require('chai');
-const path = require('path');
-
-const pathForFile = (...file) => path.join(__dirname, '..', 'data', 'tags', ...file);
+const { pathForFile: { tags: pathForFile } } = require('../helper');
 
 describe('VorbisCommentMetadata', function() {
     it('create new object should work', function() {

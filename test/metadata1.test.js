@@ -3,13 +3,11 @@
 const { SimpleIterator, metadata, format } = require('../lib/index').api;
 const { assert, use } = require('chai');
 const { promises: fs, ...oldfs } = require('fs');
-const path = require('path');
 const temp = require('temp').track();
+const { pathForFile: { tags: pathForFile } } = require('./helper');
 
 temp.track();
-use(require('./helper/async-chai-extensions.js'));
-
-const pathForFile = (...file) => path.join(__dirname, 'data', 'tags', ...file);
+use(require('./helper').asyncChaiExtensions);
 
 describe('SimpleIterator', function() {
 
