@@ -1212,7 +1212,7 @@ declare namespace api {
      * If the library is not a the FLAC one, the behaviour is undefined and crashes
      * may occur.
      */
-    const load: ((flacDynamicLibraryPath: string, ext?: string) => typeof api) | undefined;
+    const load: ((flacDynamicLibraryPath: string, ext?: string) => void) | undefined;
 
     function testAsync(mode: 'reject' | 'exception' | 'resolve', progress: (char: string) => Promise<void> | void): Promise<true>;
     const napiVersion: number;

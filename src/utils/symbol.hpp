@@ -37,8 +37,8 @@ namespace flac_bindings {
                 return library->getSymbolAddress<SymbolType>(symbolName)(std::forward<ArgTypes>(args)...);
             }
 
-            inline SymbolType operator*() {
-                return library->getSymbolAddress<SymbolType>(symbolName);
+            inline SymbolType& operator*() {
+                return *library->getSymbolAddress<SymbolType*>(symbolName);
             }
 
             inline SymbolType operator->() {
@@ -63,7 +63,7 @@ namespace flac_bindings {
             return (*this)(libFlac)(std::forward<ArgTypes>(args)...);
         }
 
-        SymbolType operator*() {
+        SymbolType& operator*() {
             return *(*this)(libFlac);
         }
 
