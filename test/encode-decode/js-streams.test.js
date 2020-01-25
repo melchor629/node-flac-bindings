@@ -27,9 +27,11 @@ afterEach('cleanUpTemporaryFiles', function() {
 
 describe('encode & decode: js streams', function() {
 
+    this.slow(250 * 1000);
+
     describe('Stream', function() {
 
-        it('encode/decode using stream', async function() {
+        it('encode/decode using stream (non-ogg)', async function() {
             const dec = new StreamDecoder({ outputAs32: false });
             const enc = new StreamEncoder({
                 samplerate: 44100,
@@ -52,7 +54,7 @@ describe('encode & decode: js streams', function() {
             comparePCM(okData, tmpFile.path, 24);
         });
 
-        /*it('encode/decode using stream (ogg)', async function() {
+        it('encode/decode using stream (ogg)', async function() {
             const dec = new StreamDecoder({ outputAs32: false, isOggStream: true });
             const enc = new StreamEncoder({
                 samplerate: 44100,
@@ -74,7 +76,7 @@ describe('encode & decode: js streams', function() {
             assert.equal(dec._processedSamples, totalSamples);
             assert.equal(enc._processedSamples, totalSamples);
             comparePCM(okData, tmpFile.path, 24, true);
-        });*/
+        });
 
         it('decode using stream and file-bit output', async function() {
             const input = fs.createReadStream(pathForFile('loop.flac'));
@@ -104,6 +106,21 @@ describe('encode & decode: js streams', function() {
             assert.equal(raw.length, totalSamples * 4 * 2);
             assert.equal(dec._processedSamples, totalSamples);
             comparePCM(okData, raw, 32);
+        });
+
+        it('decode using stream (ogg)', async function() {
+            const input = fs.createReadStream(pathForFile('loop.oga'));
+            const dec = new StreamDecoder({ outputAs32: false, isOggStream: true });
+            const chunks = [];
+
+            input.pipe(dec);
+            dec.on('data', (chunk) => chunks.push(chunk));
+            await events.once(dec, 'end');
+
+            const raw = Buffer.concat(chunks);
+            assert.equal(raw.length, totalSamples * 3 * 2);
+            assert.equal(dec._processedSamples, totalSamples);
+            comparePCM(okData, raw, 24);
         });
 
         it('encode using stream and file-bit input', async function() {
@@ -148,6 +165,27 @@ describe('encode & decode: js streams', function() {
             assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000);
             assert.equal(enc._processedSamples, totalSamples);
             comparePCM(okData, tmpFile.path, 24);
+        });
+
+        it('encode using stream (ogg)', async function() {
+            const output = fs.createWriteStream(tmpFile.path);
+            const enc = new StreamEncoder({
+                samplerate: 44100,
+                channels: 2,
+                bitsPerSample: 24,
+                compressionLevel: 9,
+                inputAs32: false,
+                isOggStream: true,
+            });
+            const raw = okData;
+
+            enc.pipe(output);
+            enc.end(raw);
+            await events.once(output, 'close');
+
+            assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000);
+            assert.equal(enc._processedSamples, totalSamples);
+            comparePCM(okData, tmpFile.path, 24, true);
         });
 
         it('stream decoder should read properties', async function() {
@@ -234,7 +272,7 @@ describe('encode & decode: js streams', function() {
 
     describe('File', function() {
 
-        it('encode/decode using file', async function() {
+        it('encode/decode using file (non-ogg)', async function() {
             const dec = new FileDecoder({ file: pathForFile('loop.flac'), outputAs32: false });
             const enc = new FileEncoder({
                 file: tmpFile.path,
@@ -252,6 +290,27 @@ describe('encode & decode: js streams', function() {
             assert.equal(dec._processedSamples, totalSamples);
             assert.equal(enc._processedSamples, totalSamples);
             comparePCM(okData, tmpFile.path, 24);
+        });
+
+        it('encode/decode using file (ogg)', async function() {
+            const dec = new FileDecoder({ file: pathForFile('loop.oga'), outputAs32: false, isOggStream: true });
+            const enc = new FileEncoder({
+                file: tmpFile.path,
+                samplerate: 44100,
+                channels: 2,
+                bitsPerSample: 24,
+                compressionLevel: 9,
+                inputAs32: false,
+                isOggStream: true,
+            });
+
+            dec.pipe(enc);
+            await events.once(enc, 'finish');
+
+            assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000);
+            assert.equal(dec._processedSamples, totalSamples);
+            assert.equal(enc._processedSamples, totalSamples);
+            comparePCM(okData, tmpFile.path, 24, true);
         });
 
         it('encode/decode using 32 bit integers', async function() {
@@ -300,6 +359,19 @@ describe('encode & decode: js streams', function() {
             comparePCM(okData, raw, 32);
         });
 
+        it('decode using file (ogg)', async function() {
+            const dec = new FileDecoder({ outputAs32: false, file: pathForFile('loop.oga'), isOggStream: true });
+            const chunks = [];
+
+            dec.on('data', (chunk) => chunks.push(chunk));
+            await events.once(dec, 'end');
+
+            const raw = Buffer.concat(chunks);
+            assert.equal(raw.length, totalSamples * 3 * 2);
+            assert.equal(dec._processedSamples, totalSamples);
+            comparePCM(okData, raw, 24);
+        });
+
         it('encode using file and 24-bit input', async function() {
             const file = tmpFile.path;
             const enc = new FileEncoder({
@@ -342,6 +414,27 @@ describe('encode & decode: js streams', function() {
             assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000);
             assert.equal(enc._processedSamples, totalSamples);
             comparePCM(okData, tmpFile.path, 24);
+        });
+
+        it('encode using file (ogg)', async function() {
+            const file = tmpFile.path;
+            const enc = new FileEncoder({
+                samplerate: 44100,
+                channels: 2,
+                bitsPerSample: 24,
+                compressionLevel: 9,
+                inputAs32: false,
+                file,
+                isOggStream: true,
+            });
+            const raw = okData;
+
+            enc.end(raw);
+            await events.once(enc, 'finish');
+
+            assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000);
+            assert.equal(enc._processedSamples, totalSamples);
+            comparePCM(okData, tmpFile.path, 24, true);
         });
 
         it('file decoder should read properties', async function() {

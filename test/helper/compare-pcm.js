@@ -6,9 +6,15 @@ const { assert } = require('chai');
  * @param {string} file Path to a flac file
  * @param {boolean} ogg Set to `true` if the file is ogg/flac
  */
-const readFlacUsingCli = (file, ogg) => (
-    cp.spawnSync('flac', [ '-d', '-c', file, ogg ? '--ogg' : '--no-ogg' ], { encoding: 'buffer' }).stdout
-);
+const readFlacUsingCli = (file, ogg) => {
+    const result = cp.spawnSync('flac', [ '-d', '-c', file, ogg ? '--ogg' : '--no-ogg' ], { encoding: 'buffer' });
+    if(result.error) {
+        throw result.error;
+    }
+
+    assert.equal(result.status, 0, result.stderr.toString('utf8'));
+    return result.stdout;
+};
 
 /**
  * From given WAV buffer, extracts the PCM data
