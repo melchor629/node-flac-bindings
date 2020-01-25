@@ -6,10 +6,12 @@ describe('format', function() {
 
     it('FLAC__VERSION_STRING is defined', function() {
         assert.isString(format.FLAC__VERSION_STRING);
+        assert.match(format.FLAC__VERSION_STRING, /^\d+\.\d+\.\d+$/);
     });
 
     it('FLAC__VENDOR_STRING is defined', function() {
         assert.isString(format.FLAC__VENDOR_STRING);
+        assert.match(format.FLAC__VENDOR_STRING, /^reference libFLAC \d+\.\d+\.\d+ \d+$/);
     });
 
     it('sampleRateIsValid() should work', function() {

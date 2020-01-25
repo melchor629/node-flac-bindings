@@ -4,6 +4,7 @@
   "description": "libflac bindings to node.js with easy to use API",
   "repository": "https://github.com/melchor629/node-flac-bindings/",
   "main": "./lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
     "test": "mocha --recursive",
     "install": "prebuild-install || cmake-js compile",
@@ -37,7 +38,6 @@
     "prebuild": "^10.0.0",
     "temp": "^0.9.1"
   },
-  "types": "lib/index.d.ts",
   "binary": {
     "napi_versions": [
       4
