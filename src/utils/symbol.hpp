@@ -38,14 +38,15 @@ namespace flac_bindings {
             }
 
             inline SymbolType& operator*() {
+                static_assert(!std::is_function<std::remove_pointer_t<SymbolType>>::value, "Function type is not valid");
                 return *library->getSymbolAddress<SymbolType*>(symbolName);
             }
 
-            inline SymbolType operator->() {
+            inline SymbolType& operator->() {
                 return *(*this);
             }
 
-            inline operator SymbolType() {
+            inline operator SymbolType&() {
                 return *(*this);
             }
         };
@@ -67,11 +68,11 @@ namespace flac_bindings {
             return *(*this)(libFlac);
         }
 
-        SymbolType operator->() {
+        SymbolType& operator->() {
             return *(*this)(libFlac);
         }
 
-        operator SymbolType() {
+        operator SymbolType&() {
             return *(*this)(libFlac);
         }
 
