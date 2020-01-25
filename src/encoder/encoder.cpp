@@ -718,7 +718,7 @@ namespace flac_bindings {
         try {
             auto jsBuffer = pointer::wrap(env, buffer, *bytes);
             auto ret = ctx->readCbk.MakeCallback(env.Global(), {jsBuffer}, *ctx->enc->asyncContext);
-            generateParseNumberResult(returnValue, "Encoder:ReadCallback")(ret);
+            generateParseObjectResult(returnValue, "Encoder:ReadCallback", "bytes", *bytes)(ret);
         } catch(const Error& error) {
             *bytes = 0;
             error.ThrowAsJavaScriptException();

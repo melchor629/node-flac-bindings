@@ -16,7 +16,11 @@ namespace flac_bindings {
 
     template<typename DataType>
     struct ProgressRequest {
+        #if defined(__GNUC__) and not defined(__clang__)
         std::shared_ptr<DataType[]> data;
+        #else
+        std::shared_ptr<DataType> data;
+        #endif
         size_t count = 0;
         std::shared_ptr<volatile bool> completed;
         std::shared_ptr<std::mutex> mutex;
