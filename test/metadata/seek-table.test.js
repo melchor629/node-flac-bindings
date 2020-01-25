@@ -4,9 +4,7 @@ const { SeekTableMetadata, SeekPoint } = require('../../lib/index').api.metadata
 const { MetadataType } = require('../../lib/index').api.format;
 const { SimpleIterator } = require('../../lib/index').api;
 const { assert } = require('chai');
-const path = require('path');
-
-const pathForFile = (...file) => path.join(__dirname, '..', 'data', 'tags', ...file);
+const { pathForFile: { tags: pathForFile } } = require('../helper');
 
 describe('SeekTableMetadata', function() {
 

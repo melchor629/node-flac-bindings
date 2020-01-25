@@ -84,17 +84,32 @@ describe('format', function() {
         assert.throws(() => format.seektableSort(new metadata.ApplicationMetadata()), /is not of type SeekTable/);
     });
 
-    it('cuesheetIsLegal() should work', function() {
+    it('cuesheetIsLegal() should return reason if wrong', function() {
         const cuesheet = new metadata.CueSheetMetadata();
         assert.isString(format.cuesheetIsLegal(cuesheet));
+        assert.equal(format.cuesheetIsLegal(cuesheet), 'cue sheet must have at least one track (the lead-out)');
+    });
+
+    it('cuesheetIsLegal() should return null if ok', function() {
+        const cuesheet = new metadata.CueSheetMetadata();
+        cuesheet.insertBlankTrack(0);
+        Array.from(cuesheet)[0].number = 1;
+        assert.isNull(format.cuesheetIsLegal(cuesheet));
     });
 
     it('cuesheetIsLegal() with value not CueSheetMetadata should throw', function() {
         assert.throws(() => format.cuesheetIsLegal(new metadata.ApplicationMetadata()), /is not of type CueSheet/);
     });
 
-    it('pictureIsLegal() should work', function() {
+    it('pictureIsLegal() should return null if ok', function() {
         assert.isNull(format.pictureIsLegal(new metadata.PictureMetadata()));
+    });
+
+    it('pictureIsLegal() should return reason if wrong', function() {
+        const picture = new metadata.PictureMetadata();
+        picture.mimeType = 'ƒ';
+        assert.isString(format.pictureIsLegal(picture));
+        assert.match(format.pictureIsLegal(picture), /^MIME type string must contain only printable ASCII characters/);
     });
 
     it('pictureIsLegal() with value not PictureMetadata should throw', function() {

@@ -4,9 +4,7 @@ const { StreamInfoMetadata } = require('../../lib/index').api.metadata;
 const { MetadataType } = require('../../lib/index').api.format;
 const { getStreaminfoAsync } = require('../../lib/index').api.metadata0;
 const { assert } = require('chai');
-const path = require('path');
-
-const pathForFile = (...file) => path.join(__dirname, '..', 'data', 'tags', ...file);
+const { pathForFile: { tags: pathForFile } } = require('../helper');
 
 describe('StreamInfoMetadata', function() {
     it('create new object should work', function() {

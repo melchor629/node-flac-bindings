@@ -1,2 +1,4 @@
-require('v8').setFlagsFromString('--expose_gc');
-module.exports = require('vm').runInNewContext('gc');
+module.exports = () => {
+    require('v8').setFlagsFromString('--expose_gc');
+    return require('vm').runInNewContext('gc')();
+};

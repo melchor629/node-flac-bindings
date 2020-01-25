@@ -3,11 +3,9 @@
 const { metadata0, metadata, format } = require('../lib/index').api;
 const { assert, use } = require('chai');
 const { promises: fs } = require('fs');
-const path = require('path');
+const { pathForFile: { tags: pathForFile } } = require('./helper');
 
-const pathForFile = (...file) => path.join(__dirname, 'data', 'tags', ...file);
-
-use(require('./helper/async-chai-extensions.js'));
+use(require('./helper').asyncChaiExtensions);
 
 describe('metadata0', function() {
 
