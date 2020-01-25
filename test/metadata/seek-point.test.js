@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/// <reference path="../../lib/index.d.ts" />
 const { SeekPoint } = require('../../lib/index').api.metadata;
 const { assert } = require('chai');
 

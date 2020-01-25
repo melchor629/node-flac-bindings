@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/// <reference path="../../lib/index.d.ts" />
 const { CueSheetTrack, CueSheetIndex } = require('../../lib/index').api.metadata;
 const { getCuesheet } = require('../../lib/index').api.metadata0;
 const { assert } = require('chai');

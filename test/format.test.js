@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/// <reference path="../lib/index.d.ts" />
 const { format, metadata } = require('../lib/index').api;
 const { assert } = require('chai');
 

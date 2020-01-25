@@ -1,4 +1,3 @@
-/// <reference path="async-chai-extensions.d.ts" />
 module.exports = function(chai) {
     chai.assert.throwsAsync = async function(f, pattern) {
         try {
