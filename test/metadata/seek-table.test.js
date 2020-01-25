@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/// <reference path="../../lib/index.d.ts" />
 const { SeekTableMetadata, SeekPoint } = require('../../lib/index').api.metadata;
 const { MetadataType } = require('../../lib/index').api.format;
 const { SimpleIterator } = require('../../lib/index').api;

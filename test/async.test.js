@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/// <reference path="../lib/index.d.ts" />
 const { testAsync } = require('../lib/index').api;
 const { assert, use } = require('chai');
 

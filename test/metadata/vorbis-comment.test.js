@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/// <reference path="../../lib/index.d.ts" />
 const { VorbisCommentMetadata } = require('../../lib/index').api.metadata;
 const { getTags } = require('../../lib/index').api.metadata0;
 const { MetadataType } = require('../../lib/index').api.format;

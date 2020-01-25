@@ -9,7 +9,10 @@ if [[ -d coverage ]]; then
 fi
 mkdir coverage
 
-cmake-js build --debug --CDCOVERAGE
+if [[ ! -z "$1" ]] && [[ "$1" = "rebuild" ]]; then
+    cmake-js clean
+    cmake-js build --debug --CDCOVERAGE
+fi
 
 nyc mocha --recursive
 nyc report --reporter=text-lcov > coverage/js.info

@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/// <reference path="../../lib/index.d.ts" />
 const { StreamInfoMetadata } = require('../../lib/index').api.metadata;
 const { MetadataType } = require('../../lib/index').api.format;
 const { getStreaminfoAsync } = require('../../lib/index').api.metadata0;

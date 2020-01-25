@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/// <reference path="../lib/index.d.ts" />
 const { Chain, Iterator, metadata, format } = require('../lib/index').api;
 const { assert, use } = require('chai');
 const { promises: fs, ...oldfs } = require('fs');

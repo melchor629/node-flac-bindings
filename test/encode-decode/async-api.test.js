@@ -1,5 +1,4 @@
 /* eslint-disable prefer-arrow-callback */
-/// <reference path="../../lib/index.d.ts" />
 const { api } = require('../../lib/index');
 const { assert } = require('chai');
 const temp = require('temp').track();
