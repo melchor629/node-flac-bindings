@@ -157,7 +157,7 @@ namespace flac_bindings {
             std::tie(ptr, length) = pointer::fromBuffer<FLAC__byte>(value);
         }
         if(length == 0) {
-            FLAC__metadata_object_picture_set_data(data, NULL, 0, false);
+            FLAC__metadata_object_picture_set_data(data, (uint8_t*) nullptr, 0, false);
         } else {
             auto ret = FLAC__metadata_object_picture_set_data(
                 data,
