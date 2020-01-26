@@ -38,6 +38,14 @@ namespace flac_bindings {
         class StreamEncoder* enc;
 
         EncoderWorkContext(StreamEncoder* enc): enc(enc) {}
+        virtual ~EncoderWorkContext() {
+            if(!readCbk.IsEmpty()) readCbk.Unref();
+            if(!writeCbk.IsEmpty()) writeCbk.Unref();
+            if(!seekCbk.IsEmpty()) seekCbk.Unref();
+            if(!tellCbk.IsEmpty()) tellCbk.Unref();
+            if(!metadataCbk.IsEmpty()) metadataCbk.Unref();
+            if(!progressCbk.IsEmpty()) progressCbk.Unref();
+        }
     };
 
     class StreamEncoder: public ObjectWrap<StreamEncoder> {

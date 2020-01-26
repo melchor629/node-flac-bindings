@@ -241,7 +241,7 @@ namespace flac_bindings {
 
         ~AsyncBackgroundTask() {
             if(!exceptionValue.IsEmpty()) {
-                exceptionValue.Reset();
+                exceptionValue.Unref();
             }
         }
 

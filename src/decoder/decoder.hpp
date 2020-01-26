@@ -32,6 +32,16 @@ namespace flac_bindings {
         class StreamDecoder* dec;
 
         DecoderWorkContext(StreamDecoder* dec): dec(dec) {}
+        virtual ~DecoderWorkContext() {
+            if(!readCbk.IsEmpty()) readCbk.Unref();
+            if(!seekCbk.IsEmpty()) seekCbk.Unref();
+            if(!tellCbk.IsEmpty()) tellCbk.Unref();
+            if(!lengthCbk.IsEmpty()) lengthCbk.Unref();
+            if(!eofCbk.IsEmpty()) eofCbk.Unref();
+            if(!writeCbk.IsEmpty()) writeCbk.Unref();
+            if(!metadataCbk.IsEmpty()) metadataCbk.Unref();
+            if(!errorCbk.IsEmpty()) errorCbk.Unref();
+        }
     };
 
     class StreamDecoder: public ObjectWrap<StreamDecoder> {

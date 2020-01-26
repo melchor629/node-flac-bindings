@@ -200,7 +200,10 @@ namespace flac_bindings {
 
     static inline bool maybeFunctionIntoRef(Napi::FunctionReference& ref, const Napi::Value& value) {
         if(value.IsFunction()) {
-            ref.Reset(value.As<Napi::Function>(), 1);
+            if(!ref.IsEmpty()) {
+                ref.Unref();
+            }
+            ref = Persistent(value.As<Napi::Function>());
             return true;
         }
 
