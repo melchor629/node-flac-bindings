@@ -5,6 +5,7 @@ const temp = require('temp').track();
 
 const {
     pathForFile: { audio: pathForFile },
+    createDeferredScope,
     comparePCM,
     getWavAudio,
     generateFlacCallbacks,
@@ -19,12 +20,15 @@ for(let i = 0; i < totalSamples * 2; i++) {
 }
 
 let tmpFile;
+let deferredScope = null;
 beforeEach('createTemporaryFiles', function() {
     tmpFile = temp.openSync('flac-bindings.encode-decode.sync-api');
+    deferredScope = createDeferredScope();
 });
 
 afterEach('cleanUpTemporaryFiles', function() {
     temp.cleanupSync();
+    deferredScope.finalize();
 });
 
 describe('encode & decode: sync api', function() {
@@ -33,6 +37,7 @@ describe('encode & decode: sync api', function() {
 
     it('decode using stream (non-ogg)', function() {
         const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r');
+        deferredScope.defer(() => callbacks.close());
         const dec = new api.Decoder();
         const allBuffers = [];
         assert.equal(dec.initStream(
@@ -62,6 +67,7 @@ describe('encode & decode: sync api', function() {
 
     it('decode using stream (ogg)', function() {
         const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.oga'), 'r');
+        deferredScope.defer(() => callbacks.close());
         const dec = new api.Decoder();
         const allBuffers = [];
         assert.equal(dec.initOggStream(
@@ -160,6 +166,7 @@ describe('encode & decode: sync api', function() {
     it('encode using stream (non-ogg)', function() {
         const enc = new api.Encoder();
         const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w');
+        deferredScope.defer(() => callbacks.close());
         enc.bitsPerSample = 24;
         enc.channels = 2;
         enc.setCompressionLevel(9);
@@ -180,6 +187,7 @@ describe('encode & decode: sync api', function() {
     it('encode using stream (ogg)', function() {
         const enc = new api.Encoder();
         const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w+');
+        deferredScope.defer(() => callbacks.close());
         enc.bitsPerSample = 24;
         enc.channels = 2;
         enc.setCompressionLevel(9);
@@ -239,6 +247,7 @@ describe('encode & decode: sync api', function() {
     it('encoder should emit streaminfo metadata block', function() {
         let metadataBlock = null;
         const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w');
+        deferredScope.defer(() => callbacks.close());
         const enc = new api.Encoder();
         enc.bitsPerSample = 24;
         enc.channels = 2;
