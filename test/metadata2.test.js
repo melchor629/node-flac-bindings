@@ -556,6 +556,78 @@ describe('Chain & Iterator', function() {
             );
         });
 
+        it('modify the blocks and write should modify the file correctly (callbacks)', async function() {
+            const readCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r');
+            const ch = new Chain();
+            assert.isTrue(
+                await ch.readWithCallbacks(readCallbacks).finally(() => readCallbacks.close()),
+                Chain.StatusString[ch.status()],
+            );
+            const it = ch.createIterator();
+
+            const vc = new metadata.VorbisCommentMetadata();
+            vc.vendorString = 'flac-bindings 2.0.0';
+            assert.isTrue(it.insertBlockAfter(vc));
+
+            assert.isTrue(it.insertBlockAfter(new metadata.PaddingMetadata(50)));
+            assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()));
+            assert.isTrue(it.next());
+
+            const writeCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r+');
+            assert.isFalse(ch.checkIfTempFileIsNeeded());
+            assert.isTrue(await ch.writeWithCallbacks(writeCallbacks), Chain.StatusString[ch.status()]);
+
+            assert.deepEqual(
+                Array.from(ch.createIterator()).map((i) => i.type),
+                [
+                    format.MetadataType.STREAMINFO,
+                    format.MetadataType.VORBIS_COMMENT,
+                    format.MetadataType.PADDING,
+                    format.MetadataType.APPLICATION,
+                    format.MetadataType.PADDING,
+                ]
+            );
+        });
+
+        it('modify the blocks and write should modify the file correctly (callbacks + tempfile)', async function() {
+            const readCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r');
+            const ch = new Chain();
+            assert.isTrue(
+                await ch.readWithCallbacks(readCallbacks).finally(() => readCallbacks.close()),
+                Chain.StatusString[ch.status()],
+            );
+            const it = ch.createIterator();
+
+            const vc = new metadata.VorbisCommentMetadata();
+            vc.vendorString = 'flac-bindings 2.0.0';
+            assert.isTrue(it.insertBlockAfter(vc));
+
+            assert.isTrue(it.insertBlockAfter(new metadata.PaddingMetadata(50)));
+            assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()));
+            assert.isTrue(it.next());
+
+            const tmpFile2 = temp.openSync('flac-bindings.metadata2.chain-iterator');
+            const writeCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r+');
+            const writeCallbacks2 = await generateFlacCallbacks.flacio(tmpFile2.path, 'r+');
+            assert.isTrue(ch.checkIfTempFileIsNeeded(false));
+            assert.isTrue(
+                await ch.writeWithCallbacksAndTempFile(false, writeCallbacks, writeCallbacks2)
+                    .finally(() => writeCallbacks.close().finally(() => writeCallbacks2.close())),
+                Chain.StatusString[ch.status()],
+            );
+
+            assert.deepEqual(
+                Array.from(ch.createIterator()).map((i) => i.type),
+                [
+                    format.MetadataType.STREAMINFO,
+                    format.MetadataType.VORBIS_COMMENT,
+                    format.MetadataType.PADDING,
+                    format.MetadataType.APPLICATION,
+                    format.MetadataType.PADDING,
+                ]
+            );
+        });
+
     });
 
     describe('other', function() {

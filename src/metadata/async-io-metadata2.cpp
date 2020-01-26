@@ -44,7 +44,7 @@ namespace flac_bindings {
         const std::function<void(Type)>& setter
     ) {
         return [setter] (auto result) {
-            auto returnValue = numberFromJs<Type>(result);
+            auto returnValue = maybeNumberFromJs<Type>(result).value_or(booleanFromJs<Type>(result));
             setter(returnValue);
         };
     }
@@ -141,12 +141,12 @@ namespace flac_bindings {
     }
 
     AsyncFlacIOWork::IOCallbacks::~IOCallbacks() {
-        if(!readCallback.IsEmpty()) readCallback.Reset();
-        if(!writeCallback.IsEmpty()) writeCallback.Reset();
-        if(!seekCallback.IsEmpty()) seekCallback.Reset();
-        if(!tellCallback.IsEmpty()) tellCallback.Reset();
-        if(!eofCallback.IsEmpty()) eofCallback.Reset();
-        if(!closeCallback.IsEmpty()) closeCallback.Reset();
+        if(!readCallback.IsEmpty()) readCallback.Unref();
+        if(!writeCallback.IsEmpty()) writeCallback.Unref();
+        if(!seekCallback.IsEmpty()) seekCallback.Unref();
+        if(!tellCallback.IsEmpty()) tellCallback.Unref();
+        if(!eofCallback.IsEmpty()) eofCallback.Unref();
+        if(!closeCallback.IsEmpty()) closeCallback.Unref();
     }
 
 
@@ -174,6 +174,12 @@ namespace flac_bindings {
         auto* ec = std::get<1>(ctx);
         auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Write);
         size_t bytes = size * numberOfMembers;
+
+        if(size * numberOfMembers == 0) {
+            //Sometimes, the callback is called with 0 bytes to write
+            //Discard the call completely :)
+            return 0;
+        }
 
         req->cbks = std::get<0>(ctx);
         req->ptr = (void*) ptr;
