@@ -21,7 +21,7 @@ jobs:
     - name: Install
       run: npm install
     - name: Workarounds
-      run: /
+      run: |
         patch node_modules/node-addon-api/napi-inl.h < .github/workflows/avoid-double-delete-ref-in-object-wrap.patch
     - name: Build
       run: npm run cmake-js -- build
