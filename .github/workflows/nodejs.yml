@@ -6,7 +6,7 @@ jobs:
   build:
     strategy:
       matrix:
-        node: [10] # Disabled node 12 until crash is fixed
+        node: [10, 12, 13]
     runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node }}-buster
@@ -20,6 +20,9 @@ jobs:
         apt-get install -y cmake libflac-dev flac
     - name: Install
       run: npm install
+    - name: Workarounds
+      run: /
+        patch node_modules/node-addon-api/napi-inl.h < .github/workflows/avoid-double-delete-ref-in-object-wrap.patch
     - name: Build
       run: npm run cmake-js -- build
     - name: Lint
