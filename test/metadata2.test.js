@@ -575,7 +575,10 @@ describe('Chain & Iterator', function() {
 
             const writeCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r+');
             assert.isFalse(ch.checkIfTempFileIsNeeded());
-            assert.isTrue(await ch.writeWithCallbacks(writeCallbacks), Chain.StatusString[ch.status()]);
+            assert.isTrue(
+                await ch.writeWithCallbacks(writeCallbacks).finally(() => writeCallbacks.close()),
+                Chain.StatusString[ch.status()],
+            );
 
             assert.deepEqual(
                 Array.from(ch.createIterator()).map((i) => i.type),
