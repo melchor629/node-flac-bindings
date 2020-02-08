@@ -27,9 +27,9 @@
     "prebuild-install": "^5.3.3"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.7",
+    "@types/chai": "^4.2.8",
     "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.22",
+    "@types/node": "^12.12.26",
     "chai": "^4.2.0",
     "eslint": "^6.8.0",
     "eslint-plugin-mocha": "^6.2.2",
