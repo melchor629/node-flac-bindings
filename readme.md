@@ -1,7 +1,10 @@
 # flac-bindings
 Nodejs bindings to [libFLAC](https://xiph.org/flac/download.html)
 
-[![Coverage Status](https://coveralls.io/repos/github/melchor629/node-flac-bindings/badge.svg?branch=master)](https://coveralls.io/github/melchor629/node-flac-bindings?branch=master)
+| master | dev |
+|--------|-----|
+|![Node CI](https://github.com/melchor629/node-flac-bindings/workflows/Node%20CI/badge.svg?branch=master)|![Node CI](https://github.com/melchor629/node-flac-bindings/workflows/Node%20CI/badge.svg?branch=dev)|
+|[![Coverage Status](https://coveralls.io/repos/github/melchor629/node-flac-bindings/badge.svg?branch=master)](https://coveralls.io/github/melchor629/node-flac-bindings?branch=master)|[![Coverage Status](https://coveralls.io/repos/github/melchor629/node-flac-bindings/badge.svg?branch=dev)](https://coveralls.io/github/melchor629/node-flac-bindings?branch=dev)|
 
 ## What can this binding do for me?
 You can use all the functions from encoder and decoder modules inside Javascript with struct-to-js (and viceversa) conversions. The FLAC library will load dynamically on runtime or with some help, you can tell where the library is. Also, any chunk of data that the FLAC API needs is solved by a simple node Buffer. And it has some beautiful js classes for encoder and decoder too.
@@ -22,7 +25,7 @@ First, tries to open the library with the usual paths in the system. If it fails
 
 The package includes [typings](https://github.com/melchor629/node-flac-bindings/blob/master/lib/index.d.ts) that could help you :)
 
-The Encoder, Decoder, the metadata level 1 `SimpleIterator`, the metadata level 2 `Chain`  and `Iterator` and `StreamMetadata` structs are classes that can be instantiated like usual JS classes. The constructor will create the underlying pointer to the object un the C API, and when the GC cleans up the objects, the pointer will be free'd as well.
+The Encoder, Decoder, the metadata level 1 `SimpleIterator`, the metadata level 2 `Chain` and `Iterator` and `StreamMetadata` structs are classes that can be instantiated like usual JS classes. The constructor will create the underlying pointer to the object un the C API, and when the GC cleans up the objects, the pointer will be free'd as well.
 
 ## Things to take into account
 Almost every function/method expects his parameters in his right type. If it not, node will crash or an JS exception will be thrown. So, pay attention on the types of the functions (the typings are just to help you 😀).
@@ -49,7 +52,7 @@ import * as flac from 'flac-bindings';  // TypeScript import
 `flac` will be an object with `{ api: [Bindings API], StreamEncoder: ..., StreamDecoder: ..., FileEncoder: ..., FileDecoder: ... }`. If the `libFLAC` library is not in the loader's path, you will get an object with a load function (`{ load: [Function load] }`). You must call `load()` with the first argument as the **full** path to the `libFLAC` dynamic library, and then `flac` (the object) will have all objects. You can also use the environment variable `FLAC_LIBRARY` to set a path to the library (it won't throw any exception if it fails).
 
 ## What I need to compile the bindings?
-Well, if you are on Linux x64 or on macOS and have node 8 LTS, 10 LTS or 12, you don't need to compile anything, I provide the binding binaries for you. You only need to provide the FLAC library binary.
+Well, if you are on Linux x64 or on macOS and have node 10 LTS, 12 LTS or higher, you don't need to compile anything, I provide the binding binaries for you. You only need to provide the FLAC library binary.
 
 In other case, you will need to install the development version of FLAC (those which includes the headers and the library binary). Also, you need to install `cmake` (no `node-gyp` nor `python-2` required).
 

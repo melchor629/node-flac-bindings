@@ -22,18 +22,18 @@
   "license": "ISC",
   "dependencies": {
     "bindings": "^1.5.0",
-    "cmake-js": "^6.0.0",
+    "cmake-js": "^6.1.0",
     "node-addon-api": "git+https://github.com/nodejs/node-addon-api.git",
     "prebuild-install": "^5.3.3"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.8",
-    "@types/mocha": "^5.2.7",
-    "@types/node": "^12.12.26",
+    "@types/chai": "^4.2.11",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^13.9.1",
     "chai": "^4.2.0",
     "eslint": "^6.8.0",
-    "eslint-plugin-mocha": "^6.2.2",
-    "mocha": "^6.2.2",
+    "eslint-plugin-mocha": "^6.3.0",
+    "mocha": "^7.1.0",
     "nyc": "^15.0.0",
     "prebuild": "^10.0.0",
     "temp": "^0.9.1"
