@@ -32,7 +32,7 @@ namespace flac_bindings {
         }
 #endif
 
-        return {};
+        return std::nullopt;
     }
 
     template<
@@ -61,7 +61,7 @@ namespace flac_bindings {
         }
 #endif
 
-        return {};
+        return std::nullopt;
     }
 
     template<
@@ -71,7 +71,7 @@ namespace flac_bindings {
     static inline std::optional<T> maybeNumberFromJs(const Napi::Value& value) {
         auto maybeNumber = maybeNumberFromJs<std::underlying_type_t<T>>(value);
         if(maybeNumber == std::nullopt) {
-            return {};
+            return std::nullopt;
         }
 
         return (T) maybeNumber.value();
@@ -144,7 +144,7 @@ namespace flac_bindings {
     template<typename T>
     static inline std::optional<T> maybeBooleanFromJs(const Napi::Value& value) {
         if(value.IsNull() || value.IsUndefined()) {
-            return {};
+            return std::nullopt;
         }
 
         return booleanFromJs<T>(value);
@@ -161,7 +161,7 @@ namespace flac_bindings {
 
     static inline std::optional<std::string> maybeStringFromJs(const Napi::Value& value) {
         if(!value.IsString()) {
-            return {};
+            return std::nullopt;
         }
 
         return value.As<Napi::String>();

@@ -143,7 +143,7 @@ namespace flac_bindings {
 
                     if(FLAC__metadata_simple_iterator_is_last(it)) {
                         if(*pastEnd) {
-                            return {};
+                            return std::nullopt;
                         }
 
                         *pastEnd = true;
