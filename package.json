@@ -23,7 +23,7 @@
   "dependencies": {
     "bindings": "^1.5.0",
     "cmake-js": "^6.1.0",
-    "node-addon-api": "git+https://github.com/nodejs/node-addon-api.git",
+    "node-addon-api": "^3.0.0",
     "prebuild-install": "^5.3.3"
   },
   "devDependencies": {
@@ -40,7 +40,8 @@
   },
   "binary": {
     "napi_versions": [
-      4
+      4,
+      6
     ]
   }
 }

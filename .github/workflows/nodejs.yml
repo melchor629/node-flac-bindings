@@ -6,10 +6,16 @@ jobs:
   build:
     strategy:
       matrix:
-        node: [10, 12, 13]
+        node:
+          - version: 10
+            napi: 6
+          - version: 12
+            napi: 4
+          - version: 14
+            napi: 6
     runs-on: ubuntu-latest
     container:
-      image: node:${{ matrix.node }}-buster
+      image: node:${{ matrix.node.version }}-buster
       env:
         CI: true
     steps:
@@ -21,8 +27,9 @@ jobs:
     - name: Install
       run: npm install
     - name: Build
-      run: npm run cmake-js -- build
+      run: npm run cmake-js -- build -CDnapi_build_version${{ matrix.node.napi }}
     - name: Lint
       run: npm run lint
     - name: Test
       run: node node_modules/.bin/mocha --recurse
+      if: ${{ matrix.node.napi > 5 }}

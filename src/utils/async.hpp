@@ -51,9 +51,9 @@ namespace flac_bindings {
     };
 
     template<typename T, typename P = char>
-    class AsyncBackgroundTask: public AsyncProgressWorker<ProgressRequest<P>> {
+    class AsyncBackgroundTask: public AsyncProgressQueueWorker<ProgressRequest<P>> {
     public:
-        typedef typename AsyncProgressWorker<ProgressRequest<P>>::ExecutionProgress NapiExecutionProgress;
+        typedef typename AsyncProgressQueueWorker<ProgressRequest<P>>::ExecutionProgress NapiExecutionProgress;
 
         class ExecutionProgress {
             AsyncBackgroundTask<T, P>* self;
@@ -231,7 +231,7 @@ namespace flac_bindings {
             ProgressCallback progress,
             const char* name,
             ValueMapFunction converter
-        ): AsyncProgressWorker<ProgressRequest<P>>(Function::New(env, _doNothing, "_doNothing"), name),
+        ): AsyncProgressQueueWorker<ProgressRequest<P>>(Function::New(env, _doNothing, "_doNothing"), name),
             resolver(Promise::Deferred::New(env)),
             function(function),
             progress(progress),

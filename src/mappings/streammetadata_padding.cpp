@@ -20,7 +20,12 @@ namespace flac_bindings {
     PaddingMetadata::PaddingMetadata(const CallbackInfo& info):
         ObjectWrap<PaddingMetadata>(info),
         Metadata(info, FLAC__METADATA_TYPE_PADDING) {
-        if(info.Length() > 0 && (info[0].IsNumber() || info[0].IsBigInt())) {
+#if NAPI_VERSION > 5
+        const bool isNumber = info[0].IsNumber() || info[0].IsBigInt();
+#else
+        const bool isNumber = info[0].IsNumber();
+#endif
+        if(info.Length() > 0 && isNumber) {
             data->length += numberFromJs<uint32_t>(info[0]);
         }
     }

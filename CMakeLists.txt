@@ -28,10 +28,12 @@ string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
 
 file(GLOB_RECURSE SOURCE_FILES "src/**/*.cpp" "src/**/*.hpp" "src/**/*.h" "src/*.cpp")
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
+
+set(napi_build_version 6)
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12.0)
-    add_compile_definitions(NAPI_VERSION=4 NAPI_EXPERIMENTAL NODE_ADDON_API_DISABLE_DEPRECATED)
+    add_compile_definitions(NAPI_VERSION=${napi_build_version} NAPI_EXPERIMENTAL NODE_ADDON_API_DISABLE_DEPRECATED)
 else()
-    add_definitions(NAPI_VERSION=4 NAPI_EXPERIMENTAL NODE_ADDON_API_DISABLE_DEPRECATED)
+    add_definitions(NAPI_VERSION=${napi_build_version} NAPI_EXPERIMENTAL NODE_ADDON_API_DISABLE_DEPRECATED)
 endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_JS_INC} ${NODE_ADDON_API_DIR})

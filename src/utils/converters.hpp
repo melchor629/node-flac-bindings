@@ -18,7 +18,9 @@ namespace flac_bindings {
     static inline std::optional<T> maybeNumberFromJs(const Napi::Value& value) {
         if(value.IsNumber()) {
             return (T) value.As<Napi::Number>().Int64Value();
-        } else if(value.IsBigInt()) {
+        }
+#if NAPI_VERSION > 5
+        else if(value.IsBigInt()) {
             auto bigNum = value.As<Napi::BigInt>();
             bool lossless = false;
             int64_t num = bigNum.Int64Value(&lossless);
@@ -28,6 +30,7 @@ namespace flac_bindings {
 
             return (T) num;
         }
+#endif
 
         return {};
     }
@@ -44,7 +47,9 @@ namespace flac_bindings {
             }
 
             return (T) intValue;
-        } else if(value.IsBigInt()) {
+        }
+#if NAPI_VERSION > 5
+        else if(value.IsBigInt()) {
             auto bigNum = value.As<Napi::BigInt>();
             bool lossless = false;
             uint64_t num = bigNum.Uint64Value(&lossless);
@@ -54,6 +59,7 @@ namespace flac_bindings {
 
             return (T) num;
         }
+#endif
 
         return {};
     }
@@ -89,11 +95,16 @@ namespace flac_bindings {
         typename std::enable_if_t<std::is_unsigned<T>::value, unsigned> = 0
     >
     static inline Napi::Value numberToJs(const Napi::Env& env, T number, bool forceBigInt = false) {
+#if NAPI_VERSION > 5
         if(!forceBigInt && number <= numberHighLimit) {
             return Napi::Number::New(env, number);
         }
 
         return Napi::BigInt::New(env, (uint64_t) number);
+#else
+        (void) forceBigInt;
+        return Napi::Number::New(env, number);
+#endif
     }
 
     template<
@@ -101,11 +112,16 @@ namespace flac_bindings {
         typename std::enable_if_t<std::is_signed<T>::value, unsigned> = 0
     >
     static inline Napi::Value numberToJs(const Napi::Env& env, T number, bool forceBigInt = false) {
+#if NAPI_VERSION > 5
         if(!forceBigInt && numberLowLimit <= number && number <= int64_t(numberHighLimit)) {
             return Napi::Number::New(env, number);
         }
 
         return Napi::BigInt::New(env, (int64_t) number);
+#else
+        (void) forceBigInt;
+        return Napi::Number::New(env, number);
+#endif
     }
 
     template<
