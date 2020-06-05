@@ -174,14 +174,22 @@ namespace flac_bindings {
         return std::make_tuple(obj1, obj2);
     }
 
+    static String getFlacVersion(const CallbackInfo& info) {
+        return String::New(info.Env(), FLAC__VERSION_STRING);
+    }
+
+    static String getVendor(const CallbackInfo& info) {
+        return String::New(info.Env(), FLAC__VENDOR_STRING);
+    }
+
     Object initFormat(const Env& env) {
         EscapableHandleScope scope(env);
         Object format = Object::New(env);
 
         napi_property_attributes attrs = napi_property_attributes::napi_enumerable;
         format.DefineProperties({
-            PropertyDescriptor::Value("FLAC__VERSION_STRING", String::New(env, FLAC__VERSION_STRING), attrs),
-            PropertyDescriptor::Value("FLAC__VENDOR_STRING", String::New(env, FLAC__VENDOR_STRING), attrs),
+            PropertyDescriptor::Accessor(env, format, "FLAC__VERSION_STRING", getFlacVersion, attrs),
+            PropertyDescriptor::Accessor(env, format, "FLAC__VENDOR_STRING", getVendor, attrs),
             PropertyDescriptor::Function(env, format, "sampleRateIsValid", &sampleRateIsValid),
             PropertyDescriptor::Function(env, format, "blocksizeIsSubset", &blocksizeIsSubset),
             PropertyDescriptor::Function(env, format, "sampleRateIsSubset", &sampleRateIsSubset),

@@ -1,15 +1,23 @@
 #pragma once
 
+#include <napi.h>
 #include <type_traits>
 #include "dl.hpp"
 
 namespace flac_bindings {
 
     extern Library* libFlac;
+    extern Napi::ObjectReference module;
 
     template<typename SymbolType>
     class Symbol {
         const char* symbolName = nullptr;
+
+        inline void throwIfLibFlacIsNotLoaded() {
+            if(!libFlac) {
+                throw Napi::Error::New(module.Env(), "libFLAC has not been loaded yet");
+            }
+        }
 
     public:
 
@@ -61,18 +69,22 @@ namespace flac_bindings {
             >::type = 0
         >
         ResultType operator()(ArgTypes&&... args) {
+            throwIfLibFlacIsNotLoaded();
             return (*this)(libFlac)(std::forward<ArgTypes>(args)...);
         }
 
         SymbolType& operator*() {
+            throwIfLibFlacIsNotLoaded();
             return *(*this)(libFlac);
         }
 
         SymbolType& operator->() {
+            throwIfLibFlacIsNotLoaded();
             return *(*this)(libFlac);
         }
 
         operator SymbolType&() {
+            throwIfLibFlacIsNotLoaded();
             return *(*this)(libFlac);
         }
 

@@ -49,10 +49,6 @@ namespace flac_bindings {
         exports["SimpleIterator"] = initMetadata1(env);
         initMetadata2(env, exports);
 
-        if(exports.Has("load")) {
-            exports.Delete("load");
-        }
-
         objectFreeze(exports);
     }
 
@@ -70,7 +66,7 @@ namespace flac_bindings {
             throw Error::New(info.Env(), "Could not load library");
         }
 
-        fillExports(info.Env(), module.Value());
+        module.Value().Delete("load");
     }
 
     Object init(Env env, Object exports) {
@@ -79,7 +75,7 @@ namespace flac_bindings {
 
         exports["_helpers"] = Object::New(env);
 
-        libFlac = Library::load("libFLAC");
+        //libFlac = Library::load("libFLAC");
         if(libFlac == nullptr) {
             //Some distros only publish the suffxed shared library
             libFlac = Library::load("libFLAC", LIBRARY_EXTENSION ".8");
@@ -87,9 +83,9 @@ namespace flac_bindings {
 
         if(libFlac == nullptr) {
             exports["load"] = Function::New(env, load);
-        } else {
-            fillExports(env, exports);
         }
+
+        fillExports(env, exports);
 
         return exports;
     }
