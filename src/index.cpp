@@ -75,7 +75,7 @@ namespace flac_bindings {
 
         exports["_helpers"] = Object::New(env);
 
-        //libFlac = Library::load("libFLAC");
+        libFlac = Library::load("libFLAC");
         if(libFlac == nullptr) {
             //Some distros only publish the suffxed shared library
             libFlac = Library::load("libFLAC", LIBRARY_EXTENSION ".8");
