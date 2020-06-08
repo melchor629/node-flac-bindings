@@ -16,7 +16,9 @@ if(SANITIZE)
     message("-- Enabled sanitizers")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+if(NOT MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+endif()
 
 execute_process(
     COMMAND node -p "require('node-addon-api').include"

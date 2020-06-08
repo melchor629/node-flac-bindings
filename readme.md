@@ -51,6 +51,8 @@ import * as flac from 'flac-bindings';  // TypeScript import
 
 `flac` will be an object with `{ api: [Bindings API], StreamEncoder: ..., StreamDecoder: ..., FileEncoder: ..., FileDecoder: ... }`. If the `libFLAC` library is not in the loader's path, you will get an object with a load function (`{ load: [Function load] }`). You must call `load()` with the first argument as the **full** path to the `libFLAC` dynamic library, and then `flac` (the object) will have all objects. You can also use the environment variable `FLAC_LIBRARY` to set a path to the library (it won't throw any exception if it fails).
 
+> **NOTE**: the package does not provide the FLAC libraries, they must be included by either installing it using the package manager (`apt`, `yum`, `pacman`, `brew`...) or providing by yourself and calling `flac.api.load('path/to/the/libFLAC.dll')`.
+
 ## What I need to compile the bindings?
 Well, if you are on Linux x64 or on macOS and have node 10 LTS, 12 LTS or higher, you don't need to compile anything, I provide the binding binaries for you. You only need to provide the FLAC library binary.
 

@@ -9,7 +9,7 @@
     "test": "mocha --recursive",
     "install": "prebuild-install || cmake-js compile",
     "cmake-js": "cmake-js",
-    "prebuild": "prebuild --backend cmake-js --runtime napi --strip",
+    "prebuild": "prebuild --backend cmake-js --runtime napi -t 4 -t 6 --strip",
     "lint": "eslint -c .eslintrc.json lib/**/*.js test/**/*.js"
   },
   "keywords": [
