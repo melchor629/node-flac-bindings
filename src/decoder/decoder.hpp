@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../flac/format.h"
+#include "../flac/decoder.hpp"
 #include "../utils/async.hpp"
 #include "../utils/converters.hpp"
 #include "../utils/enum.hpp"

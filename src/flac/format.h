@@ -35,12 +35,7 @@
 #ifndef FLAC__FORMAT_H
 #define FLAC__FORMAT_H
 
-#include <stdint.h>
-
-typedef void FLAC__StreamEncoder;
-typedef void FLAC__StreamDecoder;
-typedef int FLAC__bool;
-typedef uint8_t FLAC__byte;
+#include "ordinals.h"
 
 #ifdef __cplusplus
 extern "C" {

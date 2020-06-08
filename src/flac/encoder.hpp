@@ -3,6 +3,8 @@
 #include "format.h"
 #include "../utils/symbol.hpp"
 
+typedef struct _FLAC__StreamEncoder FLAC__StreamEncoder;
+
 namespace flac_bindings {
 
     typedef int (*FLAC__StreamEncoderReadCallback)(const FLAC__StreamEncoder *encoder, char buffer[], size_t *bytes, void *client_data);

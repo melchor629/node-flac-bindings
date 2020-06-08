@@ -1,5 +1,4 @@
 #include "encoder.hpp"
-#include "../flac/encoder.hpp"
 #include "../mappings/mappings.hpp"
 #include "../utils/defer.hpp"
 #include "../utils/encoder_decoder_utils.hpp"

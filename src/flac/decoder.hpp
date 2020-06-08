@@ -3,6 +3,8 @@
 #include "format.h"
 #include "../utils/symbol.hpp"
 
+typedef struct _FLAC__StreamDecoder FLAC__StreamDecoder;
+
 namespace flac_bindings {
 
     typedef int(*FLAC__StreamDecoderReadCallback)(const FLAC__StreamDecoder*, FLAC__byte [], size_t*, void*);
