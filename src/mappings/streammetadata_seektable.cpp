@@ -1,6 +1,6 @@
+#include <FLAC/metadata.h>
 #include "mappings.hpp"
 #include "native_iterator.hpp"
-#include "../flac/metadata.hpp"
 
 namespace flac_bindings {
 

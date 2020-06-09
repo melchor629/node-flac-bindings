@@ -1,4 +1,4 @@
-#include "../flac/format.hpp"
+#include <FLAC/format.h>
 #include "../mappings/mappings.hpp"
 #include "../utils/converters.hpp"
 #include "../utils/enum.hpp"
@@ -174,22 +174,36 @@ namespace flac_bindings {
         return std::make_tuple(obj1, obj2);
     }
 
-    static String getFlacVersion(const CallbackInfo& info) {
-        return String::New(info.Env(), FLAC__VERSION_STRING);
-    }
-
-    static String getVendor(const CallbackInfo& info) {
-        return String::New(info.Env(), FLAC__VENDOR_STRING);
-    }
-
     Object initFormat(const Env& env) {
         EscapableHandleScope scope(env);
         Object format = Object::New(env);
 
         napi_property_attributes attrs = napi_property_attributes::napi_enumerable;
         format.DefineProperties({
-            PropertyDescriptor::Accessor(env, format, "FLAC__VERSION_STRING", getFlacVersion, attrs),
-            PropertyDescriptor::Accessor(env, format, "FLAC__VENDOR_STRING", getVendor, attrs),
+            PropertyDescriptor::Value("VERSION_STRING", String::New(env, FLAC__VERSION_STRING), attrs),
+            PropertyDescriptor::Value("VENDOR_STRING", String::New(env, FLAC__VENDOR_STRING), attrs),
+            PropertyDescriptor::Value("STREAM_SYNC", numberToJs(env, FLAC__STREAM_SYNC), attrs),
+            PropertyDescriptor::Value("STREAM_SYNC_STRING", String::New(env, (const char*) FLAC__STREAM_SYNC_STRING, FLAC__STREAM_SYNC_LENGTH), attrs),
+
+            PropertyDescriptor::Value("API_SUPPORTS_OGG_FLAC", booleanToJs(env, FLAC_API_SUPPORTS_OGG_FLAC), attrs),
+
+            PropertyDescriptor::Value("MAX_METADATA_TYPE_CODE", numberToJs(env, FLAC__MAX_METADATA_TYPE_CODE), attrs),
+            PropertyDescriptor::Value("MIN_BLOCK_SIZE", numberToJs(env, FLAC__MIN_BLOCK_SIZE), attrs),
+            PropertyDescriptor::Value("MAX_BLOCK_SIZE", numberToJs(env, FLAC__MAX_BLOCK_SIZE), attrs),
+            PropertyDescriptor::Value("SUBSET_MAX_BLOCK_SIZE_48000HZ", numberToJs(env, FLAC__SUBSET_MAX_BLOCK_SIZE_48000HZ), attrs),
+            PropertyDescriptor::Value("MAX_CHANNELS", numberToJs(env, FLAC__MAX_CHANNELS), attrs),
+            PropertyDescriptor::Value("MIN_BITS_PER_SAMPLE", numberToJs(env, FLAC__MIN_BITS_PER_SAMPLE), attrs),
+            PropertyDescriptor::Value("MAX_BITS_PER_SAMPLE", numberToJs(env, FLAC__MAX_BITS_PER_SAMPLE), attrs),
+            PropertyDescriptor::Value("REFERENCE_CODEC_MAX_BITS_PER_SAMPLE", numberToJs(env, FLAC__REFERENCE_CODEC_MAX_BITS_PER_SAMPLE), attrs),
+            PropertyDescriptor::Value("MAX_SAMPLE_RATE", numberToJs(env, FLAC__MAX_SAMPLE_RATE), attrs),
+            PropertyDescriptor::Value("MAX_LPC_ORDER", numberToJs(env, FLAC__MAX_LPC_ORDER), attrs),
+            PropertyDescriptor::Value("SUBSET_MAX_LPC_ORDER_48000HZ", numberToJs(env, FLAC__SUBSET_MAX_LPC_ORDER_48000HZ), attrs),
+            PropertyDescriptor::Value("MIN_QLP_COEFF_PRECISION", numberToJs(env, FLAC__MIN_QLP_COEFF_PRECISION), attrs),
+            PropertyDescriptor::Value("MAX_QLP_COEFF_PRECISION", numberToJs(env, FLAC__MAX_QLP_COEFF_PRECISION), attrs),
+            PropertyDescriptor::Value("MAX_FIXED_ORDER", numberToJs(env, FLAC__MAX_FIXED_ORDER), attrs),
+            PropertyDescriptor::Value("MAX_RICE_PARTITION_ORDER", numberToJs(env, FLAC__MAX_RICE_PARTITION_ORDER), attrs),
+            PropertyDescriptor::Value("SUBSET_MAX_RICE_PARTITION_ORDER", numberToJs(env, FLAC__SUBSET_MAX_RICE_PARTITION_ORDER), attrs),
+
             PropertyDescriptor::Function(env, format, "sampleRateIsValid", &sampleRateIsValid),
             PropertyDescriptor::Function(env, format, "blocksizeIsSubset", &blocksizeIsSubset),
             PropertyDescriptor::Function(env, format, "sampleRateIsSubset", &sampleRateIsSubset),

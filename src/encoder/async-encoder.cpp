@@ -169,7 +169,7 @@ namespace flac_bindings {
             }
 
             case EncoderWorkRequest::Type::Write: {
-                auto jsBuffer = pointer::wrap(env, const_cast<char*>(req->constBuffer), *req->bytes);
+                auto jsBuffer = pointer::wrap(env, const_cast<FLAC__byte*>(req->constBuffer), *req->bytes);
                 result = ctx->writeCbk.MakeCallback(
                     env.Global(),
                     {jsBuffer, numberToJs(env, req->samples), numberToJs(env, req->frame)},

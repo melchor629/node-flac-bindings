@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../flac/format.h"
+#include <FLAC/format.h>
 #include "../utils/converters.hpp"
 #include "mapping.hpp"
 

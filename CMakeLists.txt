@@ -20,6 +20,36 @@ if(NOT MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 endif()
 
+option(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY NO)
+set(FLAC_TARGET FLAC)
+
+if(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY)
+    if(MSVC)
+        find_package(FLAC 1.3 REQUIRED)
+    else()
+        find_package(FLAC 1.3 QUIET)
+        if(NOT FLAC_FOUND)
+            include(FindPkgConfig)
+
+            pkg_check_modules(FLAC REQUIRED IMPORTED_TARGET flac>=1.3)
+            set(FLAC_TARGET PkgConfig::FLAC)
+        endif()
+    endif()
+else()
+    include(FetchContent)
+
+    FetchContent_Declare(
+        FLAC
+        GIT_REPOSITORY  https://gitlab.xiph.org/xiph/flac.git
+        GIT_TAG         f764434a39e8a8715d5871bb263189e5a7298280 # this is 1.3.3 but the repo has no tag :(
+    )
+
+    option(WITH_OGG NO)
+    option(BUILD_TESTING NO)
+    option(BUILD_CXXLIBS NO)
+    FetchContent_MakeAvailable(FLAC)
+endif()
+
 execute_process(
     COMMAND node -p "require('node-addon-api').include"
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -40,4 +70,11 @@ endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_JS_INC} ${NODE_ADDON_API_DIR})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
-target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB})
+target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB} ${FLAC_TARGET})
+
+if(NOT FLAC_BINDINGS_USE_EXTERNAL_LIBRARY)
+    if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+        set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+        set_target_properties("${FLAC_TARGET}" PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    endif()
+endif()

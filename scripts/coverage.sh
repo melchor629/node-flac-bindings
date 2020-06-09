@@ -11,7 +11,7 @@ mkdir coverage
 
 if [[ ! -z "$1" ]] && [[ "$1" = "rebuild" ]]; then
     cmake-js clean
-    cmake-js build --debug --CDCOVERAGE
+    cmake-js build --debug --CDCOVERAGE=ON --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON
 fi
 
 nyc mocha --recursive

@@ -556,13 +556,13 @@ namespace flac_bindings {
     }
 
     void StreamDecoder::checkIsInitialized(const Napi::Env& env) {
-        if(FLAC__stream_decoder_get_state(dec) == 9) { // FLAC__STREAM_DECODER_UNINITIALIZED
+        if(FLAC__stream_decoder_get_state(dec) == FLAC__STREAM_DECODER_UNINITIALIZED) {
             throw Error::New(env, "Decoder has not been initialized yet");
         }
     }
 
     void StreamDecoder::checkIsNotInitialized(const Napi::Env& env) {
-        if(FLAC__stream_decoder_get_state(dec) != 9) { // FLAC__STREAM_DECODER_UNINITIALIZED
+        if(FLAC__stream_decoder_get_state(dec) != FLAC__STREAM_DECODER_UNINITIALIZED) {
             throw Error::New(env, "Decoder has been initialized already");
         }
     }
@@ -576,98 +576,98 @@ namespace flac_bindings {
     c_enum::DefineReturnType StreamDecoder::createStateEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "SEARCH_FOR_METADATA", 0);
-        c_enum::defineValue(obj1, obj2, "READ_METADATA", 1);
-        c_enum::defineValue(obj1, obj2, "SEARCH_FOR_FRAME_SYNC", 2);
-        c_enum::defineValue(obj1, obj2, "READ_FRAME", 3);
-        c_enum::defineValue(obj1, obj2, "END_OF_STREAM", 4);
-        c_enum::defineValue(obj1, obj2, "OGG_ERROR", 5);
-        c_enum::defineValue(obj1, obj2, "SEEK_ERROR", 6);
-        c_enum::defineValue(obj1, obj2, "DECODER_ABORTED", 7);
-        c_enum::defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", 8);
-        c_enum::defineValue(obj1, obj2, "UNINITIALIZED", 9);
+        c_enum::defineValue(obj1, obj2, "SEARCH_FOR_METADATA", FLAC__STREAM_DECODER_SEARCH_FOR_METADATA);
+        c_enum::defineValue(obj1, obj2, "READ_METADATA", FLAC__STREAM_DECODER_READ_METADATA);
+        c_enum::defineValue(obj1, obj2, "SEARCH_FOR_FRAME_SYNC", FLAC__STREAM_DECODER_SEARCH_FOR_FRAME_SYNC);
+        c_enum::defineValue(obj1, obj2, "READ_FRAME", FLAC__STREAM_DECODER_READ_FRAME);
+        c_enum::defineValue(obj1, obj2, "END_OF_STREAM", FLAC__STREAM_DECODER_END_OF_STREAM);
+        c_enum::defineValue(obj1, obj2, "OGG_ERROR", FLAC__STREAM_DECODER_OGG_ERROR);
+        c_enum::defineValue(obj1, obj2, "SEEK_ERROR", FLAC__STREAM_DECODER_SEEK_ERROR);
+        c_enum::defineValue(obj1, obj2, "ABORTED", FLAC__STREAM_DECODER_ABORTED);
+        c_enum::defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", FLAC__STREAM_DECODER_MEMORY_ALLOCATION_ERROR);
+        c_enum::defineValue(obj1, obj2, "UNINITIALIZED", FLAC__STREAM_DECODER_UNINITIALIZED);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamDecoder::createInitStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "OK", 0);
-        c_enum::defineValue(obj1, obj2, "UNSUPPORTED_CONTAINER", 1);
-        c_enum::defineValue(obj1, obj2, "INVALID_CALLBACKS", 2);
-        c_enum::defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", 3);
-        c_enum::defineValue(obj1, obj2, "ERROR_OPENING_FILE", 4);
-        c_enum::defineValue(obj1, obj2, "ALREADY_INITIALIZED", 5);
+        c_enum::defineValue(obj1, obj2, "OK", FLAC__STREAM_DECODER_INIT_STATUS_OK);
+        c_enum::defineValue(obj1, obj2, "UNSUPPORTED_CONTAINER", FLAC__STREAM_DECODER_INIT_STATUS_UNSUPPORTED_CONTAINER);
+        c_enum::defineValue(obj1, obj2, "INVALID_CALLBACKS", FLAC__STREAM_DECODER_INIT_STATUS_INVALID_CALLBACKS);
+        c_enum::defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", FLAC__STREAM_DECODER_INIT_STATUS_MEMORY_ALLOCATION_ERROR);
+        c_enum::defineValue(obj1, obj2, "ERROR_OPENING_FILE", FLAC__STREAM_DECODER_INIT_STATUS_ERROR_OPENING_FILE);
+        c_enum::defineValue(obj1, obj2, "ALREADY_INITIALIZED", FLAC__STREAM_DECODER_INIT_STATUS_ALREADY_INITIALIZED);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamDecoder::createReadStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "CONTINUE", 0);
-        c_enum::defineValue(obj1, obj2, "END_OF_STREAM", 1);
-        c_enum::defineValue(obj1, obj2, "ABORT", 2);
+        c_enum::defineValue(obj1, obj2, "CONTINUE", FLAC__STREAM_DECODER_READ_STATUS_CONTINUE);
+        c_enum::defineValue(obj1, obj2, "END_OF_STREAM", FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM);
+        c_enum::defineValue(obj1, obj2, "ABORT", FLAC__STREAM_DECODER_READ_STATUS_ABORT);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamDecoder::createSeekStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "OK", 0);
-        c_enum::defineValue(obj1, obj2, "ERROR", 1);
-        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", 2);
+        c_enum::defineValue(obj1, obj2, "OK", FLAC__STREAM_DECODER_SEEK_STATUS_OK);
+        c_enum::defineValue(obj1, obj2, "ERROR", FLAC__STREAM_DECODER_SEEK_STATUS_ERROR);
+        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", FLAC__STREAM_DECODER_SEEK_STATUS_UNSUPPORTED);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamDecoder::createTellStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "OK", 0);
-        c_enum::defineValue(obj1, obj2, "ERROR", 1);
-        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", 2);
+        c_enum::defineValue(obj1, obj2, "OK", FLAC__STREAM_DECODER_TELL_STATUS_OK);
+        c_enum::defineValue(obj1, obj2, "ERROR", FLAC__STREAM_DECODER_TELL_STATUS_ERROR);
+        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", FLAC__STREAM_DECODER_TELL_STATUS_UNSUPPORTED);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamDecoder::createLengthStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "OK", 0);
-        c_enum::defineValue(obj1, obj2, "ERROR", 1);
-        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", 2);
+        c_enum::defineValue(obj1, obj2, "OK", FLAC__STREAM_DECODER_LENGTH_STATUS_OK);
+        c_enum::defineValue(obj1, obj2, "ERROR", FLAC__STREAM_DECODER_LENGTH_STATUS_ERROR);
+        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", FLAC__STREAM_DECODER_LENGTH_STATUS_UNSUPPORTED);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamDecoder::createWriteStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "CONTINUE", 0);
-        c_enum::defineValue(obj1, obj2, "ABORT", 1);
-        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", 2);
+        c_enum::defineValue(obj1, obj2, "CONTINUE", FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE);
+        c_enum::defineValue(obj1, obj2, "ABORT", FLAC__STREAM_DECODER_WRITE_STATUS_ABORT);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamDecoder::createErrorStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "LOST_SYNC", 0);
-        c_enum::defineValue(obj1, obj2, "BAD_HEADER", 1);
-        c_enum::defineValue(obj1, obj2, "FRAME_CRC_MISMATCH", 2);
-        c_enum::defineValue(obj1, obj2, "UNPARSEABLE_STREAM", 3);
+        c_enum::defineValue(obj1, obj2, "LOST_SYNC", FLAC__STREAM_DECODER_ERROR_STATUS_LOST_SYNC);
+        c_enum::defineValue(obj1, obj2, "BAD_HEADER", FLAC__STREAM_DECODER_ERROR_STATUS_BAD_HEADER);
+        c_enum::defineValue(obj1, obj2, "FRAME_CRC_MISMATCH", FLAC__STREAM_DECODER_ERROR_STATUS_FRAME_CRC_MISMATCH);
+        c_enum::defineValue(obj1, obj2, "UNPARSEABLE_STREAM", FLAC__STREAM_DECODER_ERROR_STATUS_UNPARSEABLE_STREAM);
         return std::make_tuple(obj1, obj2);
     }
 
 
-    int StreamDecoder::doAsyncWork(DecoderWorkContext* ctx, DecoderWorkRequest* req, int defaultReturnValue) {
+    template<typename EnumType>
+    EnumType StreamDecoder::doAsyncWork(DecoderWorkContext* ctx, DecoderWorkRequest* req, EnumType defaultReturnValue) {
         DEFER(delete req);
-        req->returnValue = defaultReturnValue;
+        req->returnValue = (int) defaultReturnValue;
 
         ctx->dec->asyncExecutionProgress->sendProgressAndWait(req);
 
-        return req->returnValue;
+        return (EnumType) req->returnValue;
     }
 
-    constexpr int defaultReadCallbackReturnValue = 2;
-    int StreamDecoder::readCallback(const FLAC__StreamDecoder*, FLAC__byte buffer[], size_t* bytes, void* ptr) {
+    constexpr FLAC__StreamDecoderReadStatus defaultReadCallbackReturnValue = FLAC__STREAM_DECODER_READ_STATUS_ABORT;
+    FLAC__StreamDecoderReadStatus StreamDecoder::readCallback(const FLAC__StreamDecoder*, FLAC__byte buffer[], size_t* bytes, void* ptr) {
         auto ctx = (DecoderWorkContext*) ptr;
         if(ctx->dec->asyncExecutionProgress) {
             auto req = new DecoderWorkRequest(DecoderWorkRequest::Type::Read);
@@ -676,7 +676,7 @@ namespace flac_bindings {
             return doAsyncWork(ctx, req, defaultReadCallbackReturnValue);
         }
 
-        int returnValue = defaultReadCallbackReturnValue;
+        auto returnValue = defaultReadCallbackReturnValue;
         auto env = ctx->dec->Env();
         HandleScope scope(env);
         try {
@@ -691,8 +691,8 @@ namespace flac_bindings {
         return returnValue;
     }
 
-    constexpr int defaultSeekCallbackReturnValue = 1;
-    int StreamDecoder::seekCallback(const FLAC__StreamDecoder*, uint64_t offset, void* ptr) {
+    FLAC__StreamDecoderSeekStatus defaultSeekCallbackReturnValue = FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
+    FLAC__StreamDecoderSeekStatus StreamDecoder::seekCallback(const FLAC__StreamDecoder*, uint64_t offset, void* ptr) {
         auto ctx = (DecoderWorkContext*) ptr;
         if(ctx->dec->asyncExecutionProgress) {
             auto req = new DecoderWorkRequest(DecoderWorkRequest::Type::Seek);
@@ -700,7 +700,7 @@ namespace flac_bindings {
             return doAsyncWork(ctx, req, defaultSeekCallbackReturnValue);
         }
 
-        int returnValue = defaultSeekCallbackReturnValue;
+        auto returnValue = defaultSeekCallbackReturnValue;
         auto env = ctx->dec->Env();
         HandleScope scope(env);
         try {
@@ -713,8 +713,8 @@ namespace flac_bindings {
         return returnValue;
     }
 
-    constexpr int defaultTellCallbackReturnValue = 1;
-    int StreamDecoder::tellCallback(const FLAC__StreamDecoder*, uint64_t* offset, void* ptr) {
+    constexpr FLAC__StreamDecoderTellStatus defaultTellCallbackReturnValue = FLAC__STREAM_DECODER_TELL_STATUS_ERROR;
+    FLAC__StreamDecoderTellStatus StreamDecoder::tellCallback(const FLAC__StreamDecoder*, uint64_t* offset, void* ptr) {
         auto ctx = (DecoderWorkContext*) ptr;
         if(ctx->dec->asyncExecutionProgress) {
             auto req = new DecoderWorkRequest(DecoderWorkRequest::Type::Tell);
@@ -722,7 +722,7 @@ namespace flac_bindings {
             return doAsyncWork(ctx, req, defaultTellCallbackReturnValue);
         }
 
-        int returnValue = defaultTellCallbackReturnValue;
+        auto returnValue = defaultTellCallbackReturnValue;
         auto env = ctx->dec->Env();
         HandleScope scope(env);
         try {
@@ -735,8 +735,8 @@ namespace flac_bindings {
         return returnValue;
     }
 
-    constexpr int defaultLengthCallbackReturnValue = 1;
-    int StreamDecoder::lengthCallback(const FLAC__StreamDecoder*, uint64_t* length, void* ptr) {
+    constexpr FLAC__StreamDecoderLengthStatus defaultLengthCallbackReturnValue = FLAC__STREAM_DECODER_LENGTH_STATUS_ERROR;
+    FLAC__StreamDecoderLengthStatus StreamDecoder::lengthCallback(const FLAC__StreamDecoder*, uint64_t* length, void* ptr) {
         auto ctx = (DecoderWorkContext*) ptr;
         if(ctx->dec->asyncExecutionProgress) {
             auto req = new DecoderWorkRequest(DecoderWorkRequest::Type::Length);
@@ -744,7 +744,7 @@ namespace flac_bindings {
             return doAsyncWork(ctx, req, defaultLengthCallbackReturnValue);
         }
 
-        int returnValue = defaultTellCallbackReturnValue;
+        auto returnValue = defaultLengthCallbackReturnValue;
         auto env = ctx->dec->Env();
         HandleScope scope(env);
         try {
@@ -765,7 +765,7 @@ namespace flac_bindings {
             return doAsyncWork(ctx, req, defaultEofCallbackReturnValue);
         }
 
-        FLAC__bool returnValue = defaultEofCallbackReturnValue;
+        auto returnValue = defaultEofCallbackReturnValue;
         auto env = ctx->dec->Env();
         HandleScope scope(env);
         try {
@@ -778,8 +778,8 @@ namespace flac_bindings {
         return returnValue;
     }
 
-    constexpr int defaultWriteCallbackReturnValue = true;
-    int StreamDecoder::writeCallback(
+    constexpr FLAC__StreamDecoderWriteStatus defaultWriteCallbackReturnValue = FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+    FLAC__StreamDecoderWriteStatus StreamDecoder::writeCallback(
         const FLAC__StreamDecoder* dec,
         const FLAC__Frame* frame,
         const int32_t *const samples[],
@@ -793,7 +793,7 @@ namespace flac_bindings {
             return doAsyncWork(ctx, req, defaultWriteCallbackReturnValue);
         }
 
-        int returnValue = defaultWriteCallbackReturnValue;
+        auto returnValue = defaultWriteCallbackReturnValue;
         auto env = ctx->dec->Env();
         HandleScope scope(env);
         try {
@@ -822,7 +822,7 @@ namespace flac_bindings {
         if(ctx->dec->asyncExecutionProgress) {
             auto req = new DecoderWorkRequest(DecoderWorkRequest::Type::Metadata);
             req->metadata = metadata;
-            doAsyncWork(ctx, req);
+            doAsyncWork(ctx, req, 0);
             return;
         }
 
@@ -836,12 +836,12 @@ namespace flac_bindings {
         }
     }
 
-    void StreamDecoder::errorCallback(const FLAC__StreamDecoder*, int errorCode, void* ptr) {
+    void StreamDecoder::errorCallback(const FLAC__StreamDecoder*, FLAC__StreamDecoderErrorStatus errorCode, void* ptr) {
         auto ctx = (DecoderWorkContext*) ptr;
         if(ctx->dec->asyncExecutionProgress) {
             auto req = new DecoderWorkRequest(DecoderWorkRequest::Type::Eof);
             req->errorCode = errorCode;
-            doAsyncWork(ctx, req);
+            doAsyncWork(ctx, req, 0);
             return;
         }
 

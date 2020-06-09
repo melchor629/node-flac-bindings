@@ -1,5 +1,5 @@
 #include <numeric>
-#include "../flac/format.h"
+#include <FLAC/format.h>
 #include "../utils/converters.hpp"
 #include "../utils/js_utils.hpp"
 

@@ -3,7 +3,6 @@
 #include "encoder/encoder.hpp"
 #include "mappings/mappings.hpp"
 #include "mappings/native_iterator.hpp"
-#include "utils/dl.hpp"
 
 namespace flac_bindings {
 
@@ -15,7 +14,6 @@ namespace flac_bindings {
     extern Function initMetadata1(const Env& env);
     extern void initMetadata2(const Env& env, Object& exports);
 
-    Library* libFlac = nullptr;
     ObjectReference module;
 
     static Object initMetadata(const Env& env) {
@@ -52,38 +50,11 @@ namespace flac_bindings {
         objectFreeze(exports);
     }
 
-    static void load(const CallbackInfo& info) {
-        auto path = stringFromJs(info[0]);
-        auto ext = maybeStringFromJs(info[1]);
-
-        if(ext.has_value()) {
-            libFlac = Library::load(path, ext.value());
-        } else {
-            libFlac = Library::load(path);
-        }
-
-        if(libFlac == nullptr) {
-            throw Error::New(info.Env(), "Could not load library");
-        }
-
-        module.Value().Delete("load");
-    }
-
     Object init(Env env, Object exports) {
         module = Persistent(exports);
         module.SuppressDestruct();
 
         exports["_helpers"] = Object::New(env);
-
-        libFlac = Library::load("libFLAC");
-        if(libFlac == nullptr) {
-            //Some distros only publish the suffxed shared library
-            libFlac = Library::load("libFLAC", LIBRARY_EXTENSION ".8");
-        }
-
-        if(libFlac == nullptr) {
-            exports["load"] = Function::New(env, load);
-        }
 
         fillExports(env, exports);
 

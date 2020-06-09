@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../flac/decoder.hpp"
+#include <FLAC/stream_decoder.h>
 #include "../utils/async.hpp"
 #include "../utils/converters.hpp"
 #include "../utils/enum.hpp"
@@ -17,7 +17,7 @@ namespace flac_bindings {
         const FLAC__Frame* frame = nullptr;
         const int32_t *const* samples = nullptr;
         const FLAC__StreamMetadata* metadata = nullptr;
-        int errorCode = 0;
+        FLAC__StreamDecoderErrorStatus errorCode = FLAC__STREAM_DECODER_ERROR_STATUS_LOST_SYNC;
         int returnValue = 0;
 
         DecoderWorkRequest();
@@ -106,7 +106,8 @@ namespace flac_bindings {
         void checkIsInitialized(const Napi::Env&);
         void checkIsNotInitialized(const Napi::Env&);
         Promise enqueueWork(AsyncDecoderWorkBase*);
-        static int doAsyncWork(DecoderWorkContext* ctx, DecoderWorkRequest* req, int defaultReturnValue = 0);
+        template<typename EnumType>
+        static EnumType doAsyncWork(DecoderWorkContext* ctx, DecoderWorkRequest* req, EnumType defaultReturnValue);
 
         static c_enum::DefineReturnType createStateEnum(const Napi::Env&);
         static c_enum::DefineReturnType createInitStatusEnum(const Napi::Env&);
@@ -117,14 +118,14 @@ namespace flac_bindings {
         static c_enum::DefineReturnType createWriteStatusEnum(const Napi::Env&);
         static c_enum::DefineReturnType createErrorStatusEnum(const Napi::Env&);
 
-        static int readCallback(const FLAC__StreamDecoder*, FLAC__byte [], size_t*, void*);
-        static int seekCallback(const FLAC__StreamDecoder*, uint64_t, void*);
-        static int tellCallback(const FLAC__StreamDecoder*, uint64_t*, void*);
-        static int lengthCallback(const FLAC__StreamDecoder*, uint64_t*, void*);
+        static FLAC__StreamDecoderReadStatus readCallback(const FLAC__StreamDecoder*, FLAC__byte [], size_t*, void*);
+        static FLAC__StreamDecoderSeekStatus seekCallback(const FLAC__StreamDecoder*, uint64_t, void*);
+        static FLAC__StreamDecoderTellStatus tellCallback(const FLAC__StreamDecoder*, uint64_t*, void*);
+        static FLAC__StreamDecoderLengthStatus lengthCallback(const FLAC__StreamDecoder*, uint64_t*, void*);
         static FLAC__bool eofCallback(const FLAC__StreamDecoder*, void*);
-        static int writeCallback(const FLAC__StreamDecoder*, const FLAC__Frame*, const int32_t *const [], void*);
+        static FLAC__StreamDecoderWriteStatus writeCallback(const FLAC__StreamDecoder*, const FLAC__Frame*, const int32_t *const [], void*);
         static void metadataCallback(const FLAC__StreamDecoder*, const FLAC__StreamMetadata*, void*);
-        static void errorCallback(const FLAC__StreamDecoder*, int, void*);
+        static void errorCallback(const FLAC__StreamDecoder*, FLAC__StreamDecoderErrorStatus, void*);
 
         static FunctionReference constructor;
 

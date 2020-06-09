@@ -1,6 +1,5 @@
 #include "native_iterator.hpp"
 #include "native_async_iterator.hpp"
-#include "../flac/format.h"
 
 namespace flac_bindings {
 

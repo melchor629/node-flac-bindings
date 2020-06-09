@@ -1,5 +1,4 @@
 #include "metadata2.hpp"
-#include "../flac/format.h"
 #include "../mappings/mappings.hpp"
 #include "../mappings/native_iterator.hpp"
 #include "../utils/converters.hpp"
@@ -219,22 +218,22 @@ namespace flac_bindings {
         static c_enum::DefineReturnType createStatusEnum(const Napi::Env& env) {
             Object obj1 = Object::New(env);
             Object obj2 = Object::New(env);
-            c_enum::defineValue(obj1, obj2, "OK", 0);
-            c_enum::defineValue(obj1, obj2, "ILLEGAL_INPUT", 1);
-            c_enum::defineValue(obj1, obj2, "ERROR_OPENING_FILE", 2);
-            c_enum::defineValue(obj1, obj2, "NOT_A_FLAC_FILE", 3);
-            c_enum::defineValue(obj1, obj2, "NOT_WRITABLE", 4);
-            c_enum::defineValue(obj1, obj2, "BAD_METADATA", 5);
-            c_enum::defineValue(obj1, obj2, "READ_ERROR", 6);
-            c_enum::defineValue(obj1, obj2, "SEEK_ERROR", 7);
-            c_enum::defineValue(obj1, obj2, "WRITE_ERROR", 8);
-            c_enum::defineValue(obj1, obj2, "RENAME_ERROR", 9);
-            c_enum::defineValue(obj1, obj2, "UNLINK_ERROR", 10);
-            c_enum::defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", 11);
-            c_enum::defineValue(obj1, obj2, "INTERNAL_ERROR", 12);
-            c_enum::defineValue(obj1, obj2, "INVALID_CALLBACKS", 13);
-            c_enum::defineValue(obj1, obj2, "READ_WRITE_MISMATCH", 14);
-            c_enum::defineValue(obj1, obj2, "WRONG_WRITE_CALL", 15);
+            c_enum::defineValue(obj1, obj2, "OK", FLAC__METADATA_CHAIN_STATUS_OK);
+            c_enum::defineValue(obj1, obj2, "ILLEGAL_INPUT", FLAC__METADATA_CHAIN_STATUS_ILLEGAL_INPUT);
+            c_enum::defineValue(obj1, obj2, "ERROR_OPENING_FILE", FLAC__METADATA_CHAIN_STATUS_ERROR_OPENING_FILE);
+            c_enum::defineValue(obj1, obj2, "NOT_A_FLAC_FILE", FLAC__METADATA_CHAIN_STATUS_NOT_A_FLAC_FILE);
+            c_enum::defineValue(obj1, obj2, "NOT_WRITABLE", FLAC__METADATA_CHAIN_STATUS_NOT_WRITABLE);
+            c_enum::defineValue(obj1, obj2, "BAD_METADATA", FLAC__METADATA_CHAIN_STATUS_BAD_METADATA);
+            c_enum::defineValue(obj1, obj2, "READ_ERROR", FLAC__METADATA_CHAIN_STATUS_READ_ERROR);
+            c_enum::defineValue(obj1, obj2, "SEEK_ERROR", FLAC__METADATA_CHAIN_STATUS_SEEK_ERROR);
+            c_enum::defineValue(obj1, obj2, "WRITE_ERROR", FLAC__METADATA_CHAIN_STATUS_WRITE_ERROR);
+            c_enum::defineValue(obj1, obj2, "RENAME_ERROR", FLAC__METADATA_CHAIN_STATUS_RENAME_ERROR);
+            c_enum::defineValue(obj1, obj2, "UNLINK_ERROR", FLAC__METADATA_CHAIN_STATUS_UNLINK_ERROR);
+            c_enum::defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", FLAC__METADATA_CHAIN_STATUS_MEMORY_ALLOCATION_ERROR);
+            c_enum::defineValue(obj1, obj2, "INTERNAL_ERROR", FLAC__METADATA_CHAIN_STATUS_INTERNAL_ERROR);
+            c_enum::defineValue(obj1, obj2, "INVALID_CALLBACKS", FLAC__METADATA_CHAIN_STATUS_INVALID_CALLBACKS);
+            c_enum::defineValue(obj1, obj2, "READ_WRITE_MISMATCH", FLAC__METADATA_CHAIN_STATUS_READ_WRITE_MISMATCH);
+            c_enum::defineValue(obj1, obj2, "WRONG_WRITE_CALL", FLAC__METADATA_CHAIN_STATUS_WRONG_WRITE_CALL);
             return std::make_tuple(obj1, obj2);
         }
     };

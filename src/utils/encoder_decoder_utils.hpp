@@ -5,9 +5,10 @@
 
 namespace flac_bindings {
 
-    static auto generateParseNumberResult(int& returnValue, const char* op) {
+    template<typename ReturnValueType>
+    static auto generateParseNumberResult(ReturnValueType& returnValue, const char* op) {
         return [&returnValue, op] (const Napi::Value& value) {
-            auto maybeReturnValue = maybeNumberFromJs<int>(value);
+            auto maybeReturnValue = maybeNumberFromJs<ReturnValueType>(value);
             if(!maybeReturnValue.has_value()) {
                 throw Napi::TypeError::New(value.Env(), op + ": Expected number or bigint as return type"s);
             }
@@ -27,9 +28,9 @@ namespace flac_bindings {
         };
     }
 
-    template<typename ResultType = uint64_t>
+    template<typename ReturnValueType, typename ResultType = uint64_t>
     static auto generateParseObjectResult(
-        int& returnValue,
+        ReturnValueType& returnValue,
         const char* op,
         const char* attributeName,
         ResultType& valueToSet
@@ -41,7 +42,7 @@ namespace flac_bindings {
 
             auto obj = value.As<Object>();
             auto maybeOpValue = maybeNumberFromJs<ResultType>(obj[attributeName]);
-            auto maybeReturnValue = maybeNumberFromJs<int>(obj["returnValue"]);
+            auto maybeReturnValue = maybeNumberFromJs<ReturnValueType>(obj["returnValue"]);
             if(!maybeOpValue.has_value()) {
                 throw Napi::TypeError::New(value.Env(), op + ": Expected number or bigint for "s + attributeName);
             }

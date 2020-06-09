@@ -210,7 +210,7 @@ namespace flac_bindings {
             case DecoderWorkRequest::Type::Read: {
                 auto buffer = pointer::wrap(env, req->buffer, *req->bytes);
                 result = ctx->readCbk.MakeCallback(env.Global(), {buffer}, asyncContext);
-                processResult = generateParseObjectResult<size_t>(
+                processResult = generateParseObjectResult(
                     req->returnValue,
                     "Decoder:ReadCallback",
                     "bytes",

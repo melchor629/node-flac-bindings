@@ -1,4 +1,5 @@
-#include "../flac/metadata2.hpp"
+#include <FLAC/callback.h>
+#include <FLAC/metadata.h>
 #include "../utils/async.hpp"
 #include "../utils/converters.hpp"
 

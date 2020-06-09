@@ -4,14 +4,18 @@ const { assert } = require('chai');
 
 describe('format', function() {
 
-    it('FLAC__VERSION_STRING is defined', function() {
-        assert.isString(format.FLAC__VERSION_STRING);
-        assert.match(format.FLAC__VERSION_STRING, /^\d+\.\d+\.\d+$/);
+    it('VERSION_STRING is defined', function() {
+        assert.isString(format.VERSION_STRING);
+        assert.match(format.VERSION_STRING, /^\d+\.\d+\.\d+$/);
     });
 
-    it('FLAC__VENDOR_STRING is defined', function() {
-        assert.isString(format.FLAC__VENDOR_STRING);
-        assert.match(format.FLAC__VENDOR_STRING, /^reference libFLAC \d+\.\d+\.\d+ \d+$/);
+    it('VENDOR_STRING is defined', function() {
+        assert.isString(format.VENDOR_STRING);
+        assert.match(format.VENDOR_STRING, /^reference libFLAC \d+\.\d+\.\d+ \d+$/);
+    });
+
+    it('API_SUPPORTS_OGG_FLAC is defined', function() {
+        assert.isBoolean(format.API_SUPPORTS_OGG_FLAC);
     });
 
     it('sampleRateIsValid() should work', function() {

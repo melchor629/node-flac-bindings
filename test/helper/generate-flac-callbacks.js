@@ -23,7 +23,7 @@ const generateFlacCallbacks = {
                 position += bytes;
             }
 
-            return Class.WriteStatus.CONTINUE;
+            return Class.WriteStatus.CONTINUE || Class.WriteStatus.OK;
         };
 
         const seek = (offset) => {
@@ -77,7 +77,7 @@ const generateFlacCallbacks = {
                 position += bytes;
             }
 
-            return Class.WriteStatus.CONTINUE;
+            return Class.WriteStatus.CONTINUE || Class.WriteStatus.OK;
         };
 
         const seek = (offset) => {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../flac/encoder.hpp"
+#include <FLAC/stream_encoder.h>
 #include "../utils/async.hpp"
 #include "../utils/converters.hpp"
 #include "../utils/enum.hpp"
@@ -12,9 +12,9 @@ namespace flac_bindings {
     struct EncoderWorkRequest {
         enum Type { Read, Write, Seek, Tell, Metadata, Progress } type;
         int returnValue = 0;
-        char* buffer = nullptr;
+        FLAC__byte* buffer = nullptr;
         size_t* bytes = nullptr;
-        const char* constBuffer = nullptr;
+        const FLAC__byte* constBuffer = nullptr;
         unsigned samples = 0;
         unsigned frame = 0;
         uint64_t* offset = nullptr;
@@ -125,7 +125,8 @@ namespace flac_bindings {
         void checkIsInitialized(const Napi::Env&);
         void checkIsNotInitialized(const Napi::Env&);
         Promise enqueueWork(AsyncEncoderWorkBase*);
-        static int doAsyncWork(EncoderWorkContext* ctx, EncoderWorkRequest* req, int defaultReturnValue = 0);
+        template<typename EnumType>
+        static EnumType doAsyncWork(EncoderWorkContext* ctx, EncoderWorkRequest* req, EnumType defaultReturnValue);
 
         static c_enum::DefineReturnType createStateEnum(const Napi::Env&);
         static c_enum::DefineReturnType createInitStatusEnum(const Napi::Env&);
@@ -134,10 +135,10 @@ namespace flac_bindings {
         static c_enum::DefineReturnType createSeekStatusEnum(const Napi::Env&);
         static c_enum::DefineReturnType createTellStatusEnum(const Napi::Env&);
 
-        static int readCallback(const FLAC__StreamEncoder*, char[], size_t*, void*);
-        static int writeCallback(const FLAC__StreamEncoder*, const char[], size_t, unsigned, unsigned, void*);
-        static int seekCallback(const FLAC__StreamEncoder*, uint64_t, void*);
-        static int tellCallback(const FLAC__StreamEncoder*, uint64_t*, void*);
+        static FLAC__StreamEncoderReadStatus readCallback(const FLAC__StreamEncoder*, FLAC__byte[], size_t*, void*);
+        static FLAC__StreamEncoderWriteStatus writeCallback(const FLAC__StreamEncoder*, const FLAC__byte[], size_t, unsigned, unsigned, void*);
+        static FLAC__StreamEncoderSeekStatus seekCallback(const FLAC__StreamEncoder*, uint64_t, void*);
+        static FLAC__StreamEncoderTellStatus tellCallback(const FLAC__StreamEncoder*, uint64_t*, void*);
         static void metadataCallback(const FLAC__StreamEncoder*, const FLAC__StreamMetadata*, void*);
         static void progressCallback(const FLAC__StreamEncoder*, uint64_t, uint64_t, unsigned, unsigned, void*);
 

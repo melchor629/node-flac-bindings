@@ -321,7 +321,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getVerifyDecoderState(const CallbackInfo& info) {
-        if(FLAC__stream_encoder_get_state(enc) == 3) { //FLAC__STREAM_ENCODER_VERIFY_DECODER_ERROR
+        if(FLAC__stream_encoder_get_state(enc) == FLAC__STREAM_ENCODER_VERIFY_DECODER_ERROR) {
             auto verifyDecoderState = FLAC__stream_encoder_get_verify_decoder_state(enc);
             return numberToJs(info.Env(), verifyDecoderState);
         }
@@ -335,7 +335,7 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getVerifyDecoderErrorStats(const CallbackInfo& info) {
-        if(FLAC__stream_encoder_get_state(enc) == 3) { //FLAC__STREAM_ENCODER_VERIFY_DECODER_ERROR
+        if(FLAC__stream_encoder_get_state(enc) == FLAC__STREAM_ENCODER_VERIFY_DECODER_ERROR) {
             uint64_t absolute_sample;
             unsigned frame_number;
             unsigned channel;
@@ -391,7 +391,7 @@ namespace flac_bindings {
             ctx->metadataCbk.IsEmpty() ? nullptr : StreamEncoder::metadataCallback,
             ctx.get()
         );
-        return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
+        return info.Env().IsExceptionPending() ? Napi::Value() : numberToJs(info.Env(), ret);
     }
 
     Napi::Value StreamEncoder::initOggStream(const CallbackInfo& info) {
@@ -417,7 +417,7 @@ namespace flac_bindings {
             ctx->metadataCbk.IsEmpty() ? nullptr : StreamEncoder::metadataCallback,
             ctx.get()
         );
-        return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
+        return info.Env().IsExceptionPending() ? Napi::Value() : numberToJs(info.Env(), ret);
     }
 
     Napi::Value StreamEncoder::initFile(const CallbackInfo& info) {
@@ -437,7 +437,7 @@ namespace flac_bindings {
             ctx->progressCbk.IsEmpty() ? nullptr : StreamEncoder::progressCallback,
             ctx.get()
         );
-        return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
+        return info.Env().IsExceptionPending() ? Napi::Value() : numberToJs(info.Env(), ret);
     }
 
     Napi::Value StreamEncoder::initOggFile(const CallbackInfo& info) {
@@ -457,7 +457,7 @@ namespace flac_bindings {
             ctx->progressCbk.IsEmpty() ? nullptr : StreamEncoder::progressCallback,
             ctx.get()
         );
-        return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
+        return info.Env().IsExceptionPending() ? Napi::Value() : numberToJs(info.Env(), ret);
     }
 
     Napi::Value StreamEncoder::finish(const CallbackInfo& info) {
@@ -602,13 +602,13 @@ namespace flac_bindings {
 
 
     void StreamEncoder::checkIsInitialized(const Napi::Env& env) {
-        if(FLAC__stream_encoder_get_state(enc) == 1) { // FLAC__STREAM_ENCODER_UNINITIALIZED
+        if(FLAC__stream_encoder_get_state(enc) == FLAC__STREAM_ENCODER_UNINITIALIZED) {
             throw Error::New(env, "Encoder has not been initialized yet");
         }
     }
 
     void StreamEncoder::checkIsNotInitialized(const Napi::Env& env) {
-        if(FLAC__stream_encoder_get_state(enc) != 1) { // FLAC__STREAM_ENCODER_UNINITIALIZED
+        if(FLAC__stream_encoder_get_state(enc) != FLAC__STREAM_ENCODER_UNINITIALIZED) {
             throw Error::New(env, "Encoder has been initialized already");
         }
     }
@@ -623,86 +623,87 @@ namespace flac_bindings {
     c_enum::DefineReturnType StreamEncoder::createStateEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);c_enum::defineValue(obj1, obj2, "OK", 0);
-        c_enum::defineValue(obj1, obj2, "UNINITIALIZED", 1);
-        c_enum::defineValue(obj1, obj2, "OGG_ERROR", 2);
-        c_enum::defineValue(obj1, obj2, "VERIFY_DECODER_ERROR", 3);
-        c_enum::defineValue(obj1, obj2, "VERIFY_MISMATCH_IN_AUDIO_DATA", 4);
-        c_enum::defineValue(obj1, obj2, "CLIENT_ERROR", 5);
-        c_enum::defineValue(obj1, obj2, "IO_ERROR", 6);
-        c_enum::defineValue(obj1, obj2, "FRAMING_ERROR", 7);
-        c_enum::defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", 8);
+        c_enum::defineValue(obj1, obj2, "UNINITIALIZED", FLAC__STREAM_ENCODER_UNINITIALIZED);
+        c_enum::defineValue(obj1, obj2, "OGG_ERROR", FLAC__STREAM_ENCODER_OGG_ERROR);
+        c_enum::defineValue(obj1, obj2, "VERIFY_DECODER_ERROR", FLAC__STREAM_ENCODER_VERIFY_DECODER_ERROR);
+        c_enum::defineValue(obj1, obj2, "VERIFY_MISMATCH_IN_AUDIO_DATA", FLAC__STREAM_ENCODER_VERIFY_MISMATCH_IN_AUDIO_DATA);
+        c_enum::defineValue(obj1, obj2, "CLIENT_ERROR", FLAC__STREAM_ENCODER_CLIENT_ERROR);
+        c_enum::defineValue(obj1, obj2, "IO_ERROR", FLAC__STREAM_ENCODER_IO_ERROR);
+        c_enum::defineValue(obj1, obj2, "FRAMING_ERROR", FLAC__STREAM_ENCODER_FRAMING_ERROR);
+        c_enum::defineValue(obj1, obj2, "MEMORY_ALLOCATION_ERROR", FLAC__STREAM_ENCODER_MEMORY_ALLOCATION_ERROR);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamEncoder::createInitStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "OK", 0);
-        c_enum::defineValue(obj1, obj2, "ENCODER_ERROR", 1);
-        c_enum::defineValue(obj1, obj2, "UNSUPPORTED_CONTAINER", 2);
-        c_enum::defineValue(obj1, obj2, "INVALID_CALLBACKS", 3);
-        c_enum::defineValue(obj1, obj2, "INVALID_NUMBER_OF_CHANNELS", 4);
-        c_enum::defineValue(obj1, obj2, "INVALID_BITS_PER_SAMPLE", 5);
-        c_enum::defineValue(obj1, obj2, "INVALID_SAMPLE_RATE", 6);
-        c_enum::defineValue(obj1, obj2, "INVALID_BLOCK_SIZE", 7);
-        c_enum::defineValue(obj1, obj2, "INVALID_MAX_LPC_ORDER", 8);
-        c_enum::defineValue(obj1, obj2, "INVALID_QLP_COEFF_PRECISION", 9);
-        c_enum::defineValue(obj1, obj2, "BLOCK_SIZE_TOO_SMALL_FOR_LPC_ORDER", 10);
-        c_enum::defineValue(obj1, obj2, "NOT_STREAMABLE", 11);
-        c_enum::defineValue(obj1, obj2, "INVALID_METADATA", 12);
-        c_enum::defineValue(obj1, obj2, "ALREADY_INITIALIZED", 13);
+        c_enum::defineValue(obj1, obj2, "OK", FLAC__STREAM_ENCODER_INIT_STATUS_OK);
+        c_enum::defineValue(obj1, obj2, "ENCODER_ERROR", FLAC__STREAM_ENCODER_INIT_STATUS_ENCODER_ERROR);
+        c_enum::defineValue(obj1, obj2, "UNSUPPORTED_CONTAINER", FLAC__STREAM_ENCODER_INIT_STATUS_UNSUPPORTED_CONTAINER);
+        c_enum::defineValue(obj1, obj2, "INVALID_CALLBACKS", FLAC__STREAM_ENCODER_INIT_STATUS_INVALID_CALLBACKS);
+        c_enum::defineValue(obj1, obj2, "INVALID_NUMBER_OF_CHANNELS", FLAC__STREAM_ENCODER_INIT_STATUS_INVALID_NUMBER_OF_CHANNELS);
+        c_enum::defineValue(obj1, obj2, "INVALID_BITS_PER_SAMPLE", FLAC__STREAM_ENCODER_INIT_STATUS_INVALID_BITS_PER_SAMPLE);
+        c_enum::defineValue(obj1, obj2, "INVALID_SAMPLE_RATE", FLAC__STREAM_ENCODER_INIT_STATUS_INVALID_SAMPLE_RATE);
+        c_enum::defineValue(obj1, obj2, "INVALID_BLOCK_SIZE", FLAC__STREAM_ENCODER_INIT_STATUS_INVALID_BLOCK_SIZE);
+        c_enum::defineValue(obj1, obj2, "INVALID_MAX_LPC_ORDER", FLAC__STREAM_ENCODER_INIT_STATUS_INVALID_MAX_LPC_ORDER);
+        c_enum::defineValue(obj1, obj2, "INVALID_QLP_COEFF_PRECISION", FLAC__STREAM_ENCODER_INIT_STATUS_INVALID_QLP_COEFF_PRECISION);
+        c_enum::defineValue(obj1, obj2, "BLOCK_SIZE_TOO_SMALL_FOR_LPC_ORDER", FLAC__STREAM_ENCODER_INIT_STATUS_BLOCK_SIZE_TOO_SMALL_FOR_LPC_ORDER);
+        c_enum::defineValue(obj1, obj2, "NOT_STREAMABLE", FLAC__STREAM_ENCODER_INIT_STATUS_NOT_STREAMABLE);
+        c_enum::defineValue(obj1, obj2, "INVALID_METADATA", FLAC__STREAM_ENCODER_INIT_STATUS_INVALID_METADATA);
+        c_enum::defineValue(obj1, obj2, "ALREADY_INITIALIZED", FLAC__STREAM_ENCODER_INIT_STATUS_ALREADY_INITIALIZED);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamEncoder::createReadStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "CONTINUE", 0);
-        c_enum::defineValue(obj1, obj2, "END_OF_STREAM", 1);
-        c_enum::defineValue(obj1, obj2, "ABORT", 2);
-        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", 3);
+        c_enum::defineValue(obj1, obj2, "CONTINUE", FLAC__STREAM_ENCODER_READ_STATUS_CONTINUE);
+        c_enum::defineValue(obj1, obj2, "END_OF_STREAM", FLAC__STREAM_ENCODER_READ_STATUS_END_OF_STREAM);
+        c_enum::defineValue(obj1, obj2, "ABORT", FLAC__STREAM_ENCODER_READ_STATUS_ABORT);
+        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", FLAC__STREAM_ENCODER_READ_STATUS_UNSUPPORTED);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamEncoder::createWriteStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "CONTINUE", 0);
-        c_enum::defineValue(obj1, obj2, "FATAL_ERROR", 1);
+        c_enum::defineValue(obj1, obj2, "OK", FLAC__STREAM_ENCODER_WRITE_STATUS_OK);
+        c_enum::defineValue(obj1, obj2, "FATAL_ERROR", FLAC__STREAM_ENCODER_WRITE_STATUS_FATAL_ERROR);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamEncoder::createSeekStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "OK", 0);
-        c_enum::defineValue(obj1, obj2, "ERROR", 1);
-        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", 2);
+        c_enum::defineValue(obj1, obj2, "OK", FLAC__STREAM_ENCODER_SEEK_STATUS_OK);
+        c_enum::defineValue(obj1, obj2, "ERROR", FLAC__STREAM_ENCODER_SEEK_STATUS_ERROR);
+        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", FLAC__STREAM_ENCODER_SEEK_STATUS_UNSUPPORTED);
         return std::make_tuple(obj1, obj2);
     }
 
     c_enum::DefineReturnType StreamEncoder::createTellStatusEnum(const Napi::Env& env) {
         Object obj1 = Object::New(env);
         Object obj2 = Object::New(env);
-        c_enum::defineValue(obj1, obj2, "OK", 0);
-        c_enum::defineValue(obj1, obj2, "ERROR", 1);
-        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", 2);
+        c_enum::defineValue(obj1, obj2, "OK", FLAC__STREAM_ENCODER_TELL_STATUS_OK);
+        c_enum::defineValue(obj1, obj2, "ERROR", FLAC__STREAM_ENCODER_TELL_STATUS_ERROR);
+        c_enum::defineValue(obj1, obj2, "UNSUPPORTED", FLAC__STREAM_ENCODER_TELL_STATUS_UNSUPPORTED);
         return std::make_tuple(obj1, obj2);
     }
 
 
 
-    int StreamEncoder::doAsyncWork(EncoderWorkContext* ctx, EncoderWorkRequest* req, int defaultReturnValue) {
+    template<typename EnumType>
+    EnumType StreamEncoder::doAsyncWork(EncoderWorkContext* ctx, EncoderWorkRequest* req, EnumType defaultReturnValue) {
         DEFER(delete req);
-        req->returnValue = defaultReturnValue;
+        req->returnValue = (int) defaultReturnValue;
 
         ctx->enc->asyncExecutionProgress->sendProgressAndWait(req);
 
-        return req->returnValue;
+        return (EnumType) req->returnValue;
     }
 
-    constexpr int defaultReadCallbackReturnValue = 2;
-    int StreamEncoder::readCallback(const FLAC__StreamEncoder*, char buffer[], size_t* bytes, void* ptr) {
+    constexpr FLAC__StreamEncoderReadStatus defaultReadCallbackReturnValue = FLAC__STREAM_ENCODER_READ_STATUS_ABORT;
+    FLAC__StreamEncoderReadStatus StreamEncoder::readCallback(const FLAC__StreamEncoder*, FLAC__byte buffer[], size_t* bytes, void* ptr) {
         auto ctx = (EncoderWorkContext*) ptr;
         if(ctx->enc->asyncExecutionProgress) {
             auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Read);
@@ -712,7 +713,7 @@ namespace flac_bindings {
         }
 
         auto env = ctx->enc->Env();
-        int returnValue = defaultReadCallbackReturnValue;
+        auto returnValue = defaultReadCallbackReturnValue;
         HandleScope scope(env);
         try {
             auto jsBuffer = pointer::wrap(env, buffer, *bytes);
@@ -726,8 +727,8 @@ namespace flac_bindings {
         return returnValue;
     }
 
-    constexpr int defaultWriteCallbackReturnValue = 1;
-    int StreamEncoder::writeCallback(const FLAC__StreamEncoder*, const char buffer[], size_t bytes, unsigned samples, unsigned frame, void* ptr) {
+    constexpr FLAC__StreamEncoderWriteStatus defaultWriteCallbackReturnValue = FLAC__STREAM_ENCODER_WRITE_STATUS_FATAL_ERROR;
+    FLAC__StreamEncoderWriteStatus StreamEncoder::writeCallback(const FLAC__StreamEncoder*, const FLAC__byte buffer[], size_t bytes, unsigned samples, unsigned frame, void* ptr) {
         auto ctx = (EncoderWorkContext*) ptr;
         if(ctx->enc->asyncExecutionProgress) {
             auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Write);
@@ -739,10 +740,10 @@ namespace flac_bindings {
         }
 
         auto env = ctx->enc->Env();
-        int returnValue = defaultWriteCallbackReturnValue;
+        auto returnValue = defaultWriteCallbackReturnValue;
         HandleScope scope(env);
         try {
-            auto jsBuffer = pointer::wrap(env, const_cast<char*>(buffer), bytes);
+            auto jsBuffer = pointer::wrap(env, const_cast<FLAC__byte*>(buffer), bytes);
             auto ret = ctx->writeCbk.MakeCallback(
                 env.Global(),
                 {jsBuffer, numberToJs(env, samples), numberToJs(env, frame)},
@@ -756,8 +757,8 @@ namespace flac_bindings {
         return returnValue;
     }
 
-    constexpr int defaultSeekCallbackReturnValue = 1;
-    int StreamEncoder::seekCallback(const FLAC__StreamEncoder*, uint64_t offset, void* ptr) {
+    constexpr FLAC__StreamEncoderSeekStatus defaultSeekCallbackReturnValue = FLAC__STREAM_ENCODER_SEEK_STATUS_ERROR;
+    FLAC__StreamEncoderSeekStatus StreamEncoder::seekCallback(const FLAC__StreamEncoder*, uint64_t offset, void* ptr) {
         auto ctx = (EncoderWorkContext*) ptr;
         if(ctx->enc->asyncExecutionProgress) {
             auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Seek);
@@ -766,7 +767,7 @@ namespace flac_bindings {
         }
 
         auto env = ctx->enc->Env();
-        int returnValue = defaultSeekCallbackReturnValue;
+        auto returnValue = defaultSeekCallbackReturnValue;
         HandleScope scope(env);
         try {
             auto ret = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, offset)}, *ctx->enc->asyncContext);
@@ -778,8 +779,8 @@ namespace flac_bindings {
         return returnValue;
     }
 
-    constexpr int defaultTellCallbackReturnValue = 1;
-    int StreamEncoder::tellCallback(const FLAC__StreamEncoder*, uint64_t* offset, void* ptr) {
+    constexpr FLAC__StreamEncoderTellStatus defaultTellCallbackReturnValue = FLAC__STREAM_ENCODER_TELL_STATUS_ERROR;
+    FLAC__StreamEncoderTellStatus StreamEncoder::tellCallback(const FLAC__StreamEncoder*, uint64_t* offset, void* ptr) {
         auto ctx = (EncoderWorkContext*) ptr;
         if(ctx->enc->asyncExecutionProgress) {
             auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Tell);
@@ -788,7 +789,7 @@ namespace flac_bindings {
         }
 
         auto env = ctx->enc->Env();
-        int returnValue = defaultTellCallbackReturnValue;
+        auto returnValue = defaultTellCallbackReturnValue;
         HandleScope scope(env);
         try {
             auto ret = ctx->tellCbk.MakeCallback(env.Global(), {numberToJs(env, *offset)}, *ctx->enc->asyncContext);
@@ -805,7 +806,7 @@ namespace flac_bindings {
         if(ctx->enc->asyncExecutionProgress) {
             auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Metadata);
             req->metadata = metadata;
-            doAsyncWork(ctx, req);
+            doAsyncWork(ctx, req, 0);
             return;
         }
 
@@ -834,7 +835,7 @@ namespace flac_bindings {
             req->progress.samplesWritten = samplesWritten;
             req->progress.framesWritten = framesWritten;
             req->progress.totalFramesEstimate = totalFramesEstimate;
-            doAsyncWork(ctx, req);
+            doAsyncWork(ctx, req, 0);
             return;
         }
 

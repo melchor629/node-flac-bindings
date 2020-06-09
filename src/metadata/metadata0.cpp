@@ -1,6 +1,4 @@
-#include "../flac/format.h"
-#include "../flac/metadata.hpp"
-#include "../flac/metadata0.hpp"
+#include <FLAC/metadata.h>
 #include "../mappings/mappings.hpp"
 #include "../utils/async.hpp"
 #include "../utils/js_utils.hpp"
