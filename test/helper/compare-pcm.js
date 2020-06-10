@@ -5,6 +5,7 @@ const { assert } = require('chai');
  * Decodes a flac file using `flac` cli tool
  * @param {string} file Path to a flac file
  * @param {boolean} ogg Set to `true` if the file is ogg/flac
+ * @returns {Buffer} The `stdout` buffer
  */
 const readFlacUsingCli = (file, ogg) => {
     const result = cp.spawnSync('flac', [ '-d', '-c', file, ogg ? '--ogg' : '--no-ogg' ], { encoding: 'buffer' });
@@ -19,6 +20,7 @@ const readFlacUsingCli = (file, ogg) => {
 /**
  * From given WAV buffer, extracts the PCM data
  * @param {Buffer} buffer WAV buffer
+ * @returns {Buffer} The PCM data of the WAV file
  */
 const getPCMData = (buffer) => {
     const pos = buffer.indexOf('data', buffer.indexOf('WAVE')) + 4;

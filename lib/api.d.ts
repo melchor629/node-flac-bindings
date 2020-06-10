@@ -1,5 +1,6 @@
 type EnumValues<T> = T[keyof T];
 type ReverseEnum<T extends { [k in keyof T]: number }> = { [k in EnumValues<T>]: keyof T };
+type PerhapsAsync<T> = Promise<T> | T;
 type Global_Iterator<T> = Iterator<T>; //Avoid type shadowing (in TS there's nothing like global:: or :: to refer global namespace)
 
 declare namespace api {
@@ -140,7 +141,16 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__stream__decoder.html#ga7a5f593b9bc2d163884348b48c4285fd
          */
         type ReadCallback = (buffer: Buffer) => ReadCallbackReturnType;
-        type ReadCallbackAsync = (buffer: Buffer) => Promise<ReadCallbackReturnType> | ReadCallbackReturnType;
+        /**
+         * Function that will be called when the decoder needs to read more data from the stream. The API
+         * expects to fill the buffer, but is valid to partially fill the buffer.
+         *  > **Note**: the offset can be a `bigint` if the number cannot be stored in a `number`.
+         *  > **Note**: The buffer is valid only inside the callback. Write in it anything and don't try to
+         *    use it outside the callback.
+         * @returns The number of bytes read into the buffer and the {@link ReadStatus}.
+         * @see https://xiph.org/flac/api/group__flac__stream__decoder.html#ga7a5f593b9bc2d163884348b48c4285fd
+         */
+        type ReadCallbackAsync = (buffer: Buffer) => PerhapsAsync<ReadCallbackReturnType>;
 
         type SeekCallbackReturnType = EnumValues<SeekStatus>;
         /**
@@ -150,7 +160,13 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__stream__decoder.html#ga375614289a1b868f1ead7fa70a581171
          */
         type SeekCallback = (offset: number | bigint) => SeekCallbackReturnType;
-        type SeekCallbackAsync = (offset: number | bigint) => Promise<SeekCallbackReturnType> | SeekCallbackReturnType;
+        /**
+         * Function that will be called when the decoder to seek in the stream.
+         *  > **Note**: the offset can be a `bigint` if the number cannot be stored in a `number`.
+         * @returns The {@link SeekStatus}.
+         * @see https://xiph.org/flac/api/group__flac__stream__decoder.html#ga375614289a1b868f1ead7fa70a581171
+         */
+        type SeekCallbackAsync = (offset: number | bigint) => PerhapsAsync<SeekCallbackReturnType>;
 
         type TellCallbackReturnType = { offset: number | bigint; returnValue: EnumValues<TellStatus>; };
         /**
@@ -161,7 +177,14 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__stream__decoder.html#ga02990309a9d30acc43ba01fe48021e39
          */
         type TellCallback = (offset?: number | bigint) => TellCallbackReturnType;
-        type TellCallbackAsync = (offset?: number | bigint) => Promise<TellCallbackReturnType> | TellCallbackReturnType;
+        /**
+         * Function that will be called when the decoder needs to know where the stream is.
+         *  > **Note**: the offset can be a `bigint` if the number cannot be stored in a `number`.
+         * @param offset You can ignore the offset, or see what is its value (just for fun). Don't expected something meaningful.
+         * @returns The position of the stream in bytes and the {@link TellStatus}.
+         * @see https://xiph.org/flac/api/group__flac__stream__decoder.html#ga02990309a9d30acc43ba01fe48021e39
+         */
+        type TellCallbackAsync = (offset?: number | bigint) => PerhapsAsync<TellCallbackReturnType>;
 
         type LengthCallbackReturnType = { offset: number | bigint; returnValue: EnumValues<LengthStatus>; };
         /**
@@ -172,7 +195,14 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__stream__decoder.html#ga02990309a9d30acc43ba01fe48021e39
          */
         type LengthCallback = (length?: number | bigint) => LengthCallbackReturnType;
-        type LengthCallbackAsync = (length?: number | bigint) => Promise<LengthCallbackReturnType> | LengthCallbackReturnType;
+        /**
+         * Function that will be called when the decoder needs to know the total length of the stream.
+         *  > **Note**: the length can be a `bigint` if the number cannot be stored in a `number`.
+         * @param length You can ignore the length, or see what is its value (just for fun). Don't expected something meaningful.
+         * @returns The length of the stream in bytes and the {@link LengthStatus}.
+         * @see https://xiph.org/flac/api/group__flac__stream__decoder.html#ga02990309a9d30acc43ba01fe48021e39
+         */
+        type LengthCallbackAsync = (length?: number | bigint) => PerhapsAsync<LengthCallbackReturnType>;
 
         type EOFCallbackReturnType = boolean;
         /**
@@ -181,7 +211,12 @@ declare namespace api {
          * @return `true` if EOF is reached, `false` otherwise.
          */
         type EOFCallback = () => EOFCallbackReturnType;
-        type EOFCallbackAsync = () => Promise<EOFCallbackReturnType> | EOFCallbackReturnType;
+        /**
+         * Function that will be called when the decoder needs to know if the End of File (or Stream)
+         * has been reached.
+         * @return `true` if EOF is reached, `false` otherwise.
+         */
+        type EOFCallbackAsync = () => PerhapsAsync<EOFCallbackReturnType>;
 
         type WriteCallbackReturnType = EnumValues<WriteStatus>;
         /**
@@ -194,20 +229,36 @@ declare namespace api {
          * @returns The {@link WriteStatus}.
          */
         type WriteCallback = (frame: Frame, buffers: Buffer[]) => WriteCallbackReturnType;
-        type WriteCallbackAsync = (frame: Frame, buffers: Buffer[]) => Promise<WriteCallbackReturnType> | WriteCallbackReturnType;
+        /**
+         * Function that will be called when the decoder has decoded a frame. Contains information about
+         * the frame and the decoded (PCM) data separated in channels.
+         *  > **Note**: The buffers are valid only inside the callback. If you need to use them outside the callback,
+         *    use `buffers.map(b => Buffer.from(b))` to make a copy of all of them.
+         * @param frame The {@link Frame} struct.
+         * @param buffers PCM data for each channel ordered by channel assignment.
+         * @returns The {@link WriteStatus}.
+         */
+        type WriteCallbackAsync = (frame: Frame, buffers: Buffer[]) => PerhapsAsync<WriteCallbackReturnType>;
 
         /**
          * Function that will be called when a metadata block has been read. The metadata object will only
          * be valid inside the callback. If a copy is needed, clone the object with {@link Metadata#clone}.
          */
         type MetadataCallback = (metadata: metadata.Metadata) => void;
-        type MetadataCallbackAsync = (metadata: metadata.Metadata) => Promise<void>;
+        /**
+         * Function that will be called when a metadata block has been read. The metadata object will only
+         * be valid inside the callback. If a copy is needed, clone the object with {@link Metadata#clone}.
+         */
+        type MetadataCallbackAsync = (metadata: metadata.Metadata) => PerhapsAsync<void>;
 
         /**
          * Function that will be called when an error while decoding occurs.
          */
         type ErrorCallback = (error: EnumValues<ErrorStatus>) => void;
-        type ErrorCallbackAsync = (error: EnumValues<ErrorStatus>) => Promise<void> | void;
+        /**
+         * Function that will be called when an error while decoding occurs.
+         */
+        type ErrorCallbackAsync = (error: EnumValues<ErrorStatus>) => PerhapsAsync<void>;
 
         /**
          * The decoder state.
@@ -410,7 +461,13 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga97d25c75f49897422d93a9d8405043cd
          */
         type ReadCallback = (buffer: Buffer) => ReadCallbackReturnType;
-        type ReadCallbackAsync = (buffer: Buffer) => Promise<ReadCallbackReturnType> | ReadCallbackReturnType;
+        /**
+         * Called when the encoder needs to read from the stream. The number of bytes
+         * matches the size of the buffer. The callback should try to fill the buffer.
+         * @returns The number of bytes read and the {@link ReadStatus}.
+         * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga97d25c75f49897422d93a9d8405043cd
+         */
+        type ReadCallbackAsync = (buffer: Buffer) => PerhapsAsync<ReadCallbackReturnType>;
 
         type WriteCallbackReturnType = EnumValues<WriteStatus>;
         /**
@@ -422,7 +479,15 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#gabf2f9bb39c806111c83dd16936ff6d09
          */
         type WriteCallback = (buffer: Buffer, samples: number, frame: number) => WriteCallbackReturnType;
-        type WriteCallbackAsync = (buffer: Buffer, samples: number, frame: number) => Promise<WriteCallbackReturnType> | WriteCallbackReturnType;
+        /**
+         * Called when encoder needs to write to the stream. The number of bytes matches
+         * the size of the buffer.
+         *  > **Note**: The buffer is valid only inside the callback. If you need to use it outside the callback,
+         *    use `Buffer.from(buffer)` to make a copy of it.
+         * @returns The {@link WriteStatus}.
+         * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#gabf2f9bb39c806111c83dd16936ff6d09
+         */
+        type WriteCallbackAsync = (buffer: Buffer, samples: number, frame: number) => PerhapsAsync<WriteCallbackReturnType>;
 
         type SeekCallbackReturnType = EnumValues<SeekStatus>;
         /**
@@ -432,7 +497,13 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga3005a69a7883da53262ec8a124d48c9e
          */
         type SeekCallback = (offset: number | bigint) => SeekCallbackReturnType;
-        type SeekCallbackAsync = (offset: number | bigint) => Promise<SeekCallbackReturnType> | SeekCallbackReturnType;
+        /**
+         * Called when the encoder needs to seek to another position in the stream.
+         *  > **Note**: the offset can be a `bigint` if the number cannot be stored in a `number`.
+         * @returns the {@link SeekStatus}.
+         * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga3005a69a7883da53262ec8a124d48c9e
+         */
+        type SeekCallbackAsync = (offset: number | bigint) => PerhapsAsync<SeekCallbackReturnType>;
 
         type TellCallbackReturnType = { offset: number | bigint; returnValue: EnumValues<TellStatus>; };
         /**
@@ -442,14 +513,24 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga4cab0b7556d8509a9f74693804c8c86e
          */
         type TellCallback = () => TellCallbackReturnType;
-        type TellCallbackAsync = () => Promise<TellCallbackReturnType> | TellCallbackReturnType;
+        /**
+         * Called when the encoder wants to know in which position is the stream.
+         *  > **Note**: the offset can be a `bigint` if the number cannot be stored in a `number`.
+         * @returns The position in the stream and the {@link TellStatus}.
+         * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga4cab0b7556d8509a9f74693804c8c86e
+         */
+        type TellCallbackAsync = () => PerhapsAsync<TellCallbackReturnType>;
 
         /**
          * Called when the encoder wrote the `STREAMINFO` block into the stream.
          * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga87778e16cdd0834a301ee8d8258cf946
          */
         type MetadataCallback = (metadata: metadata.Metadata) => void;
-        type MetadataCallbackAsync = (metadata: metadata.Metadata) => Promise<void>;
+        /**
+         * Called when the encoder wrote the `STREAMINFO` block into the stream.
+         * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga87778e16cdd0834a301ee8d8258cf946
+         */
+        type MetadataCallbackAsync = (metadata: metadata.Metadata) => PerhapsAsync<void>;
 
         /**
          * Called when the encoder has finished to write a frame.
@@ -457,7 +538,12 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#gac65f8ae0583b665933744b60fd5ba0d9
          */
         type ProgressCallback = (bytesWritten: number | bigint, samplesWritten: number | bigint, framesWritten: number, totalFramesEstimate: number) => void;
-        type ProgressCallbackAsync = (bytesWritten: number | bigint, samplesWritten: number | bigint, framesWritten: number, totalFramesEstimate: number) => Promise<void> | void;
+        /**
+         * Called when the encoder has finished to write a frame.
+         *  > **Note**: some of the numbers will be `bigint` if the value cannot be stored in a `number`.
+         * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#gac65f8ae0583b665933744b60fd5ba0d9
+         */
+        type ProgressCallbackAsync = (bytesWritten: number | bigint, samplesWritten: number | bigint, framesWritten: number, totalFramesEstimate: number) => PerhapsAsync<void>;
 
         /**
          * Encoder state.
@@ -984,6 +1070,7 @@ declare namespace api {
         getApplicationIdAsync(): Promise<Buffer | null>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga1b7374cafd886ceb880b050dfa1e387a */
         getBlock(): metadata.Metadata | null;
+        /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga1b7374cafd886ceb880b050dfa1e387a */
         getBlock<T extends metadata.MetadataTypes, MT extends metadata.Metadata<T>>(): MT | null;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga1b7374cafd886ceb880b050dfa1e387a */
         getBlockAsync(): Promise<metadata.Metadata | null>;
@@ -1097,6 +1184,10 @@ declare namespace api {
          * @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gad3e7fbc3b3d9c192a3ac425c7b263641
          **/
         getBlock(): metadata.Metadata;
+        /**
+         * > **Note**: The metadata is valid while the Chain is still alive.
+         * @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gad3e7fbc3b3d9c192a3ac425c7b263641
+         **/
         getBlock<T extends metadata.MetadataTypes, MT extends metadata.Metadata<T>>(): MT;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gaf61795b21300a2b0c9940c11974aab53 */
         setBlock(metadata: metadata.Metadata): boolean;
@@ -1147,7 +1238,7 @@ declare namespace api {
              * @param numberOfItems The number of items to read.
              * @returns the number of bytes read.
              */
-            read?: (outputBuffer: Buffer, sizeOfItem: number, numberOfItems: number) => number | bigint | Promise<number | bigint>;
+            read?: (outputBuffer: Buffer, sizeOfItem: number, numberOfItems: number) => PerhapsAsync<number | bigint>;
 
             /**
              * Write operation callback. It must write a multiple of `sizeOfItem` bytes.
@@ -1156,7 +1247,7 @@ declare namespace api {
              * @param numberOfItems The number of items to read.
              * @returns the number of bytes written.
              */
-            write?: (inputBuffer: Buffer, sizeOfItem: number, numberOfItems: number) => number | bigint | Promise<number | bigint>;
+            write?: (inputBuffer: Buffer, sizeOfItem: number, numberOfItems: number) => PerhapsAsync<number | bigint>;
 
             /**
              * Seek operation callback.
@@ -1166,25 +1257,25 @@ declare namespace api {
              * (`end`) is relative to the end of the stream.
              * @returns 0 on success, -1 on error.
              */
-            seek?: (offset: number | bigint, whence: 'set' | 'cur' | 'end') => 0 | -1 | Promise<0 | -1>;
+            seek?: (offset: number | bigint, whence: 'set' | 'cur' | 'end') => PerhapsAsync<0 | -1>;
 
             /**
              * Tell operation callback.
              * @returns The current position in bytes of the stream or -1 in case of error.
              */
-            tell?: () => number | bigint | -1 | Promise<number | bigint | -1>;
+            tell?: () => PerhapsAsync<number | bigint | -1>;
 
             /**
              * EOF check callback.
              * @returns `true` if the End Of File is reached, `false` otherwise.
              */
-            eof?: () => boolean | Promise<boolean>;
+            eof?: () => PerhapsAsync<boolean>;
 
             /**
              * Close operation callback.
              * @returns 0 on success, -1 on error.
              */
-            close: () => 0 | -1 | Promise<0 | -1>;
+            close: () => PerhapsAsync<0 | -1>;
         }
     }
 
@@ -1250,7 +1341,11 @@ declare namespace api {
     }
 
 
-    function testAsync(mode: 'reject' | 'exception' | 'resolve', progress: (char: string) => Promise<void> | void): Promise<true>;
+    function _testAsync(
+        mode: 'reject' | 'exception' | 'resolve',
+        progress: (char: string) => Promise<void> | void,
+    ): Promise<true>;
+
     const napiVersion: number;
 
 }

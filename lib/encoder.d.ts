@@ -1,4 +1,5 @@
 import { Transform, Writable } from 'stream';
+import * as api from './api';
 
 declare namespace encoder {
 
