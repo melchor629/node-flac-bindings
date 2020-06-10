@@ -135,7 +135,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getSampleRate(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto sampleRate = FLAC__stream_encoder_get_sample_rate(enc);
         return numberToJs(info.Env(), sampleRate);
     }
@@ -153,7 +152,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getBlocksize(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto blocksize = FLAC__stream_encoder_get_blocksize(enc);
         return numberToJs(info.Env(), blocksize);
     }
@@ -165,7 +163,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getDoMidSideStereo(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto doMidStereo = FLAC__stream_encoder_get_do_mid_side_stereo(enc);
         return booleanToJs(info.Env(), doMidStereo);
     }
@@ -177,7 +174,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getLooseMidSideStereo(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto looseMidStereo = FLAC__stream_encoder_get_loose_mid_side_stereo(enc);
         return booleanToJs(info.Env(), looseMidStereo);
     }
@@ -189,7 +185,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getMaxLpcOrder(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto maxLpcOrder = FLAC__stream_encoder_get_max_lpc_order(enc);
         return numberToJs(info.Env(), maxLpcOrder);
     }
@@ -201,7 +196,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getQlpCoeffPrecision(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto qlpCoeffPrecision = FLAC__stream_encoder_get_qlp_coeff_precision(enc);
         return numberToJs(info.Env(), qlpCoeffPrecision);
     }
@@ -213,7 +207,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getDoQlpCoeffPrecSearch(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto doQlpCoeffPrecSearch = FLAC__stream_encoder_get_do_qlp_coeff_prec_search(enc);
         return booleanToJs(info.Env(), doQlpCoeffPrecSearch);
     }
@@ -225,7 +218,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getDoEscapeCoding(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto doEscapeCoding = FLAC__stream_encoder_get_do_escape_coding(enc);
         return booleanToJs(info.Env(), doEscapeCoding);
     }
@@ -237,7 +229,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getDoExhaustiveModelSearch(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto doExhaustiveModelSearch = FLAC__stream_encoder_get_do_exhaustive_model_search(enc);
         return booleanToJs(info.Env(), doExhaustiveModelSearch);
     }
@@ -249,7 +240,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getMinResidualPartitionOrder(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto minResidualPartitionOrder = FLAC__stream_encoder_get_min_residual_partition_order(enc);
         return numberToJs(info.Env(), minResidualPartitionOrder);
     }
@@ -261,7 +251,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getMaxResidualPartitionOrder(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto maxResidualPartitionOrder = FLAC__stream_encoder_get_max_residual_partition_order(enc);
         return numberToJs(info.Env(), maxResidualPartitionOrder);
     }
@@ -273,7 +262,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getRiceParameterSearchDist(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto riceParameterSearchDist = FLAC__stream_encoder_get_rice_parameter_search_dist(enc);
         return numberToJs(info.Env(), riceParameterSearchDist);
     }
@@ -285,7 +273,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::getTotalSamplesEstimate(const CallbackInfo& info) {
-        checkIsNotInitialized(info.Env());
         auto totalSamplesEstimate = FLAC__stream_encoder_get_total_samples_estimate(enc);
         return numberToJs(info.Env(), totalSamplesEstimate);
     }
@@ -860,7 +847,7 @@ namespace flac_bindings {
         if(bufferSizeTuples.size() < channels) {
             throw RangeError::New(
                 value.Env(),
-                "Expected array to have "s + std::to_string(channels) + " buffers (one for channel)"
+                "Expected array to have "s + std::to_string(channels) + " buffers (one for each channel)"s
             );
         }
 
@@ -869,12 +856,11 @@ namespace flac_bindings {
             int32_t* buffer;
             size_t size;
             std::tie(buffer, size) = *it;
-            if(size < samples * channels) {
+            if(size < samples) {
                 auto errorMessage = "Buffer at position "s + std::to_string(it - bufferSizeTuples.begin()) +
-                    " has not enough bytes: expected "s + std::to_string(samples * channels * sizeof(int32_t)) +
-                    " bytes ("s + std::to_string(samples) + " samples * "s + std::to_string(channels) +
-                    " channels * "s + std::to_string(sizeof(int32_t)) + " bytes per sample) but got "s +
-                    std::to_string(size) + " bytes"s;
+                    " has not enough bytes: expected "s + std::to_string(samples * sizeof(int32_t)) +
+                    " bytes ("s + std::to_string(samples) + " samples * "s + std::to_string(sizeof(int32_t)) +
+                    " bytes per sample) but got "s + std::to_string(size) + " bytes"s;
                 throw RangeError::New(value.Env(), errorMessage);
             }
 

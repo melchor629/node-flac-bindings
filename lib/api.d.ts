@@ -413,8 +413,8 @@ declare namespace api {
         processInterleaved(buffer: Buffer, samples?: Number | null): boolean;
 
         finishAsync(): Promise<boolean>;
-        processAsync(buffers: Buffer[], samples?: Number | null): Promise<boolean>;
-        processInterleavedAsync(buffer: Buffer, samples: Number): Promise<boolean>;
+        processAsync(buffers: Buffer[], samples: Number): Promise<boolean>;
+        processInterleavedAsync(buffer: Buffer, samples?: Number | null): Promise<boolean>;
         initStreamAsync(
             writeCbk: Encoder.WriteCallbackAsync,
             seekCbk?: Encoder.SeekCallbackAsync,

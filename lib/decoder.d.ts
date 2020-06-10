@@ -1,4 +1,5 @@
 import { Transform, Readable } from 'stream';
+import { format } from './api';
 
 declare namespace decoder {
 
@@ -11,7 +12,7 @@ declare namespace decoder {
          * If set to an array, it will only emit `metadata` for the types
          * specified in it.
          **/
-        metadata?: number[] | true;
+        metadata?: format.MetadataType[] | true;
         /**
          * If set to `true`, samples will be 32 bit integers. By default, this
          * value is `false`, except when the flac is 24 bit. When `false`, the

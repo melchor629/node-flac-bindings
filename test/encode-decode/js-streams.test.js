@@ -217,6 +217,20 @@ describe('encode & decode: js streams', function() {
             assert.equal(metadataBlocks.length, 4);
         });
 
+        it('stream decoder should emit specific metadata when required', async function() {
+            const input = fs.createReadStream(pathForFile('loop.flac'));
+            const dec = new StreamDecoder({ outputAs32: true, metadata: [ 0 ] });
+            const metadataBlocks = [];
+
+            dec.on('metadata', (metadata) => metadataBlocks.push(metadata));
+            input.pipe(dec);
+            dec.on('data', () => undefined);
+            await events.once(dec, 'end');
+
+            assert.isNotEmpty(metadataBlocks);
+            assert.equal(metadataBlocks.length, 1);
+        });
+
         it('encode using ogg (stream)', async function() {
             const dec = new StreamDecoder({ outputAs32: false });
             const enc = new StreamEncoder({

@@ -15,8 +15,16 @@ const {
 const totalSamples = 992250 / 3 / 2;
 const okData = getWavAudio('loop.wav');
 const encData = Buffer.allocUnsafe(totalSamples * 4 * 2);
+const encDataAlt = [
+    Buffer.allocUnsafe(totalSamples * 4),
+    Buffer.allocUnsafe(totalSamples * 4),
+];
 for(let i = 0; i < totalSamples * 2; i++) {
     encData.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+}
+for(let i = 0; i < totalSamples; i++) {
+    encDataAlt[0].writeInt32LE(okData.readIntLE(i * 3 * 2, 3), i * 4);
+    encDataAlt[1].writeInt32LE(okData.readIntLE(i * 3 * 2 + 3, 3), i * 4);
 }
 
 let tmpFile;
@@ -163,6 +171,34 @@ describe('encode & decode: sync api', function() {
         assert.equal(metadataBlocks.length, 1);
     });
 
+    it('decoder get other properties work', function() {
+        const dec = new api.Decoder();
+        dec.setMd5Checking(true);
+        dec.setOggSerialNumber(0x11223344);
+        dec.setMetadataIgnore(1);
+        assert.equal(dec.initFile(
+            pathForFile('loop.flac'),
+            () => 0,
+            () => 0,
+            // eslint-disable-next-line no-console
+            (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+        ), 0, dec.getResolvedStateString());
+
+        assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString());
+        assert.isTrue(dec.processSingle(), dec.getResolvedStateString());
+
+        assert.equal(dec.getChannels(), 2);
+        assert.equal(dec.getBitsPerSample(), 24);
+        assert.equal(dec.getSampleRate(), 44100);
+        assert.equal(dec.getChannelAssignment(), api.format.ChannelAssignment.MID_SIDE);
+        assert.equal(dec.getBlocksize(), 4096);
+        assert.equal(dec.getTotalSamples(), totalSamples);
+        assert.isTrue(dec.getMd5Checking());
+        assert.equal(dec.getDecodePosition(), 22862);
+
+        assert.isFalse(dec.finish(), dec.getResolvedStateString());
+    });
+
     it('encode using stream (non-ogg)', function() {
         const enc = new api.Encoder();
         const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w');
@@ -244,6 +280,25 @@ describe('encode & decode: sync api', function() {
         assert.equal(progressCallbackValues.length, 30);
     });
 
+    it('encode using file with non-interleaved data (non-ogg)', function() {
+        const progressCallbackValues = [];
+        const enc = new api.Encoder();
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
+        enc.setCompressionLevel(9);
+        enc.sampleRate = 44100;
+        assert.equal(enc.initFile(
+            tmpFile.path,
+            (...args) => progressCallbackValues.push(args),
+        ), 0, enc.getResolvedStateString());
+
+        assert.isTrue(enc.process(encDataAlt, totalSamples), enc.getResolvedStateString());
+        assert.isTrue(enc.finish(), enc.getResolvedStateString());
+
+        comparePCM(okData, tmpFile.path, 24);
+        assert.equal(progressCallbackValues.length, 41);
+    });
+
     it('encoder should emit streaminfo metadata block', function() {
         let metadataBlock = null;
         const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w');
@@ -269,6 +324,90 @@ describe('encode & decode: sync api', function() {
         assert.isNotNull(metadataBlock);
         assert.equal(metadataBlock.type, 0);
         assert.equal(metadataBlock.totalSamples, totalSamples);
+    });
+
+    it('encoder process should fail if invalid buffer size is sent', function() {
+        const enc = new api.Encoder();
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
+        enc.setCompressionLevel(9);
+        enc.sampleRate = 44100;
+        assert.equal(enc.initFile(
+            tmpFile.path,
+        ), 0, enc.getResolvedStateString());
+
+        assert.throws(
+            () => enc.process([ encDataAlt[0].slice(4), encDataAlt[1] ], totalSamples),
+            /^Buffer at position 0 has not enough bytes:/
+        );
+        assert.isTrue(enc.finish(), enc.getResolvedStateString());
+    });
+
+    it('encoder process should fail if invalid number of channels is sent', function() {
+        const enc = new api.Encoder();
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
+        enc.setCompressionLevel(9);
+        enc.sampleRate = 44100;
+        assert.equal(enc.initFile(
+            tmpFile.path,
+        ), 0, enc.getResolvedStateString());
+
+        assert.throws(
+            () => enc.process([ encDataAlt[0] ], totalSamples),
+            /^Expected array to have \d+ buffers \(one for each channel\)$/
+        );
+        assert.isTrue(enc.finish(), enc.getResolvedStateString());
+    });
+
+    it('encoder processInterleaved should fail if invalid buffer size is sent', function() {
+        const enc = new api.Encoder();
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
+        enc.setCompressionLevel(9);
+        enc.sampleRate = 44100;
+        assert.equal(enc.initFile(
+            tmpFile.path,
+        ), 0, enc.getResolvedStateString());
+
+        assert.throws(
+            () => enc.processInterleaved(encData.slice(4), totalSamples),
+            /^Buffer has not enough bytes:/
+        );
+        assert.isTrue(enc.finish(), enc.getResolvedStateString());
+    });
+
+    it('encoder get other properties work', function() {
+        const enc = new api.Encoder();
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
+        enc.setCompressionLevel(9);
+        enc.sampleRate = 44100;
+        enc.totalSamplesEstimate = totalSamples;
+        enc.verify = true;
+        assert.equal(enc.initFile(
+            tmpFile.path,
+        ), 0, enc.getResolvedStateString());
+
+        assert.isTrue(enc.verify);
+
+        assert.equal(enc.channels, 2);
+        assert.equal(enc.bitsPerSample, 24);
+        assert.equal(enc.sampleRate, 44100);
+        assert.equal(enc.blocksize, 4096);
+        assert.isTrue(enc.doMidSideStereo);
+        assert.isFalse(enc.looseMidSideStereo);
+        assert.equal(enc.maxLpcOrder, 12);
+        assert.equal(enc.qlpCoeffPrecision, 15);
+        assert.isFalse(enc.doQlpCoeffPrecSearch);
+        assert.isFalse(enc.doEscapeCoding);
+        assert.isFalse(enc.doExhaustiveModelSearch);
+        assert.equal(enc.minResidualPartitionOrder, 0);
+        assert.equal(enc.maxResidualPartitionOrder, 6);
+        assert.equal(enc.riceParameterSearchDist, 0);
+        assert.equal(enc.totalSamplesEstimate, totalSamples);
+
+        assert.isTrue(enc.finish(), enc.getResolvedStateString());
     });
 
 });

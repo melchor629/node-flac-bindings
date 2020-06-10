@@ -16,8 +16,16 @@ const totalSamples = 992250 / 3 / 2;
 
 const okData = getWavAudio('loop.wav');
 const encData = Buffer.allocUnsafe(totalSamples * 4 * 2);
+const encDataAlt = [
+    Buffer.allocUnsafe(totalSamples * 4),
+    Buffer.allocUnsafe(totalSamples * 4),
+];
 for(let i = 0; i < totalSamples * 2; i++) {
     encData.writeInt32LE(okData.readIntLE(i * 3, 3), i * 4);
+}
+for(let i = 0; i < totalSamples; i++) {
+    encDataAlt[0].writeInt32LE(okData.readIntLE(i * 3 * 2, 3), i * 4);
+    encDataAlt[1].writeInt32LE(okData.readIntLE(i * 3 * 2 + 3, 3), i * 4);
 }
 
 let tmpFile;
@@ -346,6 +354,25 @@ describe('encode & decode: async api', function() {
 
         comparePCM(okData, tmpFile.path, 24, true);
         assert.equal(progressCallbackValues.length, 30);
+    });
+
+    it('encode using file with non-interleaved data (non-ogg)', async function() {
+        const progressCallbackValues = [];
+        const enc = new api.Encoder();
+        enc.bitsPerSample = 24;
+        enc.channels = 2;
+        enc.setCompressionLevel(9);
+        enc.sampleRate = 44100;
+        assert.equal(await enc.initFileAsync(
+            tmpFile.path,
+            (...args) => progressCallbackValues.push(args),
+        ), 0, enc.getResolvedStateString());
+
+        assert.isTrue(await enc.processAsync(encDataAlt, totalSamples), enc.getResolvedStateString());
+        assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString());
+
+        comparePCM(okData, tmpFile.path, 24);
+        assert.equal(progressCallbackValues.length, 41);
     });
 
     it('encoder should emit streaminfo metadata block', async function() {

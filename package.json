@@ -9,6 +9,7 @@
   "types": "./lib/index.d.ts",
   "scripts": {
     "test": "mocha --recursive",
+    "coverage": "./scripts/coverage.sh",
     "install": "node scripts/flac-build.js",
     "cmake-js": "cmake-js",
     "prebuild": "prebuild --backend cmake-js --runtime napi -t 4 -t 6 --strip",
