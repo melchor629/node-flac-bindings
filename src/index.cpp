@@ -37,8 +37,14 @@ namespace flac_bindings {
         HandleScope scope(env);
         NativeIterator::init(env);
 
+        // private definitions
+        exports.DefineProperties({
+            PropertyDescriptor::Value("_helpers", Object::New(env)),
+            PropertyDescriptor::Value("_testAsync", Function::New(env, testAsync)),
+        });
+
+        // public definitions
         exports["napiVersion"] = Number::New(env, NAPI_VERSION);
-        exports["testAsync"] = Function::New(env, testAsync);
         exports["Encoder"] = StreamEncoder::init(env);
         exports["Decoder"] = StreamDecoder::init(env);
         exports["format"] = initFormat(env);
@@ -53,8 +59,6 @@ namespace flac_bindings {
     Object init(Env env, Object exports) {
         module = Persistent(exports);
         module.SuppressDestruct();
-
-        exports["_helpers"] = Object::New(env);
 
         fillExports(env, exports);
 

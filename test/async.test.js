@@ -1,5 +1,5 @@
 /* eslint-disable prefer-arrow-callback */
-const { testAsync } = require('../lib/index').api;
+const { _testAsync: testAsync } = require('../lib/index').api;
 const { assert, use } = require('chai');
 
 use(require('./helper').asyncChaiExtensions);
