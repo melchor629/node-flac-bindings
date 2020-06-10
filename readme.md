@@ -46,7 +46,15 @@ $ npm install flac-bindings
 $ yarn add flac-bindings
 ```
 
-During installation, if the platform has a prebuild version of the bindings, it will download and install it. In case not, then it will look for FLAC dev package if installed and build the bindings with that package. But, if you don't have FLAC dev package installed, then it will download the FLAC sources and compile them alongisde the bindings. Note that prebuild versions and FLAC+bindings compilation version does not have enabled OGG support. See [How to compile][#how-to-compile] section for more information.
+The library has some native code that binds the JS code to the flac library. Depending on your platform, it can be an already-compiled library that will not require anything from you, or require to compile iself. The following logic applies:
+
+- If your CPU is `amd64`/`x86_64` and the OS is `Linux/glibc`, `Linux/musl`, `macOS` or `Windows`, then the prebuild version will download.
+- If you have `pkg-config` and `libFLAC` development package installed (`apt install libflac-dev`, `pacman -S flac`, `apk add flac-dev`, `brew install flac`...), then it will use this library and only compile the binding code. Requires you to have [Cmake](https://www.cmake.org) installed.
+- In any other case, it will download `libogg` and `libFLAC` source code and compile both libraries plus the binding code. Requires you to have [Cmake](https://www.cmake.org) and `git` installed.
+
+See [How to compile][#how-to-compile] section for more information.
+
+> It is recommended to have installed [Cmake](https://www.cmake.org) and `git` on the system when installing the packages so if a prebuild package is not avaiable, the installation will continue without any problems
 
 For use it, include with
 
@@ -60,21 +68,38 @@ import * as flac from 'flac-bindings';  // TypeScript import
 
 ## How to compile
 
-To compile the bindings you need [Cmake][https://www.cmake.org] installed in your system and accessible from the terminal, and the C and C++ compilers as well. On Windows, the compilers can be installed easily with `npm install --global --production windows-build-tools`.
+To compile the bindings you need [Cmake](https://www.cmake.org) installed in your system and accessible from the terminal, and the C and C++ compilers as well. On Windows, the compilers can be installed easily with `npm install --global --production windows-build-tools`. Don't forget `git`. It is mandatory!
 
-There are some options to use when compiling. As mentioned before, Ogg support is disabled by default. If you would like to enable it, define the environment variable `FLAC_BINDINGS_ENABLE_OGG`. The development package of Ogg must be installed (`apt install libogg-dev`, `pacman -S libogg`, `apk add libogg-dev`, `brew install libogg`...). On Windows, this can be tricker, so compile and install the package somewhere and ensure to add the path of the `lib/cmake` from the installation in the `CMAKE_MODULE_PATH`.
+There are some options to use when compiling. If you have a FLAC dev package already installed (`apt install libflac-dev`, `pacman -S flac`, `apk add flac-dev`, `brew install flac`...) and you want to compile the bindings to use this library instead, define the environment variable `FLAC_BINDINGS_USE_EXTERNAL_LIBRARY` (this will be the default option if no prebuild version is available, but a dev package is available).
 
-On the other hand, if you have a FLAC dev package already installed (`apt install libflac-dev`, `pacman -S flac`, `apk add flac-dev`, `brew install flac`...) and you want to compile the bindings to use this library instead, define the environment variable `FLAC_BINDINGS_USE_EXTERNAL_LIBRARY` (this will be the default option if no prebuild version is available, but a dev package is available).
+Then, you just need to recompile the package with: `npm rebuild flac-bindings`. If you are inside this repo tree, then run `npm run install`.
 
-> **Note**: _Both environment variables will discard the prebuild version._
+For more advanced commands for compilation inside the repo tree, see below:
+
+```sh
+# Compile (debug version)
+npm run cmake-js -- build --debug
+
+# Compile with sanitizers (only available on Linux and macOS)
+npm run cmake-js -- configure --CDSANITIZE=ON --debug
+npm run cmake-js -- build --debug
+
+# Compile with external FLAC library (can be combined with sanitizers)
+npm run cmake-js -- configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
+npm run cmake-js -- build --debug
+
+# Clean compilation folder
+npm run cmake-js -- clean
+```
 
 ## How to run the tests
 
-With a dev environment, and being able to compile the project, ensure to have installed the `flac` CLI (`apt install flac`, `pacman -S flac`, `apk add flac`, `brew install flac`...) and present in the `$PATH`. It is recommended to have installed the FLAC dev package and to have configured the project with `--CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON`.
+With a dev environment, and being able to compile the project, ensure to have installed the `flac` CLI (`apt install flac`, `pacman -S flac`, `apk add flac`, `brew install flac`...) and present in the `$PATH`. It is recommended to have installed the FLAC dev package and to have configured the project with `--CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON`. Also ensure to have installed [Cmake](https://www.cmake.org) and available in the `$PATH`.
 
 The recommended steps are:
 
 ```sh
+# Do not run tests with sanitizers enabled, it's tricker to make it work
 npm run cmake-js -- configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
 npm run cmake-js -- build --debug
 npm test

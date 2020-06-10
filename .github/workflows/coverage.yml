@@ -24,16 +24,8 @@ jobs:
           apt-get install -y cmake libflac-dev flac lcov
       - name: Install
         run: npm install
-      - name: Build
-        run: npm run cmake-js -- build --debug --CDCOVERAGE=ON --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON
-      - name: Test
-        run: |
-          export PATH="$PATH:$PWD/node_modules/.bin"
-          mkdir coverage
-          nyc mocha --recursive
-          nyc report --reporter=text-lcov > coverage/js.info
-          lcov -c --quiet --directory build/CMakeFiles/flac-bindings.dir/src --base-directory src -o coverage/cpp.info --no-external
-          cat coverage/js.info coverage/cpp.info > coverage/combined.info
+      - name: Build & Test
+        run: ./scripts/coverage.sh rebuild
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:

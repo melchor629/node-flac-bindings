@@ -38,13 +38,27 @@ if(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY)
 else()
     include(FetchContent)
 
+    # fetch libogg (post v1.3.4 commit to fix compilation in macOS)
+    FetchContent_Declare(
+        Ogg
+        GIT_REPOSITORY  https://gitlab.xiph.org/xiph/ogg.git
+        GIT_TAG         0bbcba4e7cf32324170470569c4527ffd0002870
+    )
+
+    FetchContent_MakeAvailable(Ogg)
+    # tell CMake ogg already exists
+    set(OGG_FOUND YES)
+    # expected target is different in FLAC, so creating an alias to be able to use it
+    add_library(Ogg::ogg ALIAS ogg)
+
+    # fetch flac (v1.3.3 - the repo had no tag so commit hash is used instead)
     FetchContent_Declare(
         FLAC
         GIT_REPOSITORY  https://gitlab.xiph.org/xiph/flac.git
-        GIT_TAG         f764434a39e8a8715d5871bb263189e5a7298280 # this is 1.3.3 but the repo has no tag :(
+        GIT_TAG         f764434a39e8a8715d5871bb263189e5a7298280
     )
 
-    option(WITH_OGG NO)
+    option(WITH_OGG YES)
     option(BUILD_TESTING NO)
     option(BUILD_CXXLIBS NO)
     FetchContent_MakeAvailable(FLAC)

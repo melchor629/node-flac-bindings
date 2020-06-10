@@ -35,5 +35,5 @@ jobs:
     - name: Lint
       run: npm run lint
     - name: Test
-      run: node node_modules/.bin/mocha --recurse
+      run: npm test
       if: ${{ matrix.node.napi > 5 }}

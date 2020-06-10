@@ -2,7 +2,6 @@ const cp = require('child_process');
 
 const envOpts = {
     useExternalLibrary: typeof process.env.FLAC_BINDINGS_USE_EXTERNAL_LIBRARY === 'string',
-    enableOgg: typeof process.env.FLAC_BINDINGS_ENABLE_OGG === 'string',
     pkgConfigPath: process.env.PKG_CONFIG_PATH,
 };
 
@@ -54,7 +53,7 @@ const hasGlobalInstalledFlac = () => {
     return false;
 };
 
-if(!envOpts.useExternalLibrary && !envOpts.enableOgg) {
+if(!envOpts.useExternalLibrary) {
     if(!run('prebuild-install').status) {
         process.exit(0);
     }
@@ -62,10 +61,6 @@ if(!envOpts.useExternalLibrary && !envOpts.enableOgg) {
 
 if(envOpts.useExternalLibrary || hasGlobalInstalledFlac()) {
     if(run('cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON').status) {
-        process.exit(1);
-    }
-} else if(envOpts.enableOgg) {
-    if(run('cmake-js configure --CDWITH_OGG=ON').status) {
         process.exit(1);
     }
 }
