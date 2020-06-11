@@ -38,7 +38,7 @@ if(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY)
 else()
     include(FetchContent)
 
-    set(BUILD_TESTING NO)
+    option(BUILD_TESTING NO)
 
     # fetch libogg (post v1.3.4 commit to fix compilation in macOS)
     FetchContent_Declare(
