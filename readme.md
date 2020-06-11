@@ -73,7 +73,7 @@ const { StreamEncoder } = require('flac-bindings');
 // create the Encoder instance
 const encoder = new StreamEncoder({
   channels: 2,        // 2 channels (left and right)
-  bitDepth: 16,       // 16-bit samples
+  bitsPerSample: 16,  // 16-bit samples
   samplerate: 44100,  // 44,100 Hz sample rate
 
   compressionLevel: 7,

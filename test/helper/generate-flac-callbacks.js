@@ -39,7 +39,7 @@ const generateFlacCallbacks = {
             return { offset: 0, returnValue: Class.TellStatus.UNSUPPORTED };
         };
 
-        const length = () => fs.fstatSync(fd).size;
+        const length = () => ({ returnValue: 0, length: fs.fstatSync(fd).size });
 
         const eof = () => position !== null ? length() <= position : false;
 
@@ -93,7 +93,7 @@ const generateFlacCallbacks = {
             return { offset: 0, returnValue: Class.TellStatus.UNSUPPORTED };
         };
 
-        const length = async () => (await fh.stat()).size;
+        const length = async () => ({ length: (await fh.stat()).size, returnValue: 0 });
 
         const eof = async () => position !== null ? await length() <= position : false;
 

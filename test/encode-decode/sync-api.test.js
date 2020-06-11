@@ -151,6 +151,49 @@ describe('encode & decode: sync api', function() {
         comparePCM(okData, finalBuffer, 32);
     });
 
+    it('decoder should be able to skip a frame', function() {
+        const dec = new api.Decoder();
+        assert.equal(dec.initFile(
+            pathForFile('loop.flac'),
+            () => 0,
+            null,
+            // eslint-disable-next-line no-console
+            (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+        ), 0, dec.getResolvedStateString());
+
+        assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString());
+        assert.isTrue(dec.processSingle(), dec.getResolvedStateString());
+        assert.isTrue(dec.skipSingleFrame(), dec.getResolvedStateString());
+        assert.isTrue(dec.processSingle(), dec.getResolvedStateString());
+        assert.isTrue(dec.flush(), dec.getResolvedStateString());
+        assert.isTrue(dec.finish(), dec.getResolvedStateString());
+    });
+
+    it('decoder should be able to seek to a sample', function() {
+        const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r');
+        deferredScope.defer(() => callbacks.close());
+        const dec = new api.Decoder();
+        assert.equal(dec.initStream(
+            callbacks.read,
+            callbacks.seek,
+            callbacks.tell,
+            callbacks.length,
+            callbacks.eof,
+            () => 0,
+            null,
+            // eslint-disable-next-line no-console
+            (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+        ), 0, dec.getResolvedStateString());
+
+        assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString());
+        assert.isTrue(dec.processSingle(), dec.getResolvedStateString());
+        assert.isTrue(dec.seekAbsolute(totalSamples / 5), dec.getResolvedStateString());
+        assert.equal(dec.getDecodePosition(), 157036);
+        assert.isTrue(dec.processSingle(), dec.getResolvedStateString());
+        assert.isTrue(dec.flush(), dec.getResolvedStateString());
+        assert.isTrue(dec.finish(), dec.getResolvedStateString());
+    });
+
     it('decoder should emit metadata', function() {
         const dec = new api.Decoder();
         const metadataBlocks = [];
