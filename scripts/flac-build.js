@@ -54,7 +54,7 @@ const hasGlobalInstalledFlac = () => {
 };
 
 if(!envOpts.useExternalLibrary) {
-    if(!run('prebuild-install').status) {
+    if(!run('prebuild-install -r napi').status) {
         process.exit(0);
     }
 }
