@@ -47,7 +47,12 @@ else()
         GIT_TAG         0bbcba4e7cf32324170470569c4527ffd0002870
     )
 
-    FetchContent_MakeAvailable(Ogg)
+    # polyfill for FetchContent_MakeAvailable
+    FetchContent_GetProperties(Ogg)
+    if(NOT ogg_POPULATED)
+        FetchContent_Populate(Ogg)
+        add_subdirectory(${ogg_SOURCE_DIR} ${ogg_BINARY_DIR})
+    endif()
     # tell CMake ogg already exists
     set(OGG_FOUND YES)
     # expected target is different in FLAC, so creating an alias to be able to use it
@@ -64,7 +69,11 @@ else()
     option(BUILD_PROGRAMS NO)
     option(BUILD_EXAMPLES NO)
     option(BUILD_CXXLIBS NO)
-    FetchContent_MakeAvailable(FLAC)
+    FetchContent_GetProperties(FLAC)
+    if(NOT flac_POPULATED)
+        FetchContent_Populate(FLAC)
+        add_subdirectory(${flac_SOURCE_DIR} ${flac_BINARY_DIR})
+    endif()
 endif()
 
 execute_process(
