@@ -68,7 +68,7 @@ namespace flac_bindings {
                     PropertyDescriptor::Value("order", numberToJs(env, subframe.data.lpc.order), attrs),
                     PropertyDescriptor::Value("qlpCoeffPrecision", numberToJs(env, subframe.data.lpc.qlp_coeff_precision), attrs),
                     PropertyDescriptor::Value("quantizationLevel", numberToJs(env, subframe.data.lpc.quantization_level), attrs),
-                    PropertyDescriptor::Value("wamup", arrayToJs(env, subframe.data.lpc.warmup), attrs),
+                    PropertyDescriptor::Value("warmup", arrayToJs(env, subframe.data.lpc.warmup), attrs),
                     PropertyDescriptor::Value("qlpCoeff", arrayToJs(env, subframe.data.lpc.qlp_coeff), attrs),
                     /*PropertyDescriptor::Value(
                         "residual",
@@ -88,7 +88,7 @@ namespace flac_bindings {
                     Buffer<int32_t>::Copy(
                         env,
                         subframe.data.verbatim.data,
-                        header.blocksize * header.bits_per_sample
+                        (size_t) header.blocksize * header.bits_per_sample
                     )
                 ));
                 break;
