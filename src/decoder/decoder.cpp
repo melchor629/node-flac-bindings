@@ -838,7 +838,7 @@ namespace flac_bindings {
     void StreamDecoder::errorCallback(const FLAC__StreamDecoder*, FLAC__StreamDecoderErrorStatus errorCode, void* ptr) {
         auto ctx = (DecoderWorkContext*) ptr;
         if(ctx->dec->asyncExecutionProgress) {
-            auto req = new DecoderWorkRequest(DecoderWorkRequest::Type::Eof);
+            auto req = new DecoderWorkRequest(DecoderWorkRequest::Type::Error);
             req->errorCode = errorCode;
             doAsyncWork(ctx, req, 0);
             return;

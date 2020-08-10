@@ -875,9 +875,10 @@ namespace flac_bindings {
         size_t size;
         std::tie(buffer, size) = pointer::fromBuffer<int32_t>(info[0]);
         samples = maybeNumberFromJs<unsigned>(info[1]).value_or(size / channels);
-        if(size < samples * channels) {
+        size_t readSize = (size_t) samples * channels;
+        if(size < readSize) {
             auto errorMessage = "Buffer has not enough bytes: expected "s +
-                std::to_string(samples * channels * sizeof(int32_t)) + " bytes ("s + std::to_string(samples) +
+                std::to_string(readSize * sizeof(int32_t)) + " bytes ("s + std::to_string(samples) +
                 " samples * "s + std::to_string(channels) + " channels * "s + std::to_string(sizeof(int32_t)) +
                 " bytes per sample) but got "s + std::to_string(size) + " bytes"s;
             throw RangeError::New(info.Env(), errorMessage);
