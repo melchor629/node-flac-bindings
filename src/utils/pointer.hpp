@@ -16,7 +16,7 @@ namespace flac_bindings {
         inline static Napi::Buffer<Type> wrap(const Napi::Env& env, Type* ptr, size_t size) {
             assert(size > 0);
             assert(ptr != nullptr);
-            return Napi::Buffer<Type>::New(env, ptr, size, [] (auto, auto) {});
+            return Napi::Buffer<Type>::New(env, ptr, size);
         }
 
         template<typename Type = void>

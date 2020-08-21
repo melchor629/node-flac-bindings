@@ -37,7 +37,7 @@ namespace flac_bindings {
 
         obj.DefineProperties({
             PropertyDescriptor::Value("type", numberToJs(env, subframe.type), attrs),
-            PropertyDescriptor::Value("wastedBits", numberToJs(env, subframe.wasted_bits)),
+            PropertyDescriptor::Value("wastedBits", numberToJs(env, subframe.wasted_bits), attrs),
         });
 
         switch(subframe.type) {
@@ -48,8 +48,8 @@ namespace flac_bindings {
             case FLAC__SUBFRAME_TYPE_FIXED:
                 obj.DefineProperties({
                     //TODO entropyCodingMethod
-                    PropertyDescriptor::Value("order", numberToJs(env, subframe.data.fixed.order)),
-                    PropertyDescriptor::Value("warmup", arrayToJs(env, subframe.data.fixed.warmup)),
+                    PropertyDescriptor::Value("order", numberToJs(env, subframe.data.fixed.order), attrs),
+                    PropertyDescriptor::Value("warmup", arrayToJs(env, subframe.data.fixed.warmup), attrs),
                     /*PropertyDescriptor::Value(
                         "residual",
                         Buffer<int32_t>::Copy(
@@ -85,16 +85,27 @@ namespace flac_bindings {
             case FLAC__SUBFRAME_TYPE_VERBATIM:
                 obj.DefineProperty(PropertyDescriptor::Value(
                     "data",
-                    Buffer<int32_t>::Copy(
+                    Buffer<int32_t>::New(
                         env,
-                        subframe.data.verbatim.data,
-                        (size_t) header.blocksize * header.bits_per_sample
-                    )
+                        (int32_t*) subframe.data.verbatim.data,
+                        (size_t) header.blocksize * header.bits_per_sample / sizeof(int32_t)
+                    ),
+                    attrs
                 ));
                 break;
         }
 
         return scope.Escape(objectFreeze(obj)).As<Object>();
+    }
+
+    Array subframesToJs(const Env& env, const FLAC__Frame* frame) {
+        EscapableHandleScope scope(env);
+        auto array = Array::New(env, frame->header.channels);
+        for(auto i = 0u; i < frame->header.channels; i++) {
+            array[i] = subframeToJs(env, frame->subframes[i], frame->header);
+        }
+
+        return scope.Escape(array).As<Array>();
     }
 
     Object frameFooterToJs(const Env& env, const FLAC__FrameFooter& footer) {
@@ -107,17 +118,12 @@ namespace flac_bindings {
     Object frameToJs(const Env& env, const FLAC__Frame* frame) {
         EscapableHandleScope scope(env);
         auto obj = Object::New(env);
-        obj["header"] = frameHeaderToJs(env, frame->header);
-        obj["subframes"] = arrayToJs(env, std::accumulate(
-            frame->subframes,
-            frame->subframes + FLAC__MAX_CHANNELS,
-            std::vector<Value>(),
-            [&env, &frame] (std::vector<Value> l, auto p) {
-                l.push_back(subframeToJs(env, p, frame->header));
-                return l;
-            }
-        ));
-        obj["footer"] = frameFooterToJs(env, frame->footer);
+        auto attrs = napi_property_attributes::napi_enumerable;
+        obj.DefineProperties({
+            PropertyDescriptor::Value("header", frameHeaderToJs(env, frame->header), attrs),
+            PropertyDescriptor::Value("subframes", subframesToJs(env, frame), attrs),
+            PropertyDescriptor::Value("footer", frameFooterToJs(env, frame->footer), attrs),
+        });
         return scope.Escape(objectFreeze(obj)).As<Object>();
     }
 

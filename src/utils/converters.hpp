@@ -197,7 +197,7 @@ namespace flac_bindings {
 
     template<typename Type>
     static inline Napi::Array arrayToJs(const Napi::Env& env, const std::vector<Type>& list) {
-        auto array = Napi::Array::New(env);
+        auto array = Napi::Array::New(env, list.size());
         for(size_t i = 0; i < list.size(); i += 1) {
             array[i] = list[i];
         }
@@ -206,7 +206,7 @@ namespace flac_bindings {
 
     template<typename Type, size_t Size>
     static inline Napi::Array arrayToJs(const Napi::Env& env, Type(& arr)[Size]) {
-        auto array = Napi::Array::New(env);
+        auto array = Napi::Array::New(env, Size);
         for(size_t i = 0; i < Size; i += 1) {
             array[i] = arr[i];
         }
