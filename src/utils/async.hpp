@@ -82,7 +82,6 @@ namespace flac_bindings {
 
             static Value promiseThen(const CallbackInfo& info) {
                 auto* p = (PromiseContext*) info.Data();
-                CallbackScope scope(info.Env(), p->self->asyncContext);
                 if(p->resolve) {
                     try {
                         p->resolve(info, p->req->data.get());
@@ -98,7 +97,6 @@ namespace flac_bindings {
 
             static Value promiseCatch(const CallbackInfo& info) {
                 auto* p = (PromiseContext*) info.Data();
-                CallbackScope scope(info.Env(), p->self->asyncContext);
                 if(p->reject) {
                     try {
                         p->reject(info, p->req->data.get());
@@ -179,7 +177,6 @@ namespace flac_bindings {
                 using namespace std::placeholders;
                 Napi::Env env = self->Env();
                 HandleScope scope(env);
-                CallbackScope callbackScope(env, self->asyncContext);
 
                 auto context = new PromiseContext {
                     resolve ? std::bind(resolve, *this, _1, _2) : PromiseCallback(nullptr),
@@ -220,7 +217,6 @@ namespace flac_bindings {
         ValueMapFunction converter;
         std::optional<T> returnValue = std::nullopt;
         Reference<Object> exceptionValue;
-        AsyncContext asyncContext;
 
         static Value _doNothing(const CallbackInfo& i) { return i.Env().Undefined(); }
 
@@ -235,8 +231,7 @@ namespace flac_bindings {
             resolver(Promise::Deferred::New(env)),
             function(function),
             progress(progress),
-            converter(converter),
-            asyncContext(env, name)
+            converter(converter)
         {}
 
         ~AsyncBackgroundTask() {
@@ -254,14 +249,6 @@ namespace flac_bindings {
             return scope.Escape(resolver.Promise()).template As<Promise>();
         }
 
-        AsyncContext& getAsyncContext() {
-            return asyncContext;
-        }
-
-        const AsyncContext& getAsyncContext() const {
-            return asyncContext;
-        }
-
         virtual void Execute(const NapiExecutionProgress& progress) override {
             if(function) {
                 context = new ExecutionProgress(this, progress);
@@ -275,7 +262,6 @@ namespace flac_bindings {
         virtual void OnOK() override {
             Napi::Env env = this->Env();
             HandleScope scope(env);
-            CallbackScope callbackScope(env, asyncContext);
             assert(exceptionValue.IsEmpty());
             if(returnValue && converter) {
                 resolver.Resolve(converter(env, returnValue.value()));
@@ -287,7 +273,6 @@ namespace flac_bindings {
         virtual void OnError(const Error& error) override {
             Napi::Env env = this->Env();
             HandleScope scope(env);
-            CallbackScope callbackScope(env, asyncContext);
             if(!exceptionValue.IsEmpty()) {
                 resolver.Reject(exceptionValue.Value());
             } else {

@@ -93,7 +93,8 @@ namespace flac_bindings {
         Napi::Value initOggFileAsync(const CallbackInfo&);
 
         inline void checkPendingAsyncWork(const Napi::Env& env) {
-            if(asyncContext != nullptr) {
+            std::lock_guard<std::mutex> lockGuard(this->mutex);
+            if(busy) {
                 throw Error::New(env, "There is still an operation running on this object");
             }
         }
@@ -130,7 +131,7 @@ namespace flac_bindings {
         static FunctionReference constructor;
 
         FLAC__StreamDecoder* dec = nullptr;
-        AsyncContext* asyncContext = nullptr;
+        volatile bool busy = false;
         AsyncDecoderWorkBase::ExecutionProgress* asyncExecutionProgress = nullptr;
         std::shared_ptr<DecoderWorkContext> ctx;
         std::mutex mutex;

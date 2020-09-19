@@ -36,7 +36,7 @@ namespace flac_bindings {
             ctx->enc->asyncExecutionProgress = &c;
 
             DEFER(ctx->enc->runLocked([&] () {
-                ctx->enc->asyncContext = nullptr;
+                ctx->enc->busy = false;
                 ctx->enc->asyncExecutionProgress = nullptr;
             }));
 
@@ -155,7 +155,7 @@ namespace flac_bindings {
         EncoderWorkRequest* const* reqPtr,
         size_t
     ) {
-        auto& asyncContext = prog.getTask()->getAsyncContext();
+        auto asyncContext = nullptr;
         std::function<void(Napi::Value result)> processResult;
         Napi::Value result;
         auto req = *reqPtr;
