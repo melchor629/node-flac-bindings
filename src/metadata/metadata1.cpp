@@ -11,8 +11,6 @@ namespace flac_bindings {
     using namespace Napi;
 
     class SimpleIterator: public ObjectWrap<SimpleIterator> {
-        static FunctionReference constructor;
-
         FLAC__Metadata_SimpleIterator* it;
 
         void throwIfStatusIsNotOk(const Napi::Env& env) {
@@ -59,7 +57,7 @@ namespace flac_bindings {
         }
 
     public:
-        static Function init(const Napi::Env& env) {
+        static Function init(Napi::Env env, FlacAddon& addon) {
             EscapableHandleScope scope(env);
 
             auto constructor = DefineClass(env, "SimpleIterator", {
@@ -90,8 +88,7 @@ namespace flac_bindings {
             });
             c_enum::declareInObject(constructor, "Status", createStatusEnum);
 
-            SimpleIterator::constructor = Persistent(constructor);
-            SimpleIterator::constructor.SuppressDestruct();
+            addon.simpleIteratorConstructor = Persistent(constructor);
 
             return scope.Escape(objectFreeze(constructor)).As<Function>();
         }
@@ -370,11 +367,9 @@ namespace flac_bindings {
         }
     };
 
-    FunctionReference SimpleIterator::constructor;
-
-    Function initMetadata1(const Env& env) {
+    Function initMetadata1(Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
-        return scope.Escape(SimpleIterator::init(env)).As<Function>();
+        return scope.Escape(SimpleIterator::init(env, addon)).As<Function>();
     }
 
 }

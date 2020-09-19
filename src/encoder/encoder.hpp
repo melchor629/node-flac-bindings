@@ -152,7 +152,7 @@ namespace flac_bindings {
 
     public:
 
-        static Function init(const Napi::Env&);
+        static Function init(Napi::Env env, FlacAddon& addon);
 
         StreamEncoder(const CallbackInfo&);
         ~StreamEncoder();

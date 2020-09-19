@@ -9,9 +9,7 @@
 
 namespace flac_bindings {
 
-    FunctionReference StreamDecoder::constructor;
-
-    Function StreamDecoder::init(const Napi::Env& env) {
+    Function StreamDecoder::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         auto constructor = DefineClass(env, "StreamDecoder", {
@@ -68,8 +66,7 @@ namespace flac_bindings {
         c_enum::declareInObject(constructor, "WriteStatus", createWriteStatusEnum);
         c_enum::declareInObject(constructor, "ErrorStatus", createErrorStatusEnum);
 
-        StreamDecoder::constructor = Persistent(constructor);
-        StreamDecoder::constructor.SuppressDestruct();
+        addon.decoderConstructor = Persistent(constructor);
 
         return scope.Escape(objectFreeze(constructor)).As<Function>();
     }

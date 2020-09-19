@@ -1,6 +1,7 @@
 #pragma once
 
 #include <napi.h>
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
@@ -11,10 +12,10 @@ namespace flac_bindings {
         return obj;
     }
 
-    static inline Napi::Function getHelper(const Napi::Env& env, const char* name) {
+    static inline Napi::Function getHelper(Napi::Env env, const char* name) {
         using namespace std::literals;
-        extern Napi::ObjectReference module;
         Napi::EscapableHandleScope scope(env);
+        auto& module = env.GetInstanceData<FlacAddon>()->module;
         Napi::Value maybeHelper = module.Get("_helpers").As<Napi::Object>().Get(name);
         if(!maybeHelper.IsFunction()) {
             throw Napi::TypeError::New(env, "Helper "s + name + " is not defined"s);

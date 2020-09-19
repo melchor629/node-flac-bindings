@@ -10,6 +10,8 @@ namespace flac_bindings {
 
     Object frameToJs(const Env&, const FLAC__Frame*);
 
+    class FlacAddon;
+
     class Metadata: public Mapping<FLAC__StreamMetadata> {
     public:
         Metadata(const CallbackInfo&, FLAC__MetadataType type);
@@ -46,22 +48,14 @@ namespace flac_bindings {
         Napi::Value getMd5sum(const CallbackInfo&);
         void setMd5sum(const CallbackInfo&, const Napi::Value&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
     class PaddingMetadata: public ObjectWrap<PaddingMetadata>, public Metadata {
     public:
         explicit PaddingMetadata(const CallbackInfo&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
     class ApplicationMetadata: public ObjectWrap<ApplicationMetadata>, public Metadata {
@@ -73,11 +67,7 @@ namespace flac_bindings {
         Napi::Value getData(const CallbackInfo&);
         void setData(const CallbackInfo&, const Napi::Value&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
     class SeekTableMetadata: public ObjectWrap<SeekTableMetadata>, public Metadata {
@@ -98,11 +88,7 @@ namespace flac_bindings {
         Napi::Value templateAppendSpacedPointsBySamples(const CallbackInfo&);
         Napi::Value templateSort(const CallbackInfo&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
     class SeekPoint: public ObjectWrap<SeekPoint>, public Mapping<FLAC__StreamMetadata_SeekPoint> {
@@ -117,11 +103,7 @@ namespace flac_bindings {
         Napi::Value getFrameSamples(const CallbackInfo&);
         void setFrameSamples(const CallbackInfo&, const Napi::Value&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
     class VorbisCommentMetadata: public ObjectWrap<VorbisCommentMetadata>, public Metadata {
@@ -143,11 +125,7 @@ namespace flac_bindings {
         Napi::Value removeEntriesMatching(const CallbackInfo&);
         Napi::Value get(const CallbackInfo&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
     class CueSheetMetadata: public ObjectWrap<CueSheetMetadata>, public Metadata {
@@ -174,11 +152,7 @@ namespace flac_bindings {
         Napi::Value isLegal(const CallbackInfo&);
         Napi::Value calculateCddbId(const CallbackInfo&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
     class CueSheetIndex: public ObjectWrap<CueSheetIndex>, public Mapping<FLAC__StreamMetadata_CueSheet_Index> {
@@ -191,11 +165,7 @@ namespace flac_bindings {
         Napi::Value getNumber(const CallbackInfo&);
         void setNumber(const CallbackInfo&, const Napi::Value&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
     class CueSheetTrack: public ObjectWrap<CueSheetTrack>, public Mapping<FLAC__StreamMetadata_CueSheet_Track> {
@@ -217,11 +187,7 @@ namespace flac_bindings {
         Napi::Value iterator(const CallbackInfo&);
         Napi::Value clone(const CallbackInfo&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
     class PictureMetadata: public ObjectWrap<PictureMetadata>, public Metadata {
@@ -246,11 +212,7 @@ namespace flac_bindings {
         void setData(const CallbackInfo&, const Napi::Value&);
         Napi::Value isLegal(const CallbackInfo&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
     class UnknownMetadata: public ObjectWrap<UnknownMetadata>, public Metadata {
@@ -259,11 +221,7 @@ namespace flac_bindings {
 
         Napi::Value getData(const CallbackInfo&);
 
-        static inline auto getConstructor() { return constructor.Value(); }
-        static Function init(const Napi::Env&);
-
-    private:
-        static FunctionReference constructor;
+        static Function init(Napi::Env, FlacAddon&);
     };
 
 }

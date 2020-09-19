@@ -1,14 +1,13 @@
 #include <FLAC/metadata.h>
 #include "mappings.hpp"
 #include "native_iterator.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference CueSheetMetadata::constructor;
-
-    Function CueSheetMetadata::init(const Napi::Env& env) {
+    Function CueSheetMetadata::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         auto attributes = napi_property_attributes::napi_enumerable;
@@ -51,8 +50,7 @@ namespace flac_bindings {
             InstanceMethod("calculateCddbId", &CueSheetMetadata::calculateCddbId),
         });
 
-        CueSheetMetadata::constructor = Persistent(constructor);
-        CueSheetMetadata::constructor.SuppressDestruct();
+        addon.cueSheetMetadataConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }

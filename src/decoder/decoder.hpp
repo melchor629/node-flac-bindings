@@ -128,8 +128,6 @@ namespace flac_bindings {
         static void metadataCallback(const FLAC__StreamDecoder*, const FLAC__StreamMetadata*, void*);
         static void errorCallback(const FLAC__StreamDecoder*, FLAC__StreamDecoderErrorStatus, void*);
 
-        static FunctionReference constructor;
-
         FLAC__StreamDecoder* dec = nullptr;
         volatile bool busy = false;
         AsyncDecoderWorkBase::ExecutionProgress* asyncExecutionProgress = nullptr;
@@ -138,7 +136,7 @@ namespace flac_bindings {
 
     public:
 
-        static Function init(const Napi::Env& env);
+        static Function init(Napi::Env env, FlacAddon& addon);
 
         StreamDecoder(const CallbackInfo&);
         ~StreamDecoder();

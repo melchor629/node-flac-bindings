@@ -1,13 +1,12 @@
 #include <FLAC/metadata.h>
 #include "mappings.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference ApplicationMetadata::constructor;
-
-    Function ApplicationMetadata::init(const Napi::Env& env) {
+    Function ApplicationMetadata::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         Function constructor = DefineClass(env, "ApplicationMetadata", {
@@ -25,8 +24,7 @@ namespace flac_bindings {
             ),
         });
 
-        ApplicationMetadata::constructor = Persistent(constructor);
-        ApplicationMetadata::constructor.SuppressDestruct();
+        addon.applicationMetadataConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }

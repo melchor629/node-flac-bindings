@@ -7,12 +7,10 @@
 
 namespace flac_bindings {
 
-    FunctionReference StreamEncoder::constructor;
-
     static std::vector<int32_t*> getBuffersFromArray(const Napi::Value&, unsigned, unsigned);
     static int32_t* getInterleavedBufferFromArgs(const CallbackInfo&, unsigned, unsigned&);
 
-    Function StreamEncoder::init(const Napi::Env& env) {
+    Function StreamEncoder::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         auto attrs = napi_property_attributes::napi_enumerable;
@@ -66,8 +64,7 @@ namespace flac_bindings {
         c_enum::declareInObject(constructor, "SeekStatus", createSeekStatusEnum);
         c_enum::declareInObject(constructor, "TellStatus", createTellStatusEnum);
 
-        StreamEncoder::constructor = Persistent(constructor);
-        StreamEncoder::constructor.SuppressDestruct();
+        addon.encoderConstructor = Persistent(constructor);
 
         return scope.Escape(objectFreeze(constructor)).As<Function>();
     }

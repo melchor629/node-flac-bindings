@@ -1,3 +1,4 @@
+#include "../flac_addon.hpp"
 #include "native_iterator.hpp"
 #include "native_async_iterator.hpp"
 
@@ -5,18 +6,17 @@ namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference NativeIterator::constructor;
-    void NativeIterator::init(const Napi::Env& env) {
+    void NativeIterator::init(const Napi::Env& env, FlacAddon& addon) {
         Function constructor = DefineClass(env, "NativeIterator", {
             InstanceMethod("next", &NativeIterator::next),
         });
 
-        NativeIterator::constructor = Persistent(constructor);
-        NativeIterator::constructor.SuppressDestruct();
+        addon.nativeIteratorConstructor = Persistent(constructor);
     }
 
-    Napi::Value NativeIterator::newIterator(const Napi::Env& env, const IteratorFunction& impl) {
+    Napi::Value NativeIterator::newIterator(Napi::Env env, const IteratorFunction& impl) {
         EscapableHandleScope scope(env);
+        auto& constructor = env.GetInstanceData<FlacAddon>()->nativeIteratorConstructor;
         auto obj = constructor.New({External<IteratorFunction>::New(env, new IteratorFunction(impl))});
         return scope.Escape(obj);
     }

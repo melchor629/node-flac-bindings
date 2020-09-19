@@ -1,14 +1,13 @@
 #include <FLAC/metadata.h>
 #include "mappings.hpp"
 #include "native_iterator.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference SeekTableMetadata::constructor;
-
-    Function SeekTableMetadata::init(const Napi::Env& env) {
+    Function SeekTableMetadata::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         Function constructor = DefineClass(env, "SeekTableMetadata", {
@@ -32,8 +31,7 @@ namespace flac_bindings {
             InstanceMethod("templateSort", &SeekTableMetadata::templateSort),
         });
 
-        SeekTableMetadata::constructor = Persistent(constructor);
-        SeekTableMetadata::constructor.SuppressDestruct();
+        addon.seekTableMetadataConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }

@@ -1,12 +1,11 @@
 #include "mappings.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference StreamInfoMetadata::constructor;
-
-    Function StreamInfoMetadata::init(const Napi::Env& env) {
+    Function StreamInfoMetadata::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         auto attributes = napi_property_attributes::napi_enumerable;
@@ -67,8 +66,7 @@ namespace flac_bindings {
             ),
         });
 
-        StreamInfoMetadata::constructor = Persistent(constructor);
-        StreamInfoMetadata::constructor.SuppressDestruct();
+        addon.streamInfoMetadataConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }

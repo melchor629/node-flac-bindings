@@ -1,14 +1,13 @@
 #include <FLAC/metadata.h>
 #include "mappings.hpp"
 #include "native_iterator.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference VorbisCommentMetadata::constructor;
-
-    Function VorbisCommentMetadata::init(const Napi::Env& env) {
+    Function VorbisCommentMetadata::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         Function constructor = DefineClass(env, "VorbisCommentMetadata", {
@@ -37,8 +36,7 @@ namespace flac_bindings {
             InstanceMethod("get", &VorbisCommentMetadata::get),
         });
 
-        VorbisCommentMetadata::constructor = Persistent(constructor);
-        VorbisCommentMetadata::constructor.SuppressDestruct();
+        addon.vorbisCommentMetadataConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }

@@ -1,5 +1,6 @@
 #include <FLAC/metadata.h>
 #include "mappings.hpp"
+#include "../flac_addon.hpp"
 #include "../utils/pointer.hpp"
 
 namespace flac_bindings {
@@ -71,21 +72,22 @@ namespace flac_bindings {
         }
 
         auto obj = value.As<Object>();
-        if(obj.InstanceOf(StreamInfoMetadata::getConstructor())) {
+        auto addon = value.Env().GetInstanceData<FlacAddon>();
+        if(obj.InstanceOf(addon->streamInfoMetadataConstructor.Value())) {
             return *StreamInfoMetadata::Unwrap(obj);
-        } else if(obj.InstanceOf(PaddingMetadata::getConstructor())) {
+        } else if(obj.InstanceOf(addon->paddingMetadataConstructor.Value())) {
             return *PaddingMetadata::Unwrap(obj);
-        } else if(obj.InstanceOf(ApplicationMetadata::getConstructor())) {
+        } else if(obj.InstanceOf(addon->applicationMetadataConstructor.Value())) {
             return *ApplicationMetadata::Unwrap(obj);
-        } else if(obj.InstanceOf(SeekTableMetadata::getConstructor())) {
+        } else if(obj.InstanceOf(addon->seekTableMetadataConstructor.Value())) {
             return *SeekTableMetadata::Unwrap(obj);
-        } else if(obj.InstanceOf(VorbisCommentMetadata::getConstructor())) {
+        } else if(obj.InstanceOf(addon->vorbisCommentMetadataConstructor.Value())) {
             return *VorbisCommentMetadata::Unwrap(obj);
-        } else if(obj.InstanceOf(CueSheetMetadata::getConstructor())) {
+        } else if(obj.InstanceOf(addon->cueSheetMetadataConstructor.Value())) {
             return *CueSheetMetadata::Unwrap(obj);
-        } else if(obj.InstanceOf(PictureMetadata::getConstructor())) {
+        } else if(obj.InstanceOf(addon->pictureMetadataConstructor.Value())) {
             return *PictureMetadata::Unwrap(obj);
-        } else if(obj.InstanceOf(UnknownMetadata::getConstructor())) {
+        } else if(obj.InstanceOf(addon->unknownMetadataConstructor.Value())) {
             return *UnknownMetadata::Unwrap(obj);
         } else {
             throw TypeError::New(value.Env(), "Expected "s + value.ToString().Utf8Value() + " to be an instance of Metadata");
@@ -99,36 +101,37 @@ namespace flac_bindings {
         }
 
         EscapableHandleScope scope(env);
-        Function constructor;
+        FunctionReference* constructor;
+        auto addon = Napi::Env(env).GetInstanceData<FlacAddon>();
 
         switch(metadata->type) {
             case FLAC__MetadataType::FLAC__METADATA_TYPE_STREAMINFO:
-                constructor = StreamInfoMetadata::getConstructor();
+                constructor = &addon->streamInfoMetadataConstructor;
                 break;
             case FLAC__MetadataType::FLAC__METADATA_TYPE_PADDING:
-                constructor = PaddingMetadata::getConstructor();
+                constructor = &addon->paddingMetadataConstructor;
                 break;
             case FLAC__MetadataType::FLAC__METADATA_TYPE_APPLICATION:
-                constructor = ApplicationMetadata::getConstructor();
+                constructor = &addon->applicationMetadataConstructor;
                 break;
             case FLAC__MetadataType::FLAC__METADATA_TYPE_SEEKTABLE:
-                constructor = SeekTableMetadata::getConstructor();
+                constructor = &addon->seekTableMetadataConstructor;
                 break;
             case FLAC__MetadataType::FLAC__METADATA_TYPE_VORBIS_COMMENT:
-                constructor = VorbisCommentMetadata::getConstructor();
+                constructor = &addon->vorbisCommentMetadataConstructor;
                 break;
             case FLAC__MetadataType::FLAC__METADATA_TYPE_CUESHEET:
-                constructor = CueSheetMetadata::getConstructor();
+                constructor = &addon->cueSheetMetadataConstructor;
                 break;
             case FLAC__MetadataType::FLAC__METADATA_TYPE_PICTURE:
-                constructor = PictureMetadata::getConstructor();
+                constructor = &addon->pictureMetadataConstructor;
                 break;
             default:
-                constructor = UnknownMetadata::getConstructor();
+                constructor = &addon->unknownMetadataConstructor;
                 break;
         }
 
-        auto object = constructor.New({pointer::wrap(env, metadata), booleanToJs(env, deleteHint)});
+        auto object = constructor->New({pointer::wrap(env, metadata), booleanToJs(env, deleteHint)});
         return scope.Escape(object);
     }
 
