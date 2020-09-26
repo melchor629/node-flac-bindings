@@ -1,4 +1,5 @@
 #include <napi.h>
+#include "flac_addon.hpp"
 #include "decoder/decoder.hpp"
 #include "encoder/encoder.hpp"
 #include "mappings/mappings.hpp"
@@ -11,64 +12,45 @@ namespace flac_bindings {
     extern Promise testAsync(const CallbackInfo& info);
     extern Object initFormat(const Env& env);
     extern Object initMetadata0(const Env& env);
-    extern Function initMetadata1(const Env& env);
-    extern void initMetadata2(const Env& env, Object& exports);
+    extern Function initMetadata1(Env env, FlacAddon&);
+    extern Value initMetadata2Chain(Env env, FlacAddon&);
+    extern Value initMetadata2Iterator(Env env, FlacAddon&);
 
-    ObjectReference module;
+    FlacAddon::FlacAddon(Env env, Object exports) {
+        NativeIterator::init(env, *this);
 
-    static Object initMetadata(const Env& env) {
-        EscapableHandleScope scope(env);
-        auto metadata = Object::New(env);
-        metadata["StreamInfoMetadata"] = StreamInfoMetadata::init(env);
-        metadata["PaddingMetadata"] = PaddingMetadata::init(env);
-        metadata["ApplicationMetadata"] = ApplicationMetadata::init(env);
-        metadata["SeekTableMetadata"] = SeekTableMetadata::init(env);
-        metadata["SeekPoint"] = SeekPoint::init(env);
-        metadata["VorbisCommentMetadata"] = VorbisCommentMetadata::init(env);
-        metadata["CueSheetMetadata"] = CueSheetMetadata::init(env);
-        metadata["CueSheetIndex"] = CueSheetIndex::init(env);
-        metadata["CueSheetTrack"] = CueSheetTrack::init(env);
-        metadata["PictureMetadata"] = PictureMetadata::init(env);
-        metadata["UnknownMetadata"] = UnknownMetadata::init(env);
-        return scope.Escape(objectFreeze(metadata)).As<Object>();
-    }
-
-    static void fillExports(const Env& env, Object exports) {
-        HandleScope scope(env);
-        NativeIterator::init(env);
-
-        // private definitions
-        exports.DefineProperties({
-            PropertyDescriptor::Value("_helpers", Object::New(env)),
-            PropertyDescriptor::Value("_testAsync", Function::New(env, testAsync)),
+        DefineAddon(exports, {
+            InstanceValue("_helpers", Object::New(env)),
+            InstanceValue("_testAsync", Function::New(env, testAsync, "_testAsync")),
+            InstanceValue("napiVersion", Number::New(env, NAPI_VERSION), napi_enumerable),
+            InstanceValue("Encoder", StreamEncoder::init(env, *this), napi_enumerable),
+            InstanceValue("Decoder", StreamDecoder::init(env, *this), napi_enumerable),
+            InstanceValue("format", initFormat(env), napi_enumerable),
+            InstanceValue("metadata", DefineProperties(Object::New(env), {
+                InstanceValue("StreamInfoMetadata", StreamInfoMetadata::init(env, *this), napi_enumerable),
+                InstanceValue("PaddingMetadata", PaddingMetadata::init(env, *this), napi_enumerable),
+                InstanceValue("ApplicationMetadata", ApplicationMetadata::init(env, *this), napi_enumerable),
+                InstanceValue("SeekTableMetadata", SeekTableMetadata::init(env, *this), napi_enumerable),
+                InstanceValue("SeekPoint", SeekPoint::init(env, *this), napi_enumerable),
+                InstanceValue("VorbisCommentMetadata", VorbisCommentMetadata::init(env, *this), napi_enumerable),
+                InstanceValue("CueSheetMetadata", CueSheetMetadata::init(env, *this), napi_enumerable),
+                InstanceValue("CueSheetIndex", CueSheetIndex::init(env, *this), napi_enumerable),
+                InstanceValue("CueSheetTrack", CueSheetTrack::init(env, *this), napi_enumerable),
+                InstanceValue("PictureMetadata", PictureMetadata::init(env, *this), napi_enumerable),
+                InstanceValue("UnknownMetadata", UnknownMetadata::init(env, *this), napi_enumerable),
+            }), napi_enumerable),
+            InstanceValue("metadata0", initMetadata0(env), napi_enumerable),
+            InstanceValue("SimpleIterator", initMetadata1(env, *this), napi_enumerable),
+            InstanceValue("Chain", initMetadata2Chain(env, *this), napi_enumerable),
+            InstanceValue("Iterator", initMetadata2Iterator(env, *this), napi_enumerable),
         });
 
-        // public definitions
-        exports["napiVersion"] = Number::New(env, NAPI_VERSION);
-        exports["Encoder"] = StreamEncoder::init(env);
-        exports["Decoder"] = StreamDecoder::init(env);
-        exports["format"] = initFormat(env);
-        exports["metadata"] = initMetadata(env);
-        exports["metadata0"] = initMetadata0(env);
-        exports["SimpleIterator"] = initMetadata1(env);
-        initMetadata2(env, exports);
-
         objectFreeze(exports);
-    }
 
-    Object init(Env env, Object exports) {
         module = Persistent(exports);
-        module.SuppressDestruct();
-
-        fillExports(env, exports);
-
-        return exports;
     }
 
 }
 
-static napi_value napi_init_module(napi_env env, napi_value exports) {
-    return Napi::RegisterModule(env, exports, flac_bindings::init);
-}
-
-NAPI_MODULE(flac, napi_init_module)
+using namespace flac_bindings;
+NODE_API_NAMED_ADDON(flac_bindings, FlacAddon);

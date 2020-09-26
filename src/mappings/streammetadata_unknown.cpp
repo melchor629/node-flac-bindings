@@ -1,20 +1,19 @@
+#include <FLAC/metadata.h>
 #include "mappings.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference UnknownMetadata::constructor;
-
-    Function UnknownMetadata::init(const Napi::Env& env) {
+    Function UnknownMetadata::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         Function constructor = DefineClass(env, "UnknownMetadata", {
             InstanceAccessor("data", &UnknownMetadata::getData, nullptr, napi_property_attributes::napi_enumerable),
         });
 
-        UnknownMetadata::constructor = Persistent(constructor);
-        UnknownMetadata::constructor.SuppressDestruct();
+        addon.unknownMetadataConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }

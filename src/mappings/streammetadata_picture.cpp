@@ -1,13 +1,12 @@
 #include <FLAC/metadata.h>
 #include "mappings.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference PictureMetadata::constructor;
-
-    Function PictureMetadata::init(const Napi::Env& env) {
+    Function PictureMetadata::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         napi_property_attributes attributes = napi_property_attributes::napi_enumerable;
@@ -63,8 +62,7 @@ namespace flac_bindings {
             InstanceMethod("isLegal", &PictureMetadata::isLegal),
         });
 
-        PictureMetadata::constructor = Persistent(constructor);
-        PictureMetadata::constructor.SuppressDestruct();
+        addon.pictureMetadataConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }

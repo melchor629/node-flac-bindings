@@ -28,12 +28,10 @@ namespace flac_bindings {
             return scope.Escape(worker->getPromise());
         }
 
-        static FunctionReference constructor;
-
         friend class Iterator;
 
     public:
-        static Function init(const Napi::Env& env) {
+        static Function init(Napi::Env env, FlacAddon& addon) {
             EscapableHandleScope scope(env);
 
             auto constructor = DefineClass(env, "Chain", {
@@ -55,8 +53,7 @@ namespace flac_bindings {
             });
             c_enum::declareInObject(constructor, "Status", createStatusEnum);
 
-            Chain::constructor = Persistent(constructor);
-            Chain::constructor.SuppressDestruct();
+            addon.chainConstructor = Persistent(constructor);
 
             return scope.Escape(objectFreeze(constructor)).As<Function>();
         }
@@ -241,12 +238,10 @@ namespace flac_bindings {
     class Iterator: public ObjectWrap<Iterator> {
         FLAC__Metadata_Iterator* iterator;
 
-        static FunctionReference constructor;
-
         friend class Chain;
 
     public:
-        static Function init(const Napi::Env& env) {
+        static Function init(Napi::Env env, FlacAddon& addon) {
             EscapableHandleScope scope(env);
 
             auto constructor = DefineClass(env, "Iterator", {
@@ -262,8 +257,7 @@ namespace flac_bindings {
                 InstanceMethod("insertBlockAfter", &Iterator::insertBlockAfter),
             });
 
-            Iterator::constructor = Persistent(constructor);
-            Iterator::constructor.SuppressDestruct();
+            addon.iteratorConstructor = Persistent(constructor);
 
             return scope.Escape(objectFreeze(constructor)).As<Function>();
         }
@@ -349,19 +343,22 @@ namespace flac_bindings {
         }
     };
 
-    Napi::Value Chain::createIterator(const CallbackInfo&) {
-        auto iterator = Iterator::constructor.New({});
+    Napi::Value Chain::createIterator(const CallbackInfo& info) {
+        EscapableHandleScope scope(info.Env());
+        auto addon = info.Env().GetInstanceData<FlacAddon>();
+        auto iterator = addon->iteratorConstructor.New({});
         FLAC__metadata_iterator_init(Iterator::Unwrap(iterator)->iterator, chain);
-        return iterator;
+        return scope.Escape(iterator);
     }
 
-    FunctionReference Chain::constructor;
-    FunctionReference Iterator::constructor;
+    Napi::Value initMetadata2Chain(Env env, FlacAddon& addon) {
+        EscapableHandleScope scope(env);
+        return scope.Escape(Chain::init(env, addon));
+    }
 
-    void initMetadata2(const Env& env, Object& exports) {
-        HandleScope scope(env);
-        exports["Chain"] = Chain::init(env);
-        exports["Iterator"] = Iterator::init(env);
+    Napi::Value initMetadata2Iterator(Env env, FlacAddon& addon) {
+        EscapableHandleScope scope(env);
+        return scope.Escape(Iterator::init(env, addon));
     }
 
 }

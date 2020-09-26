@@ -1,12 +1,11 @@
 #include "mappings.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference CueSheetIndex::constructor;
-
-    Function CueSheetIndex::init(const Napi::Env& env) {
+    Function CueSheetIndex::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         Function constructor = DefineClass(env, "CueSheetIndex", {
@@ -24,8 +23,7 @@ namespace flac_bindings {
             ),
         });
 
-        CueSheetIndex::constructor = Persistent(constructor);
-        CueSheetIndex::constructor.SuppressDestruct();
+        addon.cueSheetIndexConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }
@@ -78,7 +76,8 @@ namespace flac_bindings {
         }
 
         auto object = value.As<Object>();
-        if(!object.InstanceOf(CueSheetIndex::getConstructor())) {
+        auto addon = value.Env().GetInstanceData<FlacAddon>();
+        if(!object.InstanceOf(addon->cueSheetIndexConstructor.Value())) {
             throw Napi::TypeError::New(value.Env(), "Object is not an instance of CueSheetIndex");
         }
 
@@ -88,7 +87,8 @@ namespace flac_bindings {
     template<>
     Value Mapping<FLAC__StreamMetadata_CueSheet_Index>::toJs(const Env& env, FLAC__StreamMetadata_CueSheet_Index* point, bool deleteHint) {
         EscapableHandleScope scope(env);
-        Function constructor = CueSheetIndex::getConstructor();
+        auto addon = Env(env).GetInstanceData<FlacAddon>();
+        Function constructor = addon->cueSheetIndexConstructor.Value();
         auto object = constructor.New({pointer::wrap(env, point), booleanToJs(env, deleteHint)});
         return scope.Escape(object);
     }

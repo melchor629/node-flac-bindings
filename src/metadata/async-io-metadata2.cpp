@@ -50,7 +50,7 @@ namespace flac_bindings {
     }
 
     void AsyncFlacIOWork::doAsyncWork(const Napi::Env& env, AsyncFlacIOWork::ExecutionProgress& prog, FlacIOWorkRequest* const* workPtr) {
-        auto& async = prog.getTask()->getAsyncContext();
+        auto async = nullptr;
         auto& work = *workPtr;
         Napi::Value result = env.Null();
         std::function<void(const Napi::Value& result)> processResult;

@@ -29,7 +29,7 @@ namespace flac_bindings {
             HandleScope scope(env);
             auto task = self.getTask();
             auto func = task->Receiver().Get("cbk").template As<Function>();
-            auto result = func.MakeCallback(Object::New(env), {String::New(env, e, s)}, task->getAsyncContext());
+            auto result = func.MakeCallback(env.Global(), {String::New(env, e, s)});
             if(result.IsPromise()) {
                 self.defer(result.template As<Promise>(), [endMode=endMode] (auto&, auto &info2, auto e) {
                     if(*e == '9' && endMode == "exception") {

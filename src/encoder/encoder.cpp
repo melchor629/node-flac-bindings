@@ -7,12 +7,10 @@
 
 namespace flac_bindings {
 
-    FunctionReference StreamEncoder::constructor;
-
     static std::vector<int32_t*> getBuffersFromArray(const Napi::Value&, unsigned, unsigned);
     static int32_t* getInterleavedBufferFromArgs(const CallbackInfo&, unsigned, unsigned&);
 
-    Function StreamEncoder::init(const Napi::Env& env) {
+    Function StreamEncoder::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         auto attrs = napi_property_attributes::napi_enumerable;
@@ -66,8 +64,7 @@ namespace flac_bindings {
         c_enum::declareInObject(constructor, "SeekStatus", createSeekStatusEnum);
         c_enum::declareInObject(constructor, "TellStatus", createTellStatusEnum);
 
-        StreamEncoder::constructor = Persistent(constructor);
-        StreamEncoder::constructor.SuppressDestruct();
+        addon.encoderConstructor = Persistent(constructor);
 
         return scope.Escape(objectFreeze(constructor)).As<Function>();
     }
@@ -367,9 +364,6 @@ namespace flac_bindings {
         maybeFunctionIntoRef(ctx->tellCbk, info[2]);
         maybeFunctionIntoRef(ctx->metadataCbk, info[3]);
 
-        asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::initStream");
-        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
-
         auto ret = FLAC__stream_encoder_init_stream(
             enc,
             ctx->writeCbk.IsEmpty() ? nullptr : StreamEncoder::writeCallback,
@@ -392,9 +386,6 @@ namespace flac_bindings {
         maybeFunctionIntoRef(ctx->tellCbk, info[3]);
         maybeFunctionIntoRef(ctx->metadataCbk, info[4]);
 
-        asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::initOggFile");
-        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
-
         auto ret = FLAC__stream_encoder_init_ogg_stream(
             enc,
             ctx->readCbk.IsEmpty() ? nullptr : StreamEncoder::readCallback,
@@ -415,9 +406,6 @@ namespace flac_bindings {
         ctx = std::make_shared<EncoderWorkContext>(this);
         maybeFunctionIntoRef(ctx->progressCbk, info[1]);
 
-        asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::initFile");
-        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
-
         auto ret = FLAC__stream_encoder_init_file(
             enc,
             path.c_str(),
@@ -435,9 +423,6 @@ namespace flac_bindings {
         ctx = std::make_shared<EncoderWorkContext>(this);
         maybeFunctionIntoRef(ctx->progressCbk, info[1]);
 
-        asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::initOggFile");
-        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
-
         auto ret = FLAC__stream_encoder_init_ogg_file(
             enc,
             path.c_str(),
@@ -450,9 +435,6 @@ namespace flac_bindings {
     Napi::Value StreamEncoder::finish(const CallbackInfo& info) {
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
-
-        asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::finish");
-        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
 
         auto ret = FLAC__stream_encoder_finish(enc);
         ctx = nullptr;
@@ -467,9 +449,6 @@ namespace flac_bindings {
         auto channels = FLAC__stream_encoder_get_channels(enc);
         auto buffers = getBuffersFromArray(info[0], samples, channels);
 
-        asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::process");
-        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
-
         auto ret = FLAC__stream_encoder_process(enc, buffers.data(), samples);
         return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
     }
@@ -482,16 +461,12 @@ namespace flac_bindings {
         unsigned samples;
         int32_t* buffer = getInterleavedBufferFromArgs(info, channels, samples);
 
-        asyncContext = new AsyncContext(info.Env(), "flac_bindings::StreamEncoder::processInterleaved");
-        DEFER_SYNCHRONIZED({ delete asyncContext; asyncContext = nullptr; });
-
         auto ret = FLAC__stream_encoder_process_interleaved(enc, buffer, samples);
         return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
     }
 
 
     Napi::Value StreamEncoder::finishAsync(const CallbackInfo& info) {
-        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -500,7 +475,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::processAsync(const CallbackInfo& info) {
-        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -513,7 +487,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::processInterleavedAsync(const CallbackInfo& info) {
-        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsInitialized(info.Env());
 
@@ -531,7 +504,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::initStreamAsync(const CallbackInfo& info) {
-        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -546,7 +518,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::initOggStreamAsync(const CallbackInfo& info) {
-        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -562,7 +533,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::initFileAsync(const CallbackInfo& info) {
-        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -575,7 +545,6 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamEncoder::initOggFileAsync(const CallbackInfo& info) {
-        std::lock_guard<std::mutex> lockGuard(this->mutex);
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -601,8 +570,9 @@ namespace flac_bindings {
     }
 
     Promise StreamEncoder::enqueueWork(AsyncEncoderWorkBase* work) {
+        std::lock_guard<std::mutex> lockGuard(this->mutex);
         work->Queue();
-        asyncContext = &work->getAsyncContext();
+        busy = true;
         return work->getPromise();
     }
 
@@ -704,7 +674,7 @@ namespace flac_bindings {
         HandleScope scope(env);
         try {
             auto jsBuffer = pointer::wrap(env, buffer, *bytes);
-            auto ret = ctx->readCbk.MakeCallback(env.Global(), {jsBuffer}, *ctx->enc->asyncContext);
+            auto ret = ctx->readCbk.MakeCallback(env.Global(), {jsBuffer});
             generateParseObjectResult(returnValue, "Encoder:ReadCallback", "bytes", *bytes)(ret);
         } catch(const Error& error) {
             *bytes = 0;
@@ -733,8 +703,7 @@ namespace flac_bindings {
             auto jsBuffer = pointer::wrap(env, const_cast<FLAC__byte*>(buffer), bytes);
             auto ret = ctx->writeCbk.MakeCallback(
                 env.Global(),
-                {jsBuffer, numberToJs(env, samples), numberToJs(env, frame)},
-                *ctx->enc->asyncContext
+                {jsBuffer, numberToJs(env, samples), numberToJs(env, frame)}
             );
             generateParseNumberResult(returnValue, "Encoder:WriteCallback")(ret);
         } catch(const Error& error) {
@@ -757,7 +726,7 @@ namespace flac_bindings {
         auto returnValue = defaultSeekCallbackReturnValue;
         HandleScope scope(env);
         try {
-            auto ret = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, offset)}, *ctx->enc->asyncContext);
+            auto ret = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, offset)});
             generateParseNumberResult(returnValue, "Encoder:SeekCallback")(ret);
         } catch(const Error& error) {
             error.ThrowAsJavaScriptException();
@@ -779,7 +748,7 @@ namespace flac_bindings {
         auto returnValue = defaultTellCallbackReturnValue;
         HandleScope scope(env);
         try {
-            auto ret = ctx->tellCbk.MakeCallback(env.Global(), {numberToJs(env, *offset)}, *ctx->enc->asyncContext);
+            auto ret = ctx->tellCbk.MakeCallback(env.Global(), {numberToJs(env, *offset)});
             generateParseObjectResult(returnValue, "Encoder:TellCallback", "offset", *offset)(ret);
         } catch(const Error& error) {
             error.ThrowAsJavaScriptException();
@@ -801,7 +770,7 @@ namespace flac_bindings {
         HandleScope scope(env);
         try {
             auto jsMetadata = Metadata::toJs(env, const_cast<FLAC__StreamMetadata*>(metadata));
-            ctx->metadataCbk.MakeCallback(env.Global(), {jsMetadata}, *ctx->enc->asyncContext);
+            ctx->metadataCbk.MakeCallback(env.Global(), {jsMetadata});
         } catch(const Error& error) {
             error.ThrowAsJavaScriptException();
         }
@@ -835,7 +804,7 @@ namespace flac_bindings {
                 numberToJs(env, framesWritten),
                 numberToJs(env, totalFramesEstimate),
             };
-            ctx->progressCbk.MakeCallback(env.Global(), args, *ctx->enc->asyncContext);
+            ctx->progressCbk.MakeCallback(env.Global(), args);
         } catch(const Error& error) {
             error.ThrowAsJavaScriptException();
         }

@@ -1,18 +1,16 @@
 #include "mappings.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference PaddingMetadata::constructor;
-
-    Function PaddingMetadata::init(const Napi::Env& env) {
+    Function PaddingMetadata::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         Function constructor = DefineClass(env, "PaddingMetadata", {});
 
-        PaddingMetadata::constructor = Persistent(constructor);
-        PaddingMetadata::constructor.SuppressDestruct();
+        addon.paddingMetadataConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }

@@ -1,13 +1,12 @@
 #include "mappings.hpp"
 #include "../utils/pointer.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
     using namespace Napi;
 
-    FunctionReference SeekPoint::constructor;
-
-    Function SeekPoint::init(const Napi::Env& env) {
+    Function SeekPoint::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         auto attributes = napi_property_attributes::napi_enumerable;
@@ -32,8 +31,7 @@ namespace flac_bindings {
             ),
         });
 
-        SeekPoint::constructor = Persistent(constructor);
-        SeekPoint::constructor.SuppressDestruct();
+        addon.seekPointConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }
@@ -98,7 +96,8 @@ namespace flac_bindings {
         }
 
         auto object = value.As<Object>();
-        if(!object.InstanceOf(SeekPoint::getConstructor())) {
+        auto addon = value.Env().GetInstanceData<FlacAddon>();
+        if(!object.InstanceOf(addon->seekPointConstructor.Value())) {
             throw Napi::TypeError::New(value.Env(), "Object is not an instance of SeekPoint");
         }
 
@@ -108,7 +107,8 @@ namespace flac_bindings {
     template<>
     Value Mapping<FLAC__StreamMetadata_SeekPoint>::toJs(const Env& env, FLAC__StreamMetadata_SeekPoint* point, bool deleteHint) {
         EscapableHandleScope scope(env);
-        Function constructor = SeekPoint::getConstructor();
+        auto addon = Env(env).GetInstanceData<FlacAddon>();
+        Function constructor = addon->seekPointConstructor.Value();
         auto object = constructor.New({pointer::wrap(env, point), booleanToJs(env, deleteHint)});
         return scope.Escape(object);
     }

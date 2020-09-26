@@ -12,8 +12,8 @@ namespace flac_bindings {
         typedef std::optional<Napi::Value> IterationReturnValue;
         typedef std::function<IterationReturnValue(const Napi::Env&, uint64_t)> IteratorFunction;
 
-        static void init(const Napi::Env& env);
-        static Napi::Value newIterator(const Napi::Env&, const IteratorFunction&);
+        static void init(const Napi::Env& env, class FlacAddon&);
+        static Napi::Value newIterator(Napi::Env, const IteratorFunction&);
 
         NativeIterator(const CallbackInfo& info);
         virtual ~NativeIterator();
@@ -23,8 +23,6 @@ namespace flac_bindings {
     private:
         IteratorFunction* impl;
         uint64_t pos = 0;
-
-        static FunctionReference constructor;
     };
 
 }

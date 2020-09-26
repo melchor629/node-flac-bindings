@@ -281,6 +281,26 @@ describe('encode & decode: js streams', function() {
             await events.once(enc, 'end');
         });
 
+        it('encoder with no data does not write anything', async function() {
+            const enc = new StreamEncoder({
+                channels: 2,
+                samplerate: 48000,
+                bitsPerSample: 16,
+            });
+
+            await new Promise((resolve) => enc.end(resolve));
+
+            assert.equal(enc._processedSamples, 0);
+        });
+
+        it('decoder with no data does not write anything', async function() {
+            const dec = new StreamDecoder();
+
+            await new Promise((resolve) => dec.end(resolve));
+
+            assert.equal(dec._processedSamples, 0);
+        });
+
     });
 
     describe('File', function() {
@@ -519,6 +539,19 @@ describe('encode & decode: js streams', function() {
             assert.equal(dec._processedSamples, totalSamples);
             assert.equal(enc._processedSamples, totalSamples);
             comparePCM(okData, tmpFile.path, 24, true);
+        });
+
+        it('encoder with no data does not write anything', async function() {
+            const enc = new FileEncoder({
+                file: tmpFile.path,
+                channels: 2,
+                samplerate: 48000,
+                bitsPerSample: 16,
+            });
+
+            await new Promise((resolve) => enc.end(resolve));
+
+            assert.equal(enc._processedSamples, 0);
         });
 
     });

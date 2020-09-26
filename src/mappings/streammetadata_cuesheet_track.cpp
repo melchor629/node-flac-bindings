@@ -1,6 +1,7 @@
 #include <FLAC/metadata.h>
 #include "mappings.hpp"
 #include "native_iterator.hpp"
+#include "../flac_addon.hpp"
 
 namespace flac_bindings {
 
@@ -9,9 +10,7 @@ namespace flac_bindings {
     template<>
     Value Mapping<FLAC__StreamMetadata_CueSheet_Track>::toJs(const Env&, FLAC__StreamMetadata_CueSheet_Track*, bool);
 
-    FunctionReference CueSheetTrack::constructor;
-
-    Function CueSheetTrack::init(const Napi::Env& env) {
+    Function CueSheetTrack::init(Napi::Env env, FlacAddon& addon) {
         EscapableHandleScope scope(env);
 
         napi_property_attributes attributes = napi_property_attributes::napi_enumerable;
@@ -56,8 +55,7 @@ namespace flac_bindings {
             InstanceMethod("clone", &CueSheetTrack::clone),
         });
 
-        CueSheetTrack::constructor = Persistent(constructor);
-        CueSheetTrack::constructor.SuppressDestruct();
+        addon.cueSheetTrackConstructor = Persistent(constructor);
 
         return scope.Escape(constructor).As<Function>();
     }
@@ -155,7 +153,8 @@ namespace flac_bindings {
         }
 
         auto object = value.As<Object>();
-        if(!object.InstanceOf(CueSheetTrack::getConstructor())) {
+        auto addon = value.Env().GetInstanceData<FlacAddon>();
+        if(!object.InstanceOf(addon->cueSheetTrackConstructor.Value())) {
             throw Napi::TypeError::New(value.Env(), "Object is not an instance of CueSheetTrack");
         }
 
@@ -169,7 +168,8 @@ namespace flac_bindings {
         bool deleteHint
     ) {
         EscapableHandleScope scope(env);
-        Function constructor = CueSheetTrack::getConstructor();
+        auto addon = Env(env).GetInstanceData<FlacAddon>();
+        Function constructor = addon->cueSheetTrackConstructor.Value();
         auto object = constructor.New({pointer::wrap(env, track), booleanToJs(env, deleteHint)});
         return scope.Escape(object);
     }

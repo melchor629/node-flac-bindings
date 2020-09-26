@@ -61,7 +61,7 @@ import flac from 'flac-bindings';       // ES6 import
 import * as flac from 'flac-bindings';  // TypeScript import
 ```
 
-> **Note**: _this library has its own TypeScript typings, so it's possible to use it in a TS project without issues_
+> **Note**: _this library has its own TypeScript typings, so it's possible to use it in a TS project and have the right types_
 
 ## Examples
 
@@ -87,6 +87,17 @@ encoder.pipe(process.stdout);
 ```
 
 See the [tests](https://github.com/melchor629/node-flac-bindings/tree/dev/test/) directory for more examples using advanced API.
+
+## Debug the library
+
+When using `StreamEncoder`, `StreamDecoder`, `FileEncoder` or `FileDecoder`, and something does not work properly, you can enable verbose/debug logs by defining the environment variable `DEBUG=flac:*` (see [debug](https://www.npmjs.com/package/debug) package for more information). Each class has its own namespace, so you can enable debug logs only for some of them. See below the list of namespaces:
+
+- `StreamEncoder`: `flac:encoder:stream`
+- `FileEncoder`: `flac:encoder:file`
+- `StreamDecoder`: `flac:decoder:stream`
+- `FileDecoder`: `flac:decoder:file`
+
+> !! These logs can be useful when creating a new issue.
 
 ## How to compile
 
