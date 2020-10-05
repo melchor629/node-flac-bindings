@@ -99,7 +99,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB} ${FLAC_TARGET})
 
 if(NOT FLAC_BINDINGS_USE_EXTERNAL_LIBRARY)
-    if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "Android")
         set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
         set_target_properties("${FLAC_TARGET}" PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
