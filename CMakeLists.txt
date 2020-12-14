@@ -44,7 +44,7 @@ else()
     FetchContent_Declare(
         Ogg
         GIT_REPOSITORY  https://gitlab.xiph.org/xiph/ogg.git
-        GIT_TAG         0bbcba4e7cf32324170470569c4527ffd0002870
+        GIT_TAG         31bd3f2707fb7dbae539a7093ba1fc4b2b37d84e
     )
 
     # polyfill for FetchContent_MakeAvailable
