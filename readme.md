@@ -35,7 +35,9 @@ Callbacks don't follow exactly the same signature that shows in Encoder and Deco
 
 There are asynchronous functions and methods for IO bound tasks. The syncrhonous API will be faster, but will block node. If you are writing an server or expect high concurrency, use the asynchronous API.
 
-You need node version that supports v4 or v6 N-API ([see compatibility table](https://nodejs.org/docs/latest-v12.x/api/n-api.html#n_api_n_api_version_matrix)), but it is recommended to use v10.x or higher. Recommended use of `BigInt` when possible to have numbers be represented without truncation (`Number` can only store 53 bit integers! 🤨).
+You need node version that supports v6 or v7 N-API ([see compatibility table](https://nodejs.org/docs/latest-v14.x/api/n-api.html#n_api_n_api_version_matrix)), but it is recommended to use v10.20.0/v12.17.0/v14.12.0 or higher. Recommended use of `BigInt` when possible to have numbers be represented without truncation (`Number` can only store 53 bit integers! 🤨).
+
+> **Note**: starting from Node 14.x, `Buffer` had a rewrite that tracks pointers across the whole JS env. In order to share pointers from flac to node, the native code cleans up the trackings time to time when required. But this also means that buffers from `Encoder`, `Decoder` and `IO Callbacks` (metadata level 2) has a strict lifetime: buffers are ensured to be valid inside the callback itself, if the buffer must be used outside the callback make a copy. (also affects 12.19.0 or higher even though the mentioned rewrite did not happen)
 
 ## How to install
 
