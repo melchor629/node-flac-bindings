@@ -13,10 +13,20 @@ namespace flac_bindings {
         }
 
         template<typename Type>
-        inline static Napi::Buffer<Type> wrap(const Napi::Env& env, Type* ptr, size_t size) {
+        inline static Napi::Buffer<Type> wrap(Napi::Env env, Type* ptr, size_t size) {
             assert(size > 0);
             assert(ptr != nullptr);
             return Napi::Buffer<Type>::New(env, ptr, size);
+        }
+
+        template<typename Type>
+        inline static void detach(Napi::Buffer<Type> buffer) {
+#if NAPI_VERSION >= 7
+            auto arrayBuffer = buffer.ArrayBuffer();
+            if (!arrayBuffer.IsDetached()) {
+                arrayBuffer.Detach();
+            }
+#endif
         }
 
         template<typename Type = void>
@@ -39,6 +49,41 @@ namespace flac_bindings {
             Napi::Buffer<T> buffer = value.As<Napi::Buffer<T>>();
             return std::make_tuple(buffer.Data(), buffer.Length());
         }
+
+        template<typename T>
+        struct BufferReference {
+            Napi::Reference<Napi::Buffer<T>> ref;
+
+            bool isEmpty() const {
+                return ref.IsEmpty();
+            }
+
+            void clear() {
+                sharedClear();
+                ref.Reset();
+            }
+
+            void setFromWrap(Napi::Env env, T* ptr, size_t size) {
+                sharedClear();
+                ref.Reset(wrap(env, ptr, size), 1);
+            }
+
+            Napi::Buffer<T> value() {
+                return ref.Value();
+            }
+
+            ~BufferReference() {
+                clear();
+            }
+
+        private:
+            void sharedClear() {
+                if(!ref.IsEmpty()) {
+                    ref.Unref();
+                    detach(ref.Value());
+                }
+            }
+        };
     }
 
 }

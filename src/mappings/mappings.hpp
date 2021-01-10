@@ -26,6 +26,7 @@ namespace flac_bindings {
     };
 
     class StreamInfoMetadata: public ObjectWrap<StreamInfoMetadata>, public Metadata {
+        pointer::BufferReference<FLAC__byte> md5SumBuffer;
     public:
         explicit StreamInfoMetadata(const CallbackInfo&);
 
@@ -59,6 +60,8 @@ namespace flac_bindings {
     };
 
     class ApplicationMetadata: public ObjectWrap<ApplicationMetadata>, public Metadata {
+        pointer::BufferReference<FLAC__byte> idBuffer;
+        pointer::BufferReference<FLAC__byte> dataBuffer;
     public:
         explicit ApplicationMetadata(const CallbackInfo&);
 
@@ -191,6 +194,7 @@ namespace flac_bindings {
     };
 
     class PictureMetadata: public ObjectWrap<PictureMetadata>, public Metadata {
+        pointer::BufferReference<FLAC__byte> dataBuffer;
     public:
         explicit PictureMetadata(const CallbackInfo&);
 
@@ -216,6 +220,7 @@ namespace flac_bindings {
     };
 
     class UnknownMetadata: public ObjectWrap<UnknownMetadata>, public Metadata {
+        pointer::BufferReference<FLAC__byte> dataBuffer;
     public:
         explicit UnknownMetadata(const CallbackInfo&);
 

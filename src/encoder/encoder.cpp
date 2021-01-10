@@ -672,12 +672,15 @@ namespace flac_bindings {
         auto env = ctx->enc->Env();
         auto returnValue = defaultReadCallbackReturnValue;
         HandleScope scope(env);
+        Buffer<FLAC__byte> jsBuffer;
         try {
-            auto jsBuffer = pointer::wrap(env, buffer, *bytes);
+            jsBuffer = pointer::wrap(env, buffer, *bytes);
             auto ret = ctx->readCbk.MakeCallback(env.Global(), {jsBuffer});
             generateParseObjectResult(returnValue, "Encoder:ReadCallback", "bytes", *bytes)(ret);
+            pointer::detach(jsBuffer);
         } catch(const Error& error) {
             *bytes = 0;
+            pointer::detach(jsBuffer);
             error.ThrowAsJavaScriptException();
         }
 
@@ -699,14 +702,17 @@ namespace flac_bindings {
         auto env = ctx->enc->Env();
         auto returnValue = defaultWriteCallbackReturnValue;
         HandleScope scope(env);
+        Buffer<FLAC__byte> jsBuffer;
         try {
-            auto jsBuffer = pointer::wrap(env, const_cast<FLAC__byte*>(buffer), bytes);
+            jsBuffer = pointer::wrap(env, const_cast<FLAC__byte*>(buffer), bytes);
             auto ret = ctx->writeCbk.MakeCallback(
                 env.Global(),
                 {jsBuffer, numberToJs(env, samples), numberToJs(env, frame)}
             );
             generateParseNumberResult(returnValue, "Encoder:WriteCallback")(ret);
+            pointer::detach(jsBuffer);
         } catch(const Error& error) {
+            pointer::detach(jsBuffer);
             error.ThrowAsJavaScriptException();
         }
 

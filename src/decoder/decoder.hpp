@@ -163,6 +163,9 @@ namespace flac_bindings {
 
         static FunctionCallback decorate(DecoderWorkContext*, const std::function<int()>&);
 
+        pointer::BufferReference<FLAC__byte> readSharedBufferRef;
+        pointer::BufferReference<int32_t> writeSharedBufferRefs[FLAC__MAX_CHANNELS];
+
     public:
         static AsyncDecoderWork* forFinish(const Object&, DecoderWorkContext*);
         static AsyncDecoderWork* forFlush(const Object&, DecoderWorkContext*);

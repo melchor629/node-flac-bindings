@@ -208,8 +208,8 @@ namespace flac_bindings {
             }
 
             case DecoderWorkRequest::Type::Read: {
-                auto buffer = pointer::wrap(env, req->buffer, *req->bytes);
-                result = ctx->readCbk.MakeCallback(env.Global(), {buffer}, asyncContext);
+                readSharedBufferRef.setFromWrap(env, req->buffer, *req->bytes);
+                result = ctx->readCbk.MakeCallback(env.Global(), {readSharedBufferRef.value()}, asyncContext);
                 processResult = generateParseObjectResult(
                     req->returnValue,
                     "Decoder:ReadCallback",
@@ -240,12 +240,12 @@ namespace flac_bindings {
                 Array buffers = Array::New(env);
                 uint32_t channels = FLAC__stream_decoder_get_channels(ctx->dec->dec);
                 for(uint32_t ch = 0; ch < channels; ch += 1) {
-                    auto buffer = pointer::wrap(
+                    writeSharedBufferRefs[ch].setFromWrap(
                         env,
                         const_cast<int32_t*>(req->samples[ch]),
                         req->frame->header.blocksize
                     );
-                    buffers[ch] = buffer;
+                    buffers[ch] = writeSharedBufferRefs[ch].value();
                 }
 
                 auto jsFrame = frameToJs(env, req->frame);

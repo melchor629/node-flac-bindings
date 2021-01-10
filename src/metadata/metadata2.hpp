@@ -37,6 +37,7 @@ namespace flac_bindings {
             FLAC__IOCallbacks generateIOCallbacks();
         } cbk1, cbk2;
 
+        pointer::BufferReference<uint8_t> sharedBufferRef;
         std::tuple<IOCallbacks*, AsyncFlacIOWork::ExecutionProgress*> ptr1;
         std::tuple<IOCallbacks*, AsyncFlacIOWork::ExecutionProgress*> ptr2;
 
