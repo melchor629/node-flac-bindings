@@ -27,7 +27,12 @@ namespace flac_bindings {
             return info.Env().Null();
         }
 
-        return pointer::wrap(info.Env(), data->data.unknown.data, data->length);
+        EscapableHandleScope scope(info.Env());
+        if(dataBuffer.isEmpty()) {
+            dataBuffer.setFromWrap(info.Env(), data->data.unknown.data, data->length);
+        }
+
+        return scope.Escape(dataBuffer.value());
     }
 
 }

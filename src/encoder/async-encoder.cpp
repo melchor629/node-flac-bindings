@@ -162,17 +162,17 @@ namespace flac_bindings {
 
         switch(req->type) {
             case EncoderWorkRequest::Type::Read: {
-                auto jsBuffer = pointer::wrap(env, req->buffer, *req->bytes);
-                result = ctx->readCbk.MakeCallback(env.Global(), {jsBuffer}, asyncContext);
+                sharedBufferRef.setFromWrap(env, req->buffer, *req->bytes);
+                result = ctx->readCbk.MakeCallback(env.Global(), {sharedBufferRef.value()}, asyncContext);
                 processResult = generateParseObjectResult(req->returnValue, "Encoder:ReadCallback", "bytes", *req->bytes);
                 break;
             }
 
             case EncoderWorkRequest::Type::Write: {
-                auto jsBuffer = pointer::wrap(env, const_cast<FLAC__byte*>(req->constBuffer), *req->bytes);
+                sharedBufferRef.setFromWrap(env, const_cast<FLAC__byte*>(req->constBuffer), *req->bytes);
                 result = ctx->writeCbk.MakeCallback(
                     env.Global(),
-                    {jsBuffer, numberToJs(env, req->samples), numberToJs(env, req->frame)},
+                    {sharedBufferRef.value(), numberToJs(env, req->samples), numberToJs(env, req->frame)},
                     asyncContext
                 );
                 processResult = generateParseNumberResult(req->returnValue, "Encoder:WriteCallback");

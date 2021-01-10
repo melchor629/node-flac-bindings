@@ -34,7 +34,12 @@ namespace flac_bindings {
         Metadata(info, FLAC__METADATA_TYPE_APPLICATION) {}
 
     Napi::Value ApplicationMetadata::getId(const CallbackInfo& info) {
-        return pointer::wrap(info.Env(), data->data.application.id, 4);
+        EscapableHandleScope scope(info.Env());
+        if(idBuffer.isEmpty()) {
+            idBuffer.setFromWrap(info.Env(), data->data.application.id, 4);
+        }
+
+        return scope.Escape(idBuffer.value());
     }
 
     void ApplicationMetadata::setId(const CallbackInfo& info, const Napi::Value& value) {
@@ -50,10 +55,16 @@ namespace flac_bindings {
     }
 
     Napi::Value ApplicationMetadata::getData(const CallbackInfo& info) {
-        return pointer::wrap(info.Env(), data->data.application.data, data->length - 4);
+        EscapableHandleScope scope(info.Env());
+        if(dataBuffer.isEmpty()) {
+            dataBuffer.setFromWrap(info.Env(), data->data.application.data, data->length - 4);
+        }
+
+        return scope.Escape(dataBuffer.value());
     }
 
     void ApplicationMetadata::setData(const CallbackInfo& info, const Napi::Value& value) {
+        HandleScope scope(info.Env());
         FLAC__byte* ptr;
         size_t length;
         std::tie(ptr, length) = pointer::fromBuffer<FLAC__byte>(value);
@@ -68,7 +79,10 @@ namespace flac_bindings {
         if(!ret) {
             throw Error::New(info.Env(), "Could not allocate memory to store the data");
         }
-    }
 
+        if(!dataBuffer.isEmpty()) {
+            dataBuffer.clear();
+        }
+    }
 
 }

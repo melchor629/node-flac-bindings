@@ -58,22 +58,28 @@ namespace flac_bindings {
 
         switch(work->type) {
             case FlacIOWorkRequest::Read: {
+                sharedBufferRef.setFromWrap(env, (uint8_t*) work->ptr, *work->bytes);
                 result = io->readCallback.MakeCallback(env.Global(), {
-                    pointer::wrap(env, (uint8_t*) work->ptr, *work->bytes),
+                    sharedBufferRef.value(),
                     numberToJs(env, work->sizeOfItem),
                     numberToJs(env, work->nitems),
                 }, async);
-                processResult = generateProcessResult<size_t>([work] (auto v) { *work->bytes = v; });
+                processResult = generateProcessResult<size_t>([work] (auto v) {
+                    *work->bytes = v;
+                });
                 break;
             }
 
             case FlacIOWorkRequest::Write: {
+                sharedBufferRef.setFromWrap(env, (uint8_t*) work->ptr, *work->bytes);
                 result = io->writeCallback.MakeCallback(env.Global(), {
-                    pointer::wrap(env, (uint8_t*) work->ptr, *work->bytes),
+                    sharedBufferRef.value(),
                     numberToJs(env, work->sizeOfItem),
                     numberToJs(env, work->nitems),
                 }, async);
-                processResult = generateProcessResult<size_t>([work] (auto v) { *work->bytes = v; });
+                processResult = generateProcessResult<size_t>([work] (auto v) {
+                    *work->bytes = v;
+                });
                 break;
             }
 
@@ -113,17 +119,15 @@ namespace flac_bindings {
             }
         }
 
-        if(!result.IsEmpty()) {
-            if(result.IsPromise()) {
-                prog.defer(result.As<Promise>(), [processResult] (auto&, auto& info, auto*) {
-                    if(processResult) {
-                        processResult(info[0]);
-                    }
-                });
-            } else {
+        if(result.IsPromise()) {
+            prog.defer(result.As<Promise>(), [processResult] (auto&, auto& info, auto*) {
                 if(processResult) {
-                    processResult(result);
+                    processResult(info[0]);
                 }
+            });
+        } else {
+            if(processResult) {
+                processResult(result);
             }
         }
     }

@@ -181,6 +181,8 @@ namespace flac_bindings {
 
         static FunctionCallback decorate(EncoderWorkContext*, const std::function<int()>&);
 
+        pointer::BufferReference<FLAC__byte> sharedBufferRef;
+
     public:
         static AsyncEncoderWork* forFinish(const StoreList&, EncoderWorkContext* ctx);
         static AsyncEncoderWork* forProcess(const StoreList&, const std::vector<int32_t*>& buffers, uint64_t samples, EncoderWorkContext* ctx);

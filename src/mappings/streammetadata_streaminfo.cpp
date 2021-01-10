@@ -148,7 +148,12 @@ namespace flac_bindings {
     }
 
     Napi::Value StreamInfoMetadata::getMd5sum(const CallbackInfo& info) {
-        return pointer::wrap(info.Env(), data->data.stream_info.md5sum, 16);
+        EscapableHandleScope scope(info.Env());
+        if(md5SumBuffer.isEmpty()) {
+            md5SumBuffer.setFromWrap(info.Env(), data->data.stream_info.md5sum, 16);
+        }
+
+        return scope.Escape(md5SumBuffer.value());
     }
 
     void StreamInfoMetadata::setMd5sum(const CallbackInfo& info, const Napi::Value& value) {

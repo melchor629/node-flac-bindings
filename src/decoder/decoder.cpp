@@ -626,12 +626,14 @@ namespace flac_bindings {
         auto returnValue = defaultReadCallbackReturnValue;
         auto env = ctx->dec->Env();
         HandleScope scope(env);
+        Buffer<FLAC__byte> jsBuffer;
         try {
-            auto jsBuffer = pointer::wrap(env, buffer, *bytes);
+            jsBuffer = pointer::wrap(env, buffer, *bytes);
             auto ret = ctx->readCbk.MakeCallback(env.Global(), {jsBuffer});
-
             generateParseObjectResult(returnValue, "Decoder:ReadCallback", "bytes", *bytes)(ret);
+            pointer::detach(jsBuffer);
         } catch(const Error& error) {
+            pointer::detach(jsBuffer);
             error.ThrowAsJavaScriptException();
         }
 
@@ -743,8 +745,8 @@ namespace flac_bindings {
         auto returnValue = defaultWriteCallbackReturnValue;
         auto env = ctx->dec->Env();
         HandleScope scope(env);
+        auto buffers = Array::New(env);
         try {
-            auto buffers = Array::New(env);
             uint32_t channels = FLAC__stream_decoder_get_channels(const_cast<FLAC__StreamDecoder*>(dec));
             for(uint32_t ch = 0; ch < channels; ch += 1) {
                 auto buffer = pointer::wrap(
@@ -757,7 +759,14 @@ namespace flac_bindings {
 
             auto ret = ctx->writeCbk.MakeCallback(env.Global(), {frameToJs(env, frame), buffers});
             generateParseNumberResult(returnValue, "Decoder:WriteCallback")(ret);
+
+            for(uint32_t ch = 0; ch < channels; ch += 1) {
+                pointer::detach(((Napi::Value) buffers[ch]).As<Buffer<int32_t>>());
+            }
         } catch(const Error& error) {
+            for(uint32_t ch = 0; ch < buffers.Length(); ch += 1) {
+                pointer::detach(((Napi::Value) buffers[ch]).As<Buffer<int32_t>>());
+            }
             error.ThrowAsJavaScriptException();
         }
 

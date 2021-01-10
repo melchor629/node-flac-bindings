@@ -145,7 +145,12 @@ namespace flac_bindings {
             return info.Env().Null();
         }
 
-        return pointer::wrap(info.Env(), data->data.picture.data, data->data.picture.data_length);
+        EscapableHandleScope scope(info.Env());
+        if(dataBuffer.isEmpty()) {
+            dataBuffer.setFromWrap(info.Env(), data->data.picture.data, data->data.picture.data_length);
+        }
+
+        return scope.Escape(dataBuffer.value());
     }
 
     void PictureMetadata::setData(const CallbackInfo& info, const Napi::Value& value) {
@@ -166,6 +171,10 @@ namespace flac_bindings {
             if(!ret) {
                 throw Error::New(info.Env(), "Could not allocate memory to copy the data");
             }
+        }
+
+        if(!dataBuffer.isEmpty()) {
+            dataBuffer.clear();
         }
     }
 
