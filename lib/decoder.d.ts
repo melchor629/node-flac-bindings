@@ -21,6 +21,19 @@ declare namespace decoder {
         outputAs32?: boolean;
     }
 
+    interface FlacDecoderPosition {
+        /** Position where the decoding is at, in samples */
+        position: number;
+        /** Total samples (if flac provides it) */
+        totalSamples: number;
+        /** Value between 0 and 1 that represents the percentage of samples decoded (or NaN if there is no total samples) */
+        percentage: number;
+        /** Total seconds (if flac provides it) */
+        totalSeconds: number;
+        /** Current position in seconds */
+        currentSeconds: number;
+    }
+
     /**
      * FLAC decoder which transforms a stream of FLAC (or Ogg/FLAC) into
      * a interleaved raw PCM stream.
@@ -29,12 +42,18 @@ declare namespace decoder {
     class StreamDecoder extends Transform {
         constructor(props: FlacDecoderOptions);
 
+        /** Gets total number of samples if possible, once it started to process */
+        getTotalSamples(): number | undefined;
         /** Gets the number of channels found in the stream, once it started to process */
         getChannels(): number | undefined;
         /** Gets the channel assignment for the stream, once it started to process */
         getChannelAssignment(): 0 | 1 | 2 | 3 | undefined;
         /** Gets the bits per sample found in the stream, once it started to process */
         getBitsPerSample(): number | undefined;
+        /** Gets the sample rate of the stream, once it started to process */
+        getSampleRate(): number | undefined;
+        /** Returns the progress of the decoding (if possible) */
+        getProgress(): FlacDecoderPosition | undefined;
     }
 
     /**
@@ -45,12 +64,18 @@ declare namespace decoder {
     class FileDecoder extends Readable {
         constructor(props: FlacDecoderOptions & { file: string });
 
+        /** Gets total number of samples if possible, once it started to process */
+        getTotalSamples(): number | undefined;
         /** Gets the number of channels found in the stream, once it started to process */
         getChannels(): number | undefined;
         /** Gets the channel assignment for the stream, once it started to process */
         getChannelAssignment(): 0 | 1 | 2 | 3 | undefined;
         /** Gets the bits per sample found in the stream, once it started to process */
         getBitsPerSample(): number | undefined;
+        /** Gets the sample rate of the stream, once it started to process */
+        getSampleRate(): number | undefined;
+        /** Returns the progress of the decoding (if possible) */
+        getProgress(): FlacDecoderPosition | undefined;
     }
 
 }
