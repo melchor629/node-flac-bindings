@@ -88,7 +88,7 @@ process.stdin.pipe(encoder);
 encoder.pipe(process.stdout);
 ```
 
-See the [tests](https://github.com/melchor629/node-flac-bindings/tree/dev/test/) directory for more examples using advanced API.
+See [examples](https://github.com/melchor629/node-flac-bindings/tree/dev/examples/) for more examples. See the [tests](https://github.com/melchor629/node-flac-bindings/tree/dev/test/) directory for even more examples using advanced API.
 
 ## Debug the library
 
