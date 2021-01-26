@@ -50,6 +50,8 @@ declare namespace decoder {
         getChannelAssignment(): 0 | 1 | 2 | 3 | undefined;
         /** Gets the bits per sample found in the stream, once it started to process */
         getBitsPerSample(): number | undefined;
+        /** Gets the bits per sample of the output */
+        getOutputBitsPerSample(): number | undefined;
         /** Gets the sample rate of the stream, once it started to process */
         getSampleRate(): number | undefined;
         /** Returns the progress of the decoding (if possible) */
@@ -72,6 +74,8 @@ declare namespace decoder {
         getChannelAssignment(): 0 | 1 | 2 | 3 | undefined;
         /** Gets the bits per sample found in the stream, once it started to process */
         getBitsPerSample(): number | undefined;
+        /** Gets the bits per sample of the output */
+        getOutputBitsPerSample(): number | undefined;
         /** Gets the sample rate of the stream, once it started to process */
         getSampleRate(): number | undefined;
         /** Returns the progress of the decoding (if possible) */
