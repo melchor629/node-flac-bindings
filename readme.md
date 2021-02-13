@@ -49,7 +49,7 @@ $ yarn add flac-bindings
 
 The library has some native code that binds the JS code to the flac library. Depending on your platform, it can be an already-compiled library that will not require anything from you, or require to compile iself. The following logic applies:
 
-- If your CPU is `amd64`/`x86_64` and the OS is `Linux/glibc`, `Linux/musl`, `macOS` or `Windows`, and node version is in the [N-API compatibility table](https://nodejs.org/docs/latest-v12.x/api/n-api.html#n_api_n_api_version_matrix) for v4 or v6, then the prebuild version will download.
+- If your CPU is `amd64`/`x86_64` and the OS is `Linux/glibc`, `Linux/musl`, `macOS` or `Windows`, and node version is in the [N-API compatibility table](https://nodejs.org/docs/latest-v12.x/api/n-api.html#n_api_n_api_version_matrix) for v6 or v7, then the prebuild version will download.
 - If you have `pkg-config` and `libFLAC` development package installed (`apt install libflac-dev`, `pacman -S flac`, `apk add flac-dev`, `brew install flac`...), then it will use this library and only compile the binding code. Requires you to have [Cmake](https://www.cmake.org) installed.
 - In any other case, it will download `libogg` and `libFLAC` source code and compile both libraries plus the binding code. Requires you to have [Cmake](https://www.cmake.org) and `git` installed.
 
