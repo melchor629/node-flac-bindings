@@ -37,6 +37,9 @@ jspm_packages
 # Optional REPL history
 .node_repl_history
 
+# Examples folder
+examples/
+
 .clang_complete
 test*.js
 *.flac
