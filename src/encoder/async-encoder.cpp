@@ -56,7 +56,7 @@ namespace flac_bindings {
     ): AsyncEncoderWorkBase(
         list.begin()->Env(),
         decorate(ctx, function),
-        std::bind(&AsyncEncoderWork::onProgress, this, ctx, _1, _2, _3, _4),
+        std::bind(&AsyncEncoderWork::onProgress, this, ctx, _1, _2, _3),
         name,
         convertFunction
     ) {
@@ -152,18 +152,15 @@ namespace flac_bindings {
         const EncoderWorkContext* ctx,
         Napi::Env& env,
         ExecutionProgress& prog,
-        EncoderWorkRequest* const* reqPtr,
-        size_t
+        const std::shared_ptr<EncoderWorkRequest>& req
     ) {
-        auto asyncContext = nullptr;
         std::function<void(Napi::Value result)> processResult;
         Napi::Value result;
-        auto req = *reqPtr;
 
         switch(req->type) {
             case EncoderWorkRequest::Type::Read: {
                 sharedBufferRef.setFromWrap(env, req->buffer, *req->bytes);
-                result = ctx->readCbk.MakeCallback(env.Global(), {sharedBufferRef.value()}, asyncContext);
+                result = ctx->readCbk.MakeCallback(env.Global(), {sharedBufferRef.value()});
                 processResult = generateParseObjectResult(req->returnValue, "Encoder:ReadCallback", "bytes", *req->bytes);
                 break;
             }
@@ -172,28 +169,27 @@ namespace flac_bindings {
                 sharedBufferRef.setFromWrap(env, const_cast<FLAC__byte*>(req->constBuffer), *req->bytes);
                 result = ctx->writeCbk.MakeCallback(
                     env.Global(),
-                    {sharedBufferRef.value(), numberToJs(env, req->samples), numberToJs(env, req->frame)},
-                    asyncContext
+                    {sharedBufferRef.value(), numberToJs(env, req->samples), numberToJs(env, req->frame)}
                 );
                 processResult = generateParseNumberResult(req->returnValue, "Encoder:WriteCallback");
                 break;
             }
 
             case EncoderWorkRequest::Type::Seek: {
-                result = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, *req->offset)}, asyncContext);
+                result = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, *req->offset)});
                 processResult = generateParseNumberResult(req->returnValue, "Encoder:SeekCallback");
                 break;
             }
 
             case EncoderWorkRequest::Type::Tell: {
-                result = ctx->tellCbk.MakeCallback(env.Global(), {}, asyncContext);
+                result = ctx->tellCbk.MakeCallback(env.Global(), {});
                 processResult = generateParseObjectResult(req->returnValue, "Encoder:TellCallback", "offset", *req->offset);
                 break;
             }
 
             case EncoderWorkRequest::Type::Metadata: {
                 auto jsMetadata = Metadata::toJs(env, const_cast<FLAC__StreamMetadata*>(req->metadata));
-                result = ctx->metadataCbk.MakeCallback(env.Global(), {jsMetadata}, asyncContext);
+                result = ctx->metadataCbk.MakeCallback(env.Global(), {jsMetadata});
                 break;
             }
 
@@ -203,7 +199,7 @@ namespace flac_bindings {
                     numberToJs(env, req->progress.samplesWritten),
                     numberToJs(env, req->progress.framesWritten),
                     numberToJs(env, req->progress.totalFramesEstimate),
-                }, asyncContext);
+                });
                 break;
             }
         }

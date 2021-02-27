@@ -2,6 +2,7 @@
 #include <FLAC/metadata.h>
 #include "../utils/async.hpp"
 #include "../utils/converters.hpp"
+#include "../utils/pointer.hpp"
 
 namespace flac_bindings {
 
@@ -21,7 +22,7 @@ namespace flac_bindings {
         FlacIOWorkRequest(FlacIOWorkRequest::Type type): type(type) {}
     };
 
-    class AsyncFlacIOWork: public AsyncBackgroundTask<bool, FlacIOWorkRequest*> {
+    class AsyncFlacIOWork: public AsyncBackgroundTask<bool, FlacIOWorkRequest> {
         struct IOCallbacks {
             FunctionReference readCallback;
             FunctionReference writeCallback;
@@ -41,7 +42,7 @@ namespace flac_bindings {
         std::tuple<IOCallbacks*, AsyncFlacIOWork::ExecutionProgress*> ptr1;
         std::tuple<IOCallbacks*, AsyncFlacIOWork::ExecutionProgress*> ptr2;
 
-        void doAsyncWork(const Napi::Env&, AsyncFlacIOWork::ExecutionProgress&, FlacIOWorkRequest* const*);
+        void doAsyncWork(const Napi::Env&, AsyncFlacIOWork::ExecutionProgress&, const std::shared_ptr<FlacIOWorkRequest>&);
 
     public:
         AsyncFlacIOWork(

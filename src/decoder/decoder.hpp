@@ -4,6 +4,7 @@
 #include "../utils/async.hpp"
 #include "../utils/converters.hpp"
 #include "../utils/enum.hpp"
+#include "../utils/pointer.hpp"
 
 namespace flac_bindings {
 
@@ -25,7 +26,7 @@ namespace flac_bindings {
         explicit DecoderWorkRequest(DecoderWorkRequest::Type type);
     };
 
-    typedef AsyncBackgroundTask<int, DecoderWorkRequest*> AsyncDecoderWorkBase;
+    typedef AsyncBackgroundTask<int, DecoderWorkRequest> AsyncDecoderWorkBase;
 
     struct DecoderWorkContext {
         FunctionReference readCbk, seekCbk, tellCbk, lengthCbk, eofCbk, writeCbk, metadataCbk, errorCbk;
@@ -157,8 +158,7 @@ namespace flac_bindings {
             const DecoderWorkContext*,
             Napi::Env&,
             ExecutionProgress&,
-            DecoderWorkRequest* const*,
-            size_t
+            const std::shared_ptr<DecoderWorkRequest>&
         );
 
         static FunctionCallback decorate(DecoderWorkContext*, const std::function<int()>&);
