@@ -1280,6 +1280,50 @@ declare namespace api {
     }
 
 
+    namespace fns {
+        interface ZipAudioOptions {
+            /** The number of samples in the buffers. */
+            samples: number | bigint;
+            /** An array of buffers (its length determines the number of channels) */
+            buffers: Buffer[];
+            /** The input bytes per sample (by default 4) */
+            inBps?: 2 | 3 | 4;
+            /** The output bytes per sample (by default 4) */
+            outBps?: 2 | 3 | 4;
+        }
+
+        /**
+         * Zips non-interleaved PCM audio (one buffer per channel) into an interleaved PCM audio
+         * (one buffer for all channels), and optionally converting from one sample format to
+         * another. The `samples` option must be defined in order to determine how many of
+         * them there are. The channels is determined by the number of buffers inside `buffers`.
+         * @param opts The parameters to the function.
+         * @see ZipAudioOptions The options interface.
+         * @returns An interleaved PCM audio buffer.
+         */
+        function zipAudio(opts: ZipAudioOptions): Buffer;
+
+        interface ConvertSampleFormatOptions {
+            /** The buffer to convert from one sample format to another */
+            buffer: Buffer;
+            /**
+             * The number of samples in the buffers (by default buffer.byteLength / inBps`). If
+             * input buffer is interleaved, count the channels as samples.
+             */
+            samples?: number | bigint;
+            /** The input bytes per sample (by default 4) */
+            inBps?: 2 | 3 | 4;
+            /** The output bytes per sample (by default 4) */
+            outBps?: 2 | 3 | 4;
+        }
+
+        /**
+         * Converts some PCM audio from one sample format to another. The number of samples is
+         * determined by `buffer.byteLength / inBps` if `samples` is not defined.
+         */
+        function convertSampleFormat(opts: ConvertSampleFormatOptions): Buffer;
+    }
+
 
     /** @see https://xiph.org/flac/api/structFLAC____FrameHeader.html */
     interface Header {

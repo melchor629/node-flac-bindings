@@ -15,6 +15,7 @@ namespace flac_bindings {
     extern Function initMetadata1(Env env, FlacAddon&);
     extern Value initMetadata2Chain(Env env, FlacAddon&);
     extern Value initMetadata2Iterator(Env env, FlacAddon&);
+    extern Object initFns(Env env);
 
     FlacAddon::FlacAddon(Env env, Object exports) {
         NativeIterator::init(env, *this);
@@ -43,6 +44,7 @@ namespace flac_bindings {
             InstanceValue("SimpleIterator", initMetadata1(env, *this), napi_enumerable),
             InstanceValue("Chain", initMetadata2Chain(env, *this), napi_enumerable),
             InstanceValue("Iterator", initMetadata2Iterator(env, *this), napi_enumerable),
+            InstanceValue("fns", initFns(env), napi_enumerable),
         });
 
         objectFreeze(exports);
