@@ -29,10 +29,8 @@ jobs:
 
     # Compile code manually (autobuild does not work with this workflow)
     - run: |
-        apt-get update
-        apt-get install -y cmake libflac-dev flac
         npm install
-        npm run cmake-js -- build --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON
+        npm run cmake-js -- build --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=OFF
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
