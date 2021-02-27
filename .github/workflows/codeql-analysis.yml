@@ -20,11 +20,6 @@ jobs:
         # a pull request then we can checkout the head.
         fetch-depth: 2
 
-    # If this run was triggered by a pull request event, then checkout
-    # the head of the pull request instead of the merge commit.
-    - run: git checkout HEAD^2
-      if: ${{ github.event_name == 'pull_request' }}
-
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
@@ -34,6 +29,8 @@ jobs:
 
     # Compile code manually (autobuild does not work with this workflow)
     - run: |
+        apt-get update
+        apt-get install -y cmake libflac-dev flac
         npm install
         npm run cmake-js -- build --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON
 

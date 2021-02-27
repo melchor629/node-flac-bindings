@@ -10,8 +10,6 @@ jobs:
           - version: 10
             napi: 6
           - version: 12
-            napi: 4
-          - version: 12
             napi: 6
           - version: 12
             napi: 7
@@ -36,4 +34,3 @@ jobs:
       run: npm run lint
     - name: Test
       run: npm test
-      if: ${{ matrix.node.napi > 5 }}
