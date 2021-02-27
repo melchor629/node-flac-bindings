@@ -9,7 +9,7 @@ namespace flac_bindings {
         std::function<bool(FLAC__IOHandle, FLAC__IOCallbacks)> f,
         const char* name,
         const Object& obj
-    ): AsyncBackgroundTask<bool, FlacIOWorkRequest*>(
+    ): AsyncBackgroundTask<bool, FlacIOWorkRequest>(
         obj.Env(),
         [this, f] (auto c) {
             this->ptr1 = std::make_tuple(&this->cbk1, &c);
@@ -26,7 +26,7 @@ namespace flac_bindings {
         const char* name,
         const Object& obj1,
         const Object& obj2
-    ): AsyncBackgroundTask<bool, FlacIOWorkRequest*>(
+    ): AsyncBackgroundTask<bool, FlacIOWorkRequest>(
         obj1.Env(),
         [this, f] (auto c) {
             this->ptr1 = std::make_tuple(&this->cbk1, &c);
@@ -49,9 +49,8 @@ namespace flac_bindings {
         };
     }
 
-    void AsyncFlacIOWork::doAsyncWork(const Napi::Env& env, AsyncFlacIOWork::ExecutionProgress& prog, FlacIOWorkRequest* const* workPtr) {
+    void AsyncFlacIOWork::doAsyncWork(const Napi::Env& env, AsyncFlacIOWork::ExecutionProgress& prog, const std::shared_ptr<FlacIOWorkRequest>& work) {
         auto async = nullptr;
-        auto& work = *workPtr;
         Napi::Value result = env.Null();
         std::function<void(const Napi::Value& result)> processResult;
         auto io = (AsyncFlacIOWork::IOCallbacks*) work->cbks;
@@ -120,7 +119,7 @@ namespace flac_bindings {
         }
 
         if(result.IsPromise()) {
-            prog.defer(result.As<Promise>(), [processResult] (auto&, auto& info, auto*) {
+            prog.defer(result.As<Promise>(), [processResult] (auto&, auto& info, auto) {
                 if(processResult) {
                     processResult(info[0]);
                 }
@@ -158,7 +157,7 @@ namespace flac_bindings {
     static size_t flacIORead(void* ptr, size_t size, size_t numberOfMembers, void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         auto* ec = std::get<1>(ctx);
-        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Read);
+        auto req = std::make_shared<FlacIOWorkRequest>(FlacIOWorkRequest::Read);
         size_t bytes = size * numberOfMembers;
 
         req->cbks = std::get<0>(ctx);
@@ -167,16 +166,15 @@ namespace flac_bindings {
         req->nitems = numberOfMembers;
         req->sizeOfItem = size;
 
-        ec->sendProgressAndWait(&req);
+        ec->sendProgressAndWait(req);
 
-        delete req;
         return bytes / size;
     }
 
     static size_t flacIOWrite(const void* ptr, size_t size, size_t numberOfMembers, void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         auto* ec = std::get<1>(ctx);
-        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Write);
+        auto req = std::make_shared<FlacIOWorkRequest>(FlacIOWorkRequest::Write);
         size_t bytes = size * numberOfMembers;
 
         if(size * numberOfMembers == 0) {
@@ -191,70 +189,65 @@ namespace flac_bindings {
         req->nitems = numberOfMembers;
         req->sizeOfItem = size;
 
-        ec->sendProgressAndWait(&req);
+        ec->sendProgressAndWait(req);
 
-        delete req;
         return bytes / size;
     }
 
     static int flacIOSeek(void* c, int64_t offset, int whence) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         auto* ec = std::get<1>(ctx);
-        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Seek);
+        auto req = std::make_shared<FlacIOWorkRequest>(FlacIOWorkRequest::Seek);
         int ret = whence;
 
         req->cbks = std::get<0>(ctx);
         req->offset = &offset;
         req->genericReturn = &ret;
 
-        ec->sendProgressAndWait(&req);
+        ec->sendProgressAndWait(req);
 
-        delete req;
         return ret;
     }
 
     static int64_t flacIOTell(void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         auto* ec = std::get<1>(ctx);
-        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Tell);
+        auto req = std::make_shared<FlacIOWorkRequest>(FlacIOWorkRequest::Tell);
         int64_t offset = -1;
 
         req->cbks = std::get<0>(ctx);
         req->offset = &offset;
 
-        ec->sendProgressAndWait(&req);
+        ec->sendProgressAndWait(req);
 
-        delete req;
         return offset;
     }
 
     static int flacIOEof(void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         auto* ec = std::get<1>(ctx);
-        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Eof);
+        auto req = std::make_shared<FlacIOWorkRequest>(FlacIOWorkRequest::Eof);
         int ret = 0;
 
         req->cbks = std::get<0>(ctx);
         req->genericReturn = &ret;
 
-        ec->sendProgressAndWait(&req);
+        ec->sendProgressAndWait(req);
 
-        delete req;
         return ret;
     }
 
     static int flacIOClose(void* c) {
         FlacIOArg& ctx = *(FlacIOArg*) c;
         auto* ec = std::get<1>(ctx);
-        auto* req = new FlacIOWorkRequest(FlacIOWorkRequest::Close);
+        auto req = std::make_shared<FlacIOWorkRequest>(FlacIOWorkRequest::Close);
         int ret = 0;
 
         req->cbks = std::get<0>(ctx);
         req->genericReturn = &ret;
 
-        ec->sendProgressAndWait(&req);
+        ec->sendProgressAndWait(req);
 
-        delete req;
         return ret;
     }
 

@@ -12,7 +12,7 @@ namespace flac_bindings {
         std::string endMode = info[0].ToString();
         AsyncBackgroundTask<bool, char>::FunctionCallback asyncFunction = [endMode] (auto &c) {
             for(char ch = '0'; ch <= '9'; ch++) {
-                c.sendProgressAndWait(ch);
+                c.sendProgressAndWait(std::make_shared<char>(ch));
                 if(c.isCompleted()) {
                     return;
                 }
@@ -25,11 +25,11 @@ namespace flac_bindings {
             }
         };
 
-        AsyncBackgroundTask<bool, char>::ProgressCallback asyncFUNction = [endMode] (auto &env, auto &self, const auto e, auto s) {
+        AsyncBackgroundTask<bool, char>::ProgressCallback asyncFUNction = [endMode] (auto &env, auto &self, auto e) {
             HandleScope scope(env);
             auto task = self.getTask();
             auto func = task->Receiver().Get("cbk").template As<Function>();
-            auto result = func.MakeCallback(env.Global(), {String::New(env, e, s)});
+            auto result = func.MakeCallback(env.Global(), {String::New(env, e.get(), 1)});
             if(result.IsPromise()) {
                 self.defer(result.template As<Promise>(), [endMode=endMode] (auto&, auto &info2, auto e) {
                     if(*e == '9' && endMode == "exception") {

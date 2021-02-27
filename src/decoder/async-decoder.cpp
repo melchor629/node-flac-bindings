@@ -55,7 +55,7 @@ namespace flac_bindings {
     ): AsyncDecoderWorkBase(
         self.Env(),
         decorate(ctx, function),
-        std::bind(&AsyncDecoderWork::onProgress, this, ctx, _1, _2, _3, _4),
+        std::bind(&AsyncDecoderWork::onProgress, this, ctx, _1, _2, _3),
         name,
         convertFunction
     ) {
@@ -167,13 +167,11 @@ namespace flac_bindings {
         const DecoderWorkContext* ctx,
         Napi::Env& env,
         AsyncDecoderWork::ExecutionProgress& prog,
-        DecoderWorkRequest* const* reqPtr,
-        size_t
+        const std::shared_ptr<DecoderWorkRequest>& req
     ) {
         auto asyncContext = nullptr;
         std::function<void(Napi::Value result)> processResult;
         Napi::Value result;
-        auto req = *reqPtr;
 
         switch(req->type) {
             case DecoderWorkRequest::Type::Eof: {

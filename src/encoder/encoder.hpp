@@ -4,6 +4,7 @@
 #include "../utils/async.hpp"
 #include "../utils/converters.hpp"
 #include "../utils/enum.hpp"
+#include "../utils/pointer.hpp"
 
 namespace flac_bindings {
 
@@ -31,7 +32,7 @@ namespace flac_bindings {
         explicit EncoderWorkRequest(EncoderWorkRequest::Type type);
     };
 
-    typedef AsyncBackgroundTask<int, EncoderWorkRequest*> AsyncEncoderWorkBase;
+    typedef AsyncBackgroundTask<int, EncoderWorkRequest> AsyncEncoderWorkBase;
 
     struct EncoderWorkContext {
         FunctionReference readCbk, writeCbk, seekCbk, tellCbk, metadataCbk, progressCbk;
@@ -175,8 +176,7 @@ namespace flac_bindings {
             const EncoderWorkContext*,
             Napi::Env&,
             ExecutionProgress&,
-            EncoderWorkRequest* const*,
-            size_t
+            const std::shared_ptr<EncoderWorkRequest>&
         );
 
         static FunctionCallback decorate(EncoderWorkContext*, const std::function<int()>&);

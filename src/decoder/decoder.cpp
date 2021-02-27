@@ -605,10 +605,10 @@ namespace flac_bindings {
 
     template<typename EnumType>
     EnumType StreamDecoder::doAsyncWork(DecoderWorkContext* ctx, DecoderWorkRequest* req, EnumType defaultReturnValue) {
-        DEFER(delete req);
         req->returnValue = (int) defaultReturnValue;
 
-        ctx->dec->asyncExecutionProgress->sendProgressAndWait(req);
+        std::shared_ptr<DecoderWorkRequest> sharedReq(req);
+        ctx->dec->asyncExecutionProgress->sendProgressAndWait(sharedReq);
 
         return (EnumType) req->returnValue;
     }
