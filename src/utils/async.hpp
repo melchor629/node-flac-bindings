@@ -1,13 +1,13 @@
 #pragma once
 
 #include <atomic>
+#include <cassert>
 #include <condition_variable>
 #include <functional>
 #include <mutex>
 #include <optional>
 #include <napi.h>
 
-#include "pointer.hpp"
 #include "js_utils.hpp"
 
 namespace flac_bindings {
@@ -16,63 +16,48 @@ namespace flac_bindings {
 
     template<typename DataType>
     struct ProgressRequest {
-        #if defined(__GNUC__) and not defined(__clang__)
-        std::shared_ptr<DataType[]> data;
-        #else
         std::shared_ptr<DataType> data;
-        #endif
-        size_t count = 0;
-        std::shared_ptr<volatile bool> completed;
-        std::shared_ptr<std::mutex> mutex;
-        std::shared_ptr<std::condition_variable> cond;
-        std::shared_ptr<volatile bool> deferred;
+        volatile bool completed = false;
+        std::mutex mutex;
+        std::condition_variable cond;
+        volatile bool deferred = false;
 
-        inline ProgressRequest() {}
+        inline ProgressRequest(const std::shared_ptr<DataType>& data): data(data) {}
 
-        inline ProgressRequest(const DataType* data, size_t count): count(count) {
-            this->data.reset(new DataType[count]);
-            std::copy(data, data + count, this->data.get());
-            completed = std::make_shared<volatile bool>(false);
-            mutex = std::make_shared<std::mutex>();
-            cond = std::make_shared<std::condition_variable>();
-            deferred = std::make_shared<volatile bool>(false);
+        inline void notifyCompleted() {
+            std::lock_guard<std::mutex> lg(mutex);
+            completed = true;
+            cond.notify_one();
         }
 
-        inline void notifyCompleted() const {
-            std::lock_guard<std::mutex> lg(*mutex);
-            *completed = true;
-            cond->notify_one();
-        }
-
-        inline void wait() const {
-            std::unique_lock<std::mutex> ul(*mutex);
-            cond->wait(ul, [this] () { return *completed; });
+        inline void wait() {
+            std::unique_lock<std::mutex> ul(mutex);
+            cond.wait(ul, [this] () { return completed; });
         }
     };
 
+    template<typename P>
+    using AsyncBackgroundTaskBase = AsyncProgressQueueWorker<std::shared_ptr<ProgressRequest<P>>>;
+
     template<typename T, typename P = char>
-    class AsyncBackgroundTask: public AsyncProgressQueueWorker<ProgressRequest<P>> {
+    class AsyncBackgroundTask: public AsyncBackgroundTaskBase<P> {
     public:
-        typedef typename AsyncProgressQueueWorker<ProgressRequest<P>>::ExecutionProgress NapiExecutionProgress;
+        typedef typename AsyncBackgroundTaskBase<P>::ExecutionProgress NapiExecutionProgress;
 
         class ExecutionProgress {
             AsyncBackgroundTask<T, P>* self;
             const NapiExecutionProgress& progress;
             volatile bool completed = false;
-            const ProgressRequest<P>* currentProgressRequest = nullptr;
+            std::shared_ptr<ProgressRequest<P>> currentProgressRequest;
 
             friend class AsyncBackgroundTask<T, P>;
 
-            typedef typename std::function<void(const CallbackInfo&, const P*)> PromiseCallback;
-            typedef typename std::function<void(ExecutionProgress &, const CallbackInfo&, const P*)> FullPromiseCallback;
+            typedef typename std::function<void(const CallbackInfo&, const std::shared_ptr<P>&)> PromiseCallback;
+            typedef typename std::function<void(ExecutionProgress &, const CallbackInfo&, const std::shared_ptr<P>&)> FullPromiseCallback;
             struct PromiseContext {
                 PromiseCallback resolve, reject;
-                ProgressRequest<P>* req = nullptr;
+                std::shared_ptr<ProgressRequest<P>> req;
                 AsyncBackgroundTask<T, P>* self;
-
-                ~PromiseContext() {
-                    delete req;
-                }
             };
 
             ExecutionProgress(
@@ -84,7 +69,7 @@ namespace flac_bindings {
                 auto* p = (PromiseContext*) info.Data();
                 if(p->resolve) {
                     try {
-                        p->resolve(info, p->req->data.get());
+                        p->resolve(info, p->req->data);
                     } catch(const Error& error) {
                         p->self->context->reject(error.Value());
                     }
@@ -99,7 +84,7 @@ namespace flac_bindings {
                 auto* p = (PromiseContext*) info.Data();
                 if(p->reject) {
                     try {
-                        p->reject(info, p->req->data.get());
+                        p->reject(info, p->req->data);
                     } catch(const Error& error) {
                         p->self->context->reject(error.Value());
                     }
@@ -146,27 +131,12 @@ namespace flac_bindings {
                 }
             }
 
-            void sendProgress(const P* data, size_t count = 1) {
+            void sendProgressAndWait(const std::shared_ptr<P>& data) {
                 if(!completed) {
-                    ProgressRequest<P> req(data, count);
+                    auto req = std::make_shared<ProgressRequest<P>>(data);
                     progress.Send(&req, 1);
+                    req->wait();
                 }
-            }
-
-            inline void sendProgress(const P& data) {
-                sendProgress(&data);
-            }
-
-            void sendProgressAndWait(const P* data, size_t count = 1) {
-                if(!completed) {
-                    ProgressRequest<P> req(data, count);
-                    progress.Send(&req, 1);
-                    req.wait();
-                }
-            }
-
-            inline void sendProgressAndWait(const P& data) {
-                sendProgressAndWait(&data);
             }
 
             void defer(
@@ -181,7 +151,7 @@ namespace flac_bindings {
                 auto context = new PromiseContext {
                     resolve ? std::bind(resolve, *this, _1, _2) : PromiseCallback(nullptr),
                     reject ? std::bind(reject, *this, _1, _2) : PromiseCallback(nullptr),
-                    new ProgressRequest<P>(*currentProgressRequest),
+                    currentProgressRequest,
                     self
                 };
                 auto thenFunction = Function::New(env, promiseThen, "asyncBackgroundTask_executionProgress_then", context);
@@ -193,7 +163,7 @@ namespace flac_bindings {
                     catchFunction
                 );
 
-                *currentProgressRequest->deferred = true;
+                currentProgressRequest->deferred = true;
             }
 
             inline AsyncBackgroundTask<T, P>* getTask() const {
@@ -205,7 +175,7 @@ namespace flac_bindings {
             }
         };
 
-        typedef typename std::function<void(Napi::Env&, ExecutionProgress&, const P*, size_t)> ProgressCallback;
+        typedef typename std::function<void(Napi::Env&, ExecutionProgress&, const std::shared_ptr<P>&)> ProgressCallback;
         typedef std::function<void(ExecutionProgress&)> FunctionCallback;
         typedef std::function<Value(Napi::Env, T)> ValueMapFunction;
 
@@ -227,7 +197,7 @@ namespace flac_bindings {
             ProgressCallback progress,
             const char* name,
             ValueMapFunction converter
-        ): AsyncProgressQueueWorker<ProgressRequest<P>>(Function::New(env, _doNothing, "_doNothing"), name),
+        ): AsyncBackgroundTaskBase<P>(Function::New(env, _doNothing, "_doNothing"), name),
             resolver(Promise::Deferred::New(env)),
             function(function),
             progress(progress),
@@ -238,10 +208,6 @@ namespace flac_bindings {
             if(!exceptionValue.IsEmpty()) {
                 exceptionValue.Unref();
             }
-        }
-
-        inline ExecutionProgress* getExecutionProgress() const {
-            return context;
         }
 
         inline Promise getPromise() const {
@@ -280,22 +246,23 @@ namespace flac_bindings {
             }
         }
 
-        virtual void OnProgress(const ProgressRequest<P>* req, size_t size) override {
+        virtual void OnProgress(const std::shared_ptr<ProgressRequest<P>>* requestPtr, size_t size) override {
             (void) size; //In RELEASE this variable is not used :)
             assert(size == 1);
             if(progress) {
+                const auto& req = *requestPtr;
                 Napi::Env env = this->Env();
                 HandleScope scope(env);
 
                 try {
                     context->currentProgressRequest = req;
-                    progress(env, *context, req->data.get(), req->count);
+                    progress(env, *context, req->data);
                 } catch(const Error& e) {
                     context->reject(e);
                 }
 
-                context->currentProgressRequest = nullptr;
-                if(!*req->deferred) {
+                context->currentProgressRequest.reset();
+                if(!req->deferred) {
                     req->notifyCompleted();
                 }
             }
