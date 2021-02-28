@@ -229,7 +229,11 @@ namespace flac_bindings {
             HandleScope scope(env);
             assert(exceptionValue.IsEmpty());
             if(returnValue && converter) {
-                resolver.Resolve(converter(env, returnValue.value()));
+                try {
+                    resolver.Resolve(converter(env, returnValue.value()));
+                } catch(const Napi::Error& error) {
+                    resolver.Reject(error.Value());
+                }
             } else {
                 resolver.Resolve(env.Undefined());
             }
