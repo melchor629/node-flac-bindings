@@ -90,7 +90,6 @@ namespace flac_bindings {
         return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::processInterleavedAsync", ctx);
     }
 
-    static auto initConvertFunc = std::bind(numberToJs<int>, _1, _2, false);
     AsyncEncoderWork* AsyncEncoderWork::forInitStream(const StoreList& list, EncoderWorkContext* ctx) {
         auto workFunction = [ctx] () {
             return FLAC__stream_encoder_init_stream(
@@ -102,8 +101,12 @@ namespace flac_bindings {
                 ctx
             );
         };
+        auto convertFunction = [ctx] (const Napi::Env& env, int value) {
+            ctx->enc->checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
+            return env.Undefined();
+        };
 
-        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initStreamAsync", ctx, initConvertFunc);
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initStreamAsync", ctx, convertFunction);
     }
 
     AsyncEncoderWork* AsyncEncoderWork::forInitOggStream(const StoreList& list, EncoderWorkContext* ctx) {
@@ -118,8 +121,12 @@ namespace flac_bindings {
                 ctx
             );
         };
+        auto convertFunction = [ctx] (const Napi::Env& env, int value) {
+            ctx->enc->checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
+            return env.Undefined();
+        };
 
-        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initOggStreamAsync", ctx, initConvertFunc);
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initOggStreamAsync", ctx, convertFunction);
     }
 
     AsyncEncoderWork* AsyncEncoderWork::forInitFile(const StoreList& list, const std::string& path, EncoderWorkContext* ctx) {
@@ -131,8 +138,12 @@ namespace flac_bindings {
                 ctx
             );
         };
+        auto convertFunction = [ctx] (const Napi::Env& env, int value) {
+            ctx->enc->checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
+            return env.Undefined();
+        };
 
-        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initFileAsync", ctx, initConvertFunc);
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initFileAsync", ctx, convertFunction);
     }
 
     AsyncEncoderWork* AsyncEncoderWork::forInitOggFile(const StoreList& list, const std::string& path, EncoderWorkContext* ctx) {
@@ -144,8 +155,12 @@ namespace flac_bindings {
                 ctx
             );
         };
+        auto convertFunction = [ctx] (const Napi::Env& env, int value) {
+            ctx->enc->checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
+            return env.Undefined();
+        };
 
-        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initOggFileAsync", ctx, initConvertFunc);
+        return new AsyncEncoderWork(list, workFunction, "flac_bindings::StreamEncoder::initOggFileAsync", ctx, convertFunction);
     }
 
     void AsyncEncoderWork::onProgress(

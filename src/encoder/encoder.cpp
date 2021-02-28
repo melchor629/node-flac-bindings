@@ -354,7 +354,7 @@ namespace flac_bindings {
     }
 
 
-    Napi::Value StreamEncoder::initStream(const CallbackInfo& info) {
+    void StreamEncoder::initStream(const CallbackInfo& info) {
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -372,10 +372,13 @@ namespace flac_bindings {
             ctx->metadataCbk.IsEmpty() ? nullptr : StreamEncoder::metadataCallback,
             ctx.get()
         );
-        return info.Env().IsExceptionPending() ? Napi::Value() : numberToJs(info.Env(), ret);
+
+        if(!info.Env().IsExceptionPending()) {
+            checkInitStatus(info.Env(), ret);
+        }
     }
 
-    Napi::Value StreamEncoder::initOggStream(const CallbackInfo& info) {
+    void StreamEncoder::initOggStream(const CallbackInfo& info) {
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -395,10 +398,13 @@ namespace flac_bindings {
             ctx->metadataCbk.IsEmpty() ? nullptr : StreamEncoder::metadataCallback,
             ctx.get()
         );
-        return info.Env().IsExceptionPending() ? Napi::Value() : numberToJs(info.Env(), ret);
+
+        if(!info.Env().IsExceptionPending()) {
+            checkInitStatus(info.Env(), ret);
+        }
     }
 
-    Napi::Value StreamEncoder::initFile(const CallbackInfo& info) {
+    void StreamEncoder::initFile(const CallbackInfo& info) {
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -412,10 +418,13 @@ namespace flac_bindings {
             ctx->progressCbk.IsEmpty() ? nullptr : StreamEncoder::progressCallback,
             ctx.get()
         );
-        return info.Env().IsExceptionPending() ? Napi::Value() : numberToJs(info.Env(), ret);
+
+        if(!info.Env().IsExceptionPending()) {
+            checkInitStatus(info.Env(), ret);
+        }
     }
 
-    Napi::Value StreamEncoder::initOggFile(const CallbackInfo& info) {
+    void StreamEncoder::initOggFile(const CallbackInfo& info) {
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -429,7 +438,10 @@ namespace flac_bindings {
             ctx->progressCbk.IsEmpty() ? nullptr : StreamEncoder::progressCallback,
             ctx.get()
         );
-        return info.Env().IsExceptionPending() ? Napi::Value() : numberToJs(info.Env(), ret);
+
+        if(!info.Env().IsExceptionPending()) {
+            checkInitStatus(info.Env(), ret);
+        }
     }
 
     Napi::Value StreamEncoder::finish(const CallbackInfo& info) {
@@ -566,6 +578,19 @@ namespace flac_bindings {
     void StreamEncoder::checkIsNotInitialized(const Napi::Env& env) {
         if(FLAC__stream_encoder_get_state(enc) != FLAC__STREAM_ENCODER_UNINITIALIZED) {
             throw Error::New(env, "Encoder has been initialized already");
+        }
+    }
+
+    void StreamEncoder::checkInitStatus(Napi::Env env, FLAC__StreamEncoderInitStatus status) {
+        if(status != FLAC__STREAM_ENCODER_INIT_STATUS_OK) {
+            const char* statusString;
+            // remove prefix FLAC__STREAM_ENCODER_INIT_STATUS_
+            statusString = FLAC__StreamEncoderInitStatusString[status] + 33;
+
+            auto error = Error::New(env, "Encoder initialization failed: "s + statusString);
+            error.Set("status", numberToJs(env, status));
+            error.Set("statusString", String::New(env, statusString));
+            throw error;
         }
     }
 

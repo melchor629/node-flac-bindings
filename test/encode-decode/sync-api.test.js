@@ -48,7 +48,7 @@ describe('encode & decode: sync api', function() {
         deferredScope.defer(() => callbacks.close());
         const dec = new api.Decoder();
         const allBuffers = [];
-        assert.equal(dec.initStream(
+        dec.initStream(
             callbacks.read,
             callbacks.seek,
             callbacks.tell,
@@ -61,7 +61,7 @@ describe('encode & decode: sync api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString());
         assert.isTrue(dec.processUntilEndOfStream(), dec.getResolvedStateString());
@@ -78,7 +78,7 @@ describe('encode & decode: sync api', function() {
         deferredScope.defer(() => callbacks.close());
         const dec = new api.Decoder();
         const allBuffers = [];
-        assert.equal(dec.initOggStream(
+        dec.initOggStream(
             callbacks.read,
             callbacks.seek,
             callbacks.tell,
@@ -91,7 +91,7 @@ describe('encode & decode: sync api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString());
         assert.isTrue(dec.processUntilEndOfStream(), dec.getResolvedStateString());
@@ -106,7 +106,7 @@ describe('encode & decode: sync api', function() {
     it('decode using file (non-ogg)', function() {
         const dec = new api.Decoder();
         const allBuffers = [];
-        assert.equal(dec.initFile(
+        dec.initFile(
             pathForFile('loop.flac'),
             (_, buffers) => {
                 allBuffers.push(buffers.map((b) => Buffer.from(b)));
@@ -115,7 +115,7 @@ describe('encode & decode: sync api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString());
         assert.isTrue(dec.processUntilEndOfStream(), dec.getResolvedStateString());
@@ -130,7 +130,7 @@ describe('encode & decode: sync api', function() {
     it('decode using file (ogg)', function() {
         const dec = new api.Decoder();
         const allBuffers = [];
-        assert.equal(dec.initOggFile(
+        dec.initOggFile(
             pathForFile('loop.oga'),
             (_, buffers) => {
                 allBuffers.push(buffers.map((b) => Buffer.from(b)));
@@ -139,7 +139,7 @@ describe('encode & decode: sync api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString());
         assert.isTrue(dec.processUntilEndOfStream(), dec.getResolvedStateString());
@@ -153,13 +153,13 @@ describe('encode & decode: sync api', function() {
 
     it('decoder should be able to skip a frame', function() {
         const dec = new api.Decoder();
-        assert.equal(dec.initFile(
+        dec.initFile(
             pathForFile('loop.flac'),
             () => 0,
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString());
         assert.isTrue(dec.processSingle(), dec.getResolvedStateString());
@@ -173,7 +173,7 @@ describe('encode & decode: sync api', function() {
         const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r');
         deferredScope.defer(() => callbacks.close());
         const dec = new api.Decoder();
-        assert.equal(dec.initStream(
+        dec.initStream(
             callbacks.read,
             callbacks.seek,
             callbacks.tell,
@@ -183,7 +183,7 @@ describe('encode & decode: sync api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString());
         assert.isTrue(dec.processSingle(), dec.getResolvedStateString());
@@ -197,7 +197,7 @@ describe('encode & decode: sync api', function() {
     it('decoder should emit metadata', function() {
         const dec = new api.Decoder();
         const metadataBlocks = [];
-        assert.equal(0, dec.initFile(
+        dec.initFile(
             pathForFile('loop.flac'),
             () => 0,
             (metadata) => {
@@ -206,7 +206,7 @@ describe('encode & decode: sync api', function() {
             },
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), dec.getResolvedStateString());
+        );
 
         assert.isTrue(dec.processSingle(), dec.getResolvedStateString());
         assert.isTrue(dec.finish(), dec.getResolvedStateString());
@@ -219,13 +219,13 @@ describe('encode & decode: sync api', function() {
         dec.setMd5Checking(true);
         dec.setOggSerialNumber(0x11223344);
         dec.setMetadataIgnore(1);
-        assert.equal(dec.initFile(
+        dec.initFile(
             pathForFile('loop.flac'),
             () => 0,
             () => 0,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString());
         assert.isTrue(dec.processSingle(), dec.getResolvedStateString());
@@ -250,12 +250,12 @@ describe('encode & decode: sync api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(enc.initStream(
+        enc.initStream(
             callbacks.write,
             callbacks.seek,
             callbacks.tell,
             null,
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(enc.processInterleaved(encData), enc.getResolvedStateString());
         assert.isTrue(enc.finish(), enc.getResolvedStateString());
@@ -271,13 +271,13 @@ describe('encode & decode: sync api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(enc.initOggStream(
+        enc.initOggStream(
             callbacks.read,
             callbacks.write,
             callbacks.seek,
             callbacks.tell,
             null,
-        ), 0);
+        );
 
         assert.isTrue(enc.processInterleaved(encData), enc.getResolvedStateString());
         assert.isTrue(enc.finish(), enc.getResolvedStateString());
@@ -292,10 +292,10 @@ describe('encode & decode: sync api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(enc.initFile(
+        enc.initFile(
             tmpFile.path,
             (...args) => progressCallbackValues.push(args),
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(enc.processInterleaved(encData), enc.getResolvedStateString());
         assert.isTrue(enc.finish(), enc.getResolvedStateString());
@@ -311,10 +311,10 @@ describe('encode & decode: sync api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(enc.initOggFile(
+        enc.initOggFile(
             tmpFile.path,
             (...args) => progressCallbackValues.push(args),
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(enc.processInterleaved(encData), enc.getResolvedStateString());
         assert.isTrue(enc.finish(), enc.getResolvedStateString());
@@ -330,10 +330,10 @@ describe('encode & decode: sync api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(enc.initFile(
+        enc.initFile(
             tmpFile.path,
             (...args) => progressCallbackValues.push(args),
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(enc.process(encDataAlt, totalSamples), enc.getResolvedStateString());
         assert.isTrue(enc.finish(), enc.getResolvedStateString());
@@ -352,14 +352,14 @@ describe('encode & decode: sync api', function() {
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
         enc.setMetadata([ new api.metadata.VorbisCommentMetadata() ]);
-        assert.equal(enc.initStream(
+        enc.initStream(
             callbacks.write,
             callbacks.seek,
             callbacks.tell,
             (metadata) => {
                 metadataBlock = metadata;
             },
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(enc.processInterleaved(encData), enc.getResolvedStateString());
         assert.isTrue(enc.finish(), enc.getResolvedStateString());
@@ -375,9 +375,9 @@ describe('encode & decode: sync api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(enc.initFile(
+        enc.initFile(
             tmpFile.path,
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.throws(
             () => enc.process([ encDataAlt[0].slice(4), encDataAlt[1] ], totalSamples),
@@ -392,9 +392,9 @@ describe('encode & decode: sync api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(enc.initFile(
+        enc.initFile(
             tmpFile.path,
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.throws(
             () => enc.process([ encDataAlt[0] ], totalSamples),
@@ -409,9 +409,9 @@ describe('encode & decode: sync api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(enc.initFile(
+        enc.initFile(
             tmpFile.path,
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.throws(
             () => enc.processInterleaved(encData.slice(4), totalSamples),
@@ -428,9 +428,9 @@ describe('encode & decode: sync api', function() {
         enc.sampleRate = 44100;
         enc.totalSamplesEstimate = totalSamples;
         enc.verify = true;
-        assert.equal(enc.initFile(
+        enc.initFile(
             tmpFile.path,
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(enc.verify);
 

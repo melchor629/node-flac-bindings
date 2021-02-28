@@ -48,14 +48,16 @@ namespace flac_bindings {
         AsyncFlacIOWork(
             std::function<bool(FLAC__IOHandle, FLAC__IOCallbacks)> f,
             const char* name,
-            const Object &obj
+            const Object &obj,
+            std::function<void(const Napi::Env&, bool)> checkStatus
         );
 
         AsyncFlacIOWork(
             std::function<bool(FLAC__IOHandle, FLAC__IOCallbacks, FLAC__IOHandle, FLAC__IOCallbacks)> f,
             const char* name,
             const Object &obj1,
-            const Object &obj2
+            const Object &obj2,
+            std::function<void(const Napi::Env&, bool)> checkStatus
         );
     };
 }

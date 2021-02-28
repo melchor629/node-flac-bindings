@@ -38,7 +38,7 @@ declare namespace api {
             writeCallback: Decoder.WriteCallback,
             metadataCallback: Decoder.MetadataCallback | null,
             errorCallback: Decoder.ErrorCallback
-        ): EnumValues<Decoder.InitStatus>;
+        ): void;
         initOggStream(
             readCallback: Decoder.ReadCallback,
             seekCallback: Decoder.SeekCallback | null,
@@ -48,19 +48,19 @@ declare namespace api {
             writeCallback: Decoder.WriteCallback,
             metadataCallback: Decoder.MetadataCallback | null,
             errorCallback: Decoder.ErrorCallback
-        ): EnumValues<Decoder.InitStatus>;
+        ): void;
         initFile(
             path: string,
             writeCallback: Decoder.WriteCallback,
             metadataCallback: Decoder.MetadataCallback | null,
             errorCallback: Decoder.ErrorCallback
-        ): EnumValues<Decoder.InitStatus>;
+        ): void;
         initOggFile(
             path: string,
             writeCallback: Decoder.WriteCallback,
             metadataCallback: Decoder.MetadataCallback | null,
             errorCallback: Decoder.ErrorCallback
-        ): EnumValues<Decoder.InitStatus>;
+        ): void;
         finish(): boolean;
         flush(): boolean;
         reset(): boolean;
@@ -86,7 +86,7 @@ declare namespace api {
             writeCallback: Decoder.WriteCallbackAsync,
             metadataCallback: Decoder.MetadataCallbackAsync | null,
             errorCallback: Decoder.ErrorCallbackAsync
-        ): Promise<EnumValues<Decoder.InitStatus>>;
+        ): Promise<void>;
         initOggStreamAsync(
             readCallback: Decoder.ReadCallbackAsync,
             seekCallback: Decoder.SeekCallbackAsync | null,
@@ -96,19 +96,19 @@ declare namespace api {
             writeCallback: Decoder.WriteCallbackAsync,
             metadataCallback: Decoder.MetadataCallbackAsync | null,
             errorCallback: Decoder.ErrorCallbackAsync
-        ): Promise<EnumValues<Decoder.InitStatus>>;
+        ): Promise<void>;
         initFileAsync(
             path: string,
             writeCallback: Decoder.WriteCallbackAsync,
             metadataCallback: Decoder.MetadataCallbackAsync | null,
             errorCallback: Decoder.ErrorCallbackAsync
-        ): Promise<EnumValues<Decoder.InitStatus>>;
+        ): Promise<void>;
         initOggFileAsync(
             path: string,
             writeCallback: Decoder.WriteCallbackAsync,
             metadataCallback: Decoder.MetadataCallbackAsync | null,
             errorCallback: Decoder.ErrorCallbackAsync
-        ): Promise<EnumValues<Decoder.InitStatus>>;
+        ): Promise<void>;
 
         static readonly State: Decoder.State;
         static readonly StateString: ReverseEnum<Decoder.State>;
@@ -398,16 +398,16 @@ declare namespace api {
             seekCbk?: Encoder.SeekCallback | null,
             tellCbk?: Encoder.TellCallback | null,
             metadataCbk?: Encoder.MetadataCallback | null
-        ): EnumValues<Encoder.InitStatus>;
+        ): void;
         initOggStream(
             readCbk: Encoder.ReadCallback | null,
             writeCbk: Encoder.WriteCallback,
             seekCbk?: Encoder.SeekCallback | null,
             tellCbk?: Encoder.TellCallback | null,
             metadataCbk?: Encoder.MetadataCallback | null
-        ): EnumValues<Encoder.InitStatus>;
-        initFile(file: string, progressCbk?: Encoder.ProgressCallback | null): EnumValues<Encoder.InitStatus>;
-        initOggFile(file: string, progressCbk?: Encoder.ProgressCallback | null): EnumValues<Encoder.InitStatus>;
+        ): void;
+        initFile(file: string, progressCbk?: Encoder.ProgressCallback | null): void;
+        initOggFile(file: string, progressCbk?: Encoder.ProgressCallback | null): void;
         finish(): boolean;
         process(buffers: Buffer[], samples: Number): boolean;
         processInterleaved(buffer: Buffer, samples?: Number | null): boolean;
@@ -420,22 +420,22 @@ declare namespace api {
             seekCbk?: Encoder.SeekCallbackAsync,
             tellCbk?: Encoder.TellCallbackAsync,
             metadataCbk?: Encoder.MetadataCallbackAsync
-        ): Promise<EnumValues<Encoder.InitStatus>>;
+        ): Promise<void>;
         initOggStreamAsync(
             readCbk: Encoder.ReadCallbackAsync | null,
             writeCbk: Encoder.WriteCallbackAsync,
             seekCbk: Encoder.SeekCallbackAsync | null | undefined,
             tellCbk: Encoder.TellCallbackAsync | null | undefined,
             metadataCbk: Encoder.MetadataCallbackAsync | null | undefined
-        ): Promise<EnumValues<Encoder.InitStatus>>;
+        ): Promise<void>;
         initFileAsync(
             file: string,
             progressCbk: Encoder.ProgressCallbackAsync | null | undefined,
-        ): Promise<EnumValues<Encoder.InitStatus>>;
+        ): Promise<void>;
         initOggFileAsync(
             file: string,
             progressCbk: Encoder.ProgressCallbackAsync | null | undefined
-        ): Promise<EnumValues<Encoder.InitStatus>>;
+        ): Promise<void>;
 
         static readonly State: Encoder.State;
         static readonly StateString: ReverseEnum<Encoder.State>;
@@ -1040,9 +1040,9 @@ declare namespace api {
         /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gae8fd236fe6049c61f7f3b4a6ecbcd240 */
         status(): EnumValues<SimpleIterator.Status>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gaba8daf276fd7da863a2522ac050125fd */
-        init(path: string, readOnly?: boolean, preserve?: boolean): boolean;
+        init(path: string, readOnly?: boolean, preserve?: boolean): void;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gaba8daf276fd7da863a2522ac050125fd */
-        initAsync(path: string, readOnly?: boolean, preserve?: boolean): Promise<boolean>;
+        initAsync(path: string, readOnly?: boolean, preserve?: boolean): Promise<void>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga5150ecd8668c610f79192a2838667790 */
         isWritable(): boolean;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gabb7de0a1067efae353e0792dc6e51905 */
@@ -1130,25 +1130,25 @@ declare namespace api {
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga8e74773f8ca2bb2bc0b56a65ca0299f4 */
         status(): EnumValues<Chain.Status>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga5a4f2056c30f78af5a79f6b64d5bfdcd */
-        read(path: string): boolean;
+        read(path: string): void;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga5a4f2056c30f78af5a79f6b64d5bfdcd */
-        readAsync(path: string): Promise<boolean>;
+        readAsync(path: string): Promise<void>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga3995010aab28a483ad9905669e5c4954 */
-        readOgg(path: string): boolean;
+        readOgg(path: string): void;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga3995010aab28a483ad9905669e5c4954 */
-        readOggAsync(path: string): Promise<boolean>;
+        readOggAsync(path: string): Promise<void>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga595f55b611ed588d4d55a9b2eb9d2add */
-        readWithCallbacks(callbacks: Chain.IOCallbacks): Promise<boolean>;
+        readWithCallbacks(callbacks: Chain.IOCallbacks): Promise<void>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gaccc2f991722682d3c31d36f51985066c */
-        readOggWithCallbacks(callbacks: Chain.IOCallbacks): Promise<boolean>;
+        readOggWithCallbacks(callbacks: Chain.IOCallbacks): Promise<void>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46bf9cf7d426078101b9297ba80bb835 */
-        write(padding?: boolean, preserve?: boolean): boolean;
+        write(padding?: boolean, preserve?: boolean): void;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46bf9cf7d426078101b9297ba80bb835 */
-        writeAsync(padding?: boolean, preserve?: boolean): Promise<boolean>;
+        writeAsync(padding?: boolean, preserve?: boolean): Promise<void>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga70532b3705294dc891d8db649a4d4843 */
-        writeWithCallbacks(callbacks: Chain.IOCallbacks, usePadding?: boolean): Promise<boolean>;
+        writeWithCallbacks(callbacks: Chain.IOCallbacks, usePadding?: boolean): Promise<void>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga72facaa621e8d798036a4a7da3643e41 */
-        writeWithCallbacksAndTempFile(usePadding: boolean, callbacks: Chain.IOCallbacks, tempCallbacks: Chain.IOCallbacks): Promise<boolean>;
+        writeWithCallbacksAndTempFile(usePadding: boolean, callbacks: Chain.IOCallbacks, tempCallbacks: Chain.IOCallbacks): Promise<void>;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46602f64d423cfe5d5f8a4155f8a97e2 */
         checkIfTempFileIsNeeded(usePadding?: boolean): boolean;
         /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga0a43897914edb751cb87f7e281aff3dc */

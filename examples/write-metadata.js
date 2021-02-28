@@ -2,9 +2,8 @@ const { api: { format, SimpleIterator, metadata } } = require('flac-bindings')
 
 const asyncVersion = async (file) => {
   const iterator = new SimpleIterator()
-  if(!(await iterator.initAsync(file))) {
-    throw new Error(SimpleIterator.StatusString[iterator.status()])
-  }
+  // throws exception if it fails
+  await iterator.initAsync(file)
 
   // look for the tags metadata block
   while(await iterator.nextAsync() && iterator.getBlockType() !== format.MetadataType.VORBIS_COMMENT) {}
@@ -26,9 +25,8 @@ const asyncVersion = async (file) => {
 
 const syncVersion = (file) => {
   const iterator = new SimpleIterator()
-  if(!iterator.init(file)) {
-    throw new Error(SimpleIterator.StatusString[iterator.status()])
-  }
+  // throws exception if it fails
+  iterator.init(file)
 
   // look for the tags metadata block
   while(iterator.next() && iterator.getBlockType() !== format.MetadataType.VORBIS_COMMENT) {}

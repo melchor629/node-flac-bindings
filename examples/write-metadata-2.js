@@ -2,9 +2,8 @@ const { api: { format, Chain, metadata } } = require('flac-bindings')
 
 const asyncVersion = async (file) => {
   const chain = new Chain()
-  if(!(await chain.readAsync(file))) {
-    throw new Error(Chain.StatusString[chain.status()])
-  }
+  // throws exception if it fails
+  await chain.readAsync(file)
 
   const iterator = chain.createIterator()
   // look for the tags metadata block
@@ -24,14 +23,14 @@ const asyncVersion = async (file) => {
   vorbisComment.appendComment(`DATE=${new Date().toISOString()}`)
   iterator.setBlock(vorbisComment) // <- this does not save
 
+  // throws exception if it fails
   await chain.writeAsync(file) // <- this saves
 }
 
 const syncVersion = (file) => {
   const chain = new Chain()
-  if(!chain.read(file)) {
-    throw new Error(Chain.StatusString[chain.status()])
-  }
+  // throws exception if it fails
+  chain.read(file)
 
   const iterator = chain.createIterator()
   // look for the tags metadata block
@@ -51,6 +50,7 @@ const syncVersion = (file) => {
   vorbisComment.appendComment(`DATE=${new Date().toISOString()}`)
   iterator.setBlock(vorbisComment) // <- this does not save
 
+  // throws exception if it fails
   chain.write(file) // <- this saves
 }
 

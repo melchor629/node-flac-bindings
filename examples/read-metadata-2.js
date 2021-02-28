@@ -3,9 +3,8 @@ const printMetadata = require('./_print-metadata')
 
 const asyncVersion = async (file) => {
   const chain = new Chain()
-  if(!(await chain.readAsync(file))) {
-    throw new Error(Chain.StatusString[chain.status()])
-  }
+  // throws exception if it fails
+  await chain.readAsync(file)
 
   for(const metadata of chain.createIterator()) {
     printMetadata(metadata)
@@ -14,9 +13,8 @@ const asyncVersion = async (file) => {
 
 const syncVersion = (file) => {
   const chain = new Chain()
-  if(!chain.read(file)) {
-    throw new Error(Chain.StatusString[chain.status()])
-  }
+  // throws exception if it fails
+  chain.read(file)
 
   // you can also do `Array.from(iterator)` and have an array of the metadata blocks
   for(const metadata of chain.createIterator()) {
@@ -26,9 +24,8 @@ const syncVersion = (file) => {
 
 const altSyncVersion = (file) => {
   const chain = new Chain()
-  if(!chain.read(file)) {
-    throw new Error(Chain.StatusString[chain.status()])
-  }
+  // throws exception if it fails
+  chain.read(file)
 
   // this can also be used with async version. In fact, the read operation reads all metadata blocks
   // into memory, so all operations inside the iterator are in-memory.

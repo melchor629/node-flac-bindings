@@ -148,7 +148,7 @@ namespace flac_bindings {
     }
 
 
-    Napi::Value StreamDecoder::initStream(const CallbackInfo& info) {
+    void StreamDecoder::initStream(const CallbackInfo& info) {
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -175,10 +175,10 @@ namespace flac_bindings {
             ctx.get()
         );
 
-        return numberToJs(info.Env(), ret);
+        checkInitStatus(info.Env(), ret);
     }
 
-    Napi::Value StreamDecoder::initOggStream(const CallbackInfo& info) {
+    void StreamDecoder::initOggStream(const CallbackInfo& info) {
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -205,10 +205,10 @@ namespace flac_bindings {
             ctx.get()
         );
 
-        return numberToJs(info.Env(), ret);
+        checkInitStatus(info.Env(), ret);
     }
 
-    Napi::Value StreamDecoder::initFile(const CallbackInfo& info) {
+    void StreamDecoder::initFile(const CallbackInfo& info) {
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -227,10 +227,10 @@ namespace flac_bindings {
             ctx.get()
         );
 
-        return numberToJs(info.Env(), ret);
+        checkInitStatus(info.Env(), ret);
     }
 
-    Napi::Value StreamDecoder::initOggFile(const CallbackInfo& info) {
+    void StreamDecoder::initOggFile(const CallbackInfo& info) {
         checkPendingAsyncWork(info.Env());
         checkIsNotInitialized(info.Env());
 
@@ -249,7 +249,7 @@ namespace flac_bindings {
             ctx.get()
         );
 
-        return numberToJs(info.Env(), ret);
+        checkInitStatus(info.Env(), ret);
     }
 
     Napi::Value StreamDecoder::finish(const CallbackInfo& info) {
@@ -510,6 +510,17 @@ namespace flac_bindings {
     void StreamDecoder::checkIsNotInitialized(const Napi::Env& env) {
         if(FLAC__stream_decoder_get_state(dec) != FLAC__STREAM_DECODER_UNINITIALIZED) {
             throw Error::New(env, "Decoder has been initialized already");
+        }
+    }
+
+    void StreamDecoder::checkInitStatus(Napi::Env env, FLAC__StreamDecoderInitStatus status) {
+        if(status != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
+            // remove prefix FLAC__STREAM_DECODER_INIT_STATUS_
+            auto statusString = FLAC__StreamDecoderInitStatusString[status] + 33;
+            auto error = Error::New(env, "Decoder initialization failed: "s + statusString);
+            error.Set("status", numberToJs(env, status));
+            error.Set("statusString", String::New(env, statusString));
+            throw error;
         }
     }
 
