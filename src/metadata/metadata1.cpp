@@ -56,6 +56,18 @@ namespace flac_bindings {
             return scope.Escape(worker->getPromise());
         }
 
+        void checkStatus(Napi::Env env, bool succeeded) {
+            if(!succeeded) {
+                auto status = FLAC__metadata_simple_iterator_status(it);
+                // remove prefix FLAC__METADATA_SIMPLE_ITERATOR_STATUS_
+                auto statusString = FLAC__Metadata_SimpleIteratorStatusString[status] + 38;
+                auto error = Error::New(env, "SimpleIterator initialization failed: "s + statusString);
+                error.Set("status", numberToJs(env, status));
+                error.Set("statusString", String::New(env, statusString));
+                throw error;
+            }
+        }
+
     public:
         static Function init(Napi::Env env, FlacAddon& addon) {
             EscapableHandleScope scope(env);
@@ -157,12 +169,12 @@ namespace flac_bindings {
             return numberToJs(info.Env(), FLAC__metadata_simple_iterator_status(it));
         }
 
-        Napi::Value init(const CallbackInfo& info) {
+        void init(const CallbackInfo& info) {
             auto path = stringFromJs(info[0]);
             auto readOnly = maybeBooleanFromJs<FLAC__bool>(info[1]).value_or(false);
             auto preserve = maybeBooleanFromJs<FLAC__bool>(info[2]).value_or(false);
             auto res = FLAC__metadata_simple_iterator_init(it, path.c_str(), readOnly, preserve);
-            return booleanToJs(info.Env(), res);
+            checkStatus(info.Env(), res);
         }
 
         Napi::Value initAsync(const CallbackInfo& info) {
@@ -175,6 +187,10 @@ namespace flac_bindings {
                 {info.This()},
                 [this, path, readOnly, preserve] () {
                     return FLAC__metadata_simple_iterator_init(it, path.c_str(), readOnly, preserve);
+                },
+                [this] (auto env, auto value) {
+                    this->checkStatus(env, value);
+                    return env.Undefined();
                 }
             );
         }

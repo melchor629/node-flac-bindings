@@ -28,10 +28,11 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('el.flac');
             const ch = new Chain();
 
-            const ret = ch.read(filePath);
+            assert.throws(
+                () => ch.read(filePath),
+                /Chain operation failed: ERROR_OPENING_FILE/,
+            );
 
-            assert.isFalse(ret);
-            assert.equal(ch.status(), Chain.Status.ERROR_OPENING_FILE);
             await assert.throwsAsync(() => fs.access(filePath), /^ENOENT: no such file or directory/);
         });
 
@@ -39,9 +40,9 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('no.flac');
             const ch = new Chain();
 
-            const ret = ch.read(filePath);
+            ch.read(filePath);
 
-            assert.isTrue(ret, Chain.StatusString[ch.status()]);
+            assert.equal(ch.status(), Chain.Status.OK);
             await fs.access(filePath);
         });
 
@@ -61,9 +62,11 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('el.flac');
             const ch = new Chain();
 
-            assert.isFalse(await ch.readAsync(filePath));
+            await assert.throwsAsync(
+                () => ch.readAsync(filePath),
+                /Chain operation failed: ERROR_OPENING_FILE/,
+            );
 
-            assert.equal(Chain.StatusString[ch.status()], 'ERROR_OPENING_FILE');
             await assert.throwsAsync(() => fs.access(filePath), /^ENOENT: no such file or directory/);
         });
 
@@ -71,9 +74,9 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('no.flac');
             const ch = new Chain();
 
-            const ret = await ch.readAsync(filePath);
+            await ch.readAsync(filePath);
 
-            assert.isTrue(ret, Chain.StatusString[ch.status()]);
+            assert.equal(ch.status(), Chain.Status.OK);
             await fs.access(filePath);
         });
 
@@ -90,11 +93,17 @@ describe('Chain & Iterator', function() {
         });
 
         it('throws if the lacks callbacks (flac version)', async function() {
-            assert.isFalse(await new Chain().readWithCallbacks({}));
+            await assert.throwsAsync(
+                () => new Chain().readWithCallbacks({}),
+                /Chain operation failed: INVALID_CALLBACKS/,
+            );
         });
 
         it('throws if the lacks callbacks (ogg version)', async function() {
-            assert.isFalse(await new Chain().readOggWithCallbacks({}));
+            await assert.throwsAsync(
+                () => new Chain().readOggWithCallbacks({}),
+                /Chain operation failed: INVALID_CALLBACKS/,
+            );
         });
 
         it('returns works if the file can be read', async function() {
@@ -106,12 +115,12 @@ describe('Chain & Iterator', function() {
 
         it('it throws if the file cannot be read', async function() {
             const chain = new Chain();
-            assert.isFalse(await chain.readWithCallbacks({
+            await assert.throwsAsync(() => chain.readWithCallbacks({
                 read: () => 0,
                 seek: () => -1,
                 tell: () => BigInt(0),
                 close: () => undefined,
-            }));
+            }), /Chain operation failed: SEEK_ERROR/);
         });
 
     });
@@ -122,9 +131,8 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-p.flac');
             const ch = new Chain();
 
-            const ret = ch.read(filePath);
+            ch.read(filePath);
 
-            assert.isTrue(ret, Chain.StatusString[ch.status()]);
             const it = ch.createIterator();
             const i = it[Symbol.iterator]();
 
@@ -157,9 +165,8 @@ describe('Chain & Iterator', function() {
             const ch = new Chain();
             const it = new Iterator();
 
-            const ret = ch.read(filePath);
+            ch.read(filePath);
 
-            assert.isTrue(ret, Chain.StatusString[ch.status()]);
             it.init(ch);
             const i = it[Symbol.iterator]();
 
@@ -195,8 +202,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-p.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             const it = ch.createIterator();
             assert.equal(it.getBlockType(), format.MetadataType.STREAMINFO);
@@ -225,8 +231,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-p.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             const it = ch.createIterator();
             // eslint-disable-next-line curly
@@ -261,8 +266,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-p.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             ch.sortPadding();
 
@@ -286,8 +290,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-p.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             const it = ch.createIterator();
             // eslint-disable-next-line curly
@@ -340,8 +343,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-cs.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             assert.isFalse(ch.createIterator().setBlock(new metadata.PaddingMetadata()));
             assert.deepEqual(
@@ -359,8 +361,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-cs.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             const it = ch.createIterator();
             assert.isTrue(it.next());
@@ -382,8 +383,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-cs.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             assert.isFalse(ch.createIterator().deleteBlock());
             assert.deepEqual(
@@ -401,8 +401,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-cs.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             const it = ch.createIterator();
             assert.isTrue(it.next());
@@ -424,8 +423,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-cs.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             assert.isFalse(ch.createIterator().insertBlockBefore(new metadata.ApplicationMetadata()));
             assert.deepEqual(
@@ -443,8 +441,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-cs.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             const it = ch.createIterator();
             assert.isTrue(it.next());
@@ -467,8 +464,7 @@ describe('Chain & Iterator', function() {
             const filePath = pathForFile('vc-cs.flac');
             const ch = new Chain();
 
-            const initRetValue = ch.read(filePath);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(filePath);
 
             const it = ch.createIterator();
             assert.isTrue(it.next());
@@ -503,8 +499,7 @@ describe('Chain & Iterator', function() {
 
         it('modify the blocks and write should modify the file correctly (sync)', function() {
             const ch = new Chain();
-            const initRetValue = ch.read(tmpFile.path);
-            assert.isTrue(initRetValue, Chain.StatusString[ch.status()]);
+            ch.read(tmpFile.path);
             const it = ch.createIterator();
 
             const vc = new metadata.VorbisCommentMetadata();
@@ -515,7 +510,7 @@ describe('Chain & Iterator', function() {
             assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()));
             assert.isTrue(it.next());
 
-            assert.isTrue(ch.write(false));
+            ch.write(false);
 
             assert.deepEqual(
                 Array.from(ch.createIterator()).map((i) => i.type),
@@ -542,7 +537,7 @@ describe('Chain & Iterator', function() {
             assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()));
             assert.isTrue(it.next());
 
-            assert.isTrue(await ch.writeAsync(false));
+            await ch.writeAsync(false);
 
             assert.deepEqual(
                 Array.from(ch.createIterator()).map((i) => i.type),
@@ -559,10 +554,7 @@ describe('Chain & Iterator', function() {
         it('modify the blocks and write should modify the file correctly (callbacks)', async function() {
             const readCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r');
             const ch = new Chain();
-            assert.isTrue(
-                await ch.readWithCallbacks(readCallbacks).finally(() => readCallbacks.close()),
-                Chain.StatusString[ch.status()],
-            );
+            await ch.readWithCallbacks(readCallbacks).finally(() => readCallbacks.close());
             const it = ch.createIterator();
 
             const vc = new metadata.VorbisCommentMetadata();
@@ -575,10 +567,7 @@ describe('Chain & Iterator', function() {
 
             const writeCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r+');
             assert.isFalse(ch.checkIfTempFileIsNeeded());
-            assert.isTrue(
-                await ch.writeWithCallbacks(writeCallbacks).finally(() => writeCallbacks.close()),
-                Chain.StatusString[ch.status()],
-            );
+            await ch.writeWithCallbacks(writeCallbacks).finally(() => writeCallbacks.close());
 
             assert.deepEqual(
                 Array.from(ch.createIterator()).map((i) => i.type),
@@ -595,10 +584,7 @@ describe('Chain & Iterator', function() {
         it('modify the blocks and write should modify the file correctly (callbacks + tempfile)', async function() {
             const readCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r');
             const ch = new Chain();
-            assert.isTrue(
-                await ch.readWithCallbacks(readCallbacks).finally(() => readCallbacks.close()),
-                Chain.StatusString[ch.status()],
-            );
+            await ch.readWithCallbacks(readCallbacks).finally(() => readCallbacks.close());
             const it = ch.createIterator();
 
             const vc = new metadata.VorbisCommentMetadata();
@@ -613,11 +599,8 @@ describe('Chain & Iterator', function() {
             const writeCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r+');
             const writeCallbacks2 = await generateFlacCallbacks.flacio(tmpFile2.path, 'r+');
             assert.isTrue(ch.checkIfTempFileIsNeeded(false));
-            assert.isTrue(
-                await ch.writeWithCallbacksAndTempFile(false, writeCallbacks, writeCallbacks2)
-                    .finally(() => writeCallbacks.close().finally(() => writeCallbacks2.close())),
-                Chain.StatusString[ch.status()],
-            );
+            await ch.writeWithCallbacksAndTempFile(false, writeCallbacks, writeCallbacks2)
+                .finally(() => writeCallbacks.close().finally(() => writeCallbacks2.close()));
 
             assert.deepEqual(
                 Array.from(ch.createIterator()).map((i) => i.type),

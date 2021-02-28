@@ -499,10 +499,9 @@ describe('encode & decode: js streams', function() {
         it('file decoder should fail if file does not exist', async function() {
             const dec = new FileDecoder({ file: pathForFile('does not exist.flac') });
 
-            dec.on('data', () => undefined);
             await assert.throwsAsync(
                 () => events.once(dec, 'data'),
-                'Could not initialize decoder: ERROR_OPENING_FILE',
+                'Decoder initialization failed: ERROR_OPENING_FILE',
             );
         });
 
@@ -516,7 +515,13 @@ describe('encode & decode: js streams', function() {
             });
 
             enc.write(Buffer.alloc(1000 * 2));
-            await assert.throwsAsync(() => events.once(enc, 'data'), 'Could not initialize encoder: IO_ERROR');
+            await assert.throwsAsync(
+                () => events.once(enc, 'data'),
+                'Encoder initialization failed: ENCODER_ERROR',
+            );
+
+            // ENCODER_ERROR means that the error is described in getState()
+            assert.equal(enc._enc.getState(), 6); // IO_ERROR
         });
 
         it('encode using ogg (file)', async function() {

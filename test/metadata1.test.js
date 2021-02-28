@@ -20,10 +20,11 @@ describe('SimpleIterator', function() {
             const filePath = pathForFile('el.flac');
             const it = new SimpleIterator();
 
-            const ret = it.init(filePath);
+            assert.throws(
+                () => it.init(filePath),
+                /SimpleIterator initialization failed: ERROR_OPENING_FILE/,
+            );
 
-            assert.isFalse(ret);
-            assert.equal(it.status(), SimpleIterator.Status.ERROR_OPENING_FILE);
             await assert.throwsAsync(() => fs.access(filePath));
         });
 
@@ -31,9 +32,9 @@ describe('SimpleIterator', function() {
             const filePath = pathForFile('no.flac');
             const it = new SimpleIterator();
 
-            const ret = it.init(filePath);
+            it.init(filePath);
 
-            assert.isTrue(ret, SimpleIterator.StatusString[it.status()]);
+            assert.equal(it.status(), SimpleIterator.Status.OK);
             assert.isTrue(it.isWritable());
             await fs.access(filePath);
         });
@@ -50,7 +51,10 @@ describe('SimpleIterator', function() {
             const filePath = pathForFile('el.flac');
             const it = new SimpleIterator();
 
-            assert.isFalse(await it.initAsync(filePath));
+            await assert.throwsAsync(
+                () => it.initAsync(filePath),
+                /SimpleIterator initialization failed: ERROR_OPENING_FILE/,
+            );
 
             await assert.throwsAsync(() => fs.access(filePath));
         });
@@ -59,9 +63,9 @@ describe('SimpleIterator', function() {
             const filePath = pathForFile('no.flac');
             const it = new SimpleIterator();
 
-            const ret = await it.initAsync(filePath);
+            await it.initAsync(filePath);
 
-            assert.isTrue(ret, SimpleIterator.StatusString[it.status()]);
+            assert.equal(it.status(), SimpleIterator.Status.OK);
             assert.isTrue(it.isWritable());
             await fs.access(filePath);
         });
@@ -73,8 +77,7 @@ describe('SimpleIterator', function() {
             const filePath = pathForFile('vc-cs.flac');
             const it = new SimpleIterator();
 
-            const initRetValue = it.init(filePath);
-            assert.isTrue(initRetValue, SimpleIterator.StatusString[it.status()]);
+            it.init(filePath);
             const e = it[Symbol.iterator]();
 
             let m = e.next();
@@ -135,8 +138,7 @@ describe('SimpleIterator', function() {
             const filePath = pathForFile('vc-p.flac');
             const it = new SimpleIterator();
 
-            const initRetValue = it.init(filePath);
-            assert.isTrue(initRetValue, SimpleIterator.StatusString[it.status()]);
+            it.init(filePath);
 
             assert.isFalse(it.isLast());
             assert.equal(it.getBlockOffset(), 4);
@@ -179,8 +181,7 @@ describe('SimpleIterator', function() {
             const filePath = pathForFile('vc-p.flac');
             const it = new SimpleIterator();
 
-            const initRetValue = it.init(filePath);
-            assert.isTrue(initRetValue, SimpleIterator.StatusString[it.status()]);
+            it.init(filePath);
             // eslint-disable-next-line curly
             while(it.next());
 
@@ -337,8 +338,7 @@ describe('SimpleIterator', function() {
         it('replace StreamInfo block should not replace it', function() {
             const it = new SimpleIterator();
 
-            const initRetValue = it.init(tmpFile.path);
-            assert.isTrue(initRetValue, SimpleIterator.StatusString[it.status()]);
+            it.init(tmpFile.path);
 
             assert.isFalse(it.setBlock(new metadata.ApplicationMetadata()));
         });
@@ -346,8 +346,7 @@ describe('SimpleIterator', function() {
         it('replace any block should effectively replace it', function() {
             const it = new SimpleIterator();
 
-            const initRetValue = it.init(tmpFile.path);
-            assert.isTrue(initRetValue, SimpleIterator.StatusString[it.status()]);
+            it.init(tmpFile.path);
 
             assert.isTrue(it.next());
             const app = new metadata.ApplicationMetadata();
@@ -356,7 +355,7 @@ describe('SimpleIterator', function() {
             assert.isTrue(it.setBlock(app));
 
             const ot = new SimpleIterator();
-            assert.isTrue(ot.init(tmpFile.path));
+            ot.init(tmpFile.path);
             assert.isTrue(ot.next());
             assert.equal(ot.getBlockType(), format.MetadataType.APPLICATION);
             assert.deepEqual(ot.getApplicationId(), Buffer.from('node'));
@@ -365,8 +364,7 @@ describe('SimpleIterator', function() {
         it('insert any block should effectively insert it', function() {
             const it = new SimpleIterator();
 
-            const initRetValue = it.init(tmpFile.path);
-            assert.isTrue(initRetValue, SimpleIterator.StatusString[it.status()]);
+            it.init(tmpFile.path);
 
             assert.isTrue(it.next());
             const app = new metadata.ApplicationMetadata();
@@ -375,7 +373,7 @@ describe('SimpleIterator', function() {
             assert.isTrue(it.insertBlockAfter(app));
 
             const ot = new SimpleIterator();
-            assert.isTrue(ot.init(tmpFile.path));
+            ot.init(tmpFile.path);
             assert.isTrue(ot.next());
             assert.isTrue(ot.next());
             assert.equal(ot.getBlockType(), format.MetadataType.APPLICATION);
@@ -385,8 +383,7 @@ describe('SimpleIterator', function() {
         it('delete StreamInfo block should not delete it', function() {
             const it = new SimpleIterator();
 
-            const initRetValue = it.init(tmpFile.path);
-            assert.isTrue(initRetValue, SimpleIterator.StatusString[it.status()]);
+            it.init(tmpFile.path);
 
             assert.isFalse(it.deleteBlock());
         });
@@ -394,8 +391,7 @@ describe('SimpleIterator', function() {
         it('delete any other block should effectively delete it', function() {
             const it = new SimpleIterator();
 
-            const initRetValue = it.init(tmpFile.path);
-            assert.isTrue(initRetValue, SimpleIterator.StatusString[it.status()]);
+            it.init(tmpFile.path);
 
             assert.isTrue(it.next());
             assert.isTrue(it.deleteBlock());
@@ -443,7 +439,7 @@ describe('SimpleIterator', function() {
             assert.isTrue(await it.setBlockAsync(app));
 
             const ot = new SimpleIterator();
-            assert.isTrue(await ot.initAsync(tmpFile.path));
+            await ot.initAsync(tmpFile.path);
             assert.isTrue(await ot.nextAsync());
             assert.equal(ot.getBlockType(), format.MetadataType.APPLICATION);
             assert.deepEqual(await ot.getApplicationIdAsync(), Buffer.from('node'));
@@ -461,7 +457,7 @@ describe('SimpleIterator', function() {
             assert.isTrue(await it.insertBlockAfterAsync(app));
 
             const ot = new SimpleIterator();
-            assert.isTrue(await ot.initAsync(tmpFile.path));
+            await ot.initAsync(tmpFile.path);
             assert.isTrue(await ot.nextAsync());
             assert.isTrue(await ot.nextAsync());
             assert.equal(ot.getBlockType(), format.MetadataType.APPLICATION);

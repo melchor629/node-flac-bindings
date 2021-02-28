@@ -12,7 +12,7 @@ namespace flac_bindings {
     class Chain: public ObjectWrap<Chain> {
         FLAC__Metadata_Chain* chain;
 
-        static Napi::Value simpleAsyncImpl(const Napi::Value& self, const char* name, const std::function<bool()>& impl) {
+        Napi::Value simpleAsyncImpl(const Napi::Value& self, const char* name, const std::function<bool()>& impl) {
             EscapableHandleScope scope(self.Env());
             auto worker = new AsyncBackgroundTask<bool>(
                 self.Env(),
@@ -21,11 +21,26 @@ namespace flac_bindings {
                 },
                 nullptr,
                 name,
-                booleanToJs<FLAC__bool>
+                [this] (auto env, auto value) {
+                    this->checkStatus(env, value);
+                    return env.Undefined();
+                }
             );
             worker->Receiver().Set("this", self);
             worker->Queue();
             return scope.Escape(worker->getPromise());
+        }
+
+        void checkStatus(const Napi::Env& env, bool succeeded) {
+            if(!succeeded) {
+                auto status = FLAC__metadata_chain_status(chain);
+                // remove prefix FLAC__METADATA_CHAIN_STATUS_
+                auto statusString = FLAC__Metadata_ChainStatusString[status] + 28;
+                auto error = Error::New(env, "Chain operation failed: "s + statusString);
+                error.Set("status", numberToJs(env, status));
+                error.Set("statusString", String::New(env, statusString));
+                throw error;
+            }
         }
 
         friend class Iterator;
@@ -74,10 +89,10 @@ namespace flac_bindings {
             return numberToJs(info.Env(), status);
         }
 
-        Napi::Value read(const CallbackInfo& info) {
+        void read(const CallbackInfo& info) {
             auto path = stringFromJs(info[0]);
             auto ret = FLAC__metadata_chain_read(chain, path.c_str());
-            return booleanToJs(info.Env(), ret);
+            checkStatus(info.Env(), ret);
         }
 
         Napi::Value readAsync(const CallbackInfo& info) {
@@ -89,10 +104,10 @@ namespace flac_bindings {
             );
         }
 
-        Napi::Value readOgg(const CallbackInfo& info) {
+        void readOgg(const CallbackInfo& info) {
             auto path = stringFromJs(info[0]);
             auto ret = FLAC__metadata_chain_read_ogg(chain, path.c_str());
-            return booleanToJs(info.Env(), ret);
+            checkStatus(info.Env(), ret);
         }
 
         Napi::Value readOggAsync(const CallbackInfo& info) {
@@ -113,7 +128,8 @@ namespace flac_bindings {
             auto work = new AsyncFlacIOWork(
                 [this] (FLAC__IOHandle io, FLAC__IOCallbacks c) { return FLAC__metadata_chain_read_with_callbacks(chain, io, c); },
                 "flac_bindings::Chain::readWithCallbacks",
-                obj.As<Object>()
+                obj.As<Object>(),
+                std::bind(&Chain::checkStatus, this, std::placeholders::_1, std::placeholders::_2)
             );
             work->Receiver().Set("this", info.This());
             work->Queue();
@@ -129,19 +145,20 @@ namespace flac_bindings {
             auto work = new AsyncFlacIOWork(
                 [this] (FLAC__IOHandle io, FLAC__IOCallbacks c) { return FLAC__metadata_chain_read_ogg_with_callbacks(chain, io, c); },
                 "flac_bindings::Chain::readWithCallbacks",
-                obj.As<Object>()
+                obj.As<Object>(),
+                std::bind(&Chain::checkStatus, this, std::placeholders::_1, std::placeholders::_2)
             );
             work->Receiver().Set("this", info.This());
             work->Queue();
             return work->getPromise();
         }
 
-        Napi::Value write(const CallbackInfo& info) {
+        void write(const CallbackInfo& info) {
             auto padding = maybeBooleanFromJs<FLAC__bool>(info[0]).value_or(true);
             auto preserve = maybeBooleanFromJs<FLAC__bool>(info[1]).value_or(false);
 
             auto ret = FLAC__metadata_chain_write(chain, padding, preserve);
-            return booleanToJs(info.Env(), ret);
+            checkStatus(info.Env(), ret);
         }
 
         Napi::Value writeAsync(const CallbackInfo& info) {
@@ -166,7 +183,8 @@ namespace flac_bindings {
                     return FLAC__metadata_chain_write_with_callbacks(chain, padding, io, c);
                 },
                 "flac_bindings::Chain::writeWithCallbacks",
-                obj.As<Object>()
+                obj.As<Object>(),
+                std::bind(&Chain::checkStatus, this, std::placeholders::_1, std::placeholders::_2)
             );
             work->Receiver().Set("this", info.This());
             work->Queue();
@@ -189,7 +207,8 @@ namespace flac_bindings {
                 },
                 "flac_bindings::Chain::writeWithCallbacks",
                 obj1.As<Object>(),
-                obj2.As<Object>()
+                obj2.As<Object>(),
+                std::bind(&Chain::checkStatus, this, std::placeholders::_1, std::placeholders::_2)
             );
             work->Receiver().Set("this", info.This());
             work->Queue();

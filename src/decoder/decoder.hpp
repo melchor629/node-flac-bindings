@@ -61,10 +61,10 @@ namespace flac_bindings {
         Napi::Value getSampleRate(const CallbackInfo&);
         Napi::Value getBlocksize(const CallbackInfo&);
 
-        Napi::Value initStream(const CallbackInfo&);
-        Napi::Value initOggStream(const CallbackInfo&);
-        Napi::Value initFile(const CallbackInfo&);
-        Napi::Value initOggFile(const CallbackInfo&);
+        void initStream(const CallbackInfo&);
+        void initOggStream(const CallbackInfo&);
+        void initFile(const CallbackInfo&);
+        void initOggFile(const CallbackInfo&);
         Napi::Value finish(const CallbackInfo&);
         Napi::Value flush(const CallbackInfo&);
         Napi::Value reset(const CallbackInfo&);
@@ -107,6 +107,7 @@ namespace flac_bindings {
 
         void checkIsInitialized(const Napi::Env&);
         void checkIsNotInitialized(const Napi::Env&);
+        void checkInitStatus(Napi::Env, FLAC__StreamDecoderInitStatus);
         Promise enqueueWork(AsyncDecoderWorkBase*);
         template<typename EnumType>
         static EnumType doAsyncWork(DecoderWorkContext* ctx, DecoderWorkRequest* req, EnumType defaultReturnValue);

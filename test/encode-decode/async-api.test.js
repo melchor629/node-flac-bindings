@@ -49,7 +49,7 @@ describe('encode & decode: async api', function() {
         deferredScope.defer(() => callbacks.close());
         const dec = new api.Decoder();
         const allBuffers = [];
-        assert.equal(await dec.initStreamAsync(
+        await dec.initStreamAsync(
             callbacks.read,
             callbacks.seek,
             callbacks.tell,
@@ -62,7 +62,7 @@ describe('encode & decode: async api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString());
         assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString());
@@ -79,7 +79,7 @@ describe('encode & decode: async api', function() {
         deferredScope.defer(() => callbacks.close());
         const dec = new api.Decoder();
         const allBuffers = [];
-        assert.equal(await dec.initOggStreamAsync(
+        await dec.initOggStreamAsync(
             callbacks.read,
             callbacks.seek,
             callbacks.tell,
@@ -92,7 +92,7 @@ describe('encode & decode: async api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString());
         assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString());
@@ -109,7 +109,7 @@ describe('encode & decode: async api', function() {
         deferredScope.defer(() => callbacks.close());
         const dec = new api.Decoder();
         const allBuffers = [];
-        assert.equal(await dec.initStreamAsync(
+        await dec.initStreamAsync(
             callbacks.read,
             callbacks.seek,
             callbacks.tell,
@@ -122,7 +122,7 @@ describe('encode & decode: async api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString());
         assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString());
@@ -139,7 +139,7 @@ describe('encode & decode: async api', function() {
         deferredScope.defer(() => callbacks.close());
         const dec = new api.Decoder();
         const allBuffers = [];
-        assert.equal(await dec.initOggStreamAsync(
+        await dec.initOggStreamAsync(
             callbacks.read,
             callbacks.seek,
             callbacks.tell,
@@ -152,7 +152,7 @@ describe('encode & decode: async api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString());
         assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString());
@@ -167,7 +167,7 @@ describe('encode & decode: async api', function() {
     it('decode using file (non-ogg)', async function() {
         const dec = new api.Decoder();
         const allBuffers = [];
-        assert.equal(await dec.initFileAsync(
+        await dec.initFileAsync(
             pathForFile('loop.flac'),
             (_, buffers) => {
                 allBuffers.push(buffers.map((b) => Buffer.from(b)));
@@ -176,7 +176,7 @@ describe('encode & decode: async api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString());
         assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString());
@@ -191,7 +191,7 @@ describe('encode & decode: async api', function() {
     it('decode using file (ogg)', async function() {
         const dec = new api.Decoder();
         const allBuffers = [];
-        assert.equal(await dec.initOggFileAsync(
+        await dec.initOggFileAsync(
             pathForFile('loop.oga'),
             (_, buffers) => {
                 allBuffers.push(buffers.map((b) => Buffer.from(b)));
@@ -200,7 +200,7 @@ describe('encode & decode: async api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString());
         assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString());
@@ -214,13 +214,13 @@ describe('encode & decode: async api', function() {
 
     it('decoder should be able to skip a frame', async function() {
         const dec = new api.Decoder();
-        assert.equal(await dec.initFileAsync(
+        await dec.initFileAsync(
             pathForFile('loop.flac'),
             () => 0,
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString());
         assert.isTrue(await dec.processSingleAsync(), dec.getResolvedStateString());
@@ -234,7 +234,7 @@ describe('encode & decode: async api', function() {
         const callbacks = await generateFlacCallbacks.async(api.Decoder, pathForFile('loop.flac'), 'r');
         deferredScope.defer(() => callbacks.close());
         const dec = new api.Decoder();
-        assert.equal(await dec.initStreamAsync(
+        await dec.initStreamAsync(
             callbacks.read,
             callbacks.seek,
             callbacks.tell,
@@ -244,7 +244,7 @@ describe('encode & decode: async api', function() {
             null,
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString());
         assert.isTrue(await dec.processSingleAsync(), dec.getResolvedStateString());
@@ -258,7 +258,7 @@ describe('encode & decode: async api', function() {
     it('decoder should emit metadata', async function() {
         const dec = new api.Decoder();
         const metadataBlocks = [];
-        assert.equal(await dec.initFileAsync(
+        await dec.initFileAsync(
             pathForFile('loop.flac'),
             () => 0,
             (metadata) => {
@@ -267,7 +267,7 @@ describe('encode & decode: async api', function() {
             },
             // eslint-disable-next-line no-console
             (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-        ), 0, dec.getResolvedStateString());
+        );
 
         assert.isTrue(await dec.processSingleAsync(), dec.getResolvedStateString());
         assert.isTrue(await dec.finishAsync(), dec.getResolvedStateString());
@@ -283,12 +283,12 @@ describe('encode & decode: async api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(await enc.initStreamAsync(
+        await enc.initStreamAsync(
             callbacks.write,
             callbacks.seek,
             callbacks.tell,
             null,
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString());
         assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString());
@@ -304,13 +304,13 @@ describe('encode & decode: async api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(await enc.initOggStreamAsync(
+        await enc.initOggStreamAsync(
             callbacks.read,
             callbacks.write,
             callbacks.seek,
             callbacks.tell,
             null,
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString());
         assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString());
@@ -326,12 +326,12 @@ describe('encode & decode: async api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(await enc.initStreamAsync(
+        await enc.initStreamAsync(
             callbacks.write,
             callbacks.seek,
             callbacks.tell,
             null,
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString());
         assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString());
@@ -347,13 +347,13 @@ describe('encode & decode: async api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(await enc.initOggStreamAsync(
+        await enc.initOggStreamAsync(
             callbacks.read,
             callbacks.write,
             callbacks.seek,
             callbacks.tell,
             null,
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString());
         assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString());
@@ -368,10 +368,10 @@ describe('encode & decode: async api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(await enc.initFileAsync(
+        await enc.initFileAsync(
             tmpFile.path,
             (...args) => progressCallbackValues.push(args),
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString());
         assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString());
@@ -387,10 +387,10 @@ describe('encode & decode: async api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(await enc.initOggFileAsync(
+        await enc.initOggFileAsync(
             tmpFile.path,
             (...args) => progressCallbackValues.push(args),
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString());
         assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString());
@@ -406,10 +406,10 @@ describe('encode & decode: async api', function() {
         enc.channels = 2;
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
-        assert.equal(await enc.initFileAsync(
+        await enc.initFileAsync(
             tmpFile.path,
             (...args) => progressCallbackValues.push(args),
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(await enc.processAsync(encDataAlt, totalSamples), enc.getResolvedStateString());
         assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString());
@@ -428,14 +428,14 @@ describe('encode & decode: async api', function() {
         enc.setCompressionLevel(9);
         enc.sampleRate = 44100;
         enc.setMetadata([ new api.metadata.VorbisCommentMetadata() ]);
-        assert.equal(await enc.initStreamAsync(
+        await enc.initStreamAsync(
             callbacks.write,
             null,
             null,
             (metadata) => {
                 metadataBlock = metadata;
             },
-        ), 0, enc.getResolvedStateString());
+        );
 
         assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString());
         assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString());

@@ -97,7 +97,6 @@ namespace flac_bindings {
         return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::seekAbsoluteAsync", ctx);
     }
 
-    static auto initConvertFunc = std::bind(numberToJs<int>, _1, _2, false);
     AsyncDecoderWork* AsyncDecoderWork::forInitStream(const Object& self, DecoderWorkContext* ctx) {
         auto workFunction = [ctx] () {
             return FLAC__stream_decoder_init_stream(
@@ -113,7 +112,11 @@ namespace flac_bindings {
                 ctx
             );
         };
-        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initStreamAsync", ctx, initConvertFunc);
+        auto convertFunction = [ctx] (const Napi::Env& env, int value) {
+            ctx->dec->checkInitStatus(env, (FLAC__StreamDecoderInitStatus) value);
+            return env.Undefined();
+        };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initStreamAsync", ctx, convertFunction);
     }
 
     AsyncDecoderWork* AsyncDecoderWork::forInitOggStream(const Object& self, DecoderWorkContext* ctx) {
@@ -131,7 +134,11 @@ namespace flac_bindings {
                 ctx
             );
         };
-        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initOggStreamAsync", ctx, initConvertFunc);
+        auto convertFunction = [ctx] (const Napi::Env& env, int value) {
+            ctx->dec->checkInitStatus(env, (FLAC__StreamDecoderInitStatus) value);
+            return env.Undefined();
+        };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initOggStreamAsync", ctx, convertFunction);
     }
 
 
@@ -146,7 +153,11 @@ namespace flac_bindings {
                 ctx
             );
         };
-        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initFileAsync", ctx, initConvertFunc);
+        auto convertFunction = [ctx] (const Napi::Env& env, int value) {
+            ctx->dec->checkInitStatus(env, (FLAC__StreamDecoderInitStatus) value);
+            return env.Undefined();
+        };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initFileAsync", ctx, convertFunction);
     }
 
     AsyncDecoderWork* AsyncDecoderWork::forInitOggFile(const Object& self, const std::string &filePath, DecoderWorkContext* ctx) {
@@ -160,7 +171,11 @@ namespace flac_bindings {
                 ctx
             );
         };
-        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initOggFileAsync", ctx, initConvertFunc);
+        auto convertFunction = [ctx] (const Napi::Env& env, int value) {
+            ctx->dec->checkInitStatus(env, (FLAC__StreamDecoderInitStatus) value);
+            return env.Undefined();
+        };
+        return new AsyncDecoderWork(self, workFunction, "flac_bindings::StreamDecoder::initOggFileAsync", ctx, convertFunction);
     }
 
     void AsyncDecoderWork::onProgress(
@@ -169,24 +184,23 @@ namespace flac_bindings {
         AsyncDecoderWork::ExecutionProgress& prog,
         const std::shared_ptr<DecoderWorkRequest>& req
     ) {
-        auto asyncContext = nullptr;
         std::function<void(Napi::Value result)> processResult;
         Napi::Value result;
 
         switch(req->type) {
             case DecoderWorkRequest::Type::Eof: {
-                result = ctx->eofCbk.MakeCallback(env.Global(), {}, asyncContext);
+                result = ctx->eofCbk.MakeCallback(env.Global(), {});
                 processResult = generateParseBooleanResult(req->returnValue, "Decoder:EofCallback");
                 break;
             }
 
             case DecoderWorkRequest::Type::Error: {
-                result = ctx->errorCbk.MakeCallback(env.Global(), {numberToJs(env, req->errorCode)}, asyncContext);
+                result = ctx->errorCbk.MakeCallback(env.Global(), {numberToJs(env, req->errorCode)});
                 break;
             }
 
             case DecoderWorkRequest::Type::Length: {
-                result = ctx->lengthCbk.MakeCallback(env.Global(), {}, asyncContext);
+                result = ctx->lengthCbk.MakeCallback(env.Global(), {});
                 processResult = generateParseObjectResult<>(
                     req->returnValue,
                     "Decoder:LengthCallback",
@@ -199,15 +213,14 @@ namespace flac_bindings {
             case DecoderWorkRequest::Type::Metadata: {
                 result = ctx->metadataCbk.MakeCallback(
                     env.Global(),
-                    {Metadata::toJs(env, const_cast<FLAC__StreamMetadata*>(req->metadata))},
-                    asyncContext
+                    {Metadata::toJs(env, const_cast<FLAC__StreamMetadata*>(req->metadata))}
                 );
                 break;
             }
 
             case DecoderWorkRequest::Type::Read: {
                 readSharedBufferRef.setFromWrap(env, req->buffer, *req->bytes);
-                result = ctx->readCbk.MakeCallback(env.Global(), {readSharedBufferRef.value()}, asyncContext);
+                result = ctx->readCbk.MakeCallback(env.Global(), {readSharedBufferRef.value()});
                 processResult = generateParseObjectResult(
                     req->returnValue,
                     "Decoder:ReadCallback",
@@ -218,13 +231,13 @@ namespace flac_bindings {
             }
 
             case DecoderWorkRequest::Type::Seek: {
-                result = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, *req->offset)}, asyncContext);
+                result = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, *req->offset)});
                 processResult = generateParseNumberResult(req->returnValue, "Decoder:SeekCallback");
                 break;
             }
 
             case DecoderWorkRequest::Type::Tell: {
-                result = ctx->tellCbk.MakeCallback(env.Global(), {}, asyncContext);
+                result = ctx->tellCbk.MakeCallback(env.Global(), {});
                 processResult = generateParseObjectResult(
                     req->returnValue,
                     "Decoder:TellCallback",
@@ -247,7 +260,7 @@ namespace flac_bindings {
                 }
 
                 auto jsFrame = frameToJs(env, req->frame);
-                result = ctx->writeCbk.MakeCallback(env.Global(), {jsFrame, buffers}, asyncContext);
+                result = ctx->writeCbk.MakeCallback(env.Global(), {jsFrame, buffers});
                 processResult = generateParseNumberResult(req->returnValue, "Decoder:WriteCallback");
                 break;
             }

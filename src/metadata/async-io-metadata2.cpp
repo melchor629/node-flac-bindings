@@ -8,7 +8,8 @@ namespace flac_bindings {
     AsyncFlacIOWork::AsyncFlacIOWork(
         std::function<bool(FLAC__IOHandle, FLAC__IOCallbacks)> f,
         const char* name,
-        const Object& obj
+        const Object& obj,
+        std::function<void(const Napi::Env&, bool)> checkStatus
     ): AsyncBackgroundTask<bool, FlacIOWorkRequest>(
         obj.Env(),
         [this, f] (auto c) {
@@ -18,14 +19,18 @@ namespace flac_bindings {
         },
         std::bind(&AsyncFlacIOWork::doAsyncWork, this, _1, _2, _3),
         name,
-        booleanToJs<bool>
+        [checkStatus] (auto env, auto value) {
+            checkStatus(env, value);
+            return env.Undefined();
+        }
     ), cbk1(obj), cbk2() {}
 
     AsyncFlacIOWork::AsyncFlacIOWork(
         std::function<bool(FLAC__IOHandle, FLAC__IOCallbacks, FLAC__IOHandle, FLAC__IOCallbacks)> f,
         const char* name,
         const Object& obj1,
-        const Object& obj2
+        const Object& obj2,
+        std::function<void(const Napi::Env&, bool)> checkStatus
     ): AsyncBackgroundTask<bool, FlacIOWorkRequest>(
         obj1.Env(),
         [this, f] (auto c) {
@@ -36,7 +41,10 @@ namespace flac_bindings {
         },
         std::bind(&AsyncFlacIOWork::doAsyncWork, this, _1, _2, _3),
         name,
-        booleanToJs<bool>
+        [checkStatus] (auto env, auto value) {
+            checkStatus(env, value);
+            return env.Undefined();
+        }
     ), cbk1(obj1), cbk2(obj2) {}
 
     template<typename Type>
