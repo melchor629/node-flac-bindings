@@ -8,8 +8,6 @@
 #include <optional>
 #include <napi.h>
 
-#include "js_utils.hpp"
-
 namespace flac_bindings {
 
     using namespace Napi;
@@ -65,7 +63,7 @@ namespace flac_bindings {
                 const NapiExecutionProgress& progress
             ): self(self), progress(progress) {}
 
-            static Value promiseThen(const CallbackInfo& info) {
+            static void promiseThen(const CallbackInfo& info) {
                 auto* p = (PromiseContext*) info.Data();
                 if(p->resolve) {
                     try {
@@ -77,10 +75,9 @@ namespace flac_bindings {
 
                 p->req->notifyCompleted();
                 delete p;
-                return info.Env().Undefined();
             }
 
-            static Value promiseCatch(const CallbackInfo& info) {
+            static void promiseCatch(const CallbackInfo& info) {
                 auto* p = (PromiseContext*) info.Data();
                 if(p->reject) {
                     try {
@@ -96,7 +93,6 @@ namespace flac_bindings {
 
                 p->req->notifyCompleted();
                 delete p;
-                return info.Env().Undefined();
             }
 
         public:
@@ -157,11 +153,14 @@ namespace flac_bindings {
                 auto thenFunction = Function::New(env, promiseThen, "asyncBackgroundTask_executionProgress_then", context);
                 auto catchFunction = Function::New(env, promiseCatch, "asyncBackgroundTask_executionProgress_catch", context);
 
-                handleAsync(
-                    promise,
-                    thenFunction,
-                    catchFunction
-                );
+                Promise promiseAfterThen = promise.Get("then")
+                    .As<Function>()
+                    .Call(promise, {thenFunction})
+                    .template As<Promise>();
+                promiseAfterThen.Get("catch")
+                    .As<Function>()
+                    .Call(promiseAfterThen, {catchFunction})
+                    .template As<Promise>();
 
                 currentProgressRequest->deferred = true;
             }

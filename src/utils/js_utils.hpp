@@ -24,12 +24,4 @@ namespace flac_bindings {
         return scope.Escape(maybeHelper).As<Napi::Function>();
     }
 
-    static inline void handleAsync(Napi::Promise& promise, Napi::Function& resolve, Napi::Function& reject) {
-        getHelper(promise.Env(), "handleAsync")({
-            promise,
-            resolve,
-            reject,
-        });
-    }
-
 }
