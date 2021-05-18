@@ -2,6 +2,8 @@
 
 Nodejs bindings to [libFLAC](https://xiph.org/flac/download.html)
 
+![Node-API v6](https://raw.githubusercontent.com/nodejs/abi-stable-node/doc/assets/Node-API%20v6%20Badge.svg) ![Node-API v7](https://raw.githubusercontent.com/nodejs/abi-stable-node/doc/assets/Node-API%20v7%20Badge.svg)
+
 | master | dev |
 |--------|-----|
 |![Node CI](https://github.com/melchor629/node-flac-bindings/workflows/Node%20CI/badge.svg?branch=master)|![Node CI](https://github.com/melchor629/node-flac-bindings/workflows/Node%20CI/badge.svg?branch=dev)|
