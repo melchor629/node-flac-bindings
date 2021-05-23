@@ -4,7 +4,7 @@ const printMetadata = (metadata) => {
   console.log(`- type: ${format.MetadataTypeString[metadata.type]}`)
   console.log(`  isLast: ${metadata.isLast}`)
   console.log(`  length: ${metadata.length}`)
-  switch(metadata.type) {
+  switch (metadata.type) {
     case format.MetadataType.APPLICATION:
       console.log(`  id: ${metadata.id.toString('utf8')}`)
       console.log(`  data: <Buffer ${metadata.data.length} bytes>`)
@@ -15,14 +15,14 @@ const printMetadata = (metadata) => {
       console.log(`  leadIn: ${metadata.leadIn}`)
       console.log(`  isCd: ${metadata.isCd}`)
       console.log('  tracks:')
-      for(const track of metadata) {
+      for (const track of metadata) {
         console.log(`    - offset: ${track.offset}`)
         console.log(`      number: ${track.number}`)
         console.log(`      isrc: ${track.isrc}`)
         console.log(`      type: ${track.type}`)
         console.log(`      preEmphasis: ${track.preEmphasis}`)
         console.log('      indices:')
-        for(const index of track) {
+        for (const index of track) {
           console.log(`        - ${index.offset} / ${index.number}`)
         }
       }
@@ -41,7 +41,7 @@ const printMetadata = (metadata) => {
 
     case format.MetadataType.SEEKTABLE:
       console.log('  points:')
-      for(const point of metadata) {
+      for (const point of metadata) {
         console.log(`    - sampleNumber: ${point.sampleNumber}`)
         console.log(`      streamOffset: ${point.streamOffset}`)
         console.log(`      frameSamples: ${point.frameSamples}`)
@@ -66,6 +66,8 @@ const printMetadata = (metadata) => {
         .map((e) => e.split(/=/))
         .forEach(([key, ...values]) => console.log(`  ${key}: ${values.join('=')}`))
       break
+
+    default:
   }
 }
 

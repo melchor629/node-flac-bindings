@@ -21,7 +21,6 @@ namespace flac_bindings {
         NativeIterator::init(env, *this);
 
         DefineAddon(exports, {
-            InstanceValue("_helpers", Object::New(env)),
             InstanceValue("_testAsync", Function::New(env, testAsync, "_testAsync")),
             InstanceValue("napiVersion", Number::New(env, NAPI_VERSION), napi_enumerable),
             InstanceValue("Encoder", StreamEncoder::init(env, *this), napi_enumerable),

@@ -1,18 +1,24 @@
 const fs = require('fs')
 const wav = require('wav')
 const { FileDecoder } = require('flac-bindings')
+const args = require('./_args')(__filename)
+
+// first argument is the flac file to decode
+// second argument is the wav where the decoded flac will be writen
 
 const decoder = new FileDecoder({
-  file: 'some.flac',
+  file: args[0] || 'some.flac',
 })
 
 // wait until the first data
-decoder.once('data', chunk => {
+decoder.once('data', (chunk) => {
   const encoder = new wav.Writer({
-    // these methods give you some info about the flac (but they only work after the first 'metadata' or 'data' event)
+    // these methods give you some info about the flac (but they only work after the first
+    // 'metadata' or 'data' event).
     channels: decoder.getChannels(),
     // there is a small difference between the flac bits per sample and the output bits per sample.
-    // they are usually the same, but if the bps is 24 and outputAs32 is not specified, the output will be 32
+    // they are usually the same, but if the bps is 24 and outputAs32 is not specified, the output
+    // will be 32.
     bitDepth: decoder.getOutputBitsPerSample(),
     sampleRate: decoder.getSampleRate(),
   })
@@ -21,8 +27,8 @@ decoder.once('data', chunk => {
 
   decoder
     .pipe(encoder)
-    .pipe(fs.createWriteStream('out.wav'))
-    .on('error', error => {
+    .pipe(fs.createWriteStream(args[1] || 'out.wav'))
+    .on('error', (error) => {
       console.error(error)
     })
 })
