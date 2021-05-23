@@ -3,6 +3,8 @@ const http = require('http')
 const mic = require('mic')
 const { StreamEncoder } = require('flac-bindings')
 
+// here there are a lot of stuff to configure, change the script with the right value :)
+
 const micro = mic({
   rate: '44100',
   channels: 1,

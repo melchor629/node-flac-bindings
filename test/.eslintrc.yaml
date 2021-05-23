@@ -1,0 +1,8 @@
+env:
+  mocha: true
+plugins:
+  - mocha
+rules:
+  prefer-arrow-callback: 'off'
+  func-names: 'off'
+  'mocha/no-exclusive-tests': error
