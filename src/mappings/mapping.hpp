@@ -5,45 +5,45 @@
 
 namespace flac_bindings {
 
-    using namespace Napi;
+  using namespace Napi;
 
-    template<typename StorageType>
-    class Mapping {
-    public:
-        Mapping(const CallbackInfo& info) {
-            if(info.Length() > 0 && info[0].IsExternal()) {
-                data = pointer::unwrap<StorageType>(info.Env(), info[0]);
-                if(info.Length() > 1 && info[1].IsBoolean()) {
-                    shouldBeDeleted = booleanFromJs<bool>(info[1]);
-                }
-            }
+  template<typename StorageType>
+  class Mapping {
+  public:
+    Mapping(const CallbackInfo& info) {
+      if (info.Length() > 0 && info[0].IsExternal()) {
+        data = pointer::unwrap<StorageType>(info.Env(), info[0]);
+        if (info.Length() > 1 && info[1].IsBoolean()) {
+          shouldBeDeleted = booleanFromJs<bool>(info[1]);
         }
+      }
+    }
 
-        virtual ~Mapping() {}
+    virtual ~Mapping() {}
 
-        StorageType* get() {
-            return data;
-        }
+    StorageType* get() {
+      return data;
+    }
 
-        inline operator StorageType*() {
-            return data;
-        }
+    inline operator StorageType*() {
+      return data;
+    }
 
-        inline bool willBeDeleted() const {
-            return shouldBeDeleted;
-        }
+    inline bool willBeDeleted() const {
+      return shouldBeDeleted;
+    }
 
-        inline void setDeletion(bool should) {
-            shouldBeDeleted = should;
-        }
+    inline void setDeletion(bool should) {
+      shouldBeDeleted = should;
+    }
 
-        //Static methods to implement by each subclass
-        static Mapping<StorageType>& fromJs(const Value&);
-        static Value toJs(const Env&, StorageType*, bool deleteHint = false);
+    // Static methods to implement by each subclass
+    static Mapping<StorageType>& fromJs(const Value&);
+    static Value toJs(const Env&, StorageType*, bool deleteHint = false);
 
-    protected:
-        bool shouldBeDeleted = true;
-        StorageType* data = nullptr;
-    };
+  protected:
+    bool shouldBeDeleted = true;
+    StorageType* data = nullptr;
+  };
 
 }
