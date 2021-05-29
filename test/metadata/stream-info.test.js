@@ -1,188 +1,187 @@
-const { assert } = require('chai')
 const { StreamInfoMetadata } = require('../../lib/index').api.metadata
 const { MetadataType } = require('../../lib/index').api.format
 const { getStreaminfoAsync } = require('../../lib/index').api.metadata0
 const { pathForFile: { tags: pathForFile }, gc } = require('../helper')
 
-describe('StreamInfoMetadata', function () {
-  it('create new object should work', function () {
-    return new StreamInfoMetadata()
+describe('StreamInfoMetadata', () => {
+  it('create new object should work', () => {
+    expect(new StreamInfoMetadata()).not.toBeNull()
   })
 
-  it('object has the right type', function () {
+  it('object has the right type', () => {
     const st = new StreamInfoMetadata()
 
-    assert.equal(st.type, MetadataType.STREAMINFO)
+    expect(st.type).toEqual(MetadataType.STREAMINFO)
   })
 
-  it('set minBlocksize should work', function () {
+  it('set minBlocksize should work', () => {
     const st = new StreamInfoMetadata()
 
     st.minBlocksize = 1024
 
-    assert.equal(st.minBlocksize, 1024)
+    expect(st.minBlocksize).toEqual(1024)
   })
 
-  it('set minBlocksize should throw if value is not a number', function () {
+  it('set minBlocksize should throw if value is not a number', () => {
     const st = new StreamInfoMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       st.minBlocksize = null
-    })
+    }).toThrow()
   })
 
-  it('set maxBlocksize should work', function () {
+  it('set maxBlocksize should work', () => {
     const st = new StreamInfoMetadata()
 
     st.maxBlocksize = 1024
 
-    assert.equal(st.maxBlocksize, 1024)
+    expect(st.maxBlocksize).toEqual(1024)
   })
 
-  it('set maxBlocksize should throw if value is not a number', function () {
+  it('set maxBlocksize should throw if value is not a number', () => {
     const st = new StreamInfoMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       st.maxBlocksize = null
-    })
+    }).toThrow()
   })
 
-  it('set minFramesize should work', function () {
+  it('set minFramesize should work', () => {
     const st = new StreamInfoMetadata()
 
     st.minFramesize = 1024
 
-    assert.equal(st.minFramesize, 1024)
+    expect(st.minFramesize).toEqual(1024)
   })
 
-  it('set minFramesize should throw if value is not a number', function () {
+  it('set minFramesize should throw if value is not a number', () => {
     const st = new StreamInfoMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       st.minFramesize = null
-    })
+    }).toThrow()
   })
 
-  it('set maxFramesize should work', function () {
+  it('set maxFramesize should work', () => {
     const st = new StreamInfoMetadata()
 
     st.maxFramesize = 1024
 
-    assert.equal(st.maxFramesize, 1024)
+    expect(st.maxFramesize).toEqual(1024)
   })
 
-  it('set maxFramesize should throw if value is not a number', function () {
+  it('set maxFramesize should throw if value is not a number', () => {
     const st = new StreamInfoMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       st.maxFramesize = null
-    })
+    }).toThrow()
   })
 
-  it('set channels should work', function () {
+  it('set channels should work', () => {
     const st = new StreamInfoMetadata()
 
     st.channels = 2
 
-    assert.equal(st.channels, 2)
+    expect(st.channels).toEqual(2)
   })
 
-  it('set channels should throw if value is not a number', function () {
+  it('set channels should throw if value is not a number', () => {
     const st = new StreamInfoMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       st.channels = null
-    })
+    }).toThrow()
   })
 
-  it('set bitsPerSample should work', function () {
+  it('set bitsPerSample should work', () => {
     const st = new StreamInfoMetadata()
 
     st.bitsPerSample = 16
 
-    assert.equal(st.bitsPerSample, 16)
+    expect(st.bitsPerSample).toEqual(16)
   })
 
-  it('set bitsPerSample should throw if value is not a number', function () {
+  it('set bitsPerSample should throw if value is not a number', () => {
     const st = new StreamInfoMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       st.bitsPerSample = null
-    })
+    }).toThrow()
   })
 
-  it('set sampleRate should work', function () {
+  it('set sampleRate should work', () => {
     const st = new StreamInfoMetadata()
 
     st.sampleRate = 44100
 
-    assert.equal(st.sampleRate, 44100)
+    expect(st.sampleRate).toEqual(44100)
   })
 
-  it('set sampleRate should throw if value is not a number', function () {
+  it('set sampleRate should throw if value is not a number', () => {
     const st = new StreamInfoMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       st.sampleRate = null
-    })
+    }).toThrow()
   })
 
-  it('set totalSamples should work', function () {
+  it('set totalSamples should work', () => {
     const st = new StreamInfoMetadata()
 
     st.totalSamples = 441000n
 
-    assert.equal(st.totalSamples, 441000n)
+    expect(st.totalSamples).toEqual(441000)
   })
 
-  it('set totalSamples should throw if value is not a number', function () {
+  it('set totalSamples should throw if value is not a number', () => {
     const st = new StreamInfoMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       st.totalSamples = null
-    })
+    }).toThrow()
   })
 
-  it('set md5sum should work', function () {
+  it('set md5sum should work', () => {
     const st = new StreamInfoMetadata()
 
     st.md5sum = Buffer.allocUnsafe(16)
 
-    assert.isTrue(Buffer.isBuffer(st.md5sum))
+    expect(Buffer.isBuffer(st.md5sum)).toBe(true)
   })
 
-  it('set md5sum should throw if value is not a buffer', function () {
+  it('set md5sum should throw if value is not a buffer', () => {
     const st = new StreamInfoMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       st.md5sum = 123456789
-    })
+    }).toThrow()
   })
 
-  it('set md5sum should throw if value buffer is less than 16 bytes', function () {
+  it('set md5sum should throw if value buffer is less than 16 bytes', () => {
     const st = new StreamInfoMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       st.md5sum = Buffer.alloc(10)
-    })
+    }).toThrow()
   })
 
-  it('is correct from mapping', async function () {
+  it('is correct from mapping', async () => {
     const st = await getStreaminfoAsync(pathForFile('no.flac'))
 
-    assert.equal(st.bitsPerSample, 16)
-    assert.equal(st.channels, 2)
-    assert.equal(st.maxBlocksize, 4096)
-    assert.equal(st.minBlocksize, 4096)
-    assert.deepEqual(st.md5sum, Buffer.from('7ÓË©ó»PLÀ8H_pG', 'ascii'))
-    assert.equal(st.maxFramesize, 4214)
-    assert.equal(st.minFramesize, 2565)
-    assert.equal(st.sampleRate, 44100)
-    assert.equal(st.totalSamples, 10651)
+    expect(st.bitsPerSample).toEqual(16)
+    expect(st.channels).toEqual(2)
+    expect(st.maxBlocksize).toEqual(4096)
+    expect(st.minBlocksize).toEqual(4096)
+    expect(st.md5sum).toEqual(Buffer.from('7ÓË©ó»PLÀ8H_pG', 'ascii'))
+    expect(st.maxFramesize).toEqual(4214)
+    expect(st.minFramesize).toEqual(2565)
+    expect(st.sampleRate).toEqual(44100)
+    expect(st.totalSamples).toEqual(10651)
   })
 
-  describe('gc', function () {
-    it('gc should work', function () {
+  describe('gc', () => {
+    it('gc should work', () => {
       gc()
     })
   })

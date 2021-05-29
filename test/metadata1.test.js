@@ -1,73 +1,65 @@
-const { assert, use } = require('chai')
 const { promises: fs, ...oldfs } = require('fs')
 const temp = require('temp').track()
 const { SimpleIterator, metadata, format } = require('../lib/index').api
 const { pathForFile: { tags: pathForFile }, gc } = require('./helper')
 
-temp.track()
-use(require('./helper').asyncChaiExtensions)
-
-describe('SimpleIterator', function () {
-  describe('init', function () {
-    it('throws if the first argument is not a string', function () {
-      assert.throws(() => new SimpleIterator().init(8))
+describe('SimpleIterator', () => {
+  describe('init', () => {
+    it('throws if the first argument is not a string', () => {
+      expect(() => new SimpleIterator().init(8)).toThrow()
     })
 
-    it('returns false if the file does not exist', async function () {
+    it('returns false if the file does not exist', async () => {
       const filePath = pathForFile('el.flac')
       const it = new SimpleIterator()
 
-      assert.throws(
-        () => it.init(filePath),
-        /SimpleIterator initialization failed: ERROR_OPENING_FILE/,
-      )
+      expect(() => it.init(filePath)).toThrow()
 
-      await assert.throwsAsync(() => fs.access(filePath))
+      await expect(() => fs.access(filePath)).rejects.toThrow()
     })
 
-    it('returns true if the file exists', async function () {
+    it('returns true if the file exists', async () => {
       const filePath = pathForFile('no.flac')
       const it = new SimpleIterator()
 
       it.init(filePath)
 
-      assert.equal(it.status(), SimpleIterator.Status.OK)
-      assert.isTrue(it.isWritable())
+      expect(it.status()).toEqual(SimpleIterator.Status.OK)
+      expect(it.isWritable()).toBe(true)
       await fs.access(filePath)
     })
   })
 
-  describe('initAsync', function () {
-    it('throws if the first argument is not a string', async function () {
-      await assert.throwsAsync(() => new SimpleIterator().initAsync(8))
+  describe('initAsync', () => {
+    it('throws if the first argument is not a string', () => {
+      expect(() => new SimpleIterator().initAsync(8)).toThrow()
     })
 
-    it('throws if the file does not exist', async function () {
+    it('throws if the file does not exist', async () => {
       const filePath = pathForFile('el.flac')
       const it = new SimpleIterator()
 
-      await assert.throwsAsync(
+      await expect(
         () => it.initAsync(filePath),
-        /SimpleIterator initialization failed: ERROR_OPENING_FILE/,
-      )
+      ).rejects.toThrow(/SimpleIterator initialization failed: ERROR_OPENING_FILE/)
 
-      await assert.throwsAsync(() => fs.access(filePath))
+      await expect(() => fs.access(filePath)).rejects.toThrow()
     })
 
-    it('returns true if the file exists', async function () {
+    it('returns true if the file exists', async () => {
       const filePath = pathForFile('no.flac')
       const it = new SimpleIterator()
 
       await it.initAsync(filePath)
 
-      assert.equal(it.status(), SimpleIterator.Status.OK)
-      assert.isTrue(it.isWritable())
+      expect(it.status()).toEqual(SimpleIterator.Status.OK)
+      expect(it.isWritable()).toBe(true)
       await fs.access(filePath)
     })
   })
 
-  describe('iterator', function () {
-    it('should iterate over all blocks', function () {
+  describe('iterator', () => {
+    it('should iterate over all blocks', () => {
       const filePath = pathForFile('vc-cs.flac')
       const it = new SimpleIterator()
 
@@ -75,29 +67,29 @@ describe('SimpleIterator', function () {
       const e = it[Symbol.iterator]()
 
       let m = e.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.STREAMINFO)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.STREAMINFO)
 
       m = e.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.SEEKTABLE)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.SEEKTABLE)
 
       m = e.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.VORBIS_COMMENT)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.VORBIS_COMMENT)
 
       m = e.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.CUESHEET)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.CUESHEET)
 
       m = e.next()
-      assert.isTrue(m.done)
-      assert.isUndefined(m.value)
+      expect(m.done).toBe(true)
+      expect(m.value).not.toBeDefined()
     })
   })
 
-  describe('asyncIterator', function () {
-    it('should iterate over all blocks', async function () {
+  describe('asyncIterator', () => {
+    it('should iterate over all blocks', async () => {
       const filePath = pathForFile('vc-cs.flac')
       const it = new SimpleIterator()
 
@@ -105,72 +97,72 @@ describe('SimpleIterator', function () {
       const e = it[Symbol.asyncIterator]()
 
       let m = await e.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.STREAMINFO)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.STREAMINFO)
 
       m = await e.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.SEEKTABLE)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.SEEKTABLE)
 
       m = await e.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.VORBIS_COMMENT)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.VORBIS_COMMENT)
 
       m = await e.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.CUESHEET)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.CUESHEET)
 
       m = await e.next()
-      assert.isTrue(m.done)
-      assert.isUndefined(m.value)
+      expect(m.done).toBe(true)
+      expect(m.value).not.toBeDefined()
     })
   })
 
-  describe('iterate and get*', function () {
-    it('should iterate forwards and get info about them correctly', function () {
+  describe('iterate and get*', () => {
+    it('should iterate forwards and get info about them correctly', () => {
       const filePath = pathForFile('vc-p.flac')
       const it = new SimpleIterator()
 
       it.init(filePath)
 
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 4)
-      assert.equal(it.getBlockLength(), 34)
-      assert.equal(it.getBlockType(), format.MetadataType.STREAMINFO)
-      assert.instanceOf(it.getBlock(), metadata.StreamInfoMetadata)
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(4)
+      expect(it.getBlockLength()).toEqual(34)
+      expect(it.getBlockType()).toEqual(format.MetadataType.STREAMINFO)
+      expect(it.getBlock()).toBeInstanceOf(metadata.StreamInfoMetadata)
 
-      assert.isTrue(it.next())
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 42)
-      assert.equal(it.getBlockLength(), 25)
-      assert.equal(it.getBlockType(), format.MetadataType.APPLICATION)
-      assert.instanceOf(it.getBlock(), metadata.ApplicationMetadata)
+      expect(it.next()).toBe(true)
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(42)
+      expect(it.getBlockLength()).toEqual(25)
+      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(it.getBlock()).toBeInstanceOf(metadata.ApplicationMetadata)
 
-      assert.isTrue(it.next())
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 71)
-      assert.equal(it.getBlockLength(), 17142)
-      assert.equal(it.getBlockType(), format.MetadataType.PICTURE)
-      assert.instanceOf(it.getBlock(), metadata.PictureMetadata)
+      expect(it.next()).toBe(true)
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(71)
+      expect(it.getBlockLength()).toEqual(17142)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PICTURE)
+      expect(it.getBlock()).toBeInstanceOf(metadata.PictureMetadata)
 
-      assert.isTrue(it.next())
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 17217)
-      assert.equal(it.getBlockLength(), 136)
-      assert.equal(it.getBlockType(), format.MetadataType.PADDING)
-      assert.instanceOf(it.getBlock(), metadata.PaddingMetadata)
+      expect(it.next()).toBe(true)
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(17217)
+      expect(it.getBlockLength()).toEqual(136)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PADDING)
+      expect(it.getBlock()).toBeInstanceOf(metadata.PaddingMetadata)
 
-      assert.isTrue(it.next())
-      assert.isTrue(it.isLast())
-      assert.equal(it.getBlockOffset(), 17357)
-      assert.equal(it.getBlockLength(), 165)
-      assert.equal(it.getBlockType(), format.MetadataType.VORBIS_COMMENT)
-      assert.instanceOf(it.getBlock(), metadata.VorbisCommentMetadata)
+      expect(it.next()).toBe(true)
+      expect(it.isLast()).toBe(true)
+      expect(it.getBlockOffset()).toEqual(17357)
+      expect(it.getBlockLength()).toEqual(165)
+      expect(it.getBlockType()).toEqual(format.MetadataType.VORBIS_COMMENT)
+      expect(it.getBlock()).toBeInstanceOf(metadata.VorbisCommentMetadata)
 
-      assert.isFalse(it.next())
+      expect(it.next()).toBe(false)
     })
 
-    it('should iterate backwards and get info about them correctly', function () {
+    it('should iterate backwards and get info about them correctly', () => {
       const filePath = pathForFile('vc-p.flac')
       const it = new SimpleIterator()
 
@@ -178,88 +170,88 @@ describe('SimpleIterator', function () {
       // eslint-disable-next-line curly
       while (it.next());
 
-      assert.isTrue(it.isLast())
-      assert.equal(it.getBlockOffset(), 17357)
-      assert.equal(it.getBlockLength(), 165)
-      assert.equal(it.getBlockType(), format.MetadataType.VORBIS_COMMENT)
-      assert.instanceOf(it.getBlock(), metadata.VorbisCommentMetadata)
-      assert.isTrue(it.prev())
+      expect(it.isLast()).toBe(true)
+      expect(it.getBlockOffset()).toEqual(17357)
+      expect(it.getBlockLength()).toEqual(165)
+      expect(it.getBlockType()).toEqual(format.MetadataType.VORBIS_COMMENT)
+      expect(it.getBlock()).toBeInstanceOf(metadata.VorbisCommentMetadata)
+      expect(it.prev()).toBe(true)
 
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 17217)
-      assert.equal(it.getBlockLength(), 136)
-      assert.equal(it.getBlockType(), format.MetadataType.PADDING)
-      assert.instanceOf(it.getBlock(), metadata.PaddingMetadata)
-      assert.isTrue(it.prev())
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(17217)
+      expect(it.getBlockLength()).toEqual(136)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PADDING)
+      expect(it.getBlock()).toBeInstanceOf(metadata.PaddingMetadata)
+      expect(it.prev()).toBe(true)
 
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 71)
-      assert.equal(it.getBlockLength(), 17142)
-      assert.equal(it.getBlockType(), format.MetadataType.PICTURE)
-      assert.instanceOf(it.getBlock(), metadata.PictureMetadata)
-      assert.isTrue(it.prev())
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(71)
+      expect(it.getBlockLength()).toEqual(17142)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PICTURE)
+      expect(it.getBlock()).toBeInstanceOf(metadata.PictureMetadata)
+      expect(it.prev()).toBe(true)
 
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 42)
-      assert.equal(it.getBlockLength(), 25)
-      assert.equal(it.getBlockType(), format.MetadataType.APPLICATION)
-      assert.instanceOf(it.getBlock(), metadata.ApplicationMetadata)
-      assert.isTrue(it.prev())
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(42)
+      expect(it.getBlockLength()).toEqual(25)
+      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(it.getBlock()).toBeInstanceOf(metadata.ApplicationMetadata)
+      expect(it.prev()).toBe(true)
 
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 4)
-      assert.equal(it.getBlockLength(), 34)
-      assert.equal(it.getBlockType(), format.MetadataType.STREAMINFO)
-      assert.instanceOf(it.getBlock(), metadata.StreamInfoMetadata)
-      assert.isFalse(it.prev())
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(4)
+      expect(it.getBlockLength()).toEqual(34)
+      expect(it.getBlockType()).toEqual(format.MetadataType.STREAMINFO)
+      expect(it.getBlock()).toBeInstanceOf(metadata.StreamInfoMetadata)
+      expect(it.prev()).toBe(false)
     })
   })
 
-  describe('async iterate and get*Async', function () {
-    it('should iterate forwards and get info about them correctly', async function () {
+  describe('async iterate and get*Async', () => {
+    it('should iterate forwards and get info about them correctly', async () => {
       const filePath = pathForFile('vc-p.flac')
       const it = new SimpleIterator()
 
       await it.initAsync(filePath)
 
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 4)
-      assert.equal(it.getBlockLength(), 34)
-      assert.equal(it.getBlockType(), format.MetadataType.STREAMINFO)
-      assert.instanceOf(await it.getBlockAsync(), metadata.StreamInfoMetadata)
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(4)
+      expect(it.getBlockLength()).toEqual(34)
+      expect(it.getBlockType()).toEqual(format.MetadataType.STREAMINFO)
+      expect(await it.getBlockAsync()).toBeInstanceOf(metadata.StreamInfoMetadata)
 
-      assert.isTrue(await it.nextAsync())
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 42)
-      assert.equal(it.getBlockLength(), 25)
-      assert.equal(it.getBlockType(), format.MetadataType.APPLICATION)
-      assert.instanceOf(await it.getBlockAsync(), metadata.ApplicationMetadata)
+      expect(await it.nextAsync()).toBe(true)
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(42)
+      expect(it.getBlockLength()).toEqual(25)
+      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(await it.getBlockAsync()).toBeInstanceOf(metadata.ApplicationMetadata)
 
-      assert.isTrue(await it.nextAsync())
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 71)
-      assert.equal(it.getBlockLength(), 17142)
-      assert.equal(it.getBlockType(), format.MetadataType.PICTURE)
-      assert.instanceOf(await it.getBlockAsync(), metadata.PictureMetadata)
+      expect(await it.nextAsync()).toBe(true)
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(71)
+      expect(it.getBlockLength()).toEqual(17142)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PICTURE)
+      expect(await it.getBlockAsync()).toBeInstanceOf(metadata.PictureMetadata)
 
-      assert.isTrue(await it.nextAsync())
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 17217)
-      assert.equal(it.getBlockLength(), 136)
-      assert.equal(it.getBlockType(), format.MetadataType.PADDING)
-      assert.instanceOf(await it.getBlockAsync(), metadata.PaddingMetadata)
+      expect(await it.nextAsync()).toBe(true)
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(17217)
+      expect(it.getBlockLength()).toEqual(136)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PADDING)
+      expect(await it.getBlockAsync()).toBeInstanceOf(metadata.PaddingMetadata)
 
-      assert.isTrue(await it.nextAsync())
-      assert.isTrue(it.isLast())
-      assert.equal(it.getBlockOffset(), 17357)
-      assert.equal(it.getBlockLength(), 165)
-      assert.equal(it.getBlockType(), format.MetadataType.VORBIS_COMMENT)
-      assert.instanceOf(await it.getBlockAsync(), metadata.VorbisCommentMetadata)
+      expect(await it.nextAsync()).toBe(true)
+      expect(it.isLast()).toBe(true)
+      expect(it.getBlockOffset()).toEqual(17357)
+      expect(it.getBlockLength()).toEqual(165)
+      expect(it.getBlockType()).toEqual(format.MetadataType.VORBIS_COMMENT)
+      expect(await it.getBlockAsync()).toBeInstanceOf(metadata.VorbisCommentMetadata)
 
-      assert.isFalse(await it.nextAsync())
+      expect(await it.nextAsync()).toBe(false)
     })
 
-    it('should iterate backwards and get info about them correctly', async function () {
+    it('should iterate backwards and get info about them correctly', async () => {
       const filePath = pathForFile('vc-p.flac')
       const it = new SimpleIterator()
 
@@ -267,209 +259,210 @@ describe('SimpleIterator', function () {
       // eslint-disable-next-line no-await-in-loop
       while (await it.nextAsync());
 
-      assert.isTrue(it.isLast())
-      assert.equal(it.getBlockOffset(), 17357)
-      assert.equal(it.getBlockLength(), 165)
-      assert.equal(it.getBlockType(), format.MetadataType.VORBIS_COMMENT)
-      assert.instanceOf(await it.getBlockAsync(), metadata.VorbisCommentMetadata)
-      assert.isTrue(await it.prevAsync())
+      expect(it.isLast()).toBe(true)
+      expect(it.getBlockOffset()).toEqual(17357)
+      expect(it.getBlockLength()).toEqual(165)
+      expect(it.getBlockType()).toEqual(format.MetadataType.VORBIS_COMMENT)
+      expect(await it.getBlockAsync()).toBeInstanceOf(metadata.VorbisCommentMetadata)
+      expect(await it.prevAsync()).toBe(true)
 
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 17217)
-      assert.equal(it.getBlockLength(), 136)
-      assert.equal(it.getBlockType(), format.MetadataType.PADDING)
-      assert.instanceOf(await it.getBlockAsync(), metadata.PaddingMetadata)
-      assert.isTrue(await it.prevAsync())
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(17217)
+      expect(it.getBlockLength()).toEqual(136)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PADDING)
+      expect(await it.getBlockAsync()).toBeInstanceOf(metadata.PaddingMetadata)
+      expect(await it.prevAsync()).toBe(true)
 
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 71)
-      assert.equal(it.getBlockLength(), 17142)
-      assert.equal(it.getBlockType(), format.MetadataType.PICTURE)
-      assert.instanceOf(await it.getBlockAsync(), metadata.PictureMetadata)
-      assert.isTrue(await it.prevAsync())
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(71)
+      expect(it.getBlockLength()).toEqual(17142)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PICTURE)
+      expect(await it.getBlockAsync()).toBeInstanceOf(metadata.PictureMetadata)
+      expect(await it.prevAsync()).toBe(true)
 
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 42)
-      assert.equal(it.getBlockLength(), 25)
-      assert.equal(it.getBlockType(), format.MetadataType.APPLICATION)
-      assert.instanceOf(await it.getBlockAsync(), metadata.ApplicationMetadata)
-      assert.isTrue(await it.prevAsync())
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(42)
+      expect(it.getBlockLength()).toEqual(25)
+      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(await it.getBlockAsync()).toBeInstanceOf(metadata.ApplicationMetadata)
+      expect(await it.prevAsync()).toBe(true)
 
-      assert.isFalse(it.isLast())
-      assert.equal(it.getBlockOffset(), 4)
-      assert.equal(it.getBlockLength(), 34)
-      assert.equal(it.getBlockType(), format.MetadataType.STREAMINFO)
-      assert.instanceOf(await it.getBlockAsync(), metadata.StreamInfoMetadata)
-      assert.isFalse(await it.prevAsync())
+      expect(it.isLast()).toBe(false)
+      expect(it.getBlockOffset()).toEqual(4)
+      expect(it.getBlockLength()).toEqual(34)
+      expect(it.getBlockType()).toEqual(format.MetadataType.STREAMINFO)
+      expect(await it.getBlockAsync()).toBeInstanceOf(metadata.StreamInfoMetadata)
+      expect(await it.prevAsync()).toBe(false)
     })
   })
 
-  describe('modify', function () {
+  describe('modify', () => {
     let tmpFile
-    beforeEach('createTemporaryFiles', function () {
+    beforeEach(() => {
       tmpFile = temp.openSync('flac-bindings.metadata1.simpleiterator')
       oldfs.copyFileSync(pathForFile('no.flac'), tmpFile.path)
     })
 
-    afterEach('cleanUpTemporaryFiles', function () {
+    afterEach(() => {
+      oldfs.closeSync(tmpFile.fd)
       temp.cleanupSync()
     })
 
-    it('setBlock() throws if the first argument is not a Metadata', function () {
-      assert.throws(() => new SimpleIterator().setBlock({}))
+    it('setBlock() throws if the first argument is not a Metadata', () => {
+      expect(() => new SimpleIterator().setBlock({})).toThrow()
     })
 
-    it('insertBlockAfter() throws if the first argument is not a Metadata', function () {
-      assert.throws(() => new SimpleIterator().insertBlockAfter({}))
+    it('insertBlockAfter() throws if the first argument is not a Metadata', () => {
+      expect(() => new SimpleIterator().insertBlockAfter({})).toThrow()
     })
 
-    it('replace StreamInfo block should not replace it', function () {
+    it('replace StreamInfo block should not replace it', () => {
       const it = new SimpleIterator()
 
       it.init(tmpFile.path)
 
-      assert.isFalse(it.setBlock(new metadata.ApplicationMetadata()))
+      expect(it.setBlock(new metadata.ApplicationMetadata())).toBe(false)
     })
 
-    it('replace any block should effectively replace it', function () {
+    it('replace any block should effectively replace it', () => {
       const it = new SimpleIterator()
 
       it.init(tmpFile.path)
 
-      assert.isTrue(it.next())
+      expect(it.next()).toBe(true)
       const app = new metadata.ApplicationMetadata()
       app.id = Buffer.from('node')
       app.data = Buffer.from('A Wonderful Adventure')
-      assert.isTrue(it.setBlock(app))
+      expect(it.setBlock(app)).toBe(true)
 
       const ot = new SimpleIterator()
       ot.init(tmpFile.path)
-      assert.isTrue(ot.next())
-      assert.equal(ot.getBlockType(), format.MetadataType.APPLICATION)
-      assert.deepEqual(ot.getApplicationId(), Buffer.from('node'))
+      expect(ot.next()).toBe(true)
+      expect(ot.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(ot.getApplicationId()).toEqual(Buffer.from('node'))
     })
 
-    it('insert any block should effectively insert it', function () {
+    it('insert any block should effectively insert it', () => {
       const it = new SimpleIterator()
 
       it.init(tmpFile.path)
 
-      assert.isTrue(it.next())
+      expect(it.next()).toBe(true)
       const app = new metadata.ApplicationMetadata()
       app.id = Buffer.from('node')
       app.data = Buffer.from('A Wonderful Adventure')
-      assert.isTrue(it.insertBlockAfter(app))
+      expect(it.insertBlockAfter(app)).toBe(true)
 
       const ot = new SimpleIterator()
       ot.init(tmpFile.path)
-      assert.isTrue(ot.next())
-      assert.isTrue(ot.next())
-      assert.equal(ot.getBlockType(), format.MetadataType.APPLICATION)
-      assert.deepEqual(ot.getApplicationId(), Buffer.from('node'))
+      expect(ot.next()).toBe(true)
+      expect(ot.next()).toBe(true)
+      expect(ot.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(ot.getApplicationId()).toEqual(Buffer.from('node'))
     })
 
-    it('delete StreamInfo block should not delete it', function () {
+    it('delete StreamInfo block should not delete it', () => {
       const it = new SimpleIterator()
 
       it.init(tmpFile.path)
 
-      assert.isFalse(it.deleteBlock())
+      expect(it.deleteBlock()).toBe(false)
     })
 
-    it('delete any other block should effectively delete it', function () {
+    it('delete any other block should effectively delete it', () => {
       const it = new SimpleIterator()
 
       it.init(tmpFile.path)
 
-      assert.isTrue(it.next())
-      assert.isTrue(it.deleteBlock())
+      expect(it.next()).toBe(true)
+      expect(it.deleteBlock()).toBe(true)
     })
   })
 
-  describe('async modify', function () {
+  describe('async modify', () => {
     let tmpFile
-    beforeEach('createTemporaryFiles', function () {
+    beforeEach(() => {
       tmpFile = temp.openSync('flac-bindings.metadata1.simpleiterator')
       oldfs.copyFileSync(pathForFile('no.flac'), tmpFile.path)
     })
 
-    afterEach('cleanUpTemporaryFiles', function () {
+    afterEach(() => {
       temp.cleanupSync()
     })
 
-    it('setBlock() throws if the first argument is not a Metadata', async function () {
-      await assert.throwsAsync(() => new SimpleIterator().setBlockAsync({}))
+    it('setBlock() throws if the first argument is not a Metadata', () => {
+      expect(() => new SimpleIterator().setBlockAsync({})).toThrow()
     })
 
-    it('insertBlockAfter() throws if the first argument is not a Metadata', async function () {
-      await assert.throwsAsync(() => new SimpleIterator().insertBlockAfterAsync({}))
+    it('insertBlockAfter() throws if the first argument is not a Metadata', () => {
+      expect(() => new SimpleIterator().insertBlockAfterAsync({})).toThrow()
     })
 
-    it('replace StreamInfo block should not replace it', async function () {
+    it('replace StreamInfo block should not replace it', async () => {
       const it = new SimpleIterator()
 
       it.initAsync(tmpFile.path)
 
-      assert.isFalse(await it.setBlockAsync(new metadata.ApplicationMetadata()))
+      expect(await it.setBlockAsync(new metadata.ApplicationMetadata())).toBe(false)
     })
 
-    it('replace any block should effectively replace it', async function () {
+    it('replace any block should effectively replace it', async () => {
       const it = new SimpleIterator()
 
       await it.initAsync(tmpFile.path)
 
-      assert.isTrue(await it.nextAsync())
+      expect(await it.nextAsync()).toBe(true)
       const app = new metadata.ApplicationMetadata()
       app.id = Buffer.from('node')
       app.data = Buffer.from('A Wonderful Adventure')
-      assert.isTrue(await it.setBlockAsync(app))
+      expect(await it.setBlockAsync(app)).toBe(true)
 
       const ot = new SimpleIterator()
       await ot.initAsync(tmpFile.path)
-      assert.isTrue(await ot.nextAsync())
-      assert.equal(ot.getBlockType(), format.MetadataType.APPLICATION)
-      assert.deepEqual(await ot.getApplicationIdAsync(), Buffer.from('node'))
+      expect(await ot.nextAsync()).toBe(true)
+      expect(ot.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(await ot.getApplicationIdAsync()).toEqual(Buffer.from('node'))
     })
 
-    it('insert any block should effectively insert it', async function () {
+    it('insert any block should effectively insert it', async () => {
       const it = new SimpleIterator()
 
       await it.initAsync(tmpFile.path)
 
-      assert.isTrue(await it.nextAsync())
+      expect(await it.nextAsync()).toBe(true)
       const app = new metadata.ApplicationMetadata()
       app.id = Buffer.from('node')
       app.data = Buffer.from('A Wonderful Adventure')
-      assert.isTrue(await it.insertBlockAfterAsync(app))
+      expect(await it.insertBlockAfterAsync(app)).toBe(true)
 
       const ot = new SimpleIterator()
       await ot.initAsync(tmpFile.path)
-      assert.isTrue(await ot.nextAsync())
-      assert.isTrue(await ot.nextAsync())
-      assert.equal(ot.getBlockType(), format.MetadataType.APPLICATION)
-      assert.deepEqual(await ot.getApplicationIdAsync(), Buffer.from('node'))
+      expect(await ot.nextAsync()).toBe(true)
+      expect(await ot.nextAsync()).toBe(true)
+      expect(ot.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(await ot.getApplicationIdAsync()).toEqual(Buffer.from('node'))
     })
 
-    it('delete StreamInfo block should not delete it', async function () {
+    it('delete StreamInfo block should not delete it', async () => {
       const it = new SimpleIterator()
 
       await it.initAsync(tmpFile.path)
 
-      assert.isFalse(await it.deleteBlockAsync())
+      expect(await it.deleteBlockAsync()).toBe(false)
     })
 
-    it('delete any other block should effectively delete it', async function () {
+    it('delete any other block should effectively delete it', async () => {
       const it = new SimpleIterator()
 
       await it.initAsync(tmpFile.path)
 
-      assert.isTrue(await it.nextAsync())
-      assert.isTrue(await it.deleteBlockAsync())
+      expect(await it.nextAsync()).toBe(true)
+      expect(await it.deleteBlockAsync()).toBe(true)
     })
   })
 
-  describe('gc', function () {
-    it('gc should work', function () {
+  describe('gc', () => {
+    it('gc should work', () => {
       gc()
     })
   })

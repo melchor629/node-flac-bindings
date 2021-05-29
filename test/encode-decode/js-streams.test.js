@@ -1,4 +1,3 @@
-const { assert } = require('chai')
 const events = require('events')
 const fs = require('fs')
 const temp = require('temp').track()
@@ -19,19 +18,18 @@ const {
 } = require('../helper')
 
 let tmpFile
-beforeEach('createTemporaryFiles', function () {
+beforeEach(() => {
   tmpFile = temp.openSync('flac-bindings.encode-decode.js-streams')
 })
 
-afterEach('cleanUpTemporaryFiles', function () {
+afterEach(() => {
+  fs.closeSync(tmpFile.fd)
   temp.cleanupSync()
 })
 
-describe('encode & decode: js streams', function () {
-  this.slow(250 * 1000)
-
-  describe('Stream', function () {
-    it('encode/decode using stream (non-ogg)', async function () {
+describe('encode & decode: js streams', () => {
+  describe('Stream', () => {
+    it('encode/decode using stream (non-ogg)', async () => {
       const dec = new StreamDecoder({ outputAs32: false })
       const enc = new StreamEncoder({
         samplerate: 44100,
@@ -48,13 +46,13 @@ describe('encode & decode: js streams', function () {
       enc.pipe(output)
       await events.once(output, 'close')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(dec.processedSamples, totalSamples)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
-    it('encode/decode using stream (ogg)', async function () {
+    it('encode/decode using stream (ogg)', async () => {
       const dec = new StreamDecoder({ outputAs32: false, isOggStream: true })
       const enc = new StreamEncoder({
         samplerate: 44100,
@@ -72,13 +70,13 @@ describe('encode & decode: js streams', function () {
       enc.pipe(output)
       await events.once(output, 'close')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(dec.processedSamples, totalSamples)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
-    it('decode using stream and file-bit output', async function () {
+    it('decode using stream and file-bit output', async () => {
       const input = fs.createReadStream(pathForFile('loop.flac'))
       const dec = new StreamDecoder({ outputAs32: false })
       const chunks = []
@@ -88,12 +86,12 @@ describe('encode & decode: js streams', function () {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      assert.equal(raw.length, totalSamples * 3 * 2)
-      assert.equal(dec.processedSamples, totalSamples)
+      expect(raw.length).toEqual(totalSamples * 3 * 2)
+      expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
 
-    it('decode using stream and 32-bit output', async function () {
+    it('decode using stream and 32-bit output', async () => {
       const input = fs.createReadStream(pathForFile('loop.flac'))
       const dec = new StreamDecoder({ outputAs32: true })
       const chunks = []
@@ -103,12 +101,12 @@ describe('encode & decode: js streams', function () {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      assert.equal(raw.length, totalSamples * 4 * 2)
-      assert.equal(dec.processedSamples, totalSamples)
+      expect(raw.length).toEqual(totalSamples * 4 * 2)
+      expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 32)
     })
 
-    it('decode using stream (ogg)', async function () {
+    it('decode using stream (ogg)', async () => {
       const input = fs.createReadStream(pathForFile('loop.oga'))
       const dec = new StreamDecoder({ outputAs32: false, isOggStream: true })
       const chunks = []
@@ -118,12 +116,12 @@ describe('encode & decode: js streams', function () {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      assert.equal(raw.length, totalSamples * 3 * 2)
-      assert.equal(dec.processedSamples, totalSamples)
+      expect(raw.length).toEqual(totalSamples * 3 * 2)
+      expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
 
-    it('encode using stream and file-bit input', async function () {
+    it('encode using stream and file-bit input', async () => {
       const output = fs.createWriteStream(tmpFile.path)
       const enc = new StreamEncoder({
         samplerate: 44100,
@@ -138,12 +136,12 @@ describe('encode & decode: js streams', function () {
       enc.end(raw)
       await events.once(output, 'close')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
-    it('encode using stream and 32-bit input', async function () {
+    it('encode using stream and 32-bit input', async () => {
       const output = fs.createWriteStream(tmpFile.path)
       const enc = new StreamEncoder({
         samplerate: 44100,
@@ -162,12 +160,12 @@ describe('encode & decode: js streams', function () {
       enc.end(chunkazo)
       await events.once(output, 'close')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
-    it('encode using stream (ogg)', async function () {
+    it('encode using stream (ogg)', async () => {
       const output = fs.createWriteStream(tmpFile.path)
       const enc = new StreamEncoder({
         samplerate: 44100,
@@ -183,28 +181,28 @@ describe('encode & decode: js streams', function () {
       enc.end(raw)
       await events.once(output, 'close')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
-    it('stream decoder should read properties', async function () {
+    it('stream decoder should read properties', async () => {
       const input = fs.createReadStream(pathForFile('loop.flac'))
       const dec = new StreamDecoder({ outputAs32: true })
 
       input.pipe(dec)
       await events.once(dec, 'data')
 
-      assert.equal(dec.getBitsPerSample(), 24)
-      assert.equal(dec.getChannels(), 2)
-      assert.equal(dec.getChannelAssignment(), 3)
-      assert.equal(dec.getTotalSamples(), totalSamples)
+      expect(dec.getBitsPerSample()).toEqual(24)
+      expect(dec.getChannels()).toEqual(2)
+      expect(dec.getChannelAssignment()).toEqual(3)
+      expect(dec.getTotalSamples()).toEqual(totalSamples)
 
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
     })
 
-    it('stream decoder should emit metadata when required', async function () {
+    it('stream decoder should emit metadata when required', async () => {
       const input = fs.createReadStream(pathForFile('loop.flac'))
       const dec = new StreamDecoder({ outputAs32: true, metadata: true })
       const metadataBlocks = []
@@ -214,11 +212,11 @@ describe('encode & decode: js streams', function () {
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
 
-      assert.isNotEmpty(metadataBlocks)
-      assert.equal(metadataBlocks.length, 4)
+      expect(metadataBlocks).not.toBeEmpty()
+      expect(metadataBlocks.length).toEqual(4)
     })
 
-    it('stream decoder should emit specific metadata when required', async function () {
+    it('stream decoder should emit specific metadata when required', async () => {
       const input = fs.createReadStream(pathForFile('loop.flac'))
       const dec = new StreamDecoder({ outputAs32: true, metadata: [0] })
       const metadataBlocks = []
@@ -228,11 +226,11 @@ describe('encode & decode: js streams', function () {
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
 
-      assert.isNotEmpty(metadataBlocks)
-      assert.equal(metadataBlocks.length, 1)
+      expect(metadataBlocks).not.toBeEmpty()
+      expect(metadataBlocks.length).toEqual(1)
     })
 
-    it('encode using ogg (stream)', async function () {
+    it('encode using ogg (stream)', async () => {
       const dec = new StreamDecoder({ outputAs32: false })
       const enc = new StreamEncoder({
         isOggStream: true,
@@ -251,13 +249,13 @@ describe('encode & decode: js streams', function () {
       enc.pipe(output)
       await events.once(output, 'close')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(dec.processedSamples, totalSamples)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
-    it('encoder options should not throw exception', async function () {
+    it('encoder options should not throw exception', async () => {
       const enc = new StreamEncoder({
         bitsPerSample: 16,
         channels: 2,
@@ -282,7 +280,7 @@ describe('encode & decode: js streams', function () {
       await events.once(enc, 'end')
     })
 
-    it('encoder with no data does not write anything', async function () {
+    it('encoder with no data does not write anything', async () => {
       const enc = new StreamEncoder({
         channels: 2,
         samplerate: 48000,
@@ -291,20 +289,20 @@ describe('encode & decode: js streams', function () {
 
       await new Promise((resolve) => enc.end(resolve))
 
-      assert.equal(enc.processedSamples, 0)
+      expect(enc.processedSamples).toEqual(0)
     })
 
-    it('decoder with no data does not write anything', async function () {
+    it('decoder with no data does not write anything', async () => {
       const dec = new StreamDecoder()
 
       await new Promise((resolve) => dec.end(resolve))
 
-      assert.equal(dec.processedSamples, 0)
+      expect(dec.processedSamples).toEqual(0)
     })
   })
 
-  describe('File', function () {
-    it('encode/decode using file (non-ogg)', async function () {
+  describe('File', () => {
+    it('encode/decode using file (non-ogg)', async () => {
       const dec = new FileDecoder({ file: pathForFile('loop.flac'), outputAs32: false })
       const enc = new FileEncoder({
         file: tmpFile.path,
@@ -318,13 +316,13 @@ describe('encode & decode: js streams', function () {
       dec.pipe(enc)
       await events.once(enc, 'finish')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(dec.processedSamples, totalSamples)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
-    it('encode/decode using file (ogg)', async function () {
+    it('encode/decode using file (ogg)', async () => {
       const dec = new FileDecoder({ file: pathForFile('loop.oga'), outputAs32: false, isOggStream: true })
       const enc = new FileEncoder({
         file: tmpFile.path,
@@ -339,13 +337,13 @@ describe('encode & decode: js streams', function () {
       dec.pipe(enc)
       await events.once(enc, 'finish')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(dec.processedSamples, totalSamples)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
-    it('encode/decode using 32 bit integers', async function () {
+    it('encode/decode using 32 bit integers', async () => {
       const dec = new FileDecoder({ file: pathForFile('loop.flac'), outputAs32: true })
       const enc = new FileEncoder({
         file: tmpFile.path,
@@ -359,13 +357,13 @@ describe('encode & decode: js streams', function () {
       dec.pipe(enc)
       await events.once(enc, 'finish')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(dec.processedSamples, totalSamples)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
-    it('decode using file and file-bit output', async function () {
+    it('decode using file and file-bit output', async () => {
       const dec = new FileDecoder({ outputAs32: false, file: pathForFile('loop.flac') })
       const chunks = []
 
@@ -373,12 +371,12 @@ describe('encode & decode: js streams', function () {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      assert.equal(raw.length, totalSamples * 3 * 2)
-      assert.equal(dec.processedSamples, totalSamples)
+      expect(raw.length).toEqual(totalSamples * 3 * 2)
+      expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
 
-    it('decode using file and 32-bit output', async function () {
+    it('decode using file and 32-bit output', async () => {
       const dec = new FileDecoder({ outputAs32: true, file: pathForFile('loop.flac') })
       const chunks = []
 
@@ -386,12 +384,12 @@ describe('encode & decode: js streams', function () {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      assert.equal(raw.length, totalSamples * 4 * 2)
-      assert.equal(dec.processedSamples, totalSamples)
+      expect(raw.length).toEqual(totalSamples * 4 * 2)
+      expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 32)
     })
 
-    it('decode using file (ogg)', async function () {
+    it('decode using file (ogg)', async () => {
       const dec = new FileDecoder({ outputAs32: false, file: pathForFile('loop.oga'), isOggStream: true })
       const chunks = []
 
@@ -399,12 +397,12 @@ describe('encode & decode: js streams', function () {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      assert.equal(raw.length, totalSamples * 3 * 2)
-      assert.equal(dec.processedSamples, totalSamples)
+      expect(raw.length).toEqual(totalSamples * 3 * 2)
+      expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
 
-    it('encode using file and 24-bit input', async function () {
+    it('encode using file and 24-bit input', async () => {
       const file = tmpFile.path
       const enc = new FileEncoder({
         samplerate: 44100,
@@ -419,12 +417,12 @@ describe('encode & decode: js streams', function () {
       enc.end(raw)
       await events.once(enc, 'finish')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
-    it('encode using file and 32-bit input', async function () {
+    it('encode using file and 32-bit input', async () => {
       const file = tmpFile.path
       const enc = new FileEncoder({
         samplerate: 44100,
@@ -443,12 +441,12 @@ describe('encode & decode: js streams', function () {
       enc.end(chunkazo)
       await events.once(enc, 'finish')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
-    it('encode using file (ogg)', async function () {
+    it('encode using file (ogg)', async () => {
       const file = tmpFile.path
       const enc = new FileEncoder({
         samplerate: 44100,
@@ -464,26 +462,26 @@ describe('encode & decode: js streams', function () {
       enc.end(raw)
       await events.once(enc, 'finish')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
-    it('file decoder should read properties', async function () {
+    it('file decoder should read properties', async () => {
       const dec = new FileDecoder({ outputAs32: true, file: pathForFile('loop.flac') })
 
       await events.once(dec, 'data')
 
-      assert.equal(dec.getBitsPerSample(), 24)
-      assert.equal(dec.getChannels(), 2)
-      assert.equal(dec.getChannelAssignment(), 3)
-      assert.equal(dec.getTotalSamples(), totalSamples)
+      expect(dec.getBitsPerSample()).toEqual(24)
+      expect(dec.getChannels()).toEqual(2)
+      expect(dec.getChannelAssignment()).toEqual(3)
+      expect(dec.getTotalSamples()).toEqual(totalSamples)
 
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
     })
 
-    it('file decoder should emit metadata when required', async function () {
+    it('file decoder should emit metadata when required', async () => {
       const dec = new FileDecoder({ outputAs32: true, metadata: true, file: pathForFile('loop.flac') })
       const metadataBlocks = []
 
@@ -491,20 +489,17 @@ describe('encode & decode: js streams', function () {
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
 
-      assert.isNotEmpty(metadataBlocks)
-      assert.equal(metadataBlocks.length, 4)
+      expect(metadataBlocks).not.toBeEmpty()
+      expect(metadataBlocks.length).toEqual(4)
     })
 
-    it('file decoder should fail if file does not exist', async function () {
+    it('file decoder should fail if file does not exist', async () => {
       const dec = new FileDecoder({ file: pathForFile('does not exist.flac') })
 
-      await assert.throwsAsync(
-        () => events.once(dec, 'data'),
-        'Decoder initialization failed: ERROR_OPENING_FILE',
-      )
+      await expect(() => events.once(dec, 'data')).rejects.toThrow('Decoder initialization failed: ERROR_OPENING_FILE')
     })
 
-    it('file encoder should fail if file cannot write', async function () {
+    it('file encoder should fail if file cannot write', async () => {
       const enc = new FileEncoder({
         file: pathForFile('does/not/exist.flac'),
         channels: 1,
@@ -514,16 +509,13 @@ describe('encode & decode: js streams', function () {
       })
 
       enc.write(Buffer.alloc(1000 * 2))
-      await assert.throwsAsync(
-        () => events.once(enc, 'data'),
-        'Encoder initialization failed: ENCODER_ERROR',
-      )
+      await expect(() => events.once(enc, 'data')).rejects.toThrow('Encoder initialization failed: ENCODER_ERROR')
 
       // ENCODER_ERROR means that the error is described in getState()
-      assert.equal(enc.getState(), 6) // IO_ERROR
+      expect(enc.getState()).toEqual(6) // IO_ERROR
     })
 
-    it('encode using ogg (file)', async function () {
+    it('encode using ogg (file)', async () => {
       const dec = new FileDecoder({ file: pathForFile('loop.flac'), outputAs32: false })
       const enc = new FileEncoder({
         file: tmpFile.path,
@@ -539,13 +531,13 @@ describe('encode & decode: js streams', function () {
       dec.pipe(enc)
       await events.once(enc, 'finish')
 
-      assert.isTrue((await fs.promises.stat(tmpFile.path)).size > 660 * 1000)
-      assert.equal(dec.processedSamples, totalSamples)
-      assert.equal(enc.processedSamples, totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
+      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(enc.processedSamples).toEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
-    it('encoder with no data does not write anything', async function () {
+    it('encoder with no data does not write anything', async () => {
       const enc = new FileEncoder({
         file: tmpFile.path,
         channels: 2,
@@ -555,11 +547,19 @@ describe('encode & decode: js streams', function () {
 
       await new Promise((resolve) => enc.end(resolve))
 
-      assert.equal(enc.processedSamples, 0)
+      expect(enc.processedSamples).toEqual(0)
+    })
+
+    it('encoder without file throws', () => {
+      expect(() => new FileEncoder({})).toThrow(/No file/)
+    })
+
+    it('decoder without file throws', () => {
+      expect(() => new FileDecoder({})).toThrow(/No file/)
     })
   })
 
-  it('gc should work', function () {
+  it('gc should work', () => {
     gc()
   })
 })

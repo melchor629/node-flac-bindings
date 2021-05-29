@@ -1,5 +1,4 @@
 const cp = require('child_process')
-const { assert } = require('chai')
 
 /**
  * Decodes a flac file using `flac` cli tool
@@ -13,7 +12,9 @@ const readFlacUsingCli = (file, ogg) => {
     throw result.error
   }
 
-  assert.equal(result.status, 0, result.stderr.toString('utf8'))
+  if (result.status) {
+    throw new Error(result.stderr.toString('utf8'))
+  }
   return result.stdout
 }
 
@@ -43,9 +44,7 @@ const comparePCM = (okData, flacFile, bitsPerSample = 16, ogg = false) => {
   const sampleSize = bitsPerSample / 8
   const wavSampleSize = 3
   if (convertedData.length / sampleSize !== okData.length / wavSampleSize) {
-    assert.fail(
-      convertedData.length / sampleSize,
-      okData.length / wavSampleSize,
+    throw new Error(
       `Length is different: ${convertedData.length / sampleSize} vs ${okData.length / wavSampleSize}`,
     )
   }
@@ -54,7 +53,7 @@ const comparePCM = (okData, flacFile, bitsPerSample = 16, ogg = false) => {
     const a = convertedData.readIntLE(i * sampleSize, sampleSize)
     const b = okData.readIntLE(i * wavSampleSize, wavSampleSize)
     if (a !== b) {
-      assert.fail(a, b, `PCM data is different at sample ${i}: ${a} !== ${b}`)
+      throw new Error(`PCM data is different at sample ${i}: ${a} !== ${b}`)
     }
   }
 }

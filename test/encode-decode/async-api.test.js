@@ -1,5 +1,5 @@
-const { assert } = require('chai')
 const temp = require('temp').track()
+const fs = require('fs')
 const { api } = require('../../lib/index')
 const {
   pathForFile: { audio: pathForFile },
@@ -17,20 +17,19 @@ const {
 
 let tmpFile
 let deferredScope = null
-beforeEach('createTemporaryFiles', function () {
+beforeEach(() => {
   tmpFile = temp.openSync('flac-bindings.encode-decode.async-api')
   deferredScope = createDeferredScope()
 })
 
-afterEach('cleanUpTemporaryFiles', function () {
+afterEach(() => {
+  fs.closeSync(tmpFile.fd)
   temp.cleanupSync()
   return deferredScope.finalize()
 })
 
-describe('encode & decode: async api', function () {
-  this.slow(250 * 1000)
-
-  it('decode using stream (non-ogg)', async function () {
+describe('encode & decode: async api', () => {
+  it('decode using stream (non-ogg)', async () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
     const dec = new api.Decoder()
@@ -50,17 +49,17 @@ describe('encode & decode: async api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.flushAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.finishAsync(), dec.getResolvedStateString())
+    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
+    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
+    expect(await dec.flushAsync()).toBe(true)
+    expect(await dec.finishAsync()).toBe(true)
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    assert.equal(samples, totalSamples)
+    expect(samples).toEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
-  it('decode using stream (ogg)', async function () {
+  it('decode using stream (ogg)', async () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.oga'), 'r')
     deferredScope.defer(() => callbacks.close())
     const dec = new api.Decoder()
@@ -80,17 +79,17 @@ describe('encode & decode: async api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.flushAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.finishAsync(), dec.getResolvedStateString())
+    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
+    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
+    expect(await dec.flushAsync()).toBe(true)
+    expect(await dec.finishAsync()).toBe(true)
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    assert.equal(samples, totalSamples)
+    expect(samples).toEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
-  it('decode with async callbacks using stream (non-ogg)', async function () {
+  it('decode with async callbacks using stream (non-ogg)', async () => {
     const callbacks = await generateFlacCallbacks.async(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
     const dec = new api.Decoder()
@@ -110,17 +109,17 @@ describe('encode & decode: async api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.flushAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.finishAsync(), dec.getResolvedStateString())
+    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
+    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
+    expect(await dec.flushAsync()).toBe(true)
+    expect(await dec.finishAsync()).toBe(true)
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    assert.equal(samples, totalSamples)
+    expect(samples).toEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
-  it('decode with async callbacks using stream (ogg)', async function () {
+  it('decode with async callbacks using stream (ogg)', async () => {
     const callbacks = await generateFlacCallbacks.async(api.Decoder, pathForFile('loop.oga'), 'r')
     deferredScope.defer(() => callbacks.close())
     const dec = new api.Decoder()
@@ -140,17 +139,17 @@ describe('encode & decode: async api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.flushAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.finishAsync(), dec.getResolvedStateString())
+    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
+    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
+    expect(await dec.flushAsync()).toBe(true)
+    expect(await dec.finishAsync()).toBe(true)
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    assert.equal(samples, totalSamples)
+    expect(samples).toEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
-  it('decode using file (non-ogg)', async function () {
+  it('decode using file (non-ogg)', async () => {
     const dec = new api.Decoder()
     const allBuffers = []
     await dec.initFileAsync(
@@ -164,17 +163,17 @@ describe('encode & decode: async api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.flushAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.finishAsync(), dec.getResolvedStateString())
+    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
+    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
+    expect(await dec.flushAsync()).toBe(true)
+    expect(await dec.finishAsync()).toBe(true)
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    assert.equal(samples, totalSamples)
+    expect(samples).toEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
-  it('decode using file (ogg)', async function () {
+  it('decode using file (ogg)', async () => {
     const dec = new api.Decoder()
     const allBuffers = []
     await dec.initOggFileAsync(
@@ -188,17 +187,17 @@ describe('encode & decode: async api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.processUntilEndOfStreamAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.flushAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.finishAsync(), dec.getResolvedStateString())
+    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
+    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
+    expect(await dec.flushAsync()).toBe(true)
+    expect(await dec.finishAsync()).toBe(true)
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    assert.equal(samples, totalSamples)
+    expect(samples).toEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
-  it('decoder should be able to skip a frame', async function () {
+  it('decoder should be able to skip a frame', async () => {
     const dec = new api.Decoder()
     await dec.initFileAsync(
       pathForFile('loop.flac'),
@@ -208,15 +207,15 @@ describe('encode & decode: async api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.processSingleAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.skipSingleFrameAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.processSingleAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.flushAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.finishAsync(), dec.getResolvedStateString())
+    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
+    expect(await dec.processSingleAsync()).toBe(true)
+    expect(await dec.skipSingleFrameAsync()).toBe(true)
+    expect(await dec.processSingleAsync()).toBe(true)
+    expect(await dec.flushAsync()).toBe(true)
+    expect(await dec.finishAsync()).toBe(true)
   })
 
-  it('decoder should be able to seek to a sample', async function () {
+  it('decoder should be able to seek to a sample', async () => {
     const callbacks = await generateFlacCallbacks.async(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
     const dec = new api.Decoder()
@@ -232,16 +231,16 @@ describe('encode & decode: async api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(await dec.processUntilEndOfMetadataAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.processSingleAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.seekAbsoluteAsync(totalSamples / 5), dec.getResolvedStateString())
-    assert.equal(dec.getDecodePosition(), 157036)
-    assert.isTrue(await dec.processSingleAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.flushAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.finishAsync(), dec.getResolvedStateString())
+    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
+    expect(await dec.processSingleAsync()).toBe(true)
+    expect(await dec.seekAbsoluteAsync(totalSamples / 5)).toBe(true)
+    expect(dec.getDecodePosition()).toEqual(157036)
+    expect(await dec.processSingleAsync()).toBe(true)
+    expect(await dec.flushAsync()).toBe(true)
+    expect(await dec.finishAsync()).toBe(true)
   })
 
-  it('decoder should emit metadata', async function () {
+  it('decoder should emit metadata', async () => {
     const dec = new api.Decoder()
     const metadataBlocks = []
     await dec.initFileAsync(
@@ -255,13 +254,13 @@ describe('encode & decode: async api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(await dec.processSingleAsync(), dec.getResolvedStateString())
-    assert.isTrue(await dec.finishAsync(), dec.getResolvedStateString())
+    expect(await dec.processSingleAsync()).toBe(true)
+    expect(await dec.finishAsync()).toBe(true)
 
-    assert.equal(metadataBlocks.length, 1)
+    expect(metadataBlocks.length).toEqual(1)
   })
 
-  it('encode using stream (non-ogg)', async function () {
+  it('encode using stream (non-ogg)', async () => {
     const enc = new api.Encoder()
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w')
     deferredScope.defer(() => callbacks.close())
@@ -276,13 +275,13 @@ describe('encode & decode: async api', function () {
       null,
     )
 
-    assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString())
-    assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString())
+    expect(await enc.processInterleavedAsync(encData)).toBe(true)
+    expect(await enc.finishAsync()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
   })
 
-  it('encode using stream (ogg)', async function () {
+  it('encode using stream (ogg)', async () => {
     const enc = new api.Encoder()
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w+')
     deferredScope.defer(() => callbacks.close())
@@ -298,13 +297,13 @@ describe('encode & decode: async api', function () {
       null,
     )
 
-    assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString())
-    assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString())
+    expect(await enc.processInterleavedAsync(encData)).toBe(true)
+    expect(await enc.finishAsync()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24, true)
   })
 
-  it('encode with async callbacks using stream (non-ogg)', async function () {
+  it('encode with async callbacks using stream (non-ogg)', async () => {
     const enc = new api.Encoder()
     const callbacks = await generateFlacCallbacks.async(api.Encoder, tmpFile.path, 'w')
     deferredScope.defer(() => callbacks.close())
@@ -319,13 +318,13 @@ describe('encode & decode: async api', function () {
       null,
     )
 
-    assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString())
-    assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString())
+    expect(await enc.processInterleavedAsync(encData)).toBe(true)
+    expect(await enc.finishAsync()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
   })
 
-  it('encode with async callbacks using stream (ogg)', async function () {
+  it('encode with async callbacks using stream (ogg)', async () => {
     const enc = new api.Encoder()
     const callbacks = await generateFlacCallbacks.async(api.Encoder, tmpFile.path, 'w+')
     deferredScope.defer(() => callbacks.close())
@@ -341,13 +340,13 @@ describe('encode & decode: async api', function () {
       null,
     )
 
-    assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString())
-    assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString())
+    expect(await enc.processInterleavedAsync(encData)).toBe(true)
+    expect(await enc.finishAsync()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24, true)
   })
 
-  it('encode using file (non-ogg)', async function () {
+  it('encode using file (non-ogg)', async () => {
     const progressCallbackValues = []
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
@@ -359,14 +358,14 @@ describe('encode & decode: async api', function () {
       (...args) => progressCallbackValues.push(args),
     )
 
-    assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString())
-    assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString())
+    expect(await enc.processInterleavedAsync(encData)).toBe(true)
+    expect(await enc.finishAsync()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
-    assert.equal(progressCallbackValues.length, 41)
+    expect(progressCallbackValues.length).toEqual(41)
   })
 
-  it('encode using file (ogg)', async function () {
+  it('encode using file (ogg)', async () => {
     const progressCallbackValues = []
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
@@ -378,14 +377,14 @@ describe('encode & decode: async api', function () {
       (...args) => progressCallbackValues.push(args),
     )
 
-    assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString())
-    assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString())
+    expect(await enc.processInterleavedAsync(encData)).toBe(true)
+    expect(await enc.finishAsync()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24, true)
-    assert.equal(progressCallbackValues.length, 30)
+    expect(progressCallbackValues.length).toEqual(30)
   })
 
-  it('encode using file with non-interleaved data (non-ogg)', async function () {
+  it('encode using file with non-interleaved data (non-ogg)', async () => {
     const progressCallbackValues = []
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
@@ -397,14 +396,14 @@ describe('encode & decode: async api', function () {
       (...args) => progressCallbackValues.push(args),
     )
 
-    assert.isTrue(await enc.processAsync(encDataAlt, totalSamples), enc.getResolvedStateString())
-    assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString())
+    expect(await enc.processAsync(encDataAlt, totalSamples)).toBe(true)
+    expect(await enc.finishAsync()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
-    assert.equal(progressCallbackValues.length, 41)
+    expect(progressCallbackValues.length).toEqual(41)
   })
 
-  it('encoder should emit streaminfo metadata block', async function () {
+  it('encoder should emit streaminfo metadata block', async () => {
     let metadataBlock = null
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w')
     deferredScope.defer(() => callbacks.close())
@@ -423,15 +422,15 @@ describe('encode & decode: async api', function () {
       },
     )
 
-    assert.isTrue(await enc.processInterleavedAsync(encData), enc.getResolvedStateString())
-    assert.isTrue(await enc.finishAsync(), enc.getResolvedStateString())
+    expect(await enc.processInterleavedAsync(encData)).toBe(true)
+    expect(await enc.finishAsync()).toBe(true)
 
-    assert.isNotNull(metadataBlock)
-    assert.equal(metadataBlock.type, 0)
-    assert.equal(metadataBlock.totalSamples, totalSamples)
+    expect(metadataBlock).not.toBeNull()
+    expect(metadataBlock.type).toEqual(0)
+    expect(metadataBlock.totalSamples).toEqual(totalSamples)
   })
 
-  it('encoder should throw if another async method is running', async function () {
+  it('encoder should throw if another async method is running', async () => {
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
     enc.channels = 2
@@ -444,13 +443,13 @@ describe('encode & decode: async api', function () {
 
     const promise = enc.processInterleavedAsync(encData)
 
-    await assert.throwsAsync(() => enc.processInterleavedAsync(encData), /There is still an operation running/)
+    expect(() => enc.processInterleavedAsync(encData)).toThrow(/There is still an operation running/)
 
     await promise
     await enc.finishAsync()
   })
 
-  it('decoder should throw if another async method is running', async function () {
+  it('decoder should throw if another async method is running', async () => {
     const dec = new api.Decoder()
     const allBuffers = []
     await dec.initFileAsync(
@@ -465,14 +464,14 @@ describe('encode & decode: async api', function () {
     )
 
     const e = await dec.processUntilEndOfMetadataAsync()
-    assert.isTrue(e)
+    expect(e).toBe(true)
 
     const promise = dec.processSingleAsync()
-    await assert.throwsAsync(() => dec.processSingleAsync(), /There is still an operation running/)
+    expect(() => dec.processSingleAsync()).toThrow(/There is still an operation running/)
 
     await promise
     const f = await dec.processUntilEndOfStreamAsync()
-    assert.isTrue(f)
+    expect(f).toBe(true)
     await dec.finishAsync()
   })
 })

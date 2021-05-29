@@ -1,4 +1,3 @@
-const { assert, use } = require('chai')
 const { promises: fs, ...oldfs } = require('fs')
 const temp = require('temp').track()
 const {
@@ -10,118 +9,102 @@ const {
   gc,
 } = require('./helper')
 
-temp.track()
-
-use(require('./helper').asyncChaiExtensions)
-
-describe('Chain & Iterator', function () {
-  describe('read', function () {
-    it('throws if the first argument is not a Metadata', function () {
-      assert.throws(() => new Chain().read({}), /Expected .+? to be string/)
+describe('Chain & Iterator', () => {
+  describe('read', () => {
+    it('throws if the first argument is not a Metadata', () => {
+      expect(() => new Chain().read({})).toThrow()
     })
 
-    it('throws if the first argument is not a Metadata (ogg version)', function () {
-      assert.throws(() => new Chain().readOgg(() => 1), /Expected .+? to be string/)
+    it('throws if the first argument is not a Metadata (ogg version)', () => {
+      expect(() => new Chain().readOgg(() => 1)).toThrow()
     })
 
-    it('returns false if the file does not exist', async function () {
+    it('returns false if the file does not exist', async () => {
       const filePath = pathForFile('el.flac')
       const ch = new Chain()
 
-      assert.throws(
-        () => ch.read(filePath),
-        /Chain operation failed: ERROR_OPENING_FILE/,
-      )
+      expect(() => ch.read(filePath)).toThrow()
 
-      await assert.throwsAsync(() => fs.access(filePath), /^ENOENT: no such file or directory/)
+      await expect(() => fs.access(filePath)).rejects.toThrow(/^ENOENT: no such file or directory/)
     })
 
-    it('returns true if the file exists', async function () {
+    it('returns true if the file exists', async () => {
       const filePath = pathForFile('no.flac')
       const ch = new Chain()
 
       ch.read(filePath)
 
-      assert.equal(ch.status(), Chain.Status.OK)
+      expect(ch.status()).toEqual(Chain.Status.OK)
       await fs.access(filePath)
     })
   })
 
-  describe('readAsync', function () {
-    it('throws if the first argument is not a string', async function () {
-      await assert.throwsAsync(() => new Chain().readAsync({}), /Expected .+? to be string/)
+  describe('readAsync', () => {
+    it('throws if the first argument is not a string', () => {
+      expect(() => new Chain().readAsync({})).toThrow(/Expected .+? to be string/)
     })
 
-    it('throws if the first argument is not a string (ogg version)', async function () {
-      await assert.throwsAsync(() => new Chain().readOggAsync(() => 1), /Expected .+? to be string/)
+    it('throws if the first argument is not a string (ogg version)', () => {
+      expect(() => new Chain().readOggAsync(() => 1)).toThrow(/Expected .+? to be string/)
     })
 
-    it('throws if the file does not exist', async function () {
+    it('throws if the file does not exist', async () => {
       const filePath = pathForFile('el.flac')
       const ch = new Chain()
 
-      await assert.throwsAsync(
-        () => ch.readAsync(filePath),
-        /Chain operation failed: ERROR_OPENING_FILE/,
-      )
+      await expect(() => ch.readAsync(filePath)).rejects.toThrow(/Chain operation failed: ERROR_OPENING_FILE/)
 
-      await assert.throwsAsync(() => fs.access(filePath), /^ENOENT: no such file or directory/)
+      await expect(() => fs.access(filePath)).rejects.toThrow(/^ENOENT: no such file or directory/)
     })
 
-    it('returns true if the file exists', async function () {
+    it('returns true if the file exists', async () => {
       const filePath = pathForFile('no.flac')
       const ch = new Chain()
 
       await ch.readAsync(filePath)
 
-      assert.equal(ch.status(), Chain.Status.OK)
+      expect(ch.status()).toEqual(Chain.Status.OK)
       await fs.access(filePath)
     })
   })
 
-  describe('readWithCallbacks', function () {
-    it('throws if the first argument is not an object', async function () {
-      await assert.throwsAsync(() => new Chain().readWithCallbacks(7), /Expected .+? to be object/)
+  describe('readWithCallbacks', () => {
+    it('throws if the first argument is not an object', () => {
+      expect(() => new Chain().readWithCallbacks(7)).toThrow(/Expected .+? to be object/)
     })
 
-    it('throws if the first argument is not an object (ogg version)', async function () {
-      await assert.throwsAsync(() => new Chain().readOggWithCallbacks(7), /Expected .+? to be object/)
+    it('throws if the first argument is not an object (ogg version)', () => {
+      expect(() => new Chain().readOggWithCallbacks(7)).toThrow(/Expected .+? to be object/)
     })
 
-    it('throws if the lacks callbacks (flac version)', async function () {
-      await assert.throwsAsync(
-        () => new Chain().readWithCallbacks({}),
-        /Chain operation failed: INVALID_CALLBACKS/,
-      )
+    it('throws if the lacks callbacks (flac version)', async () => {
+      await expect(() => new Chain().readWithCallbacks({})).rejects.toThrow(/Chain operation failed: INVALID_CALLBACKS/)
     })
 
-    it('throws if the lacks callbacks (ogg version)', async function () {
-      await assert.throwsAsync(
-        () => new Chain().readOggWithCallbacks({}),
-        /Chain operation failed: INVALID_CALLBACKS/,
-      )
+    it('throws if the lacks callbacks (ogg version)', async () => {
+      await expect(() => new Chain().readOggWithCallbacks({})).rejects.toThrow(/Chain operation failed: INVALID_CALLBACKS/)
     })
 
-    it('returns works if the file can be read', async function () {
+    it('returns works if the file can be read', async () => {
       const callbacks = await generateFlacCallbacks.flacio(pathForFile('vc-cs.flac'), 'r')
       const chain = new Chain()
       await chain.readWithCallbacks(callbacks)
         .finally(() => callbacks.close())
     })
 
-    it('it throws if the file cannot be read', async function () {
+    it('it throws if the file cannot be read', async () => {
       const chain = new Chain()
-      await assert.throwsAsync(() => chain.readWithCallbacks({
+      await expect(() => chain.readWithCallbacks({
         read: () => 0,
         seek: () => -1,
         tell: () => BigInt(0),
         close: () => undefined,
-      }), /Chain operation failed: SEEK_ERROR/)
+      })).rejects.toThrow(/Chain operation failed: SEEK_ERROR/)
     })
   })
 
-  describe('iterator', function () {
-    it('createIterator() returns an iterator and iterates over the blocks correctly', function () {
+  describe('iterator', () => {
+    it('createIterator() returns an iterator and iterates over the blocks correctly', () => {
       const filePath = pathForFile('vc-p.flac')
       const ch = new Chain()
 
@@ -131,30 +114,30 @@ describe('Chain & Iterator', function () {
       const i = it[Symbol.iterator]()
 
       let m = i.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.STREAMINFO)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.STREAMINFO)
 
       m = i.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.APPLICATION)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.APPLICATION)
 
       m = i.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.PICTURE)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.PICTURE)
 
       m = i.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.PADDING)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.PADDING)
 
       m = i.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.VORBIS_COMMENT)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.VORBIS_COMMENT)
 
       m = i.next()
-      assert.isTrue(m.done)
+      expect(m.done).toBe(true)
     })
 
-    it('new Iterator() creates an iterator from the chain and iterates over the blocks correctly', function () {
+    it('new Iterator() creates an iterator from the chain and iterates over the blocks correctly', () => {
       const filePath = pathForFile('vc-p.flac')
       const ch = new Chain()
       const it = new Iterator()
@@ -165,61 +148,61 @@ describe('Chain & Iterator', function () {
       const i = it[Symbol.iterator]()
 
       let m = i.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.STREAMINFO)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.STREAMINFO)
 
       m = i.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.APPLICATION)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.APPLICATION)
 
       m = i.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.PICTURE)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.PICTURE)
 
       m = i.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.PADDING)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.PADDING)
 
       m = i.next()
-      assert.isFalse(m.done)
-      assert.equal(m.value.type, format.MetadataType.VORBIS_COMMENT)
+      expect(m.done).toBe(false)
+      expect(m.value.type).toEqual(format.MetadataType.VORBIS_COMMENT)
 
       m = i.next()
-      assert.isTrue(m.done)
+      expect(m.done).toBe(true)
     })
   })
 
-  describe('iterator and get*', function () {
-    it('should iterate forwards and get info about them correctly', function () {
+  describe('iterator and get*', () => {
+    it('should iterate forwards and get info about them correctly', () => {
       const filePath = pathForFile('vc-p.flac')
       const ch = new Chain()
 
       ch.read(filePath)
 
       const it = ch.createIterator()
-      assert.equal(it.getBlockType(), format.MetadataType.STREAMINFO)
-      assert.isTrue(it.getBlock() instanceof metadata.StreamInfoMetadata)
+      expect(it.getBlockType()).toEqual(format.MetadataType.STREAMINFO)
+      expect(it.getBlock() instanceof metadata.StreamInfoMetadata).toBe(true)
 
-      assert.isTrue(it.next())
-      assert.equal(it.getBlockType(), format.MetadataType.APPLICATION)
-      assert.isTrue(it.getBlock() instanceof metadata.ApplicationMetadata)
+      expect(it.next()).toBe(true)
+      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(it.getBlock() instanceof metadata.ApplicationMetadata).toBe(true)
 
-      assert.isTrue(it.next())
-      assert.equal(it.getBlockType(), format.MetadataType.PICTURE)
-      assert.isTrue(it.getBlock() instanceof metadata.PictureMetadata)
+      expect(it.next()).toBe(true)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PICTURE)
+      expect(it.getBlock() instanceof metadata.PictureMetadata).toBe(true)
 
-      assert.isTrue(it.next())
-      assert.equal(it.getBlockType(), format.MetadataType.PADDING)
-      assert.isTrue(it.getBlock() instanceof metadata.PaddingMetadata)
+      expect(it.next()).toBe(true)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PADDING)
+      expect(it.getBlock() instanceof metadata.PaddingMetadata).toBe(true)
 
-      assert.isTrue(it.next())
-      assert.equal(it.getBlockType(), format.MetadataType.VORBIS_COMMENT)
-      assert.isTrue(it.getBlock() instanceof metadata.VorbisCommentMetadata)
+      expect(it.next()).toBe(true)
+      expect(it.getBlockType()).toEqual(format.MetadataType.VORBIS_COMMENT)
+      expect(it.getBlock() instanceof metadata.VorbisCommentMetadata).toBe(true)
 
-      assert.isFalse(it.next())
+      expect(it.next()).toBe(false)
     })
 
-    it('should iterate backwards and get info about them correctly', function () {
+    it('should iterate backwards and get info about them correctly', () => {
       const filePath = pathForFile('vc-p.flac')
       const ch = new Chain()
 
@@ -229,30 +212,30 @@ describe('Chain & Iterator', function () {
       // eslint-disable-next-line curly
       while (it.next());
 
-      assert.equal(it.getBlockType(), format.MetadataType.VORBIS_COMMENT)
-      assert.isTrue(it.getBlock() instanceof metadata.VorbisCommentMetadata)
-      assert.isTrue(it.prev())
+      expect(it.getBlockType()).toEqual(format.MetadataType.VORBIS_COMMENT)
+      expect(it.getBlock() instanceof metadata.VorbisCommentMetadata).toBe(true)
+      expect(it.prev()).toBe(true)
 
-      assert.equal(it.getBlockType(), format.MetadataType.PADDING)
-      assert.isTrue(it.getBlock() instanceof metadata.PaddingMetadata)
-      assert.isTrue(it.prev())
+      expect(it.getBlockType()).toEqual(format.MetadataType.PADDING)
+      expect(it.getBlock() instanceof metadata.PaddingMetadata).toBe(true)
+      expect(it.prev()).toBe(true)
 
-      assert.equal(it.getBlockType(), format.MetadataType.PICTURE)
-      assert.isTrue(it.getBlock() instanceof metadata.PictureMetadata)
-      assert.isTrue(it.prev())
+      expect(it.getBlockType()).toEqual(format.MetadataType.PICTURE)
+      expect(it.getBlock() instanceof metadata.PictureMetadata).toBe(true)
+      expect(it.prev()).toBe(true)
 
-      assert.equal(it.getBlockType(), format.MetadataType.APPLICATION)
-      assert.isTrue(it.getBlock() instanceof metadata.ApplicationMetadata)
-      assert.isTrue(it.prev())
+      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(it.getBlock() instanceof metadata.ApplicationMetadata).toBe(true)
+      expect(it.prev()).toBe(true)
 
-      assert.equal(it.getBlockType(), format.MetadataType.STREAMINFO)
-      assert.isTrue(it.getBlock() instanceof metadata.StreamInfoMetadata)
-      assert.isFalse(it.prev())
+      expect(it.getBlockType()).toEqual(format.MetadataType.STREAMINFO)
+      expect(it.getBlock() instanceof metadata.StreamInfoMetadata).toBe(true)
+      expect(it.prev()).toBe(false)
     })
   })
 
-  describe('sortPadding', function () {
-    it('should move padding to the end', function () {
+  describe('sortPadding', () => {
+    it('should move padding to the end', () => {
       const filePath = pathForFile('vc-p.flac')
       const ch = new Chain()
 
@@ -260,21 +243,18 @@ describe('Chain & Iterator', function () {
 
       ch.sortPadding()
 
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.APPLICATION,
-          format.MetadataType.PICTURE,
-          format.MetadataType.VORBIS_COMMENT,
-          format.MetadataType.PADDING,
-        ],
-      )
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.PICTURE,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.PADDING,
+      ])
     })
   })
 
-  describe('mergePadding', function () {
-    it('should merge adjacent padding blocks', function () {
+  describe('mergePadding', () => {
+    it('should merge adjacent padding blocks', () => {
       const filePath = pathForFile('vc-p.flac')
       const ch = new Chain()
 
@@ -285,257 +265,225 @@ describe('Chain & Iterator', function () {
       while (it.next());
       it.insertBlockBefore(new metadata.PaddingMetadata(100))
 
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.APPLICATION,
-          format.MetadataType.PICTURE,
-          format.MetadataType.PADDING,
-          format.MetadataType.PADDING,
-          format.MetadataType.VORBIS_COMMENT,
-        ],
-      )
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.PICTURE,
+        format.MetadataType.PADDING,
+        format.MetadataType.PADDING,
+        format.MetadataType.VORBIS_COMMENT,
+      ])
 
       ch.mergePadding()
 
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.APPLICATION,
-          format.MetadataType.PICTURE,
-          format.MetadataType.PADDING,
-          format.MetadataType.VORBIS_COMMENT,
-        ],
-      )
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.PICTURE,
+        format.MetadataType.PADDING,
+        format.MetadataType.VORBIS_COMMENT,
+      ])
     })
   })
 
-  describe('modify', function () {
-    it('setBlock() throws if the first argument is not a Metadata', function () {
-      assert.throws(() => new Iterator().setBlock({}))
+  describe('modify', () => {
+    it('setBlock() throws if the first argument is not a Metadata', () => {
+      expect(() => new Iterator().setBlock({})).toThrow()
     })
 
-    it('insertBlockAfter() throws if the first argument is not a Metadata', function () {
-      assert.throws(() => new Iterator().insertBlockAfter({}))
+    it('insertBlockAfter() throws if the first argument is not a Metadata', () => {
+      expect(() => new Iterator().insertBlockAfter({})).toThrow()
     })
 
-    it('insertBlockBefore() throws if the first argument is not a Metadata', function () {
-      assert.throws(() => new Iterator().insertBlockBefore({}))
+    it('insertBlockBefore() throws if the first argument is not a Metadata', () => {
+      expect(() => new Iterator().insertBlockBefore({})).toThrow()
     })
 
-    it('replace StreamInfo block should not replace it', function () {
+    it('replace StreamInfo block should not replace it', () => {
       const filePath = pathForFile('vc-cs.flac')
       const ch = new Chain()
 
       ch.read(filePath)
 
-      assert.isFalse(ch.createIterator().setBlock(new metadata.PaddingMetadata()))
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.SEEKTABLE,
-          format.MetadataType.VORBIS_COMMENT,
-          format.MetadataType.CUESHEET,
-        ],
-      )
+      expect(ch.createIterator().setBlock(new metadata.PaddingMetadata())).toBe(false)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.SEEKTABLE,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.CUESHEET,
+      ])
     })
 
-    it('replace any other block block should replace it', function () {
-      const filePath = pathForFile('vc-cs.flac')
-      const ch = new Chain()
-
-      ch.read(filePath)
-
-      const it = ch.createIterator()
-      assert.isTrue(it.next())
-      assert.isTrue(it.next())
-      assert.isTrue(it.setBlock(new metadata.PaddingMetadata()))
-      assert.equal(it.getBlockType(), format.MetadataType.PADDING)
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.SEEKTABLE,
-          format.MetadataType.PADDING,
-          format.MetadataType.CUESHEET,
-        ],
-      )
-    })
-
-    it('delete StreamInfo block should not delete it', function () {
-      const filePath = pathForFile('vc-cs.flac')
-      const ch = new Chain()
-
-      ch.read(filePath)
-
-      assert.isFalse(ch.createIterator().deleteBlock())
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.SEEKTABLE,
-          format.MetadataType.VORBIS_COMMENT,
-          format.MetadataType.CUESHEET,
-        ],
-      )
-    })
-
-    it('delete any other block block should replace it', function () {
+    it('replace any other block block should replace it', () => {
       const filePath = pathForFile('vc-cs.flac')
       const ch = new Chain()
 
       ch.read(filePath)
 
       const it = ch.createIterator()
-      assert.isTrue(it.next())
-      assert.isTrue(it.next())
-      assert.isTrue(it.deleteBlock(true))
-      assert.equal(it.getBlockType(), format.MetadataType.SEEKTABLE)
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.SEEKTABLE,
-          format.MetadataType.PADDING,
-          format.MetadataType.CUESHEET,
-        ],
-      )
+      expect(it.next()).toBe(true)
+      expect(it.next()).toBe(true)
+      expect(it.setBlock(new metadata.PaddingMetadata())).toBe(true)
+      expect(it.getBlockType()).toEqual(format.MetadataType.PADDING)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.SEEKTABLE,
+        format.MetadataType.PADDING,
+        format.MetadataType.CUESHEET,
+      ])
     })
 
-    it('insert before a StreamInfo block should not insert it', function () {
+    it('delete StreamInfo block should not delete it', () => {
       const filePath = pathForFile('vc-cs.flac')
       const ch = new Chain()
 
       ch.read(filePath)
 
-      assert.isFalse(ch.createIterator().insertBlockBefore(new metadata.ApplicationMetadata()))
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.SEEKTABLE,
-          format.MetadataType.VORBIS_COMMENT,
-          format.MetadataType.CUESHEET,
-        ],
-      )
+      expect(ch.createIterator().deleteBlock()).toBe(false)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.SEEKTABLE,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.CUESHEET,
+      ])
     })
 
-    it('insert before any other block block should insert it', function () {
+    it('delete any other block block should replace it', () => {
       const filePath = pathForFile('vc-cs.flac')
       const ch = new Chain()
 
       ch.read(filePath)
 
       const it = ch.createIterator()
-      assert.isTrue(it.next())
-      assert.isTrue(it.next())
-      assert.isTrue(it.insertBlockBefore(new metadata.ApplicationMetadata()))
-      assert.equal(it.getBlockType(), format.MetadataType.APPLICATION)
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.SEEKTABLE,
-          format.MetadataType.APPLICATION,
-          format.MetadataType.VORBIS_COMMENT,
-          format.MetadataType.CUESHEET,
-        ],
-      )
+      expect(it.next()).toBe(true)
+      expect(it.next()).toBe(true)
+      expect(it.deleteBlock(true)).toBe(true)
+      expect(it.getBlockType()).toEqual(format.MetadataType.SEEKTABLE)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.SEEKTABLE,
+        format.MetadataType.PADDING,
+        format.MetadataType.CUESHEET,
+      ])
     })
 
-    it('insert after any other block block should insert it', function () {
+    it('insert before a StreamInfo block should not insert it', () => {
+      const filePath = pathForFile('vc-cs.flac')
+      const ch = new Chain()
+
+      ch.read(filePath)
+
+      expect(ch.createIterator().insertBlockBefore(new metadata.ApplicationMetadata())).toBe(false)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.SEEKTABLE,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.CUESHEET,
+      ])
+    })
+
+    it('insert before any other block block should insert it', () => {
       const filePath = pathForFile('vc-cs.flac')
       const ch = new Chain()
 
       ch.read(filePath)
 
       const it = ch.createIterator()
-      assert.isTrue(it.next())
-      assert.isTrue(it.next())
-      assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()))
-      assert.equal(it.getBlockType(), format.MetadataType.APPLICATION)
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.SEEKTABLE,
-          format.MetadataType.VORBIS_COMMENT,
-          format.MetadataType.APPLICATION,
-          format.MetadataType.CUESHEET,
-        ],
-      )
+      expect(it.next()).toBe(true)
+      expect(it.next()).toBe(true)
+      expect(it.insertBlockBefore(new metadata.ApplicationMetadata())).toBe(true)
+      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.SEEKTABLE,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.CUESHEET,
+      ])
+    })
+
+    it('insert after any other block block should insert it', () => {
+      const filePath = pathForFile('vc-cs.flac')
+      const ch = new Chain()
+
+      ch.read(filePath)
+
+      const it = ch.createIterator()
+      expect(it.next()).toBe(true)
+      expect(it.next()).toBe(true)
+      expect(it.insertBlockAfter(new metadata.ApplicationMetadata())).toBe(true)
+      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.SEEKTABLE,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.CUESHEET,
+      ])
     })
   })
 
-  describe('write', function () {
+  describe('write', () => {
     let tmpFile
-    beforeEach('createTemporaryFiles', function () {
+    beforeEach(() => {
       tmpFile = temp.openSync('flac-bindings.metadata2.chain-iterator')
       oldfs.copyFileSync(pathForFile('no.flac'), tmpFile.path)
     })
 
-    afterEach('cleanUpTemporaryFiles', function () {
+    afterEach(() => {
+      oldfs.closeSync(tmpFile.fd)
       temp.cleanupSync()
     })
 
-    it('modify the blocks and write should modify the file correctly (sync)', function () {
+    it('modify the blocks and write should modify the file correctly (sync)', () => {
       const ch = new Chain()
       ch.read(tmpFile.path)
       const it = ch.createIterator()
 
       const vc = new metadata.VorbisCommentMetadata()
       vc.vendorString = 'flac-bindings 2.0.0'
-      assert.isTrue(it.insertBlockAfter(vc))
+      expect(it.insertBlockAfter(vc)).toBe(true)
 
-      assert.isTrue(it.insertBlockAfter(new metadata.PaddingMetadata(50)))
-      assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()))
-      assert.isTrue(it.next())
+      expect(it.insertBlockAfter(new metadata.PaddingMetadata(50))).toBe(true)
+      expect(it.insertBlockAfter(new metadata.ApplicationMetadata())).toBe(true)
+      expect(it.next()).toBe(true)
 
       ch.write(false)
 
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.VORBIS_COMMENT,
-          format.MetadataType.PADDING,
-          format.MetadataType.APPLICATION,
-          format.MetadataType.PADDING,
-        ],
-      )
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.PADDING,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.PADDING,
+      ])
     })
 
-    it('modify the blocks and write should modify the file correctly (async)', async function () {
+    it('modify the blocks and write should modify the file correctly (async)', async () => {
       const ch = new Chain()
       await ch.readAsync(tmpFile.path)
       const it = ch.createIterator()
 
       const vc = new metadata.VorbisCommentMetadata()
       vc.vendorString = 'flac-bindings 2.0.0'
-      assert.isTrue(it.insertBlockAfter(vc))
+      expect(it.insertBlockAfter(vc)).toBe(true)
 
-      assert.isTrue(it.insertBlockAfter(new metadata.PaddingMetadata(50)))
-      assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()))
-      assert.isTrue(it.next())
+      expect(it.insertBlockAfter(new metadata.PaddingMetadata(50))).toBe(true)
+      expect(it.insertBlockAfter(new metadata.ApplicationMetadata())).toBe(true)
+      expect(it.next()).toBe(true)
 
       await ch.writeAsync(false)
 
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.VORBIS_COMMENT,
-          format.MetadataType.PADDING,
-          format.MetadataType.APPLICATION,
-          format.MetadataType.PADDING,
-        ],
-      )
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.PADDING,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.PADDING,
+      ])
     })
 
-    it('modify the blocks and write should modify the file correctly (callbacks)', async function () {
+    it('modify the blocks and write should modify the file correctly (callbacks)', async () => {
       const readCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r')
       const ch = new Chain()
       await ch.readWithCallbacks(readCallbacks).finally(() => readCallbacks.close())
@@ -543,29 +491,26 @@ describe('Chain & Iterator', function () {
 
       const vc = new metadata.VorbisCommentMetadata()
       vc.vendorString = 'flac-bindings 2.0.0'
-      assert.isTrue(it.insertBlockAfter(vc))
+      expect(it.insertBlockAfter(vc)).toBe(true)
 
-      assert.isTrue(it.insertBlockAfter(new metadata.PaddingMetadata(50)))
-      assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()))
-      assert.isTrue(it.next())
+      expect(it.insertBlockAfter(new metadata.PaddingMetadata(50))).toBe(true)
+      expect(it.insertBlockAfter(new metadata.ApplicationMetadata())).toBe(true)
+      expect(it.next()).toBe(true)
 
       const writeCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r+')
-      assert.isFalse(ch.checkIfTempFileIsNeeded())
+      expect(ch.checkIfTempFileIsNeeded()).toBe(false)
       await ch.writeWithCallbacks(writeCallbacks).finally(() => writeCallbacks.close())
 
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.VORBIS_COMMENT,
-          format.MetadataType.PADDING,
-          format.MetadataType.APPLICATION,
-          format.MetadataType.PADDING,
-        ],
-      )
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.PADDING,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.PADDING,
+      ])
     })
 
-    it('modify the blocks and write should modify the file correctly (callbacks + tempfile)', async function () {
+    it('modify the blocks and write should modify the file correctly (callbacks + tempfile)', async () => {
       const readCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r')
       const ch = new Chain()
       await ch.readWithCallbacks(readCallbacks).finally(() => readCallbacks.close())
@@ -573,44 +518,41 @@ describe('Chain & Iterator', function () {
 
       const vc = new metadata.VorbisCommentMetadata()
       vc.vendorString = 'flac-bindings 2.0.0'
-      assert.isTrue(it.insertBlockAfter(vc))
+      expect(it.insertBlockAfter(vc)).toBe(true)
 
-      assert.isTrue(it.insertBlockAfter(new metadata.PaddingMetadata(50)))
-      assert.isTrue(it.insertBlockAfter(new metadata.ApplicationMetadata()))
-      assert.isTrue(it.next())
+      expect(it.insertBlockAfter(new metadata.PaddingMetadata(50))).toBe(true)
+      expect(it.insertBlockAfter(new metadata.ApplicationMetadata())).toBe(true)
+      expect(it.next()).toBe(true)
 
       const tmpFile2 = temp.openSync('flac-bindings.metadata2.chain-iterator')
       const writeCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r+')
       const writeCallbacks2 = await generateFlacCallbacks.flacio(tmpFile2.path, 'r+')
-      assert.isTrue(ch.checkIfTempFileIsNeeded(false))
+      expect(ch.checkIfTempFileIsNeeded(false)).toBe(true)
       await ch.writeWithCallbacksAndTempFile(false, writeCallbacks, writeCallbacks2)
         .finally(() => writeCallbacks.close().finally(() => writeCallbacks2.close()))
 
-      assert.deepEqual(
-        Array.from(ch.createIterator()).map((i) => i.type),
-        [
-          format.MetadataType.STREAMINFO,
-          format.MetadataType.VORBIS_COMMENT,
-          format.MetadataType.PADDING,
-          format.MetadataType.APPLICATION,
-          format.MetadataType.PADDING,
-        ],
-      )
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.PADDING,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.PADDING,
+      ])
     })
   })
 
-  describe('other', function () {
-    it('checkIfTempFileIsNeeded() should work', async function () {
+  describe('other', () => {
+    it('checkIfTempFileIsNeeded() should work', async () => {
       const filePath = pathForFile('vc-cs.flac')
       const ch = new Chain()
       await ch.readAsync(filePath)
 
-      assert.isFalse(ch.checkIfTempFileIsNeeded())
+      expect(ch.checkIfTempFileIsNeeded()).toBe(false)
     })
   })
 
-  describe('gc', function () {
-    it('gc should work', function () {
+  describe('gc', () => {
+    it('gc should work', () => {
       gc()
     })
   })
