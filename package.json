@@ -8,7 +8,7 @@
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "scripts": {
-    "test": "mocha --recursive",
+    "test": "jest",
     "coverage": "./scripts/coverage.sh",
     "install": "node scripts/flac-build.js",
     "cmake-js": "cmake-js",
