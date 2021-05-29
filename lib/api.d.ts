@@ -1,9 +1,10 @@
-export type EnumValues<T> = T[keyof T];
-type ReverseEnum<T extends { [k in keyof T]: number }> = { [k in EnumValues<T>]: keyof T };
-type PerhapsAsync<T> = Promise<T> | T;
 type Global_Iterator<T> = Iterator<T>; //Avoid type shadowing (in TS there's nothing like global:: or :: to refer global namespace)
 
 declare namespace api {
+
+  export type EnumValues<T> = T[keyof T];
+  export type ReverseEnum<T extends { [k in keyof T]: number }> = { [k in EnumValues<T>]: keyof T };
+  export type PerhapsAsync<T> = Promise<T> | T;
 
   /**
    * @see https://xiph.org/flac/api/group__flac__stream__decoder.html
@@ -1302,6 +1303,31 @@ declare namespace api {
      * @returns An interleaved PCM audio buffer.
      */
     function zipAudio(opts: ZipAudioOptions): Buffer;
+
+    interface UnzipAudioOptions {
+      /** The interleaved PCM buffer */
+      buffer: Buffer;
+      /** The number of channels that has the interleaved audio */
+      channels: number | bigint;
+      /**
+       * The number of samples in the buffers (by default buffer.byteLength / inBps` /
+       * `channels`).
+       */
+      samples?: number | bigint;
+      /** The input bytes per sample (by default 4) */
+      inBps?: 2 | 3 | 4;
+      /** The output bytes per sample (by default 4) */
+      outBps?: 2 | 3 | 4;
+    }
+
+    /**
+     * Unzips interleaved PCM audio into a non interleaved array of PCM audio (one buffer
+     * per channel), and optionally converting from one sample format to another.
+     * @param opts The parameters to the function
+     * @see UnzipAudioOptions The options interface.
+     * @returns A non interleaved array of PCM audio buffers.
+     */
+    function unzipAudio(opts: UnzipAudioOptions): Buffer[];
 
     interface ConvertSampleFormatOptions {
       /** The buffer to convert from one sample format to another */
