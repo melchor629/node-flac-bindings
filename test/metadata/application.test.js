@@ -1,4 +1,3 @@
-const { assert } = require('chai')
 const {
   api: {
     metadata: { ApplicationMetadata },
@@ -7,44 +6,44 @@ const {
 } = require('../../lib/index')
 const { gc } = require('../helper')
 
-describe('ApplicationMetadata', function () {
-  it('new object has the right type', function () {
+describe('ApplicationMetadata', () => {
+  it('new object has the right type', () => {
     const am = new ApplicationMetadata()
 
-    assert.equal(am.type, MetadataType.APPLICATION)
+    expect(am.type).toEqual(MetadataType.APPLICATION)
   })
 
-  it('set id of object should work', function () {
+  it('set id of object should work', () => {
     const am = new ApplicationMetadata()
 
     am.id = Buffer.from('1234')
-    assert.deepEqual(am.id, Buffer.from('1234'))
+    expect(am.id).toEqual(Buffer.from('1234'))
   })
 
-  it('set id of object having less than 4 bytes should throw', function () {
+  it('set id of object having less than 4 bytes should throw', () => {
     const am = new ApplicationMetadata()
 
-    assert.throws(() => {
+    expect(() => {
       am.id = Buffer.from('si')
-    })
+    }).toThrow()
   })
 
-  it('set id of object having more than 4 bytes should work but discard the rest', function () {
+  it('set id of object having more than 4 bytes should work but discard the rest', () => {
     const am = new ApplicationMetadata()
 
     am.id = Buffer.from('1234===-><-')
-    assert.deepEqual(am.id, Buffer.from('1234'))
+    expect(am.id).toEqual(Buffer.from('1234'))
   })
 
-  it('set data of object should work', function () {
+  it('set data of object should work', () => {
     const am = new ApplicationMetadata()
 
     am.data = Buffer.from('this is a wonderful data that is useless per se, pero bueno')
-    assert.deepEqual(am.data, Buffer.from('this is a wonderful data that is useless per se, pero bueno'))
+    expect(am.data).toEqual(Buffer.from('this is a wonderful data that is useless per se, pero bueno'))
   })
 
-  describe('gc', function () {
-    it('gc should work', function () {
+  describe('gc', () => {
+    it('gc should work', () => {
       gc()
     })
   })

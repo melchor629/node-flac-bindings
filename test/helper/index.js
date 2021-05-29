@@ -1,4 +1,3 @@
-const asyncChaiExtensions = require('./async-chai-extensions')
 const createDeferredScope = require('./deferred')
 const gc = require('./gc')
 const { comparePCM, getPCMData } = require('./compare-pcm')
@@ -9,7 +8,6 @@ const loopPcmAudio = require('./loop-pcm-audio')
 const pathForFile = require('./path-for-file')
 
 module.exports = {
-  asyncChaiExtensions,
   createDeferredScope,
   gc,
   comparePCM,

@@ -115,18 +115,18 @@ For more advanced commands for compilation inside the repo tree, see below:
 
 ```sh
 # Compile (debug version)
-npm run cmake-js -- build --debug
+npx cmake-js build --debug
 
 # Compile with sanitizers (only available on Linux and macOS)
-npm run cmake-js -- configure --CDSANITIZE=ON --debug
-npm run cmake-js -- build --debug
+npx cmake-js configure --CDSANITIZE=ON --debug
+npx cmake-js build --debug
 
 # Compile with external FLAC library (can be combined with sanitizers)
-npm run cmake-js -- configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
-npm run cmake-js -- build --debug
+npx cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
+npx cmake-js build --debug
 
 # Clean compilation folder
-npm run cmake-js -- clean
+npx cmake-js clean
 ```
 
 ## How to run the tests
@@ -137,8 +137,8 @@ The recommended steps are:
 
 ```sh
 # Do not run tests with sanitizers enabled, it's tricker to make it work
-npm run cmake-js -- configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
-npm run cmake-js -- build --debug
+npx cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
+npx cmake-js build --debug
 npm test
 
 # To run tests with coverage (requires lcov to be installed)

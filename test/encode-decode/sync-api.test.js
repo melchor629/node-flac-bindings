@@ -1,5 +1,5 @@
-const { assert } = require('chai')
 const temp = require('temp').track()
+const fs = require('fs')
 const { api } = require('../../lib/index')
 const {
   pathForFile: { audio: pathForFile },
@@ -17,20 +17,19 @@ const {
 
 let tmpFile
 let deferredScope = null
-beforeEach('createTemporaryFiles', function () {
+beforeEach(() => {
   tmpFile = temp.openSync('flac-bindings.encode-decode.sync-api')
   deferredScope = createDeferredScope()
 })
 
-afterEach('cleanUpTemporaryFiles', function () {
+afterEach(() => {
+  fs.closeSync(tmpFile.fd)
   temp.cleanupSync()
   deferredScope.finalize()
 })
 
-describe('encode & decode: sync api', function () {
-  this.slow(250 * 1000)
-
-  it('decode using stream (non-ogg)', function () {
+describe('encode & decode: sync api', () => {
+  it('decode using stream (non-ogg)', () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
     const dec = new api.Decoder()
@@ -50,17 +49,17 @@ describe('encode & decode: sync api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString())
-    assert.isTrue(dec.processUntilEndOfStream(), dec.getResolvedStateString())
-    assert.isTrue(dec.flush(), dec.getResolvedStateString())
-    assert.isTrue(dec.finish(), dec.getResolvedStateString())
+    expect(dec.processUntilEndOfMetadata()).toBe(true)
+    expect(dec.processUntilEndOfStream()).toBe(true)
+    expect(dec.flush()).toBe(true)
+    expect(dec.finish()).toBe(true)
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    assert.equal(samples, totalSamples)
+    expect(samples).toEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
-  it('decode using stream (ogg)', function () {
+  it('decode using stream (ogg)', () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.oga'), 'r')
     deferredScope.defer(() => callbacks.close())
     const dec = new api.Decoder()
@@ -80,17 +79,17 @@ describe('encode & decode: sync api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString())
-    assert.isTrue(dec.processUntilEndOfStream(), dec.getResolvedStateString())
-    assert.isTrue(dec.flush(), dec.getResolvedStateString())
-    assert.isTrue(dec.finish(), dec.getResolvedStateString())
+    expect(dec.processUntilEndOfMetadata()).toBe(true)
+    expect(dec.processUntilEndOfStream()).toBe(true)
+    expect(dec.flush()).toBe(true)
+    expect(dec.finish()).toBe(true)
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    assert.equal(samples, totalSamples)
+    expect(samples).toEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
-  it('decode using file (non-ogg)', function () {
+  it('decode using file (non-ogg)', () => {
     const dec = new api.Decoder()
     const allBuffers = []
     dec.initFile(
@@ -104,17 +103,17 @@ describe('encode & decode: sync api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString())
-    assert.isTrue(dec.processUntilEndOfStream(), dec.getResolvedStateString())
-    assert.isTrue(dec.flush(), dec.getResolvedStateString())
-    assert.isTrue(dec.finish(), dec.getResolvedStateString())
+    expect(dec.processUntilEndOfMetadata()).toBe(true)
+    expect(dec.processUntilEndOfStream()).toBe(true)
+    expect(dec.flush()).toBe(true)
+    expect(dec.finish()).toBe(true)
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    assert.equal(samples, totalSamples)
+    expect(samples).toEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
-  it('decode using file (ogg)', function () {
+  it('decode using file (ogg)', () => {
     const dec = new api.Decoder()
     const allBuffers = []
     dec.initOggFile(
@@ -128,17 +127,17 @@ describe('encode & decode: sync api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString())
-    assert.isTrue(dec.processUntilEndOfStream(), dec.getResolvedStateString())
-    assert.isTrue(dec.flush(), dec.getResolvedStateString())
-    assert.isTrue(dec.finish(), dec.getResolvedStateString())
+    expect(dec.processUntilEndOfMetadata()).toBe(true)
+    expect(dec.processUntilEndOfStream()).toBe(true)
+    expect(dec.flush()).toBe(true)
+    expect(dec.finish()).toBe(true)
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    assert.equal(samples, totalSamples)
+    expect(samples).toEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
-  it('decoder should be able to skip a frame', function () {
+  it('decoder should be able to skip a frame', () => {
     const dec = new api.Decoder()
     dec.initFile(
       pathForFile('loop.flac'),
@@ -148,15 +147,15 @@ describe('encode & decode: sync api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString())
-    assert.isTrue(dec.processSingle(), dec.getResolvedStateString())
-    assert.isTrue(dec.skipSingleFrame(), dec.getResolvedStateString())
-    assert.isTrue(dec.processSingle(), dec.getResolvedStateString())
-    assert.isTrue(dec.flush(), dec.getResolvedStateString())
-    assert.isTrue(dec.finish(), dec.getResolvedStateString())
+    expect(dec.processUntilEndOfMetadata()).toBe(true)
+    expect(dec.processSingle()).toBe(true)
+    expect(dec.skipSingleFrame()).toBe(true)
+    expect(dec.processSingle()).toBe(true)
+    expect(dec.flush()).toBe(true)
+    expect(dec.finish()).toBe(true)
   })
 
-  it('decoder should be able to seek to a sample', function () {
+  it('decoder should be able to seek to a sample', () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
     const dec = new api.Decoder()
@@ -172,16 +171,16 @@ describe('encode & decode: sync api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString())
-    assert.isTrue(dec.processSingle(), dec.getResolvedStateString())
-    assert.isTrue(dec.seekAbsolute(totalSamples / 5), dec.getResolvedStateString())
-    assert.equal(dec.getDecodePosition(), 157036)
-    assert.isTrue(dec.processSingle(), dec.getResolvedStateString())
-    assert.isTrue(dec.flush(), dec.getResolvedStateString())
-    assert.isTrue(dec.finish(), dec.getResolvedStateString())
+    expect(dec.processUntilEndOfMetadata()).toBe(true)
+    expect(dec.processSingle()).toBe(true)
+    expect(dec.seekAbsolute(totalSamples / 5)).toBe(true)
+    expect(dec.getDecodePosition()).toEqual(157036)
+    expect(dec.processSingle()).toBe(true)
+    expect(dec.flush()).toBe(true)
+    expect(dec.finish()).toBe(true)
   })
 
-  it('decoder should emit metadata', function () {
+  it('decoder should emit metadata', () => {
     const dec = new api.Decoder()
     const metadataBlocks = []
     dec.initFile(
@@ -195,13 +194,13 @@ describe('encode & decode: sync api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(dec.processSingle(), dec.getResolvedStateString())
-    assert.isTrue(dec.finish(), dec.getResolvedStateString())
+    expect(dec.processSingle()).toBe(true)
+    expect(dec.finish()).toBe(true)
 
-    assert.equal(metadataBlocks.length, 1)
+    expect(metadataBlocks.length).toEqual(1)
   })
 
-  it('decoder get other properties work', function () {
+  it('decoder get other properties work', () => {
     const dec = new api.Decoder()
     dec.setMd5Checking(true)
     dec.setOggSerialNumber(0x11223344)
@@ -214,22 +213,22 @@ describe('encode & decode: sync api', function () {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    assert.isTrue(dec.processUntilEndOfMetadata(), dec.getResolvedStateString())
-    assert.isTrue(dec.processSingle(), dec.getResolvedStateString())
+    expect(dec.processUntilEndOfMetadata()).toBe(true)
+    expect(dec.processSingle()).toBe(true)
 
-    assert.equal(dec.getChannels(), 2)
-    assert.equal(dec.getBitsPerSample(), 24)
-    assert.equal(dec.getSampleRate(), 44100)
-    assert.equal(dec.getChannelAssignment(), api.format.ChannelAssignment.MID_SIDE)
-    assert.equal(dec.getBlocksize(), 4096)
-    assert.equal(dec.getTotalSamples(), totalSamples)
-    assert.isTrue(dec.getMd5Checking())
-    assert.equal(dec.getDecodePosition(), 22862)
+    expect(dec.getChannels()).toEqual(2)
+    expect(dec.getBitsPerSample()).toEqual(24)
+    expect(dec.getSampleRate()).toEqual(44100)
+    expect(dec.getChannelAssignment()).toEqual(api.format.ChannelAssignment.MID_SIDE)
+    expect(dec.getBlocksize()).toEqual(4096)
+    expect(dec.getTotalSamples()).toEqual(totalSamples)
+    expect(dec.getMd5Checking()).toBe(true)
+    expect(dec.getDecodePosition()).toEqual(22862)
 
-    assert.isFalse(dec.finish(), dec.getResolvedStateString())
+    expect(dec.finish()).toBe(false)
   })
 
-  it('encode using stream (non-ogg)', function () {
+  it('encode using stream (non-ogg)', () => {
     const enc = new api.Encoder()
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w')
     deferredScope.defer(() => callbacks.close())
@@ -244,13 +243,13 @@ describe('encode & decode: sync api', function () {
       null,
     )
 
-    assert.isTrue(enc.processInterleaved(encData), enc.getResolvedStateString())
-    assert.isTrue(enc.finish(), enc.getResolvedStateString())
+    expect(enc.processInterleaved(encData)).toBe(true)
+    expect(enc.finish()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
   })
 
-  it('encode using stream (ogg)', function () {
+  it('encode using stream (ogg)', () => {
     const enc = new api.Encoder()
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w+')
     deferredScope.defer(() => callbacks.close())
@@ -266,13 +265,13 @@ describe('encode & decode: sync api', function () {
       null,
     )
 
-    assert.isTrue(enc.processInterleaved(encData), enc.getResolvedStateString())
-    assert.isTrue(enc.finish(), enc.getResolvedStateString())
+    expect(enc.processInterleaved(encData)).toBe(true)
+    expect(enc.finish()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24, true)
   })
 
-  it('encode using file (non-ogg)', function () {
+  it('encode using file (non-ogg)', () => {
     const progressCallbackValues = []
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
@@ -284,14 +283,14 @@ describe('encode & decode: sync api', function () {
       (...args) => progressCallbackValues.push(args),
     )
 
-    assert.isTrue(enc.processInterleaved(encData), enc.getResolvedStateString())
-    assert.isTrue(enc.finish(), enc.getResolvedStateString())
+    expect(enc.processInterleaved(encData)).toBe(true)
+    expect(enc.finish()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
-    assert.equal(progressCallbackValues.length, 41)
+    expect(progressCallbackValues.length).toEqual(41)
   })
 
-  it('encode using file (ogg)', function () {
+  it('encode using file (ogg)', () => {
     const progressCallbackValues = []
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
@@ -303,14 +302,14 @@ describe('encode & decode: sync api', function () {
       (...args) => progressCallbackValues.push(args),
     )
 
-    assert.isTrue(enc.processInterleaved(encData), enc.getResolvedStateString())
-    assert.isTrue(enc.finish(), enc.getResolvedStateString())
+    expect(enc.processInterleaved(encData)).toBe(true)
+    expect(enc.finish()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24, true)
-    assert.equal(progressCallbackValues.length, 30)
+    expect(progressCallbackValues.length).toEqual(30)
   })
 
-  it('encode using file with non-interleaved data (non-ogg)', function () {
+  it('encode using file with non-interleaved data (non-ogg)', () => {
     const progressCallbackValues = []
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
@@ -322,14 +321,14 @@ describe('encode & decode: sync api', function () {
       (...args) => progressCallbackValues.push(args),
     )
 
-    assert.isTrue(enc.process(encDataAlt, totalSamples), enc.getResolvedStateString())
-    assert.isTrue(enc.finish(), enc.getResolvedStateString())
+    expect(enc.process(encDataAlt, totalSamples)).toBe(true)
+    expect(enc.finish()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
-    assert.equal(progressCallbackValues.length, 41)
+    expect(progressCallbackValues.length).toEqual(41)
   })
 
-  it('encoder should emit streaminfo metadata block', function () {
+  it('encoder should emit streaminfo metadata block', () => {
     let metadataBlock = null
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w')
     deferredScope.defer(() => callbacks.close())
@@ -348,15 +347,15 @@ describe('encode & decode: sync api', function () {
       },
     )
 
-    assert.isTrue(enc.processInterleaved(encData), enc.getResolvedStateString())
-    assert.isTrue(enc.finish(), enc.getResolvedStateString())
+    expect(enc.processInterleaved(encData)).toBe(true)
+    expect(enc.finish()).toBe(true)
 
-    assert.isNotNull(metadataBlock)
-    assert.equal(metadataBlock.type, 0)
-    assert.equal(metadataBlock.totalSamples, totalSamples)
+    expect(metadataBlock).not.toBeNull()
+    expect(metadataBlock.type).toEqual(0)
+    expect(metadataBlock.totalSamples).toEqual(totalSamples)
   })
 
-  it('encoder process should fail if invalid buffer size is sent', function () {
+  it('encoder process should fail if invalid buffer size is sent', () => {
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
     enc.channels = 2
@@ -366,14 +365,11 @@ describe('encode & decode: sync api', function () {
       tmpFile.path,
     )
 
-    assert.throws(
-      () => enc.process([encDataAlt[0].slice(4), encDataAlt[1]], totalSamples),
-      /^Buffer at position 0 has not enough bytes:/,
-    )
-    assert.isTrue(enc.finish(), enc.getResolvedStateString())
+    expect(() => enc.process([encDataAlt[0].slice(4), encDataAlt[1]], totalSamples)).toThrow()
+    expect(enc.finish()).toBe(true)
   })
 
-  it('encoder process should fail if invalid number of channels is sent', function () {
+  it('encoder process should fail if invalid number of channels is sent', () => {
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
     enc.channels = 2
@@ -383,14 +379,11 @@ describe('encode & decode: sync api', function () {
       tmpFile.path,
     )
 
-    assert.throws(
-      () => enc.process([encDataAlt[0]], totalSamples),
-      /^Expected array to have \d+ buffers \(one for each channel\)$/,
-    )
-    assert.isTrue(enc.finish(), enc.getResolvedStateString())
+    expect(() => enc.process([encDataAlt[0]], totalSamples)).toThrow()
+    expect(enc.finish()).toBe(true)
   })
 
-  it('encoder processInterleaved should fail if invalid buffer size is sent', function () {
+  it('encoder processInterleaved should fail if invalid buffer size is sent', () => {
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
     enc.channels = 2
@@ -400,14 +393,11 @@ describe('encode & decode: sync api', function () {
       tmpFile.path,
     )
 
-    assert.throws(
-      () => enc.processInterleaved(encData.slice(4), totalSamples),
-      /^Buffer has not enough bytes:/,
-    )
-    assert.isTrue(enc.finish(), enc.getResolvedStateString())
+    expect(() => enc.processInterleaved(encData.slice(4), totalSamples)).toThrow()
+    expect(enc.finish()).toBe(true)
   })
 
-  it('encoder get other properties work', function () {
+  it('encoder get other properties work', () => {
     const enc = new api.Encoder()
     enc.bitsPerSample = 24
     enc.channels = 2
@@ -419,24 +409,24 @@ describe('encode & decode: sync api', function () {
       tmpFile.path,
     )
 
-    assert.isTrue(enc.verify)
+    expect(enc.verify).toBe(true)
 
-    assert.equal(enc.channels, 2)
-    assert.equal(enc.bitsPerSample, 24)
-    assert.equal(enc.sampleRate, 44100)
-    assert.equal(enc.blocksize, 4096)
-    assert.isTrue(enc.doMidSideStereo)
-    assert.isFalse(enc.looseMidSideStereo)
-    assert.equal(enc.maxLpcOrder, 12)
-    assert.equal(enc.qlpCoeffPrecision, 15)
-    assert.isFalse(enc.doQlpCoeffPrecSearch)
-    assert.isFalse(enc.doEscapeCoding)
-    assert.isFalse(enc.doExhaustiveModelSearch)
-    assert.equal(enc.minResidualPartitionOrder, 0)
-    assert.equal(enc.maxResidualPartitionOrder, 6)
-    assert.equal(enc.riceParameterSearchDist, 0)
-    assert.equal(enc.totalSamplesEstimate, totalSamples)
+    expect(enc.channels).toEqual(2)
+    expect(enc.bitsPerSample).toEqual(24)
+    expect(enc.sampleRate).toEqual(44100)
+    expect(enc.blocksize).toEqual(4096)
+    expect(enc.doMidSideStereo).toBe(true)
+    expect(enc.looseMidSideStereo).toBe(false)
+    expect(enc.maxLpcOrder).toEqual(12)
+    expect(enc.qlpCoeffPrecision).toEqual(15)
+    expect(enc.doQlpCoeffPrecSearch).toBe(false)
+    expect(enc.doEscapeCoding).toBe(false)
+    expect(enc.doExhaustiveModelSearch).toBe(false)
+    expect(enc.minResidualPartitionOrder).toEqual(0)
+    expect(enc.maxResidualPartitionOrder).toEqual(6)
+    expect(enc.riceParameterSearchDist).toEqual(0)
+    expect(enc.totalSamplesEstimate).toEqual(totalSamples)
 
-    assert.isTrue(enc.finish(), enc.getResolvedStateString())
+    expect(enc.finish()).toBe(true)
   })
 })

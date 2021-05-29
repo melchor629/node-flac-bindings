@@ -1,33 +1,32 @@
-const { assert } = require('chai')
 const { PaddingMetadata } = require('../../lib/index').api.metadata
 const { MetadataType } = require('../../lib/index').api.format
 const { gc } = require('../helper')
 
-describe('PaddingMetadata', function () {
-  it('create new object should work', function () {
-    return new PaddingMetadata()
+describe('PaddingMetadata', () => {
+  it('create new object should work', () => {
+    expect(new PaddingMetadata()).not.toBeNull()
   })
 
-  it('the object should have the right type', function () {
+  it('the object should have the right type', () => {
     const p = new PaddingMetadata()
 
-    assert.equal(p.type, MetadataType.PADDING)
+    expect(p.type).toEqual(MetadataType.PADDING)
   })
 
-  it('the object initially has 0 bytes of padding', function () {
+  it('the object initially has 0 bytes of padding', () => {
     const p = new PaddingMetadata()
 
-    assert.equal(p.length, 0)
+    expect(p.length).toEqual(0)
   })
 
-  it('the object created with a size should have that size in bytes of padding', function () {
+  it('the object created with a size should have that size in bytes of padding', () => {
     const p = new PaddingMetadata(123)
 
-    assert.equal(p.length, 123)
+    expect(p.length).toEqual(123)
   })
 
-  describe('gc', function () {
-    it('gc should work', function () {
+  describe('gc', () => {
+    it('gc should work', () => {
       gc()
     })
   })

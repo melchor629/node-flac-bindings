@@ -1,143 +1,142 @@
-const { assert } = require('chai')
 const { format, metadata } = require('../lib/index').api
 
-describe('format', function () {
-  it('VERSION_STRING is defined', function () {
-    assert.isString(format.VERSION_STRING)
-    assert.match(format.VERSION_STRING, /^\d+\.\d+\.\d+$/)
+describe('format', () => {
+  test('VERSION_STRING is defined', () => {
+    expect(format.VERSION_STRING).toBeString()
+    expect(format.VERSION_STRING).toMatch(/^\d+\.\d+\.\d+$/)
   })
 
-  it('VENDOR_STRING is defined', function () {
-    assert.isString(format.VENDOR_STRING)
-    assert.match(format.VENDOR_STRING, /^reference libFLAC \d+\.\d+\.\d+ \d+$/)
+  test('VENDOR_STRING is defined', () => {
+    expect(format.VENDOR_STRING).toBeString()
+    expect(format.VENDOR_STRING).toMatch(/^reference libFLAC \d+\.\d+\.\d+ \d+$/)
   })
 
-  it('API_SUPPORTS_OGG_FLAC is defined', function () {
-    assert.isBoolean(format.API_SUPPORTS_OGG_FLAC)
+  test('API_SUPPORTS_OGG_FLAC is defined', () => {
+    expect(format.API_SUPPORTS_OGG_FLAC).toBeBoolean()
   })
 
-  it('sampleRateIsValid() should work', function () {
-    assert.isTrue(format.sampleRateIsValid(96000))
-    assert.isFalse(format.sampleRateIsValid(BigInt(112938129312)))
+  test('sampleRateIsValid() should work', () => {
+    expect(format.sampleRateIsValid(96000)).toBeTrue()
+    expect(format.sampleRateIsValid(BigInt(112938129312))).toBeFalse()
   })
 
-  it('sampleRateIsValid() should throw if the argument is not number', function () {
-    assert.throws(() => format.sampleRateIsValid('p'), /Expected p to be number/)
-    assert.isFalse(format.sampleRateIsValid(Infinity))
-    assert.isFalse(format.sampleRateIsValid(NaN))
+  test('sampleRateIsValid() should throw if the argument is not number', () => {
+    expect(() => format.sampleRateIsValid('p')).toThrow(/Expected p to be number/)
+    expect(format.sampleRateIsValid(Infinity)).toBeFalse()
+    expect(format.sampleRateIsValid(NaN)).toBeFalse()
   })
 
-  it('blocksizeIsSubset() should work', function () {
-    assert.isTrue(format.blocksizeIsSubset(4410, 44100))
+  test('blocksizeIsSubset() should work', () => {
+    expect(format.blocksizeIsSubset(4410, 44100)).toBeTrue()
   })
 
-  it('blocksizeIsSubset() should throw if any of the arguments is not number', function () {
-    assert.throws(() => format.blocksizeIsSubset({}, 44100), /Expected .+? to be number/)
-    assert.throws(() => format.blocksizeIsSubset(4410, []), /Expected {2}to be number/)
+  test('blocksizeIsSubset() should throw if any of the arguments is not number', () => {
+    expect(() => format.blocksizeIsSubset({}, 44100)).toThrow(/Expected .+? to be number/)
+    expect(() => format.blocksizeIsSubset(4410, [])).toThrow(/Expected {2}to be number/)
   })
 
-  it('sampleRateIsSubset() should work', function () {
-    assert.isTrue(format.sampleRateIsSubset(44100))
-    assert.isFalse(format.sampleRateIsSubset(BigInt(9123812830192)))
+  test('sampleRateIsSubset() should work', () => {
+    expect(format.sampleRateIsSubset(44100)).toBeTrue()
+    expect(format.sampleRateIsSubset(BigInt(9123812830192))).toBeFalse()
   })
 
-  it('sampleRateIsSubset() should throw if the argument is not number', function () {
-    assert.throws(() => format.sampleRateIsSubset(Promise), /Expected .+? to be number/)
+  test('sampleRateIsSubset() should throw if the argument is not number', () => {
+    expect(() => format.sampleRateIsSubset(Promise)).toThrow(/Expected .+? to be number/)
   })
 
-  it('vorbiscommentEntryIsLegal() should work', function () {
-    assert.isTrue(format.vorbiscommentEntryIsLegal('KEY=VALUE'))
-    assert.isFalse(format.vorbiscommentEntryIsLegal('KEY VALUE'))
+  test('vorbiscommentEntryIsLegal() should work', () => {
+    expect(format.vorbiscommentEntryIsLegal('KEY=VALUE')).toBeTrue()
+    expect(format.vorbiscommentEntryIsLegal('KEY VALUE')).toBeFalse()
   })
 
-  it('vorbiscommentEntryIsLegal() should throw if the argument is not string', function () {
-    assert.throws(() => format.vorbiscommentEntryIsLegal(new Map()), /Expected .+? to be string/)
+  test('vorbiscommentEntryIsLegal() should throw if the argument is not string', () => {
+    expect(() => format.vorbiscommentEntryIsLegal(new Map())).toThrow(/Expected .+? to be string/)
   })
 
-  it('vorbiscommentEntryNameIsLegal() should work', function () {
-    assert.isTrue(format.vorbiscommentEntryNameIsLegal('KEY'))
-    assert.isFalse(format.vorbiscommentEntryNameIsLegal('KEY \n'))
+  test('vorbiscommentEntryNameIsLegal() should work', () => {
+    expect(format.vorbiscommentEntryNameIsLegal('KEY')).toBeTrue()
+    expect(format.vorbiscommentEntryNameIsLegal('KEY \n')).toBeFalse()
   })
 
-  it('vorbiscommentEntryNameIsLegal() should throw if the argument is not string', function () {
-    assert.throws(() => format.vorbiscommentEntryNameIsLegal(String), /Expected .+? to be string/)
+  test('vorbiscommentEntryNameIsLegal() should throw if the argument is not string', () => {
+    expect(() => format.vorbiscommentEntryNameIsLegal(String)).toThrow(/Expected .+? to be string/)
   })
 
-  it('vorbiscommentEntryValueIsLegal() should work', function () {
-    assert.isTrue(format.vorbiscommentEntryValueIsLegal('VALUE IS OK'))
+  test('vorbiscommentEntryValueIsLegal() should work', () => {
+    expect(format.vorbiscommentEntryValueIsLegal('VALUE IS OK')).toBeTrue()
   })
 
-  it('vorbiscommentEntryValueIsLegal() should throw if the argument is not string', function () {
-    assert.throws(() => format.vorbiscommentEntryValueIsLegal(Buffer), / to be string$/)
+  test('vorbiscommentEntryValueIsLegal() should throw if the argument is not string', () => {
+    expect(() => format.vorbiscommentEntryValueIsLegal(Buffer)).toThrow(/ to be string$/)
   })
 
-  it('seektableIsLegal() should work', function () {
-    assert.isTrue(format.seektableIsLegal(new metadata.SeekTableMetadata()))
+  test('seektableIsLegal() should work', () => {
+    expect(format.seektableIsLegal(new metadata.SeekTableMetadata())).toBeTrue()
   })
 
-  it('seektableIsLegal() with value not SeekTableMetadata should throw', function () {
-    assert.throws(() => format.seektableIsLegal(new metadata.ApplicationMetadata()), /is not of type SeekTable/)
+  test('seektableIsLegal() with value not SeekTableMetadata should throw', () => {
+    expect(() => format.seektableIsLegal(new metadata.ApplicationMetadata())).toThrow(/is not of type SeekTable/)
   })
 
-  it('seektableSort() should work', function () {
-    assert.equal(format.seektableSort(new metadata.SeekTableMetadata()), 0)
+  test('seektableSort() should work', () => {
+    expect(format.seektableSort(new metadata.SeekTableMetadata())).toBe(0)
   })
 
-  it('seektableSort() with value not SeekTableMetadata should throw', function () {
-    assert.throws(() => format.seektableSort(new metadata.ApplicationMetadata()), /is not of type SeekTable/)
+  test('seektableSort() with value not SeekTableMetadata should throw', () => {
+    expect(() => format.seektableSort(new metadata.ApplicationMetadata())).toThrow(/is not of type SeekTable/)
   })
 
-  it('cuesheetIsLegal() should return reason if wrong', function () {
+  test('cuesheetIsLegal() should return reason if wrong', () => {
     const cuesheet = new metadata.CueSheetMetadata()
-    assert.isString(format.cuesheetIsLegal(cuesheet))
-    assert.equal(format.cuesheetIsLegal(cuesheet), 'cue sheet must have at least one track (the lead-out)')
+    expect(format.cuesheetIsLegal(cuesheet)).toBeString()
+    expect(format.cuesheetIsLegal(cuesheet)).toBe('cue sheet must have at least one track (the lead-out)')
   })
 
-  it('cuesheetIsLegal() should return null if ok', function () {
+  test('cuesheetIsLegal() should return null if ok', () => {
     const cuesheet = new metadata.CueSheetMetadata()
     cuesheet.insertBlankTrack(0)
     Array.from(cuesheet)[0].number = 1
-    assert.isNull(format.cuesheetIsLegal(cuesheet))
+    expect(format.cuesheetIsLegal(cuesheet)).toBeNull()
   })
 
-  it('cuesheetIsLegal() with value not CueSheetMetadata should throw', function () {
-    assert.throws(() => format.cuesheetIsLegal(new metadata.ApplicationMetadata()), /is not of type CueSheet/)
+  test('cuesheetIsLegal() with value not CueSheetMetadata should throw', () => {
+    expect(() => format.cuesheetIsLegal(new metadata.ApplicationMetadata())).toThrow(/is not of type CueSheet/)
   })
 
-  it('pictureIsLegal() should return null if ok', function () {
-    assert.isNull(format.pictureIsLegal(new metadata.PictureMetadata()))
+  test('pictureIsLegal() should return null if ok', () => {
+    expect(format.pictureIsLegal(new metadata.PictureMetadata())).toBeNull()
   })
 
-  it('pictureIsLegal() should return reason if wrong', function () {
+  test('pictureIsLegal() should return reason if wrong', () => {
     const picture = new metadata.PictureMetadata()
     picture.mimeType = 'ƒ'
-    assert.isString(format.pictureIsLegal(picture))
-    assert.match(format.pictureIsLegal(picture), /^MIME type string must contain only printable ASCII characters/)
+    expect(format.pictureIsLegal(picture)).toBeString()
+    expect(format.pictureIsLegal(picture)).toMatch(/^MIME type string must contain only printable ASCII characters/)
   })
 
-  it('pictureIsLegal() with value not PictureMetadata should throw', function () {
-    assert.throws(() => format.pictureIsLegal(new metadata.ApplicationMetadata()), /is not of type Picture/)
-  });
+  test('pictureIsLegal() with value not PictureMetadata should throw', () => {
+    expect(() => format.pictureIsLegal(new metadata.ApplicationMetadata())).toThrow(/is not of type Picture/)
+  })
 
-  [
+  describe.each([
     'MetadataType',
     'EntropyCodingMethodType',
     'SubframeType',
     'ChannelAssignment',
     'FrameNumberType',
     'PictureType',
-  ].forEach((t) => {
-    it(`${t} should be an object`, function () {
-      assert.isObject(format[t])
+  ])('%s', (t) => {
+    test('should be an object', () => {
+      expect(format[t]).toBeObject()
     })
 
-    it(`${t}String should be an object`, function () {
-      assert.isObject(format[`${t}String`])
+    test(`${t}String should be an object`, () => {
+      expect(format[`${t}String`]).toBeObject()
     })
 
-    it(`${t} and ${t}String should contain the same values`, function () {
-      assert.deepEqual(Object.values(format[t]).map((v) => v.toString()), Object.keys(format[`${t}String`]))
-      assert.deepEqual(Object.values(format[`${t}String`]), Object.keys(format[t]))
+    test(`${t} and ${t}String should contain the same values`, () => {
+      expect(Object.values(format[t]).map((v) => v.toString())).toEqual(Object.keys(format[`${t}String`]))
+      expect(Object.values(format[`${t}String`])).toEqual(Object.keys(format[t]))
     })
   })
 })

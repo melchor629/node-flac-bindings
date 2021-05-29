@@ -30,18 +30,15 @@
     "prebuild-install": "^6.1.2"
   },
   "devDependencies": {
-    "@types/chai": "^4.2.18",
     "@types/debug": "^4.1.5",
-    "@types/mocha": "^8.2.2",
+    "@types/jest": "^26.0.23",
     "@types/node": "^14.17.0",
     "@types/temp": "^0.9.0",
-    "chai": "^4.3.4",
     "eslint": "^7.26.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.23.3",
-    "eslint-plugin-mocha": "^8.1.0",
-    "mocha": "^8.4.0",
-    "nyc": "^15.1.0",
+    "jest": "^26.6.3",
+    "jest-extended": "^0.11.5",
     "prebuild": "^10.0.1",
     "temp": "^0.9.4"
   },
@@ -49,6 +46,26 @@
     "napi_versions": [
       6,
       7
+    ]
+  },
+  "jest": {
+    "coveragePathIgnorePatterns": [
+      "test/"
+    ],
+    "coverageReporters": [
+      [
+        "lcovonly",
+        {
+          "file": "js.info"
+        }
+      ],
+      "text"
+    ],
+    "roots": [
+      "test"
+    ],
+    "setupFilesAfterEnv": [
+      "jest-extended"
     ]
   },
   "funding": {
