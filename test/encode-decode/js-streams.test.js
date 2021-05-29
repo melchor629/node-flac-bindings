@@ -197,9 +197,18 @@ describe('encode & decode: js streams', () => {
       expect(dec.getChannels()).toEqual(2)
       expect(dec.getChannelAssignment()).toEqual(3)
       expect(dec.getTotalSamples()).toEqual(totalSamples)
+      expect(dec.getSampleRate()).toEqual(44100)
 
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
+
+      expect(dec.getProgress()).toEqual({
+        position: totalSamples,
+        totalSamples,
+        percentage: 1,
+        totalSeconds: totalSamples / 44100,
+        currentSeconds: totalSamples / 44100,
+      })
     })
 
     it('stream decoder should emit metadata when required', async () => {
@@ -476,9 +485,18 @@ describe('encode & decode: js streams', () => {
       expect(dec.getChannels()).toEqual(2)
       expect(dec.getChannelAssignment()).toEqual(3)
       expect(dec.getTotalSamples()).toEqual(totalSamples)
+      expect(dec.getSampleRate()).toEqual(44100)
 
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
+
+      expect(dec.getProgress()).toEqual({
+        position: totalSamples,
+        totalSamples,
+        percentage: 1,
+        totalSeconds: totalSamples / 44100,
+        currentSeconds: totalSamples / 44100,
+      })
     })
 
     it('file decoder should emit metadata when required', async () => {

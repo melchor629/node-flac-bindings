@@ -9,17 +9,34 @@ describe('fns', () => {
     it('throws if buffer size is smaller', () => {
       expect(() => fns.convertSampleFormat({
         buffer: Buffer.alloc(16),
-        inBps: 16,
-        samples: 2,
-      })).toThrow()
+        inBps: 2,
+        samples: 10n,
+      })).toThrow(/Buffer has size/)
     })
 
     it('throws if 0 samples is passed', () => {
       expect(() => fns.convertSampleFormat({
-        buffer: Buffer.alloc(0),
-        samples: 0,
+        buffer: Buffer.alloc(16),
+        samples: 0n,
         inBps: 2,
-      })).toThrow()
+      })).toThrow(/Invalid value/)
+    })
+
+    it('throws for unsupported input bits per sample', () => {
+      expect(() => fns.convertSampleFormat({
+        buffer: Buffer.alloc(16),
+        samples: 2n,
+        inBps: 5,
+      })).toThrow(/Unsupported 5 bits per sample/)
+    })
+
+    it('throws for unsupported output bits per sample', () => {
+      expect(() => fns.convertSampleFormat({
+        buffer: Buffer.alloc(16),
+        samples: 2n,
+        inBps: 2,
+        outBps: 5,
+      })).toThrow(/Unsupported 5 bits per sample/)
     })
 
     it('returns same buffer if no conversion is required', () => {
@@ -41,15 +58,15 @@ describe('fns', () => {
         3, 0, 0,
       ])
       const expectedBuffer = Buffer.from([
-        1, 0,
-        2, 0,
-        3, 0,
+        1,
+        2,
+        3,
       ])
 
       const returnedBuffer = fns.convertSampleFormat({
         buffer,
         inBps: 3,
-        outBps: 2,
+        outBps: 1,
       })
 
       expect(returnedBuffer).toEqual(expectedBuffer)
@@ -123,6 +140,23 @@ describe('fns', () => {
         inBps: 2,
         samples: 0,
       })).toThrow()
+    })
+
+    it('throws for unsupported input bits per sample', () => {
+      expect(() => fns.zipAudio({
+        buffers: [Buffer.alloc(4 * 2)],
+        samples: 1n,
+        inBps: 5,
+      })).toThrow(/Unsupported 5 bits per sample/)
+    })
+
+    it('throws for unsupported output bits per sample', () => {
+      expect(() => fns.zipAudio({
+        buffers: [Buffer.alloc(4 * 2)],
+        samples: 2n,
+        inBps: 2,
+        outBps: 5,
+      })).toThrow(/Unsupported 5 bits per sample/)
     })
 
     it('returns interleaved audio', () => {
@@ -238,7 +272,7 @@ describe('fns', () => {
     })
 
     it('throws if buffer is smaller than expected', () => {
-      expect(() => fns.zipAudio({
+      expect(() => fns.unzipAudio({
         buffer: Buffer.alloc(4 * 2),
         inBps: 3,
         samples: 3,
@@ -246,11 +280,30 @@ describe('fns', () => {
     })
 
     it('throws if samples is 0', () => {
-      expect(() => fns.zipAudio({
+      expect(() => fns.unzipAudio({
         buffer: Buffer.alloc(4 * 2),
         inBps: 2,
         samples: 0,
       })).toThrow()
+    })
+
+    it('throws for unsupported input bits per sample', () => {
+      expect(() => fns.unzipAudio({
+        buffer: Buffer.alloc(4 * 2),
+        channels: 1,
+        samples: 1n,
+        inBps: 5,
+      })).toThrow(/Unsupported 5 bits per sample/)
+    })
+
+    it('throws for unsupported output bits per sample', () => {
+      expect(() => fns.unzipAudio({
+        buffer: Buffer.alloc(4 * 2),
+        channels: 1,
+        samples: 2n,
+        inBps: 2,
+        outBps: 5,
+      })).toThrow(/Unsupported 5 bits per sample/)
     })
 
     it('returns interleaved audio', () => {
