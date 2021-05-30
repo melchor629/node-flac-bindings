@@ -1285,9 +1285,9 @@ declare namespace api {
       /** An array of buffers (its length determines the number of channels) */
       buffers: Buffer[];
       /** The input bytes per sample (by default 4) */
-      inBps?: 2 | 3 | 4;
+      inBps?: 1 | 2 | 3 | 4;
       /** The output bytes per sample (by default 4) */
-      outBps?: 2 | 3 | 4;
+      outBps?: 1 | 2 | 3 | 4;
     }
 
     /**
@@ -1312,9 +1312,9 @@ declare namespace api {
        */
       samples?: number | bigint;
       /** The input bytes per sample (by default 4) */
-      inBps?: 2 | 3 | 4;
+      inBps?: 1 | 2 | 3 | 4;
       /** The output bytes per sample (by default 4) */
-      outBps?: 2 | 3 | 4;
+      outBps?: 1 | 2 | 3 | 4;
     }
 
     /**
@@ -1335,9 +1335,9 @@ declare namespace api {
        */
       samples?: number | bigint;
       /** The input bytes per sample (by default 4) */
-      inBps?: 2 | 3 | 4;
+      inBps?: 1 | 2 | 3 | 4;
       /** The output bytes per sample (by default 4) */
-      outBps?: 2 | 3 | 4;
+      outBps?: 1 | 2 | 3 | 4;
     }
 
     /**
@@ -1404,7 +1404,7 @@ declare namespace api {
   interface Frame {
     footer: Footer;
     header: Header;
-    subframes: SubFrame[];
+    subframes: Array<ConstantSubFrame | VerbatimSubFrame | FixedSubFrame | LPCSubFrame>;
   }
 
 

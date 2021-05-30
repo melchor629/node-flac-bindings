@@ -11,6 +11,7 @@ export interface FileDecoderOptions extends DecoderOptions {
  * FLAC decoder which reads a FLAC or Ogg/FLAC file and outputs
  * a interleaved raw PCM stream.
  * @emits metadata When a metadata block is received, the event will be fired
+ * @emits format When the decoder knows the exact format of the flac
  */
 export default class FileDecoder extends Readable implements BaseDecoder {
   constructor(options: FileDecoderOptions);

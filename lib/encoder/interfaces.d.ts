@@ -5,18 +5,23 @@ export interface EncoderOptions {
   /** If true, then the output will be an Ogg/FLAC file */
   isOggStream?: boolean;
   /** Number of channels to be encoded */
-  channels: number;
+  channels?: number;
   /** Sample resolution of the input to be encoded */
-  bitsPerSample: number;
+  bitsPerSample?: number;
+  /** Alternative name for bitsPerSample */
+  bitDepth?: number;
   /**
   * If set to `true`, all the input will be treated as 32 bit, if `false``
   * the input will be treated as `bitsPerSample` bit.
-  * If `bitsPerSample` is 24, this will be set to `true` by default.
-  * In the rest of the cases will be set to `false`.
+  * When true, the input must be int32 holding the values in range of the
+  * original bit depth (for 16 bit values must be inside [-32768,32767]).
+  * By default is set to false.
   **/
   inputAs32?: boolean;
   /** Sample rate in Hz of the input to be encoded */
-  samplerate: number;
+  samplerate?: number;
+  /** Sample rate in Hz of the input to be encoded */
+  sampleRate?: number;
   /** If the output is Ogg, this serial number must be set */
   oggSerialNumber?: number;
   /** Number of samples expected to be written into the stream */
