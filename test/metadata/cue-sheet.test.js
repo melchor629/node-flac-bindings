@@ -66,7 +66,7 @@ describe('CueSheetMetadata', () => {
     expect(cs).not.toBe(false)
     const tracks = Array.from(cs)
 
-    expect(tracks.length).toEqual(2)
+    expect(tracks).toHaveLength(2)
     expect(tracks[0].offset).toEqual(0)
     expect(tracks[0].number).toEqual(1)
     expect(tracks[0].isrc).toEqual('')
@@ -142,7 +142,7 @@ describe('CueSheetMetadata', () => {
       cst.offset = 123n
 
       const tracks = Array.from(cs)
-      expect(tracks.length).toEqual(1)
+      expect(tracks).toHaveLength(1)
       expect(tracks[0].offset).not.toEqual(cst.offset)
     })
 
@@ -173,7 +173,7 @@ describe('CueSheetMetadata', () => {
       expect(cs.setTrack(0, cst)).toBe(true)
 
       const tracks = Array.from(cs)
-      expect(tracks.length).toEqual(1)
+      expect(tracks).toHaveLength(1)
       expect(tracks[0].offset).toEqual(123)
     })
 
@@ -436,7 +436,7 @@ describe('CueSheetMetadata', () => {
 
   describe('gc', () => {
     it('gc should work', () => {
-      gc()
+      expect(gc).not.toThrow()
     })
   })
 })

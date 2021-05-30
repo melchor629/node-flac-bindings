@@ -1,5 +1,8 @@
+plugins:
+  - jest
 env:
   jest: true
-rules:
-  prefer-arrow-callback: "off"
-  func-names: "off"
+  jest/globals: true
+extends:
+  - plugin:jest/recommended
+  - plugin:jest/style

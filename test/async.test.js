@@ -5,7 +5,7 @@ const progressValues = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 describe('async', () => {
   describe('AsyncBackgroundTask', () => {
     test('should resolve', async () => {
-      await testAsync('resolve', (c) => c)
+      await expect(testAsync('resolve', (c) => c)).resolves.toBeTrue()
     })
 
     test('should reject', async () => {

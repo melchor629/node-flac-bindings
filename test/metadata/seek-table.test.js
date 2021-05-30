@@ -20,7 +20,7 @@ describe('SeekTableMetadata', () => {
     it.next()
     const points = Array.from(it.getBlock())
 
-    expect(points.length).toEqual(2)
+    expect(points).toHaveLength(2)
     expect(points[0].sampleNumber).toEqual(0)
     expect(points[0].streamOffset).toEqual(0)
     expect(points[0].frameSamples).toEqual(4096)
@@ -104,7 +104,7 @@ describe('SeekTableMetadata', () => {
     st.setPoint(0, new SeekPoint(3n, 2n, 1n))
 
     const points = Array.from(st)
-    expect(points.length).toEqual(1)
+    expect(points).toHaveLength(1)
     expect(points[0].sampleNumber).toEqual(3)
     expect(points[0].streamOffset).toEqual(2)
     expect(points[0].frameSamples).toEqual(1)
@@ -162,7 +162,7 @@ describe('SeekTableMetadata', () => {
     expect(st.templateAppendPlaceholders(10)).toBe(true)
 
     const points = Array.from(st)
-    expect(points.length).toEqual(11)
+    expect(points).toHaveLength(11)
     expect(points[0].sampleNumber).toEqual(998877665544332211n)
   })
 
@@ -179,7 +179,7 @@ describe('SeekTableMetadata', () => {
     expect(st.templateAppendPoint(675n)).toBe(true)
 
     const points = Array.from(st)
-    expect(points.length).toEqual(2)
+    expect(points).toHaveLength(2)
     expect(points[0].sampleNumber).toEqual(998877665544332211n)
     expect(points[1].sampleNumber).toEqual(675)
   })
@@ -197,7 +197,7 @@ describe('SeekTableMetadata', () => {
     expect(st.templateAppendPoints([675n, 879n, 213n])).toBe(true)
 
     const points = Array.from(st)
-    expect(points.length).toEqual(4)
+    expect(points).toHaveLength(4)
     expect(points[0].sampleNumber).toEqual(998877665544332211n)
     expect(points[1].sampleNumber).toEqual(675)
     expect(points[2].sampleNumber).toEqual(879)
@@ -223,7 +223,7 @@ describe('SeekTableMetadata', () => {
     expect(st.templateAppendSpacedPoints(5, 25n)).toBe(true)
 
     const points = Array.from(st)
-    expect(points.length).toEqual(6)
+    expect(points).toHaveLength(6)
     expect(points[0].sampleNumber).toEqual(123)
     expect(points[1].sampleNumber).toEqual(5 * 0)
     expect(points[2].sampleNumber).toEqual(5 * 1)
@@ -251,7 +251,7 @@ describe('SeekTableMetadata', () => {
     expect(st.templateAppendSpacedPointsBySamples(5, 25)).toBe(true)
 
     const points = Array.from(st)
-    expect(points.length).toEqual(6)
+    expect(points).toHaveLength(6)
     expect(points[0].sampleNumber).toEqual(123)
     expect(points[1].sampleNumber).toEqual(5 * 0)
     expect(points[2].sampleNumber).toEqual(5 * 1)
@@ -288,7 +288,7 @@ describe('SeekTableMetadata', () => {
     expect(st.templateSort()).toBe(true)
 
     const points = Array.from(st)
-    expect(points.length).toEqual(8)
+    expect(points).toHaveLength(8)
     expect(points[0].sampleNumber).toEqual(5 * 0)
     expect(points[1].sampleNumber).toEqual(5 * 1)
     expect(points[2].sampleNumber).toEqual(5 * 2)
@@ -309,7 +309,7 @@ describe('SeekTableMetadata', () => {
     expect(st.templateSort(true)).toBe(true)
 
     const points = Array.from(st)
-    expect(points.length).toEqual(7)
+    expect(points).toHaveLength(7)
     expect(points[0].sampleNumber).toEqual(5 * 0)
     expect(points[1].sampleNumber).toEqual(5 * 1)
     expect(points[2].sampleNumber).toEqual(5 * 2)
@@ -326,7 +326,7 @@ describe('SeekTableMetadata', () => {
 
   describe('gc', () => {
     it('gc should work', () => {
-      gc()
+      expect(gc).not.toThrow()
     })
   })
 })

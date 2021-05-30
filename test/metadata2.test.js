@@ -88,11 +88,13 @@ describe('Chain & Iterator', () => {
     it('returns works if the file can be read', async () => {
       const callbacks = await generateFlacCallbacks.flacio(pathForFile('vc-cs.flac'), 'r')
       const chain = new Chain()
-      await chain.readWithCallbacks(callbacks)
-        .finally(() => callbacks.close())
+      await expect(
+        chain.readWithCallbacks(callbacks)
+          .finally(() => callbacks.close()),
+      ).resolves.not.toThrow()
     })
 
-    it('it throws if the file cannot be read', async () => {
+    it('throws if the file cannot be read', async () => {
       const chain = new Chain()
       await expect(() => chain.readWithCallbacks({
         read: () => 0,
@@ -553,7 +555,7 @@ describe('Chain & Iterator', () => {
 
   describe('gc', () => {
     it('gc should work', () => {
-      gc()
+      expect(gc).not.toThrow()
     })
   })
 })

@@ -86,7 +86,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      expect(raw.length).toEqual(totalSamples * 3 * 2)
+      expect(raw).toHaveLength(totalSamples * 3 * 2)
       expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
@@ -101,7 +101,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      expect(raw.length).toEqual(totalSamples * 4 * 2)
+      expect(raw).toHaveLength(totalSamples * 4 * 2)
       expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 32)
     })
@@ -116,7 +116,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      expect(raw.length).toEqual(totalSamples * 3 * 2)
+      expect(raw).toHaveLength(totalSamples * 3 * 2)
       expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
@@ -242,7 +242,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       expect(metadataBlocks).not.toBeEmpty()
-      expect(metadataBlocks.length).toEqual(4)
+      expect(metadataBlocks).toHaveLength(4)
     })
 
     it('stream decoder should emit specific metadata when required', async () => {
@@ -256,7 +256,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       expect(metadataBlocks).not.toBeEmpty()
-      expect(metadataBlocks.length).toEqual(1)
+      expect(metadataBlocks).toHaveLength(1)
     })
 
     it('encode using ogg (stream)', async () => {
@@ -302,10 +302,12 @@ describe('encode & decode: js streams', () => {
         metadata: [],
       })
 
-      enc.write(Buffer.alloc(1000 * 2 * 2))
-      enc.end()
-      enc.on('data', () => undefined)
-      await events.once(enc, 'end')
+      await expect((async () => {
+        enc.write(Buffer.alloc(1000 * 2 * 2))
+        enc.end()
+        enc.on('data', () => undefined)
+        await events.once(enc, 'end')
+      })()).resolves.not.toThrow()
     })
 
     it('encoder with no data does not write anything', async () => {
@@ -396,7 +398,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      expect(raw.length).toEqual(totalSamples * 3 * 2)
+      expect(raw).toHaveLength(totalSamples * 3 * 2)
       expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
@@ -409,7 +411,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      expect(raw.length).toEqual(totalSamples * 4 * 2)
+      expect(raw).toHaveLength(totalSamples * 4 * 2)
       expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 32)
     })
@@ -422,7 +424,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       const raw = Buffer.concat(chunks)
-      expect(raw.length).toEqual(totalSamples * 3 * 2)
+      expect(raw).toHaveLength(totalSamples * 3 * 2)
       expect(dec.processedSamples).toEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
@@ -542,7 +544,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       expect(metadataBlocks).not.toBeEmpty()
-      expect(metadataBlocks.length).toEqual(4)
+      expect(metadataBlocks).toHaveLength(4)
     })
 
     it('file decoder should fail if file does not exist', async () => {
@@ -611,6 +613,6 @@ describe('encode & decode: js streams', () => {
   })
 
   it('gc should work', () => {
-    gc()
+    expect(gc).not.toThrow()
   })
 })

@@ -257,7 +257,7 @@ describe('encode & decode: async api', () => {
     expect(await dec.processSingleAsync()).toBe(true)
     expect(await dec.finishAsync()).toBe(true)
 
-    expect(metadataBlocks.length).toEqual(1)
+    expect(metadataBlocks).toHaveLength(1)
   })
 
   it('encode using stream (non-ogg)', async () => {
@@ -362,7 +362,7 @@ describe('encode & decode: async api', () => {
     expect(await enc.finishAsync()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
-    expect(progressCallbackValues.length).toEqual(41)
+    expect(progressCallbackValues).toHaveLength(41)
   })
 
   it('encode using file (ogg)', async () => {
@@ -381,7 +381,7 @@ describe('encode & decode: async api', () => {
     expect(await enc.finishAsync()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24, true)
-    expect(progressCallbackValues.length).toEqual(30)
+    expect(progressCallbackValues).toHaveLength(30)
   })
 
   it('encode using file with non-interleaved data (non-ogg)', async () => {
@@ -400,7 +400,7 @@ describe('encode & decode: async api', () => {
     expect(await enc.finishAsync()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
-    expect(progressCallbackValues.length).toEqual(41)
+    expect(progressCallbackValues).toHaveLength(41)
   })
 
   it('encoder should emit streaminfo metadata block', async () => {
