@@ -26,6 +26,8 @@ namespace flac_bindings {
       if (!arrayBuffer.IsDetached()) {
         arrayBuffer.Detach();
       }
+#else
+      (void) buffer;
 #endif
     }
 
