@@ -17,9 +17,9 @@ decoder.once('data', (chunk) => {
     // 'metadata' or 'data' event).
     channels: decoder.getChannels(),
     // there is a small difference between the flac bits per sample and the output bits per sample.
-    // they are usually the same, but if the bps is 24 and outputAs32 is not specified, the output
-    // will be 32.
-    bitDepth: decoder.getOutputBitsPerSample(),
+    // by default both will be the same, but if `outputAs32` is set to true, then the output will
+    // always be 32 bit int but with the values from the range of the original bit depth.
+    bitDepth: decoder.getBitsPerSample(),
     sampleRate: decoder.getSampleRate(),
   })
 
