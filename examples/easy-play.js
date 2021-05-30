@@ -2,12 +2,9 @@ const Speaker = require('speaker')
 const { FileDecoder } = require('flac-bindings')
 const args = require('./_args')(__filename)
 
-// this example is so basic that it supposes the flac is 44100 Hz, 16 bit stereo
-const speaker = new Speaker({
-  channels: 2,
-  bitDepth: 16,
-  sampleRate: 44100,
-})
+// this example is so basic that the configuration is read from the emited format event
+// which may not work for you depending on the flac file...
+const speaker = new Speaker()
 
 // creates the decoder using a file
 const decoder = new FileDecoder({
