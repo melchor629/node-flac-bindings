@@ -33,17 +33,17 @@ export interface DecoderPosition {
 
 export interface BaseDecoder {
   /** Gets total number of samples if possible, once it started to process */
-  getTotalSamples(): number | undefined
+  getTotalSamples(): number
   /** Gets the number of channels found in the stream, once it started to process */
-  getChannels(): number | undefined
+  getChannels(): number
   /** Gets the channel assignment for the stream, once it started to process */
-  getChannelAssignment(): 0 | 1 | 2 | 3 | undefined
+  getChannelAssignment(): 0 | 1 | 2 | 3
   /** Gets the bits per sample found in the stream, once it started to process */
-  getBitsPerSample(): number | undefined
+  getBitsPerSample(): number
   /** Gets the bits per sample of the output */
-  getOutputBitsPerSample(): number | undefined
+  getOutputBitsPerSample(): number
   /** Gets the sample rate of the stream, once it started to process */
-  getSampleRate(): number | undefined
+  getSampleRate(): number
   /** Returns the progress of the decoding (if possible) */
   getProgress(): DecoderPosition | undefined
   /** Get the number of processed samples in the process */

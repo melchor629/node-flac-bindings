@@ -16,11 +16,11 @@ export interface FileDecoderOptions extends DecoderOptions {
 export default class FileDecoder extends Readable implements BaseDecoder {
   constructor(options: FileDecoderOptions);
   readonly processedSamples: number
-  getTotalSamples(): number | undefined
-  getChannels(): number | undefined
-  getChannelAssignment(): 0 | 1 | 2 | 3 | undefined
-  getBitsPerSample(): number | undefined
-  getOutputBitsPerSample(): number | undefined
-  getSampleRate(): number | undefined
-  getProgress(): DecoderPosition
+  getTotalSamples(): number
+  getChannels(): number
+  getChannelAssignment(): 0 | 1 | 2 | 3
+  getBitsPerSample(): number
+  getOutputBitsPerSample(): number
+  getSampleRate(): number
+  getProgress(): DecoderPosition | undefined
 }

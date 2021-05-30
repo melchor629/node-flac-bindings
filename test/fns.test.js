@@ -9,7 +9,7 @@ describe('fns', () => {
     it('throws if buffer size is smaller', () => {
       expect(() => fns.convertSampleFormat({
         buffer: Buffer.alloc(16),
-        inBps: 2,
+        inBps: 2n,
         samples: 10n,
       })).toThrow(/Buffer has size/)
     })
@@ -26,7 +26,7 @@ describe('fns', () => {
       expect(() => fns.convertSampleFormat({
         buffer: Buffer.alloc(16),
         samples: 2n,
-        inBps: 5,
+        inBps: 5n,
       })).toThrow(/Unsupported 5 bits per sample/)
     })
 
@@ -34,8 +34,8 @@ describe('fns', () => {
       expect(() => fns.convertSampleFormat({
         buffer: Buffer.alloc(16),
         samples: 2n,
-        inBps: 2,
-        outBps: 5,
+        inBps: 2n,
+        outBps: 5n,
       })).toThrow(/Unsupported 5 bits per sample/)
     })
 
@@ -44,8 +44,8 @@ describe('fns', () => {
 
       const returnedBuffer = fns.convertSampleFormat({
         buffer,
-        inBps: 2,
-        outBps: 2,
+        inBps: 2n,
+        outBps: 2n,
       })
 
       expect(returnedBuffer).toBe(buffer)

@@ -127,7 +127,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: false,
       })
       const raw = okData
@@ -147,7 +146,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: true,
       })
       const raw = okData
@@ -171,7 +169,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: false,
         isOggStream: true,
       })
@@ -211,6 +208,29 @@ describe('encode & decode: js streams', () => {
       })
     })
 
+    it('stream decoder should emit format', async () => {
+      const input = fs.createReadStream(pathForFile('loop.flac'))
+      const dec = new StreamDecoder({ outputAs32: true })
+      let format = null
+
+      dec.on('format', (fmt) => {
+        format = fmt
+      })
+      input.pipe(dec)
+      dec.on('data', () => undefined)
+      await events.once(dec, 'end')
+
+      expect(format).not.toBeNull()
+      expect(format).toEqual({
+        channels: 2,
+        bitDepth: 24,
+        bitsPerSample: 24,
+        is32bit: true,
+        sampleRate: 44100,
+        totalSamples,
+      })
+    })
+
     it('stream decoder should emit metadata when required', async () => {
       const input = fs.createReadStream(pathForFile('loop.flac'))
       const dec = new StreamDecoder({ outputAs32: true, metadata: true })
@@ -247,7 +267,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: false,
       })
       const input = fs.createReadStream(pathForFile('loop.flac'))
@@ -318,7 +337,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: false,
       })
 
@@ -338,7 +356,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: false,
         isOggStream: true,
       })
@@ -359,7 +376,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: true,
       })
 
@@ -417,7 +433,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: false,
         file,
       })
@@ -437,7 +452,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: true,
         file,
       })
@@ -461,7 +475,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: false,
         file,
         isOggStream: true,
@@ -496,6 +509,27 @@ describe('encode & decode: js streams', () => {
         percentage: 1,
         totalSeconds: totalSamples / 44100,
         currentSeconds: totalSamples / 44100,
+      })
+    })
+
+    it('file decoder should emit format', async () => {
+      const dec = new FileDecoder({ outputAs32: true, file: pathForFile('loop.flac') })
+      let format = null
+
+      dec.on('format', (fmt) => {
+        format = fmt
+      })
+      dec.on('data', () => undefined)
+      await events.once(dec, 'end')
+
+      expect(format).not.toBeNull()
+      expect(format).toEqual({
+        channels: 2,
+        bitDepth: 24,
+        bitsPerSample: 24,
+        is32bit: true,
+        sampleRate: 44100,
+        totalSamples,
       })
     })
 
@@ -542,7 +576,6 @@ describe('encode & decode: js streams', () => {
         samplerate: 44100,
         channels: 2,
         bitsPerSample: 24,
-        compressionLevel: 9,
         inputAs32: false,
       })
 
