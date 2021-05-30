@@ -5,6 +5,7 @@ import { BaseDecoder, DecoderOptions, DecoderPosition } from './interfaces'
  * FLAC decoder which transforms a stream of FLAC (or Ogg/FLAC) into
  * a interleaved raw PCM stream.
  * @emits metadata When a metadata block is received, the event will be fired
+ * @emits format When the decoder knows the exact format of the flac
  */
 export default class StreamDecoder extends Transform implements BaseDecoder {
   constructor(props: DecoderOptions)
