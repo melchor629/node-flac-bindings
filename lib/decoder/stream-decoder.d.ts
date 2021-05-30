@@ -10,11 +10,11 @@ import { BaseDecoder, DecoderOptions, DecoderPosition } from './interfaces'
 export default class StreamDecoder extends Transform implements BaseDecoder {
   constructor(props: DecoderOptions)
   readonly processedSamples: number
-  getTotalSamples(): number | undefined
-  getChannels(): number | undefined
-  getChannelAssignment(): 0 | 1 | 2 | 3 | undefined
-  getBitsPerSample(): number | undefined
-  getOutputBitsPerSample(): number | undefined
-  getSampleRate(): number | undefined
+  getTotalSamples(): number
+  getChannels(): number
+  getChannelAssignment(): 0 | 1 | 2 | 3
+  getBitsPerSample(): number
+  getOutputBitsPerSample(): number
+  getSampleRate(): number
   getProgress(): DecoderPosition | undefined
 }

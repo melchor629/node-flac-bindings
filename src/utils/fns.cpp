@@ -14,7 +14,7 @@ namespace flac_bindings {
 
   static int64_t readI24(const void* buff) {
     const auto tmp = (const uint8_t*) buff;
-    const auto val = tmp[0] + (tmp[1] << 8) + (tmp[2] << 16);
+    const uint64_t val = tmp[0] | (tmp[1] << 8) | (tmp[2] << 16);
     return val | (val & 0x800000) * 0x1FE;
   }
 
