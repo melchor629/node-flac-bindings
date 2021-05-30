@@ -2,7 +2,7 @@
 
 Nodejs bindings to [libFLAC](https://xiph.org/flac/download.html)
 
-![Node-API v6](https://raw.githubusercontent.com/nodejs/abi-stable-node/doc/assets/Node-API%20v6%20Badge.svg) ![Node-API v7](https://raw.githubusercontent.com/nodejs/abi-stable-node/doc/assets/Node-API%20v7%20Badge.svg)
+![Node-API v6](https://raw.githubusercontent.com/nodejs/abi-stable-node/doc/assets/Node-API%20v6%20Badge.svg) ![Node-API v8](https://raw.githubusercontent.com/nodejs/abi-stable-node/doc/assets/Node-API%20v8%20Badge.svg)
 
 | master | dev |
 |--------|-----|
@@ -37,7 +37,7 @@ Callbacks don't follow exactly the same signature that shows in Encoder and Deco
 
 There are asynchronous functions and methods for IO bound tasks. The syncrhonous API will be faster, but will block node. If you are writing an server or expect high concurrency, use the asynchronous API.
 
-You need node version that supports v6 or v7 N-API ([see compatibility table](https://nodejs.org/docs/latest-v14.x/api/n-api.html#n_api_n_api_version_matrix)), but it is recommended to use v10.20.0/v12.17.0/v14.12.0 or higher. Recommended use of `BigInt` when possible to have numbers be represented without truncation (`Number` can only store 53 bit integers! 🤨).
+You need node version that supports v6 or v8 N-API ([see compatibility table](https://nodejs.org/docs/latest-v16.x/api/n-api.html#n_api_node_api_version_matrix)), but it is recommended to use v10.20.0/v12.17.0/v14.12.0/v16.0.0 or higher. Recommended use of `BigInt` when possible to have numbers be represented without truncation (`Number` can only store 53 bit integers! 🤨).
 
 > **Note**: starting from Node 14.x, `Buffer` had a rewrite that tracks pointers across the whole JS env. In order to share pointers from flac to node, the native code cleans up the trackings time to time when required. But this also means that buffers from `Encoder`, `Decoder` and `IO Callbacks` (metadata level 2) has a strict lifetime: buffers are ensured to be valid inside the callback itself, if the buffer must be used outside the callback make a copy. (also affects 12.19.0 or higher even though the mentioned rewrite did not happen)
 
