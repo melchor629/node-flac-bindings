@@ -141,7 +141,7 @@ describe('PictureMetadata', () => {
 
   describe('gc', () => {
     it('gc should work', () => {
-      gc()
+      expect(gc).not.toThrow()
     })
   })
 })

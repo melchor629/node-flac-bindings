@@ -16,18 +16,18 @@ describe('PaddingMetadata', () => {
   it('the object initially has 0 bytes of padding', () => {
     const p = new PaddingMetadata()
 
-    expect(p.length).toEqual(0)
+    expect(p).toHaveLength(0)
   })
 
   it('the object created with a size should have that size in bytes of padding', () => {
     const p = new PaddingMetadata(123)
 
-    expect(p.length).toEqual(123)
+    expect(p).toHaveLength(123)
   })
 
   describe('gc', () => {
     it('gc should work', () => {
-      gc()
+      expect(gc).not.toThrow()
     })
   })
 })

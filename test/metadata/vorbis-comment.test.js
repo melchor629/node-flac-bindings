@@ -25,7 +25,7 @@ describe('VorbisCommentMetadata', () => {
   it('.comments should contain all the expected comments', () => {
     const comments = Array.from(getTags(pathForFile('vc-p.flac')))
 
-    expect(comments.length).toEqual(6)
+    expect(comments).toHaveLength(6)
     expect(comments[0]).toEqual('TITLE=Metadata Test')
     expect(comments[1]).toEqual('ARTIST=melchor629')
     expect(comments[2]).toEqual('ALBUM=flac-bindings')
@@ -84,7 +84,7 @@ describe('VorbisCommentMetadata', () => {
   })
 
   it('get() should throw if the first argument is not a string', () => {
-    expect(() => new VorbisCommentMetadata().get(function () {})).toThrow()
+    expect(() => new VorbisCommentMetadata().get(() => {})).toThrow()
   })
 
   it('resizeComments() should add and remove comment entries', () => {
@@ -274,7 +274,7 @@ describe('VorbisCommentMetadata', () => {
 
   describe('gc', () => {
     it('gc should work', () => {
-      gc()
+      expect(gc).not.toThrow()
     })
   })
 })

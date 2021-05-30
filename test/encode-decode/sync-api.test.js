@@ -197,7 +197,7 @@ describe('encode & decode: sync api', () => {
     expect(dec.processSingle()).toBe(true)
     expect(dec.finish()).toBe(true)
 
-    expect(metadataBlocks.length).toEqual(1)
+    expect(metadataBlocks).toHaveLength(1)
   })
 
   it('decoder get other properties work', () => {
@@ -287,7 +287,7 @@ describe('encode & decode: sync api', () => {
     expect(enc.finish()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
-    expect(progressCallbackValues.length).toEqual(41)
+    expect(progressCallbackValues).toHaveLength(41)
   })
 
   it('encode using file (ogg)', () => {
@@ -306,7 +306,7 @@ describe('encode & decode: sync api', () => {
     expect(enc.finish()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24, true)
-    expect(progressCallbackValues.length).toEqual(30)
+    expect(progressCallbackValues).toHaveLength(30)
   })
 
   it('encode using file with non-interleaved data (non-ogg)', () => {
@@ -325,7 +325,7 @@ describe('encode & decode: sync api', () => {
     expect(enc.finish()).toBe(true)
 
     comparePCM(okData, tmpFile.path, 24)
-    expect(progressCallbackValues.length).toEqual(41)
+    expect(progressCallbackValues).toHaveLength(41)
   })
 
   it('encoder should emit streaminfo metadata block', () => {
