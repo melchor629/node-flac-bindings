@@ -29,7 +29,7 @@ jobs:
     - name: Install
       run: npm install
     - name: Build
-      run: npm run cmake-js -- build --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --CDnapi_build_version${{ matrix.node.napi }}
+        run: npm run cmake-js -- build --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --CDnapi_build_version=${{ matrix.node.napi }}
     - name: Lint
       run: npm run lint
     - name: Test
