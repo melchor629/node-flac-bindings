@@ -79,7 +79,7 @@ export interface EncoderOptions {
   * until the encoder has finished.
   * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga9c1098e664d7997947493901ed869b64
   */
-  metadata?: metadata.Metadata[];
+  metadata?: metadata.AnyMetadata[];
 }
 
 export interface BaseEncoder {

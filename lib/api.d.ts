@@ -245,12 +245,12 @@ declare namespace api {
      * Function that will be called when a metadata block has been read. The metadata object will only
      * be valid inside the callback. If a copy is needed, clone the object with {@link Metadata#clone}.
      */
-    type MetadataCallback = (metadata: metadata.Metadata) => void;
+    type MetadataCallback = (metadata: metadata.AnyMetadata) => void;
     /**
      * Function that will be called when a metadata block has been read. The metadata object will only
      * be valid inside the callback. If a copy is needed, clone the object with {@link Metadata#clone}.
      */
-    type MetadataCallbackAsync = (metadata: metadata.Metadata) => PerhapsAsync<void>;
+    type MetadataCallbackAsync = (metadata: metadata.AnyMetadata) => PerhapsAsync<void>;
 
     /**
      * Function that will be called when an error while decoding occurs.
@@ -362,7 +362,7 @@ declare namespace api {
     constructor();
     setOggSerialNumber(value: number): void;
     setCompressionLevel(value: number): void;
-    setMetadata(metadata: metadata.Metadata[]): void;
+    setMetadata(metadata: metadata.AnyMetadata[]): void;
     setApodization(apodization: string): void;
     verify: boolean;
     streamableSubset: boolean;
@@ -526,12 +526,12 @@ declare namespace api {
      * Called when the encoder wrote the `STREAMINFO` block into the stream.
      * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga87778e16cdd0834a301ee8d8258cf946
      */
-    type MetadataCallback = (metadata: metadata.Metadata) => void;
+    type MetadataCallback = (metadata: metadata.AnyMetadata) => void;
     /**
      * Called when the encoder wrote the `STREAMINFO` block into the stream.
      * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga87778e16cdd0834a301ee8d8258cf946
      */
-    type MetadataCallbackAsync = (metadata: metadata.Metadata) => PerhapsAsync<void>;
+    type MetadataCallbackAsync = (metadata: metadata.AnyMetadata) => PerhapsAsync<void>;
 
     /**
      * Called when the encoder has finished to write a frame.
@@ -752,7 +752,11 @@ declare namespace api {
 
   /** @see https://xiph.org/flac/api/group__flac__metadata__object.html */
   namespace metadata {
-    type MetadataTypes = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+    // NOTE: TS has a limitation in the values inside the enum type (see https://github.com/microsoft/TypeScript/issues/43505)
+    type UnknownMetadataTypes = 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 126;
+    type MetadataTypes = 0 | 1 | 2 | 3 | 4 | 5 | 6 | UnknownMetadataTypes;
+    type AnyMetadata = ApplicationMetadata | CueSheetMetadata | PaddingMetadata | PictureMetadata
+      | SeekTableMetadata | StreamInfoMetadata | VorbisCommentMetadata | UnknownMetadata;
 
     abstract class Metadata<T extends MetadataTypes = MetadataTypes> {
       readonly type: T;
@@ -957,7 +961,7 @@ declare namespace api {
     }
 
     /** @see https://xiph.org/flac/api/structFLAC____StreamMetadata__Unknown.html */
-    class UnknownMetadata extends Metadata { //From 7 to 126
+    class UnknownMetadata extends Metadata<UnknownMetadataTypes> { //From 7 to 126
       readonly data: Buffer | null;
 
       constructor(type?: number);
@@ -1037,7 +1041,7 @@ declare namespace api {
    * Metadata Level 1 iterator with an iterable interface implemented.
    * @see https://xiph.org/flac/api/group__flac__metadata__level1.html
    */
-  class SimpleIterator implements Iterable<metadata.Metadata>, AsyncIterable<metadata.Metadata> {
+  class SimpleIterator implements Iterable<metadata.AnyMetadata>, AsyncIterable<metadata.AnyMetadata> {
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gae8fd236fe6049c61f7f3b4a6ecbcd240 */
     status(): EnumValues<SimpleIterator.Status>;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gaba8daf276fd7da863a2522ac050125fd */
@@ -1070,19 +1074,17 @@ declare namespace api {
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gad4fea2d7d98d16e75e6d8260f690a5dc */
     getApplicationIdAsync(): Promise<Buffer | null>;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga1b7374cafd886ceb880b050dfa1e387a */
-    getBlock(): metadata.Metadata | null;
+    getBlock(): metadata.AnyMetadata | null;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga1b7374cafd886ceb880b050dfa1e387a */
-    getBlock<T extends metadata.MetadataTypes, MT extends metadata.Metadata<T>>(): MT | null;
-    /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga1b7374cafd886ceb880b050dfa1e387a */
-    getBlockAsync(): Promise<metadata.Metadata | null>;
+    getBlockAsync(): Promise<metadata.AnyMetadata | null>;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gae1dd863561606658f88c492682de7b80 */
-    setBlock(metadata: metadata.Metadata, pad?: boolean): boolean;
+    setBlock(metadata: metadata.AnyMetadata, pad?: boolean): boolean;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gae1dd863561606658f88c492682de7b80 */
-    setBlockAsync(metadata: metadata.Metadata, pad?: boolean): Promise<boolean>;
+    setBlockAsync(metadata: metadata.AnyMetadata, pad?: boolean): Promise<boolean>;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga7a0c00e93bb37324a20926e92e604102 */
-    insertBlockAfter(metadata: metadata.Metadata, pad?: boolean): boolean;
+    insertBlockAfter(metadata: metadata.AnyMetadata, pad?: boolean): boolean;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#ga7a0c00e93bb37324a20926e92e604102 */
-    insertBlockAfterAsync(metadata: metadata.Metadata, pad?: boolean): Promise<boolean>;
+    insertBlockAfterAsync(metadata: metadata.AnyMetadata, pad?: boolean): Promise<boolean>;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gac3116c8e6e7f59914ae22c0c4c6b0a23 */
     deleteBlock(pad?: boolean): boolean;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level1.html#gac3116c8e6e7f59914ae22c0c4c6b0a23 */
@@ -1091,12 +1093,12 @@ declare namespace api {
     /**
      * Returns an iterator that iterates over the metadata blocks.
      */
-    [Symbol.iterator]: () => Global_Iterator<metadata.Metadata>;
+    [Symbol.iterator]: () => Global_Iterator<metadata.AnyMetadata>;
 
     /**
      * Returns an async iterator that iterates over the metadata blocks.
      */
-    [Symbol.asyncIterator]: () => AsyncIterator<metadata.Metadata>;
+    [Symbol.asyncIterator]: () => AsyncIterator<metadata.AnyMetadata>;
 
     static Status: SimpleIterator.Status;
     static StatusString: ReverseEnum<SimpleIterator.Status>;
@@ -1171,7 +1173,7 @@ declare namespace api {
    * Metadata Level 2 Iterator class which implements the iterable interface.
    * @see https://xiph.org/flac/api/group__flac__metadata__level2.html
    */
-  class Iterator implements Iterable<metadata.Metadata> {
+  class Iterator implements Iterable<metadata.AnyMetadata> {
     /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga2e93196b17a1c73e949e661e33d7311a */
     init(chain: Chain): void;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga60449d0c1d76a73978159e3aa5e79459 */
@@ -1184,25 +1186,20 @@ declare namespace api {
      * > **Note**: The metadata is valid while the Chain is still alive.
      * @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gad3e7fbc3b3d9c192a3ac425c7b263641
      **/
-    getBlock(): metadata.Metadata;
-    /**
-     * > **Note**: The metadata is valid while the Chain is still alive.
-     * @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gad3e7fbc3b3d9c192a3ac425c7b263641
-     **/
-    getBlock<T extends metadata.MetadataTypes, MT extends metadata.Metadata<T>>(): MT;
+    getBlock(): metadata.AnyMetadata;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gaf61795b21300a2b0c9940c11974aab53 */
-    setBlock(metadata: metadata.Metadata): boolean;
+    setBlock(metadata: metadata.AnyMetadata): boolean;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#gadf860af967d2ee483be01fc0ed8767a9 */
     deleteBlock(padding?: boolean): boolean;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga8ac45e2df8b6fd6f5db345c4293aa435 */
-    insertBlockBefore(metadata: metadata.Metadata): boolean;
+    insertBlockBefore(metadata: metadata.AnyMetadata): boolean;
     /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga55e53757f91696e2578196a2799fc632 */
-    insertBlockAfter(metadata: metadata.Metadata): boolean;
+    insertBlockAfter(metadata: metadata.AnyMetadata): boolean;
 
     /**
      * Returns an iterator that will iterate over all the metadata objects.
      */
-    [Symbol.iterator]: () => Global_Iterator<metadata.Metadata>;
+    [Symbol.iterator]: () => Global_Iterator<metadata.AnyMetadata>;
   }
 
 
