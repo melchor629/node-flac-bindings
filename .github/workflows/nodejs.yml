@@ -21,16 +21,16 @@ jobs:
       env:
         CI: true
     steps:
-    - uses: actions/checkout@v1
-    - name: Prepare
-      run: |
-        apt-get update
-        apt-get install -y cmake libflac-dev flac
-    - name: Install
-      run: npm install
-    - name: Build
+      - uses: actions/checkout@v1
+      - name: Prepare
+        run: |
+          apt-get update
+          apt-get install -y cmake libflac-dev flac
+      - name: Install
+        run: npm install
+      - name: Build
         run: npm run cmake-js -- build --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --CDnapi_build_version=${{ matrix.node.napi }}
-    - name: Lint
-      run: npm run lint
-    - name: Test
-      run: npm test
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm test
