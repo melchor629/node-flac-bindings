@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(flac-bindings)
 
 include(CheckCCompilerFlag)
+include(CheckIPOSupported)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -39,6 +40,12 @@ if(NOT MSVC)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv7-a")
     endif()
   endif()
+endif()
+
+check_ipo_supported(RESULT LTO_SUPPORTED)
+if(LTO_SUPPORTED)
+  message("-- LTO/IPO supported and enabled")
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 option(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY NO)
