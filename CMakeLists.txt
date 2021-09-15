@@ -68,11 +68,11 @@ else()
 
   option(BUILD_TESTING NO)
 
-  # fetch libogg (post v1.3.4 commit to fix compilation in macOS)
+  # fetch libogg (v1.3.5)
   FetchContent_Declare(
     Ogg
     GIT_REPOSITORY  https://gitlab.xiph.org/xiph/ogg.git
-    GIT_TAG         369657ca2eb36131cbd53359b4d365e2b48054de
+    GIT_TAG         3069cc2bb44160982cdb21b2b8f0660c76b17572
   )
 
   # polyfill for FetchContent_MakeAvailable
@@ -90,7 +90,7 @@ else()
   FetchContent_Declare(
     FLAC
     GIT_REPOSITORY  https://gitlab.xiph.org/xiph/flac.git
-    GIT_TAG         27c615706cedd252a206dd77e3910dfa395dcc49
+    GIT_TAG         b358381a102a2c1c153ee4cf95dfc04af62faa1a
   )
 
   option(WITH_OGG YES)

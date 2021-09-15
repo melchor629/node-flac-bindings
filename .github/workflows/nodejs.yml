@@ -7,10 +7,6 @@ jobs:
     strategy:
       matrix:
         node:
-          - version: 10
-            napi: 6
-          - version: 12
-            napi: 6
           - version: 12
             napi: 8
           - version: 14
