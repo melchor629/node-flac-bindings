@@ -2,7 +2,7 @@
   "name": "flac-bindings",
   "version": "2.7.0",
   "libflac": "1.3.3",
-  "libogg": "1.3.4",
+  "libogg": "1.3.5",
   "description": "libflac bindings to node.js with easy to use API",
   "repository": "https://github.com/melchor629/node-flac-bindings/",
   "main": "./lib/index.js",
@@ -26,21 +26,21 @@
     "bindings": "^1.5.0",
     "cmake-js": "^6.2.1",
     "debug": "^4.3.2",
-    "node-addon-api": "^4.1.0",
+    "node-addon-api": "^4.2.0",
     "prebuild-install": "^6.1.4"
   },
   "devDependencies": {
     "@types/debug": "^4.1.7",
-    "@types/jest": "^27.0.1",
-    "@types/node": "^14.17.14",
+    "@types/jest": "^27.0.2",
+    "@types/node": "^14.17.27",
     "@types/temp": "^0.9.1",
     "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^14.2.1",
-    "eslint-plugin-import": "^2.24.2",
-    "eslint-plugin-jest": "^24.4.0",
-    "jest": "^27.1.0",
-    "jest-extended": "^0.11.5",
-    "prebuild": "^10.0.1",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-jest": "^25.2.2",
+    "jest": "^27.3.1",
+    "jest-extended": "^1.1.0",
+    "prebuild": "^11.0.0",
     "temp": "^0.9.4"
   },
   "binary": {
@@ -67,7 +67,7 @@
       "test"
     ],
     "setupFilesAfterEnv": [
-      "jest-extended"
+      "jest-extended/all"
     ],
     "testEnvironment": "node",
     "transform": {}
