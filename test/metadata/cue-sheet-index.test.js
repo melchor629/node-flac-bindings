@@ -5,8 +5,8 @@ describe('CueSheetIndex', () => {
   it('create a new object with parameters should work', () => {
     const csi = new CueSheetIndex(10, 0)
 
-    expect(csi.offset).toEqual(10)
-    expect(csi.number).toEqual(0)
+    expect(csi.offset).toBe(10)
+    expect(csi.number).toBe(0)
   })
 
   it('create a new object with offset not being a number should throw', () => {
@@ -22,7 +22,7 @@ describe('CueSheetIndex', () => {
 
     csi.offset = 9007199254740993n
 
-    expect(csi.offset).toEqual(9007199254740993n)
+    expect(csi.offset).toBe(9007199254740993n)
   })
 
   it('set offset is not a number should throw', () => {
@@ -38,7 +38,7 @@ describe('CueSheetIndex', () => {
 
     csi.number = 10
 
-    expect(csi.number).toEqual(10)
+    expect(csi.number).toBe(10)
   })
 
   it('set number is not a number should throw', () => {

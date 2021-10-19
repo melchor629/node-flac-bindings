@@ -19,19 +19,19 @@ describe('VorbisCommentMetadata', () => {
 
     vc.vendorString = 'mee'
 
-    expect(vc.vendorString).toEqual('mee')
+    expect(vc.vendorString).toBe('mee')
   })
 
   it('.comments should contain all the expected comments', () => {
     const comments = Array.from(getTags(pathForFile('vc-p.flac')))
 
     expect(comments).toHaveLength(6)
-    expect(comments[0]).toEqual('TITLE=Metadata Test')
-    expect(comments[1]).toEqual('ARTIST=melchor629')
-    expect(comments[2]).toEqual('ALBUM=flac-bindings')
-    expect(comments[3]).toEqual('COMMENT=Nice comment tho')
-    expect(comments[4]).toEqual('DATE=2019')
-    expect(comments[5]).toEqual('TRACKNUMBER=1')
+    expect(comments[0]).toBe('TITLE=Metadata Test')
+    expect(comments[1]).toBe('ARTIST=melchor629')
+    expect(comments[2]).toBe('ALBUM=flac-bindings')
+    expect(comments[3]).toBe('COMMENT=Nice comment tho')
+    expect(comments[4]).toBe('DATE=2019')
+    expect(comments[5]).toBe('TRACKNUMBER=1')
   })
 
   it('iterator should iterate over all the expected comments', () => {
@@ -40,27 +40,27 @@ describe('VorbisCommentMetadata', () => {
 
     m = it.next()
     expect(m.done).toBe(false)
-    expect(m.value).toEqual('TITLE=Metadata Test')
+    expect(m.value).toBe('TITLE=Metadata Test')
 
     m = it.next()
     expect(m.done).toBe(false)
-    expect(m.value).toEqual('ARTIST=melchor629')
+    expect(m.value).toBe('ARTIST=melchor629')
 
     m = it.next()
     expect(m.done).toBe(false)
-    expect(m.value).toEqual('ALBUM=flac-bindings')
+    expect(m.value).toBe('ALBUM=flac-bindings')
 
     m = it.next()
     expect(m.done).toBe(false)
-    expect(m.value).toEqual('COMMENT=Nice comment tho')
+    expect(m.value).toBe('COMMENT=Nice comment tho')
 
     m = it.next()
     expect(m.done).toBe(false)
-    expect(m.value).toEqual('DATE=2019')
+    expect(m.value).toBe('DATE=2019')
 
     m = it.next()
     expect(m.done).toBe(false)
-    expect(m.value).toEqual('TRACKNUMBER=1')
+    expect(m.value).toBe('TRACKNUMBER=1')
 
     m = it.next()
     expect(m.done).toBe(true)
@@ -72,7 +72,7 @@ describe('VorbisCommentMetadata', () => {
     const entryValue = vc.get('COMMENT')
 
     expect(entryValue).not.toBeNull()
-    expect(entryValue).toEqual('Nice comment tho')
+    expect(entryValue).toBe('Nice comment tho')
   })
 
   it('get() should return null for a non existing entry', () => {
@@ -91,9 +91,9 @@ describe('VorbisCommentMetadata', () => {
     const vc = new VorbisCommentMetadata()
 
     expect(vc.resizeComments(10)).toBe(true)
-    expect(vc.count).toEqual(10)
+    expect(vc.count).toBe(10)
     expect(vc.resizeComments(1)).toBe(true)
-    expect(vc.count).toEqual(1)
+    expect(vc.count).toBe(1)
   })
 
   it('resizeComments() should throw if size is not a number', () => {
@@ -108,8 +108,8 @@ describe('VorbisCommentMetadata', () => {
 
     expect(vc.setComment(0, 'ARTIST=Mario')).toBe(true)
 
-    expect(vc.count).toEqual(1)
-    expect(Array.from(vc)[0]).toEqual('ARTIST=Mario')
+    expect(vc.count).toBe(1)
+    expect(Array.from(vc)[0]).toBe('ARTIST=Mario')
   })
 
   it('setComment() should throw if the position is invalid', () => {
@@ -134,8 +134,8 @@ describe('VorbisCommentMetadata', () => {
 
     expect(vc.insertComment(0, 'TITLE=tests')).toBe(true)
 
-    expect(vc.count).toEqual(1)
-    expect(Array.from(vc)[0]).toEqual('TITLE=tests')
+    expect(vc.count).toBe(1)
+    expect(Array.from(vc)[0]).toBe('TITLE=tests')
   })
 
   it('insertComment() should throw if the position is invalid', () => {
@@ -158,8 +158,8 @@ describe('VorbisCommentMetadata', () => {
 
     expect(vc.appendComment('TITLE=tests')).toBe(true)
 
-    expect(vc.count).toEqual(1)
-    expect(Array.from(vc)[0]).toEqual('TITLE=tests')
+    expect(vc.count).toBe(1)
+    expect(Array.from(vc)[0]).toBe('TITLE=tests')
   })
 
   it('appendComment() should throw if the first argument is not a string', () => {
@@ -172,8 +172,8 @@ describe('VorbisCommentMetadata', () => {
 
     expect(vc.replaceComment('TITLE=tests', true)).toBe(true)
 
-    expect(vc.count).toEqual(1)
-    expect(Array.from(vc)[0]).toEqual('TITLE=tests')
+    expect(vc.count).toBe(1)
+    expect(Array.from(vc)[0]).toBe('TITLE=tests')
   })
 
   it('deleteComment() should remove the comment entry if the position is valid', () => {
@@ -182,7 +182,7 @@ describe('VorbisCommentMetadata', () => {
 
     expect(vc.deleteComment(0, 'TITLE=tests')).toBe(true)
 
-    expect(vc.count).toEqual(0)
+    expect(vc.count).toBe(0)
   })
 
   it('deleteComment() should throw if the position is invalid', () => {
@@ -202,7 +202,7 @@ describe('VorbisCommentMetadata', () => {
 
     const pos = vc.findEntryFrom(0, 'title')
 
-    expect(pos).toEqual(0)
+    expect(pos).toBe(0)
   })
 
   it('findEntryFrom() should return the -1 if the entry cannot be found', () => {
@@ -228,8 +228,8 @@ describe('VorbisCommentMetadata', () => {
 
     const ret = vc.removeEntryMatching('ARTIST')
 
-    expect(ret).toEqual(0)
-    expect(vc.count).toEqual(1)
+    expect(ret).toBe(0)
+    expect(vc.count).toBe(1)
   })
 
   it('removeEntryMatching() should return 1 if at least one entry has been removed', () => {
@@ -239,8 +239,8 @@ describe('VorbisCommentMetadata', () => {
 
     const ret = vc.removeEntryMatching('TITLE')
 
-    expect(ret).toEqual(1)
-    expect(vc.count).toEqual(1)
+    expect(ret).toBe(1)
+    expect(vc.count).toBe(1)
   })
 
   it('removeEntryMatching() should throw if the first argument is not a string', () => {
@@ -253,8 +253,8 @@ describe('VorbisCommentMetadata', () => {
 
     const ret = vc.removeEntriesMatching('ARTIST')
 
-    expect(ret).toEqual(0)
-    expect(vc.count).toEqual(1)
+    expect(ret).toBe(0)
+    expect(vc.count).toBe(1)
   })
 
   it('removeEntriesMatching() should return 2 if entries has been removed', () => {
@@ -264,8 +264,8 @@ describe('VorbisCommentMetadata', () => {
 
     const ret = vc.removeEntriesMatching('TITLE')
 
-    expect(ret).toEqual(2)
-    expect(vc.count).toEqual(0)
+    expect(ret).toBe(2)
+    expect(vc.count).toBe(0)
   })
 
   it('removeEntriesMatching() should throw if the first argument is not a string', () => {

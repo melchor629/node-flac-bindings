@@ -20,7 +20,7 @@ describe('CueSheetMetadata', () => {
 
       cst.mediaCatalogNumber = '31A9-F6AB-979D-505'
 
-      expect(cst.mediaCatalogNumber).toEqual('31A9-F6AB-979D-505')
+      expect(cst.mediaCatalogNumber).toBe('31A9-F6AB-979D-505')
     },
   )
 
@@ -41,7 +41,7 @@ describe('CueSheetMetadata', () => {
 
     cst.leadIn = 1234567890
 
-    expect(cst.leadIn).toEqual(1234567890)
+    expect(cst.leadIn).toBe(1234567890)
   })
 
   it('leadIn should work with bigints', () => {
@@ -49,7 +49,7 @@ describe('CueSheetMetadata', () => {
 
     cst.leadIn = 12345678900987654321n
 
-    expect(cst.leadIn).toEqual(12345678900987654321n)
+    expect(cst.leadIn).toBe(12345678900987654321n)
   })
 
   it('leadIn should throw if not a number nor bigint', () => {
@@ -67,18 +67,18 @@ describe('CueSheetMetadata', () => {
     const tracks = Array.from(cs)
 
     expect(tracks).toHaveLength(2)
-    expect(tracks[0].offset).toEqual(0)
-    expect(tracks[0].number).toEqual(1)
-    expect(tracks[0].isrc).toEqual('')
-    expect(tracks[0].type).toEqual(0)
-    expect(tracks[0].preEmphasis).toEqual(false)
-    expect(tracks[0].count).toEqual(2)
-    expect(tracks[1].offset).toEqual(441000)
-    expect(tracks[1].number).toEqual(170)
-    expect(tracks[1].isrc).toEqual('')
-    expect(tracks[1].type).toEqual(0)
-    expect(tracks[1].preEmphasis).toEqual(false)
-    expect(tracks[1].count).toEqual(0)
+    expect(tracks[0].offset).toBe(0)
+    expect(tracks[0].number).toBe(1)
+    expect(tracks[0].isrc).toBe('')
+    expect(tracks[0].type).toBe(0)
+    expect(tracks[0].preEmphasis).toBe(false)
+    expect(tracks[0].count).toBe(2)
+    expect(tracks[1].offset).toBe(441000)
+    expect(tracks[1].number).toBe(170)
+    expect(tracks[1].isrc).toBe('')
+    expect(tracks[1].type).toBe(0)
+    expect(tracks[1].preEmphasis).toBe(false)
+    expect(tracks[1].count).toBe(0)
   })
 
   it('isLegal() should return a string when error', () => {
@@ -114,7 +114,7 @@ describe('CueSheetMetadata', () => {
 
       expect(cs.insertBlankTrack(0)).toBe(true)
 
-      expect(cs.count).toEqual(1)
+      expect(cs.count).toBe(1)
     })
 
     it('insertBlankTrack() should fail if the index is invalid', () => {
@@ -131,7 +131,7 @@ describe('CueSheetMetadata', () => {
 
       expect(cs.insertTrack(0, cst)).toBe(true)
 
-      expect(cs.count).toEqual(1)
+      expect(cs.count).toBe(1)
     })
 
     it('insertTrack() should make a copy', () => {
@@ -174,7 +174,7 @@ describe('CueSheetMetadata', () => {
 
       const tracks = Array.from(cs)
       expect(tracks).toHaveLength(1)
-      expect(tracks[0].offset).toEqual(123)
+      expect(tracks[0].offset).toBe(123)
     })
 
     it('setTrack() should throw if the index is invalid', () => {
@@ -201,7 +201,7 @@ describe('CueSheetMetadata', () => {
 
       expect(cs.deleteTrack(0)).toBe(true)
 
-      expect(cs.count).toEqual(0)
+      expect(cs.count).toBe(0)
     })
 
     it('deleteTrack() should throw if the index is invalid', () => {
@@ -218,9 +218,9 @@ describe('CueSheetMetadata', () => {
       const cs = new CueSheetMetadata()
 
       expect(cs.resizeTracks(10)).toBe(true)
-      expect(cs.count).toEqual(10)
+      expect(cs.count).toBe(10)
       expect(cs.resizeTracks(1)).toBe(true)
-      expect(cs.count).toEqual(1)
+      expect(cs.count).toBe(1)
     })
 
     it('resizeTracks() should throw if size is not a number', () => {
@@ -236,9 +236,9 @@ describe('CueSheetMetadata', () => {
       cs.insertBlankTrack(0)
 
       expect(cs.trackResizeIndices(0, 10)).toBe(true)
-      expect(Array.from(cs)[0].count).toEqual(10)
+      expect(Array.from(cs)[0].count).toBe(10)
       expect(cs.trackResizeIndices(0, 1)).toBe(true)
-      expect(Array.from(cs)[0].count).toEqual(1)
+      expect(Array.from(cs)[0].count).toBe(1)
     })
 
     it('trackResizeIndices() should throw if the index is invalid', () => {
@@ -274,7 +274,7 @@ describe('CueSheetMetadata', () => {
 
       expect(cs.trackInsertIndex(0, 0, new CueSheetIndex(1n, 0))).toBe(true)
 
-      expect(Array.from(cs)[0].count).toEqual(1)
+      expect(Array.from(cs)[0].count).toBe(1)
     })
 
     it(
@@ -337,7 +337,7 @@ describe('CueSheetMetadata', () => {
 
         expect(cs.trackInsertBlankIndex(0, 0)).toBe(true)
 
-        expect(Array.from(cs)[0].count).toEqual(1)
+        expect(Array.from(cs)[0].count).toBe(1)
       },
     )
 
@@ -389,7 +389,7 @@ describe('CueSheetMetadata', () => {
 
       expect(cs.trackDeleteIndex(0, 0)).toBe(true)
 
-      expect(Array.from(cs)[0].count).toEqual(0)
+      expect(Array.from(cs)[0].count).toBe(0)
     })
 
     it(

@@ -234,7 +234,7 @@ describe('encode & decode: async api', () => {
     expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
     expect(await dec.processSingleAsync()).toBe(true)
     expect(await dec.seekAbsoluteAsync(totalSamples / 5)).toBe(true)
-    expect(dec.getDecodePosition()).toEqual(157036)
+    expect(dec.getDecodePosition()).toBe(157036)
     expect(await dec.processSingleAsync()).toBe(true)
     expect(await dec.flushAsync()).toBe(true)
     expect(await dec.finishAsync()).toBe(true)
@@ -426,7 +426,7 @@ describe('encode & decode: async api', () => {
     expect(await enc.finishAsync()).toBe(true)
 
     expect(metadataBlock).not.toBeNull()
-    expect(metadataBlock.type).toEqual(0)
+    expect(metadataBlock.type).toBe(0)
     expect(metadataBlock.totalSamples).toEqual(totalSamples)
   })
 

@@ -21,12 +21,12 @@ describe('SeekTableMetadata', () => {
     const points = Array.from(it.getBlock())
 
     expect(points).toHaveLength(2)
-    expect(points[0].sampleNumber).toEqual(0)
-    expect(points[0].streamOffset).toEqual(0)
-    expect(points[0].frameSamples).toEqual(4096)
-    expect(points[1].sampleNumber).toEqual(16384)
-    expect(points[1].streamOffset).toEqual(8780)
-    expect(points[1].frameSamples).toEqual(4096)
+    expect(points[0].sampleNumber).toBe(0)
+    expect(points[0].streamOffset).toBe(0)
+    expect(points[0].frameSamples).toBe(4096)
+    expect(points[1].sampleNumber).toBe(16384)
+    expect(points[1].streamOffset).toBe(8780)
+    expect(points[1].frameSamples).toBe(4096)
   })
 
   it('iterator should iterate over all points in the object', () => {
@@ -38,15 +38,15 @@ describe('SeekTableMetadata', () => {
 
     let v = i.next()
     expect(v.done).toBe(false)
-    expect(v.value.sampleNumber).toEqual(0)
-    expect(v.value.streamOffset).toEqual(0)
-    expect(v.value.frameSamples).toEqual(4096)
+    expect(v.value.sampleNumber).toBe(0)
+    expect(v.value.streamOffset).toBe(0)
+    expect(v.value.frameSamples).toBe(4096)
 
     v = i.next()
     expect(v.done).toBe(false)
-    expect(v.value.sampleNumber).toEqual(16384)
-    expect(v.value.streamOffset).toEqual(8780)
-    expect(v.value.frameSamples).toEqual(4096)
+    expect(v.value.sampleNumber).toBe(16384)
+    expect(v.value.streamOffset).toBe(8780)
+    expect(v.value.frameSamples).toBe(4096)
 
     v = i.next()
     expect(v.done).toBe(true)
@@ -55,11 +55,11 @@ describe('SeekTableMetadata', () => {
   it('resizePoints() should insert and remove points', () => {
     const st = new SeekTableMetadata()
 
-    expect(st.count).toEqual(0)
+    expect(st.count).toBe(0)
     expect(st.resizePoints(10)).toBe(true)
-    expect(st.count).toEqual(10)
+    expect(st.count).toBe(10)
     expect(st.resizePoints(1)).toBe(true)
-    expect(st.count).toEqual(1)
+    expect(st.count).toBe(1)
   })
 
   it('resizePoints() should throw if size is not a number', () => {
@@ -73,7 +73,7 @@ describe('SeekTableMetadata', () => {
 
     expect(st.insertPoint(0, new SeekPoint())).toBe(true)
 
-    expect(st.count).toEqual(1)
+    expect(st.count).toBe(1)
   })
 
   it('insertPoint() should throw if the position is invalid', () => {
@@ -82,7 +82,7 @@ describe('SeekTableMetadata', () => {
     expect(() => st.insertPoint(11, new SeekPoint())).toThrow()
     expect(() => st.insertPoint(-1, new SeekPoint())).toThrow()
 
-    expect(st.count).toEqual(0)
+    expect(st.count).toBe(0)
   })
 
   it('insertPoint() should throw if the position is not a number', () => {
@@ -105,9 +105,9 @@ describe('SeekTableMetadata', () => {
 
     const points = Array.from(st)
     expect(points).toHaveLength(1)
-    expect(points[0].sampleNumber).toEqual(3)
-    expect(points[0].streamOffset).toEqual(2)
-    expect(points[0].frameSamples).toEqual(1)
+    expect(points[0].sampleNumber).toBe(3)
+    expect(points[0].streamOffset).toBe(2)
+    expect(points[0].frameSamples).toBe(1)
   })
 
   it('setPoint() should throw if the position is invalid', () => {
@@ -137,7 +137,7 @@ describe('SeekTableMetadata', () => {
 
     expect(st.deletePoint(0)).toBe(true)
 
-    expect(st.count).toEqual(0)
+    expect(st.count).toBe(0)
   })
 
   it('deletePoint() should throw if the position is invalid', () => {
@@ -163,7 +163,7 @@ describe('SeekTableMetadata', () => {
 
     const points = Array.from(st)
     expect(points).toHaveLength(11)
-    expect(points[0].sampleNumber).toEqual(998877665544332211n)
+    expect(points[0].sampleNumber).toBe(998877665544332211n)
   })
 
   it('templateAppendPlaceholders() should throw if count is not a number', () => {
@@ -180,8 +180,8 @@ describe('SeekTableMetadata', () => {
 
     const points = Array.from(st)
     expect(points).toHaveLength(2)
-    expect(points[0].sampleNumber).toEqual(998877665544332211n)
-    expect(points[1].sampleNumber).toEqual(675)
+    expect(points[0].sampleNumber).toBe(998877665544332211n)
+    expect(points[1].sampleNumber).toBe(675)
   })
 
   it('templateAppendPoint() should throw if sampleNumber is not a number', () => {
@@ -198,10 +198,10 @@ describe('SeekTableMetadata', () => {
 
     const points = Array.from(st)
     expect(points).toHaveLength(4)
-    expect(points[0].sampleNumber).toEqual(998877665544332211n)
-    expect(points[1].sampleNumber).toEqual(675)
-    expect(points[2].sampleNumber).toEqual(879)
-    expect(points[3].sampleNumber).toEqual(213)
+    expect(points[0].sampleNumber).toBe(998877665544332211n)
+    expect(points[1].sampleNumber).toBe(675)
+    expect(points[2].sampleNumber).toBe(879)
+    expect(points[3].sampleNumber).toBe(213)
   })
 
   it('templateAppendPoints() should throw if sampleNumbers is not an array', () => {
@@ -224,7 +224,7 @@ describe('SeekTableMetadata', () => {
 
     const points = Array.from(st)
     expect(points).toHaveLength(6)
-    expect(points[0].sampleNumber).toEqual(123)
+    expect(points[0].sampleNumber).toBe(123)
     expect(points[1].sampleNumber).toEqual(5 * 0)
     expect(points[2].sampleNumber).toEqual(5 * 1)
     expect(points[3].sampleNumber).toEqual(5 * 2)
@@ -252,7 +252,7 @@ describe('SeekTableMetadata', () => {
 
     const points = Array.from(st)
     expect(points).toHaveLength(6)
-    expect(points[0].sampleNumber).toEqual(123)
+    expect(points[0].sampleNumber).toBe(123)
     expect(points[1].sampleNumber).toEqual(5 * 0)
     expect(points[2].sampleNumber).toEqual(5 * 1)
     expect(points[3].sampleNumber).toEqual(5 * 2)
@@ -294,9 +294,9 @@ describe('SeekTableMetadata', () => {
     expect(points[2].sampleNumber).toEqual(5 * 2)
     expect(points[3].sampleNumber).toEqual(5 * 3)
     expect(points[4].sampleNumber).toEqual(5 * 4)
-    expect(points[5].sampleNumber).toEqual(123)
-    expect(points[6].sampleNumber).toEqual(500)
-    expect(points[7].sampleNumber).toEqual(18446744073709551615n)
+    expect(points[5].sampleNumber).toBe(123)
+    expect(points[6].sampleNumber).toBe(500)
+    expect(points[7].sampleNumber).toBe(18446744073709551615n)
   })
 
   it('templateSort(true) sorts the points and removes duplicates', () => {
@@ -315,8 +315,8 @@ describe('SeekTableMetadata', () => {
     expect(points[2].sampleNumber).toEqual(5 * 2)
     expect(points[3].sampleNumber).toEqual(5 * 3)
     expect(points[4].sampleNumber).toEqual(5 * 4)
-    expect(points[5].sampleNumber).toEqual(123)
-    expect(points[6].sampleNumber).toEqual(500)
+    expect(points[5].sampleNumber).toBe(123)
+    expect(points[6].sampleNumber).toBe(500)
   })
 
   it('isLegal() should work', () => {

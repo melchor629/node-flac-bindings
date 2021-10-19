@@ -362,7 +362,7 @@ namespace flac_bindings {
       throw Error::New(info.Env(), "Could not set the metadata");
     }
 
-    // Save all objects inside this to hold the references untile the object is destroyed
+    // Save all objects inside this to hold the references until the object is destroyed
     metadataArrayRef = Persistent(info[0].As<Object>());
   }
 
@@ -421,8 +421,7 @@ namespace flac_bindings {
         Napi::PropertyDescriptor::Value("expected", numberToJs(info.Env(), expected), attrs),
         Napi::PropertyDescriptor::Value("got", numberToJs(info.Env(), got), attrs),
       });
-      info.Env().Global().Get("Object").As<Object>().Get("freeze").As<Function>().Call({obj});
-      return obj;
+      return objectFreeze(obj);
     }
 
     return info.Env().Null();

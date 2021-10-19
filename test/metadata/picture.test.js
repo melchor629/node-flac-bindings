@@ -18,7 +18,7 @@ describe('PictureMetadata', () => {
 
     p.pictureType = 2
 
-    expect(p.pictureType).toEqual(2)
+    expect(p.pictureType).toBe(2)
   })
 
   it('pictureType should throw if not a number', () => {
@@ -34,7 +34,7 @@ describe('PictureMetadata', () => {
 
     p.width = 100
 
-    expect(p.width).toEqual(100)
+    expect(p.width).toBe(100)
   })
 
   it('width should throw if not a number', () => {
@@ -50,7 +50,7 @@ describe('PictureMetadata', () => {
 
     p.height = 100
 
-    expect(p.height).toEqual(100)
+    expect(p.height).toBe(100)
   })
 
   it('height should throw if not a number', () => {
@@ -66,7 +66,7 @@ describe('PictureMetadata', () => {
 
     p.depth = 32
 
-    expect(p.depth).toEqual(32)
+    expect(p.depth).toBe(32)
   })
 
   it('depth should throw if not a number', () => {
@@ -82,7 +82,7 @@ describe('PictureMetadata', () => {
 
     p.colors = 1
 
-    expect(p.colors).toEqual(1)
+    expect(p.colors).toBe(1)
   })
 
   it('colors should throw if not a number', () => {
@@ -96,17 +96,17 @@ describe('PictureMetadata', () => {
   it('change mimeType should work', () => {
     const p = new PictureMetadata()
 
-    expect(p.mimeType).toEqual('')
+    expect(p.mimeType).toBe('')
     p.mimeType = 'image/jpg'
-    expect(p.mimeType).toEqual('image/jpg')
+    expect(p.mimeType).toBe('image/jpg')
   })
 
   it('change description should work', () => {
     const p = new PictureMetadata()
 
-    expect(p.description).toEqual('')
+    expect(p.description).toBe('')
     p.description = 'Big description'
-    expect(p.description).toEqual('Big description')
+    expect(p.description).toBe('Big description')
   })
 
   it('change data should work', () => {

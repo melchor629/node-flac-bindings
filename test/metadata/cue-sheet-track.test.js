@@ -12,7 +12,7 @@ describe('CueSheetTrack', () => {
 
     cst.offset = 9231292
 
-    expect(cst.offset).toEqual(9231292)
+    expect(cst.offset).toBe(9231292)
   })
 
   it('offset should work with bigints', () => {
@@ -20,7 +20,7 @@ describe('CueSheetTrack', () => {
 
     cst.offset = 8127328197321897923n
 
-    expect(cst.offset).toEqual(8127328197321897923n)
+    expect(cst.offset).toBe(8127328197321897923n)
   })
 
   it('number should limit numbers to 255 automatically', () => {
@@ -28,7 +28,7 @@ describe('CueSheetTrack', () => {
 
     cst.number = 256
 
-    expect(cst.number).toEqual(0)
+    expect(cst.number).toBe(0)
   })
 
   it('isrc should be able to set a string of 12 bytes', () => {
@@ -36,7 +36,7 @@ describe('CueSheetTrack', () => {
 
     cst.isrc = '🗿-5374-12'
 
-    expect(cst.isrc).toEqual('🗿-5374-12')
+    expect(cst.isrc).toBe('🗿-5374-12')
   })
 
   it('isrc should throw if the string is not 12 bytes', () => {
@@ -49,10 +49,10 @@ describe('CueSheetTrack', () => {
     const cst = new CueSheetTrack()
 
     cst.type = 2
-    expect(cst.type).toEqual(0)
+    expect(cst.type).toBe(0)
 
     cst.type = 19237
-    expect(cst.type).toEqual(1)
+    expect(cst.type).toBe(1)
   })
 
   it('iterator should get all index items', () => {

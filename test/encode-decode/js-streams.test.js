@@ -190,11 +190,11 @@ describe('encode & decode: js streams', () => {
       input.pipe(dec)
       await events.once(dec, 'data')
 
-      expect(dec.getBitsPerSample()).toEqual(24)
-      expect(dec.getChannels()).toEqual(2)
-      expect(dec.getChannelAssignment()).toEqual(3)
+      expect(dec.getBitsPerSample()).toBe(24)
+      expect(dec.getChannels()).toBe(2)
+      expect(dec.getChannelAssignment()).toBe(3)
       expect(dec.getTotalSamples()).toEqual(totalSamples)
-      expect(dec.getSampleRate()).toEqual(44100)
+      expect(dec.getSampleRate()).toBe(44100)
 
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
@@ -319,7 +319,7 @@ describe('encode & decode: js streams', () => {
 
       await new Promise((resolve) => enc.end(resolve))
 
-      expect(enc.processedSamples).toEqual(0)
+      expect(enc.processedSamples).toBe(0)
     })
 
     it('decoder with no data does not write anything', async () => {
@@ -327,7 +327,7 @@ describe('encode & decode: js streams', () => {
 
       await new Promise((resolve) => dec.end(resolve))
 
-      expect(dec.processedSamples).toEqual(0)
+      expect(dec.processedSamples).toBe(0)
     })
   })
 
@@ -496,11 +496,11 @@ describe('encode & decode: js streams', () => {
 
       await events.once(dec, 'data')
 
-      expect(dec.getBitsPerSample()).toEqual(24)
-      expect(dec.getChannels()).toEqual(2)
-      expect(dec.getChannelAssignment()).toEqual(3)
+      expect(dec.getBitsPerSample()).toBe(24)
+      expect(dec.getChannels()).toBe(2)
+      expect(dec.getChannelAssignment()).toBe(3)
       expect(dec.getTotalSamples()).toEqual(totalSamples)
-      expect(dec.getSampleRate()).toEqual(44100)
+      expect(dec.getSampleRate()).toBe(44100)
 
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
@@ -566,7 +566,7 @@ describe('encode & decode: js streams', () => {
       await expect(() => events.once(enc, 'data')).rejects.toThrow('Encoder initialization failed: ENCODER_ERROR')
 
       // ENCODER_ERROR means that the error is described in getState()
-      expect(enc.getState()).toEqual(6) // IO_ERROR
+      expect(enc.getState()).toBe(6) // IO_ERROR
     })
 
     it('encode using ogg (file)', async () => {
@@ -600,7 +600,7 @@ describe('encode & decode: js streams', () => {
 
       await new Promise((resolve) => enc.end(resolve))
 
-      expect(enc.processedSamples).toEqual(0)
+      expect(enc.processedSamples).toBe(0)
     })
 
     it('encoder without file throws', () => {
