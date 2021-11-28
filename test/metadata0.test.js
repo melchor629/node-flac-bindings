@@ -1,6 +1,8 @@
-const { promises: fs } = require('fs')
-const { metadata0, metadata, format } = require('../lib/index').api
-const { pathForFile: { tags: pathForFile }, gc } = require('./helper')
+import fs from 'fs/promises'
+import { metadata0, metadata, format } from '../lib/api.js'
+import { pathForFile as fullPathForFile, gc } from './helper/index.js'
+
+const { tags: pathForFile } = fullPathForFile
 
 describe('metadata0', () => {
   describe('getTags', () => {

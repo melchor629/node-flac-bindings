@@ -1,6 +1,9 @@
-const { CueSheetTrack, CueSheetIndex } = require('../../lib/index').api.metadata
-const { getCuesheet } = require('../../lib/index').api.metadata0
-const { pathForFile: { tags: pathForFile }, gc } = require('../helper')
+import { metadata, metadata0 } from '../../lib/api.js'
+import { pathForFile as fullPathForFile, gc } from '../helper/index.js'
+
+const { CueSheetTrack, CueSheetIndex } = metadata
+const { getCuesheet } = metadata0
+const { tags: pathForFile } = fullPathForFile
 
 describe('CueSheetTrack', () => {
   it('create a new object should work', () => {

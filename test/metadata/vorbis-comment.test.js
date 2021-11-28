@@ -1,7 +1,10 @@
-const { VorbisCommentMetadata } = require('../../lib/index').api.metadata
-const { getTags } = require('../../lib/index').api.metadata0
-const { MetadataType } = require('../../lib/index').api.format
-const { pathForFile: { tags: pathForFile }, gc } = require('../helper')
+import { format, metadata, metadata0 } from '../../lib/api.js'
+import { gc, pathForFile as fullPathForFile } from '../helper/index.js'
+
+const { VorbisCommentMetadata } = metadata
+const { getTags } = metadata0
+const { MetadataType } = format
+const { tags: pathForFile } = fullPathForFile
 
 describe('VorbisCommentMetadata', () => {
   it('create new object should work', () => {

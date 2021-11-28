@@ -1,6 +1,6 @@
-const fs = require('fs')
-const pathForFile = require('./path-for-file')
-const { getPCMData } = require('./compare-pcm')
+import fs from 'fs'
+import pathForFile from './path-for-file.js'
+import { getPCMData } from './compare-pcm.js'
 
 const cache = new Map()
 
@@ -21,4 +21,4 @@ const getWavAudio = (...file) => {
   return pcm
 }
 
-module.exports = getWavAudio
+export default getWavAudio

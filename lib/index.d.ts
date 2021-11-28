@@ -1,19 +1,3 @@
-import api = require('./api');
-import encoder = require('./encoder');
-import decoder = require('./decoder');
-
-declare interface FlacBindings {
-  api: typeof api,
-  StreamEncoder: typeof encoder.StreamEncoder,
-  FileEncoder: typeof encoder.FileEncoder,
-  StreamDecoder: typeof decoder.StreamDecoder,
-  FileDecoder: typeof decoder.FileDecoder,
-}
-
-declare const FlacBindings: FlacBindings;
-export = FlacBindings;
-
-declare module 'flac-bindings' {
-  const FlacBindings: FlacBindings;
-  export = FlacBindings;
-}
+export * as api from './api.js'
+export { StreamEncoder, FileEncoder } from './encoder/index.js'
+export { StreamDecoder, FileDecoder } from './decoder/index.js'

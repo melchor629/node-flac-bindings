@@ -1,11 +1,14 @@
-const { join } = require('path')
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
+
+const dataPath = join(dirname(fileURLToPath(new URL(import.meta.url))), '..', 'data')
 
 /**
  * Gets the the absolute path to the requested file or folder
  * @param {string} type Type of test data file
  * @param  {...string} file path splitted in args
  */
-const pathForFile = (type, ...file) => join(__dirname, '..', 'data', type, ...file)
+const pathForFile = (type, ...file) => join(dataPath, type, ...file)
 
 /**
  * Gets the absolute path to the request path from the audio data folder
@@ -19,4 +22,4 @@ pathForFile.audio = (...file) => pathForFile('audio', ...file)
  */
 pathForFile.tags = (...file) => pathForFile('tags', ...file)
 
-module.exports = pathForFile
+export default pathForFile

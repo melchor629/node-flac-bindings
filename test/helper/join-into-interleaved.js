@@ -1,4 +1,4 @@
-const { fns } = require('../../lib/api')
+import { fns } from '../../lib/api.js'
 
 /**
  * Joins into interleaved
@@ -22,4 +22,4 @@ const joinIntoInterleaved = (arrayOfArrayOfBuffers, bytesPerSample = 4) => {
   ]
 }
 
-module.exports = joinIntoInterleaved
+export default joinIntoInterleaved

@@ -1,4 +1,4 @@
-const cp = require('child_process')
+import cp from 'child_process'
 
 /**
  * Decodes a flac file using `flac` cli tool
@@ -23,7 +23,7 @@ const readFlacUsingCli = (file, ogg) => {
  * @param {Buffer} buffer WAV buffer
  * @returns {Buffer} The PCM data of the WAV file
  */
-const getPCMData = (buffer) => {
+export const getPCMData = (buffer) => {
   const pos = buffer.indexOf('data', buffer.indexOf('WAVE')) + 4
   const length = buffer.readUInt32LE(pos)
   return buffer.slice(pos + 4, length !== 0 ? pos + 4 + length : undefined)
@@ -36,7 +36,7 @@ const getPCMData = (buffer) => {
  * @param {number} bitsPerSample Bits per sample of the audio
  * @param {boolean} ogg Set to `true` if the file is ogg/flac
  */
-const comparePCM = (okData, flacFile, bitsPerSample = 16, ogg = false) => {
+export const comparePCM = (okData, flacFile, bitsPerSample = 16, ogg = false) => {
   const convertedData = Buffer.isBuffer(flacFile)
     ? flacFile
     : getPCMData(readFlacUsingCli(flacFile, ogg))
@@ -57,5 +57,3 @@ const comparePCM = (okData, flacFile, bitsPerSample = 16, ogg = false) => {
     }
   }
 }
-
-module.exports = { comparePCM, getPCMData }

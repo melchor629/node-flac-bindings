@@ -1,20 +1,8 @@
-const createDeferredScope = require('./deferred')
-const gc = require('./gc')
-const { comparePCM, getPCMData } = require('./compare-pcm')
-const generateFlacCallbacks = require('./generate-flac-callbacks')
-const getWavAudio = require('./get-wav-audio')
-const joinIntoInterleaved = require('./join-into-interleaved')
-const loopPcmAudio = require('./loop-pcm-audio')
-const pathForFile = require('./path-for-file')
-
-module.exports = {
-  createDeferredScope,
-  gc,
-  comparePCM,
-  getPCMData,
-  generateFlacCallbacks,
-  getWavAudio,
-  joinIntoInterleaved,
-  loopPcmAudio,
-  pathForFile,
-}
+export { default as createDeferredScope } from './deferred.js'
+export { default as gc } from './gc.js'
+export { comparePCM, getPCMData } from './compare-pcm.js'
+export { default as generateFlacCallbacks } from './generate-flac-callbacks.js'
+export { default as getWavAudio } from './get-wav-audio.js'
+export { default as joinIntoInterleaved } from './join-into-interleaved.js'
+export { default as loopPcmAudio } from './loop-pcm-audio.js'
+export { default as pathForFile } from './path-for-file.js'

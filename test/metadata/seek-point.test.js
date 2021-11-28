@@ -1,5 +1,7 @@
-const { SeekPoint } = require('../../lib/index').api.metadata
-const { gc } = require('../helper')
+import { metadata } from '../../lib/api.js'
+import { gc } from '../helper/index.js'
+
+const { SeekPoint } = metadata
 
 describe('SeekPoint', () => {
   it('create new object should work', () => {

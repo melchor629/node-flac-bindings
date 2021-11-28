@@ -1,7 +1,7 @@
-const http = require('http')
+import http from 'http'
 // requires sox (macOS/Windows) or arecord (Linux)
-const mic = require('mic')
-const { StreamEncoder } = require('flac-bindings')
+import mic from 'mic'
+import { StreamEncoder } from 'flac-bindings'
 
 // here there are a lot of stuff to configure, change the script with the right value :)
 

@@ -1,5 +1,7 @@
-const cp = require('child_process')
-const debug = require('debug')('flac:build')
+import cp from 'child_process'
+import debugFactory from 'debug'
+
+const debug = debugFactory('flac:build')
 
 const envOpts = {
   useExternalLibrary: typeof process.env.FLAC_BINDINGS_USE_EXTERNAL_LIBRARY === 'string',

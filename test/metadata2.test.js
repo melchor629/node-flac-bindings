@@ -1,13 +1,17 @@
-const { promises: fs, ...oldfs } = require('fs')
-const temp = require('temp').track()
-const {
+import oldfs from 'fs'
+import fs from 'fs/promises'
+import tempUntracked from 'temp'
+import {
   Chain, Iterator, metadata, format,
-} = require('../lib/index').api
-const {
-  pathForFile: { tags: pathForFile },
+} from '../lib/api.js'
+import {
+  pathForFile as fullPathForFile,
   generateFlacCallbacks,
   gc,
-} = require('./helper')
+} from './helper/index.js'
+
+const temp = tempUntracked.track()
+const { tags: pathForFile } = fullPathForFile
 
 describe('Chain & Iterator', () => {
   describe('read', () => {

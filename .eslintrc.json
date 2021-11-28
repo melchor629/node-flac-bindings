@@ -4,7 +4,9 @@
     "airbnb-base"
   ],
   "env": {
-    "es2020": true
+    "es2020": true,
+    "node": true,
+    "browser": false
   },
   "parserOptions": {
     "ecmaVersion": 11
@@ -21,6 +23,10 @@
         "allowAfterThis": true,
         "allowAfterSuper": true
       }
+    ],
+    "import/extensions": [
+      "error",
+      "ignorePackages"
     ]
   }
 }

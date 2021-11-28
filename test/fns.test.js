@@ -1,4 +1,4 @@
-const { api: { fns } } = require('../lib')
+import { fns } from '../lib/api.js'
 
 describe('fns', () => {
   describe('convertSampleFormat', () => {

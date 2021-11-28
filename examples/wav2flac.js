@@ -1,7 +1,9 @@
-const fs = require('fs')
-const wav = require('wav')
-const { FileEncoder } = require('flac-bindings')
-const args = require('./_args')(__filename)
+import fs from 'fs'
+import wav from 'wav'
+import { FileEncoder } from 'flac-bindings'
+import createArgs from './_args.js'
+
+const args = createArgs(import.meta.url)
 
 // first argument is the wav file to encode
 // second argument is encoded flac output

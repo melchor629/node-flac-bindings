@@ -1,6 +1,8 @@
-const { PaddingMetadata } = require('../../lib/index').api.metadata
-const { MetadataType } = require('../../lib/index').api.format
-const { gc } = require('../helper')
+import { format, metadata } from '../../lib/api.js'
+import { gc } from '../helper/index.js'
+
+const { PaddingMetadata } = metadata
+const { MetadataType } = format
 
 describe('PaddingMetadata', () => {
   it('create new object should work', () => {

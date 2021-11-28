@@ -1,7 +1,11 @@
-const { promises: fs, ...oldfs } = require('fs')
-const temp = require('temp').track()
-const { SimpleIterator, metadata, format } = require('../lib/index').api
-const { pathForFile: { tags: pathForFile }, gc } = require('./helper')
+import oldfs from 'fs'
+import fs from 'fs/promises'
+import tempUntracked from 'temp'
+import { SimpleIterator, metadata, format } from '../lib/api.js'
+import { pathForFile as fullPathForFile, gc } from './helper/index.js'
+
+const temp = tempUntracked.track()
+const { tags: pathForFile } = fullPathForFile
 
 describe('SimpleIterator', () => {
   describe('init', () => {

@@ -1,7 +1,9 @@
 // requires sox (macOS/Windows) or arecord (Linux)
-const mic = require('mic')
-const { FileEncoder } = require('flac-bindings')
-const args = require('./_args')(__filename)
+import mic from 'mic'
+import { FileEncoder } from 'flac-bindings'
+import createArgs from './_args.js'
+
+const args = createArgs(import.meta.url)
 
 // first argument is the flac where the captured audio will be writen
 

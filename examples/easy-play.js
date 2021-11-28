@@ -1,6 +1,8 @@
-const Speaker = require('speaker')
-const { FileDecoder } = require('flac-bindings')
-const args = require('./_args')(__filename)
+import Speaker from 'speaker'
+import { FileDecoder } from 'flac-bindings'
+import createArgs from './_args.js'
+
+const args = createArgs(import.meta.url)
 
 // this example is so basic that the configuration is read from the emited format event
 // which may not work for you depending on the flac file...

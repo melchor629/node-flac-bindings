@@ -15,4 +15,4 @@ const createDeferredScope = () => {
   }
 }
 
-module.exports = createDeferredScope
+export default createDeferredScope

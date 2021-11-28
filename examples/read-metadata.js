@@ -1,7 +1,9 @@
 /* eslint-disable no-await-in-loop */
-const { api: { SimpleIterator } } = require('flac-bindings')
-const args = require('./_args')(__filename)
-const printMetadata = require('./_print-metadata')
+import { SimpleIterator } from 'flac-bindings/api'
+import createArgs from './_args.js'
+import printMetadata from './_print-metadata.js'
+
+const args = createArgs(import.meta.url)
 
 // first argument is the flac file
 // second argument must be one of async, alt-async, sync or alt-sync

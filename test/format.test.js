@@ -1,4 +1,4 @@
-const { format, metadata } = require('../lib/index').api
+import { format, metadata } from '../lib/api.js'
 
 describe('format', () => {
   test('VERSION_STRING is defined', () => {

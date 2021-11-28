@@ -1,7 +1,9 @@
-const { api: { format, Chain, metadata } } = require('flac-bindings')
-const { basename } = require('path')
-const { homedir } = require('os')
-const args = require('./_args')(__filename)
+import { format, Chain, metadata } from 'flac-bindings/api'
+import { basename } from 'path'
+import { homedir } from 'os'
+import createArgs from './_args.js'
+
+const args = createArgs(import.meta.url)
 
 // first argument is the file to modify
 // second is one of async or sync

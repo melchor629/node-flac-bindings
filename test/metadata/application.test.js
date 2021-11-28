@@ -1,10 +1,11 @@
-const {
-  api: {
-    metadata: { ApplicationMetadata },
-    format: { MetadataType },
-  },
-} = require('../../lib/index')
-const { gc } = require('../helper')
+import { gc } from '../helper/index.js'
+import {
+  metadata,
+  format,
+} from '../../lib/api.js'
+
+const { ApplicationMetadata } = metadata
+const { MetadataType } = format
 
 describe('ApplicationMetadata', () => {
   it('new object has the right type', () => {

@@ -1,5 +1,7 @@
-const { CueSheetIndex } = require('../../lib/index').api.metadata
-const { gc } = require('../helper')
+import { metadata } from '../../lib/api.js'
+import { gc } from '../helper/index.js'
+
+const { CueSheetIndex } = metadata
 
 describe('CueSheetIndex', () => {
   it('create a new object with parameters should work', () => {

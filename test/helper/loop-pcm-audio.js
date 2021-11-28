@@ -1,5 +1,5 @@
-const getWavAudio = require('./get-wav-audio')
-const { fns } = require('../../lib/api')
+import getWavAudio from './get-wav-audio.js'
+import { fns } from '../../lib/api.js'
 
 const totalSamples = 992250 / 3 / 2
 
@@ -10,7 +10,7 @@ let encData = null
 /** @type {Buffer[] | null} */
 let encDataAlt = null
 
-module.exports = {
+const loopPcmAudio = {
   totalSamples,
   // read input data which is stereo 24bit...
   get okData() {
@@ -42,3 +42,5 @@ module.exports = {
     return encDataAlt
   },
 }
+
+export default loopPcmAudio

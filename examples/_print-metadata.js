@@ -1,4 +1,4 @@
-const { api: { format } } = require('flac-bindings')
+import { format } from 'flac-bindings/api'
 
 const printMetadata = (metadata) => {
   console.log(`- type: ${format.MetadataTypeString[metadata.type]}`)
@@ -71,4 +71,4 @@ const printMetadata = (metadata) => {
   }
 }
 
-module.exports = printMetadata
+export default printMetadata

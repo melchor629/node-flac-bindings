@@ -1,19 +1,23 @@
-const temp = require('temp').track()
-const fs = require('fs')
-const { api } = require('../../lib/index')
-const {
-  pathForFile: { audio: pathForFile },
+import tempUntracked from 'temp'
+import fs from 'fs'
+import { api } from '../../lib/index.js'
+import {
+  pathForFile as fullPathForFile,
   createDeferredScope,
   comparePCM,
   generateFlacCallbacks,
   joinIntoInterleaved,
-  loopPcmAudio: {
-    totalSamples,
-    encData,
-    encDataAlt,
-    okData,
-  },
-} = require('../helper')
+  loopPcmAudio,
+} from '../helper/index.js'
+
+const { audio: pathForFile } = fullPathForFile
+const {
+  totalSamples,
+  encData,
+  encDataAlt,
+  okData,
+} = loopPcmAudio
+const temp = tempUntracked.track()
 
 let tmpFile
 let deferredScope = null

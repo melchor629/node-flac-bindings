@@ -1,4 +1,4 @@
-const { _testAsync: testAsync } = require('../lib/index').api
+import { _testAsync as testAsync } from '../lib/api.js'
 
 const progressValues = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 

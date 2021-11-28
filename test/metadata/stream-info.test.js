@@ -1,7 +1,10 @@
-const { StreamInfoMetadata } = require('../../lib/index').api.metadata
-const { MetadataType } = require('../../lib/index').api.format
-const { getStreaminfoAsync } = require('../../lib/index').api.metadata0
-const { pathForFile: { tags: pathForFile }, gc } = require('../helper')
+import { format, metadata, metadata0 } from '../../lib/api.js'
+import { gc, pathForFile as fullPathForFile } from '../helper/index.js'
+
+const { StreamInfoMetadata } = metadata
+const { MetadataType } = format
+const { getStreaminfoAsync } = metadata0
+const { tags: pathForFile } = fullPathForFile
 
 describe('StreamInfoMetadata', () => {
   it('create new object should work', () => {

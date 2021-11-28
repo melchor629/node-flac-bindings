@@ -1,4 +1,4 @@
-const fs = require('fs')
+import fs from 'fs'
 
 const generateFlacCallbacks = {
   sync: (Class, path, flags) => {
@@ -161,4 +161,4 @@ const generateFlacCallbacks = {
   },
 }
 
-module.exports = generateFlacCallbacks
+export default generateFlacCallbacks

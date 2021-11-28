@@ -1,7 +1,9 @@
-const { SeekTableMetadata, SeekPoint } = require('../../lib/index').api.metadata
-const { MetadataType } = require('../../lib/index').api.format
-const { SimpleIterator } = require('../../lib/index').api
-const { pathForFile: { tags: pathForFile }, gc } = require('../helper')
+import { format, metadata, SimpleIterator } from '../../lib/api.js'
+import { gc, pathForFile as fullPathForFile } from '../helper/index.js'
+
+const { SeekTableMetadata, SeekPoint } = metadata
+const { MetadataType } = format
+const { tags: pathForFile } = fullPathForFile
 
 describe('SeekTableMetadata', () => {
   it('create new object should work', () => {

@@ -1,6 +1,8 @@
-const { api: { Chain } } = require('flac-bindings')
-const printMetadata = require('./_print-metadata')
-const args = require('./_args')(__filename)
+import { Chain } from 'flac-bindings/api'
+import createArgs from './_args.js'
+import printMetadata from './_print-metadata.js'
+
+const args = createArgs(import.meta.url)
 
 // first argument is the flac
 // second argument must be async, sync or alt-sync

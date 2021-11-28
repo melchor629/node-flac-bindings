@@ -1,21 +1,25 @@
-const events = require('events')
-const fs = require('fs')
-const temp = require('temp').track()
-const {
+import events from 'events'
+import fs from 'fs'
+import tempUntracked from 'temp'
+import {
   FileDecoder,
   FileEncoder,
   StreamEncoder,
   StreamDecoder,
-} = require('../../lib/index')
-const {
-  pathForFile: { audio: pathForFile },
+} from '../../lib/index.js'
+import {
+  pathForFile as fullPathForFile,
   comparePCM,
   gc,
-  loopPcmAudio: {
-    totalSamples,
-    okData,
-  },
-} = require('../helper')
+  loopPcmAudio,
+} from '../helper/index.js'
+
+const { audio: pathForFile } = fullPathForFile
+const {
+  totalSamples,
+  okData,
+} = loopPcmAudio
+const temp = tempUntracked.track()
 
 let tmpFile
 beforeEach(() => {
@@ -317,7 +321,7 @@ describe('encode & decode: js streams', () => {
         bitsPerSample: 16,
       })
 
-      await new Promise((resolve) => enc.end(resolve))
+      await new Promise((resolve) => { enc.end(resolve) })
 
       expect(enc.processedSamples).toBe(0)
     })
@@ -325,7 +329,7 @@ describe('encode & decode: js streams', () => {
     it('decoder with no data does not write anything', async () => {
       const dec = new StreamDecoder()
 
-      await new Promise((resolve) => dec.end(resolve))
+      await new Promise((resolve) => { dec.end(resolve) })
 
       expect(dec.processedSamples).toBe(0)
     })
@@ -598,7 +602,7 @@ describe('encode & decode: js streams', () => {
         bitsPerSample: 16,
       })
 
-      await new Promise((resolve) => enc.end(resolve))
+      await new Promise((resolve) => { enc.end(resolve) })
 
       expect(enc.processedSamples).toBe(0)
     })

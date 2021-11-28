@@ -39,7 +39,7 @@ There are asynchronous functions and methods for IO bound tasks. The syncrhonous
 
 You need node version that supports v8 N-API ([see compatibility table](https://nodejs.org/docs/latest-v16.x/api/n-api.html#n_api_node_api_version_matrix)), which is supported in node v12.22.0/v14.17.0/v16.0.0 or higher. Recommended use of `BigInt` when possible to have numbers be represented without truncation (`Number` can only store 53 bit integers! 🤨).
 
-> **Note**: starting from Node 14.x, `Buffer` had a rewrite that tracks pointers across the whole JS env. In order to share pointers from flac to node, the native code cleans up the trackings time to time when required. But this also means that buffers from `Encoder`, `Decoder` and `IO Callbacks` (metadata level 2) has a strict lifetime: buffers are ensured to be valid inside the callback itself, if the buffer must be used outside the callback make a copy. (also affects 12.19.0 or higher even though the mentioned rewrite did not happen)
+> **Note**: starting from Node 14.x and 12.19.0, `Buffer` had a rewrite that tracks pointers across the whole JS env. In order to share pointers from flac to node, the native code cleans up the trackings time to time when required. But this also means that buffers from `Encoder`, `Decoder` and `IO Callbacks` (metadata level 2) has a strict lifetime: buffers are ensured to be valid inside the callback itself, if the buffer must be used outside the callback make a copy.
 
 ## How to install
 
@@ -60,19 +60,33 @@ See [How to compile](#how-to-compile) section for more information.
 For use it, include with
 
 ```javascript
-const flac = require('flac-bindings');  // default node import
-import flac from 'flac-bindings';       // ES6 import
-import * as flac from 'flac-bindings';  // TypeScript import
+// ESM import (Streams and native API alias)
+import { api, FileDecoder, StreamDecoder, FileEncoder, StreamEncoder } from 'flac-bindings';
+
+// ESM import for native API
+import {
+  Encoder,
+  Decoder,
+  format,
+  metadata,
+  metadata0,
+  SimpleIterator,
+  Chain,
+  Iterator,
+  fns,
+} from 'flac-bindings/api';
 ```
 
 > **Note**: _this library has its own TypeScript typings, so it's possible to use it in a TS project and have the right types_
+
+> **Note**: _this library is written in ES Modules, and cannot be imported from CommonJS modules - see [this](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c)_
 
 ## Examples
 
 Here's an example of using `flac-bindings` to encode some raw PCM data coming from `process.stdin` to a FLAC file that gets piped to `process.stdout`:
 
 ```js
-const { StreamEncoder } = require('flac-bindings');
+import { StreamEncoder } from 'flac-bindings';
 
 // create the Encoder instance
 const encoder = new StreamEncoder({
@@ -100,6 +114,7 @@ When using `StreamEncoder`, `StreamDecoder`, `FileEncoder` or `FileDecoder`, and
 - `FileEncoder`: `flac:encoder:file`
 - `StreamDecoder`: `flac:decoder:stream`
 - `FileDecoder`: `flac:decoder:file`
+- The `post-install` script: `flac:build`
 
 > !! These logs can be useful when creating a new issue.
 

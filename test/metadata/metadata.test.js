@@ -1,8 +1,10 @@
+import { metadata } from '../../lib/api.js'
+import { gc } from '../helper/index.js'
+
 const {
   ApplicationMetadata,
   Metadata,
-} = require('../../lib/index').api.metadata
-const { gc } = require('../helper')
+} = metadata
 
 describe('Metadata', () => {
   it('create metadata object should throw', () => {
