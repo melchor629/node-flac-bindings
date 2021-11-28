@@ -8,33 +8,14 @@ namespace flac_bindings {
   using namespace Napi;
   using namespace std::placeholders;
 
-  EncoderWorkRequest::EncoderWorkRequest() {}
-
-  EncoderWorkRequest::EncoderWorkRequest(EncoderWorkRequest::Type type) {
-    this->type = type;
-  }
-
-  EncoderWorkRequest::EncoderWorkRequest(const EncoderWorkRequest& d) {
-    type = d.type;
-    returnValue = d.returnValue;
-    buffer = d.buffer;
-    bytes = d.bytes;
-    constBuffer = d.constBuffer;
-    samples = d.samples;
-    frame = d.frame;
-    offset = d.offset;
-    metadata = d.metadata;
-    progress = d.progress;
-  }
-
   AsyncEncoderWork::FunctionCallback
     AsyncEncoderWork::decorate(EncoderWorkContext* ctx, const std::function<int()>& func) {
     return [ctx, func](ExecutionProgress& c) {
-      ctx->enc->asyncExecutionProgress = &c;
+      ctx->asyncExecutionProgress = &c;
 
-      DEFER(ctx->enc->runLocked([&]() {
-        ctx->enc->busy = false;
-        ctx->enc->asyncExecutionProgress = nullptr;
+      DEFER(ctx->runLocked([&]() {
+        ctx->workInProgress = false;
+        ctx->asyncExecutionProgress = nullptr;
       }));
 
       int ok = func();
@@ -64,7 +45,7 @@ namespace flac_bindings {
 
   AsyncEncoderWork* AsyncEncoderWork::forFinish(const StoreList& list, EncoderWorkContext* ctx) {
     auto workFunction = [ctx]() {
-      return FLAC__stream_encoder_finish(ctx->enc->enc);
+      return FLAC__stream_encoder_finish(ctx->enc);
     };
 
     return new AsyncEncoderWork(
@@ -80,7 +61,7 @@ namespace flac_bindings {
     uint64_t samples,
     EncoderWorkContext* ctx) {
     auto workFunction = [ctx, buffers, samples]() {
-      return FLAC__stream_encoder_process(ctx->enc->enc, buffers.data(), samples);
+      return FLAC__stream_encoder_process(ctx->enc, buffers.data(), samples);
     };
 
     return new AsyncEncoderWork(
@@ -96,7 +77,7 @@ namespace flac_bindings {
     uint64_t samples,
     EncoderWorkContext* ctx) {
     auto workFunction = [ctx, buffer, samples]() {
-      return FLAC__stream_encoder_process_interleaved(ctx->enc->enc, buffer, samples);
+      return FLAC__stream_encoder_process_interleaved(ctx->enc, buffer, samples);
     };
 
     return new AsyncEncoderWork(
@@ -106,100 +87,106 @@ namespace flac_bindings {
       ctx);
   }
 
-  AsyncEncoderWork*
-    AsyncEncoderWork::forInitStream(const StoreList& list, EncoderWorkContext* ctx) {
+  AsyncEncoderWork* AsyncEncoderWork::forInitStream(
+    const StoreList& list,
+    std::shared_ptr<EncoderWorkContext> ctx,
+    StreamEncoderBuilder& builder) {
     auto workFunction = [ctx]() {
       return FLAC__stream_encoder_init_stream(
-        ctx->enc->enc,
-        ctx->writeCbk.IsEmpty() ? nullptr : StreamEncoder::writeCallback,
-        ctx->seekCbk.IsEmpty() ? nullptr : StreamEncoder::seekCallback,
-        ctx->tellCbk.IsEmpty() ? nullptr : StreamEncoder::tellCallback,
-        ctx->metadataCbk.IsEmpty() ? nullptr : StreamEncoder::metadataCallback,
-        ctx);
+        ctx->enc,
+        ctx->writeCbk.IsEmpty() ? nullptr : AsyncEncoderWork::writeCallback,
+        ctx->seekCbk.IsEmpty() ? nullptr : AsyncEncoderWork::seekCallback,
+        ctx->tellCbk.IsEmpty() ? nullptr : AsyncEncoderWork::tellCallback,
+        ctx->metadataCbk.IsEmpty() ? nullptr : AsyncEncoderWork::metadataCallback,
+        ctx.get());
     };
-    auto convertFunction = [ctx](const Napi::Env& env, int value) {
-      ctx->enc->checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
-      return env.Undefined();
+    auto convertFunction = [ctx, &builder](const Napi::Env& env, int value) {
+      builder.checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
+      return builder.createEncoder(env, builder.Value(), ctx);
     };
 
     return new AsyncEncoderWork(
       list,
       workFunction,
-      "flac_bindings::StreamEncoder::initStreamAsync",
-      ctx,
+      "flac_bindings::StreamEncoderBuilder::buildWithStreamAsync",
+      ctx.get(),
       convertFunction);
   }
 
-  AsyncEncoderWork*
-    AsyncEncoderWork::forInitOggStream(const StoreList& list, EncoderWorkContext* ctx) {
+  AsyncEncoderWork* AsyncEncoderWork::forInitOggStream(
+    const StoreList& list,
+    std::shared_ptr<EncoderWorkContext> ctx,
+    StreamEncoderBuilder& builder) {
     auto workFunction = [ctx]() {
       return FLAC__stream_encoder_init_ogg_stream(
-        ctx->enc->enc,
-        ctx->readCbk.IsEmpty() ? nullptr : StreamEncoder::readCallback,
-        ctx->writeCbk.IsEmpty() ? nullptr : StreamEncoder::writeCallback,
-        ctx->seekCbk.IsEmpty() ? nullptr : StreamEncoder::seekCallback,
-        ctx->tellCbk.IsEmpty() ? nullptr : StreamEncoder::tellCallback,
-        ctx->metadataCbk.IsEmpty() ? nullptr : StreamEncoder::metadataCallback,
-        ctx);
+        ctx->enc,
+        ctx->readCbk.IsEmpty() ? nullptr : AsyncEncoderWork::readCallback,
+        ctx->writeCbk.IsEmpty() ? nullptr : AsyncEncoderWork::writeCallback,
+        ctx->seekCbk.IsEmpty() ? nullptr : AsyncEncoderWork::seekCallback,
+        ctx->tellCbk.IsEmpty() ? nullptr : AsyncEncoderWork::tellCallback,
+        ctx->metadataCbk.IsEmpty() ? nullptr : AsyncEncoderWork::metadataCallback,
+        ctx.get());
     };
-    auto convertFunction = [ctx](const Napi::Env& env, int value) {
-      ctx->enc->checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
-      return env.Undefined();
+    auto convertFunction = [ctx, &builder](const Napi::Env& env, int value) {
+      builder.checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
+      return builder.createEncoder(env, builder.Value(), ctx);
     };
 
     return new AsyncEncoderWork(
       list,
       workFunction,
-      "flac_bindings::StreamEncoder::initOggStreamAsync",
-      ctx,
+      "flac_bindings::StreamEncoderBuilder::buildWithOggStreamAsync",
+      ctx.get(),
       convertFunction);
   }
 
   AsyncEncoderWork* AsyncEncoderWork::forInitFile(
     const StoreList& list,
     const std::string& path,
-    EncoderWorkContext* ctx) {
+    std::shared_ptr<EncoderWorkContext> ctx,
+    StreamEncoderBuilder& builder) {
     auto workFunction = [ctx, path]() {
       return FLAC__stream_encoder_init_file(
-        ctx->enc->enc,
+        ctx->enc,
         path.c_str(),
-        ctx->progressCbk.IsEmpty() ? nullptr : StreamEncoder::progressCallback,
-        ctx);
+        ctx->progressCbk.IsEmpty() ? nullptr : AsyncEncoderWork::progressCallback,
+        ctx.get());
     };
-    auto convertFunction = [ctx](const Napi::Env& env, int value) {
-      ctx->enc->checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
-      return env.Undefined();
+    auto convertFunction = [ctx, &builder](const Napi::Env& env, int value) {
+      builder.checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
+      return builder.createEncoder(env, builder.Value(), ctx);
     };
 
     return new AsyncEncoderWork(
       list,
       workFunction,
-      "flac_bindings::StreamEncoder::initFileAsync",
-      ctx,
+      "flac_bindings::StreamEncoderBuilder::buildWithFileAsync",
+      ctx.get(),
       convertFunction);
   }
 
   AsyncEncoderWork* AsyncEncoderWork::forInitOggFile(
     const StoreList& list,
     const std::string& path,
-    EncoderWorkContext* ctx) {
+    std::shared_ptr<EncoderWorkContext> ctx,
+    StreamEncoderBuilder& builder) {
     auto workFunction = [ctx, path]() {
       return FLAC__stream_encoder_init_ogg_file(
-        ctx->enc->enc,
+        ctx->enc,
         path.c_str(),
-        ctx->progressCbk.IsEmpty() ? nullptr : StreamEncoder::progressCallback,
-        ctx);
+        ctx->progressCbk.IsEmpty() ? nullptr : AsyncEncoderWork::progressCallback,
+        ctx.get());
     };
-    auto convertFunction = [ctx](const Napi::Env& env, int value) {
-      ctx->enc->checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
-      return env.Undefined();
+    auto convertFunction = [ctx, &builder](const Napi::Env& env, int value) {
+      builder.checkInitStatus(env, (FLAC__StreamEncoderInitStatus) value);
+      return builder.createEncoder(env, builder.Value(), ctx);
     };
 
     return new AsyncEncoderWork(
       list,
       workFunction,
-      "flac_bindings::StreamEncoder::initOggFileAsync",
-      ctx,
+      "flac_bindings::StreamEncoderBuilder::buildWithOggFileAsync",
+      ctx.get(),
       convertFunction);
   }
 
@@ -211,57 +198,54 @@ namespace flac_bindings {
     std::function<void(Napi::Value result)> processResult;
     Napi::Value result;
 
-    switch (req->type) {
-      case EncoderWorkRequest::Type::Read: {
-        sharedBufferRef.setFromWrap(env, req->buffer, *req->bytes);
-        result = ctx->readCbk.MakeCallback(env.Global(), {sharedBufferRef.value()});
-        processResult =
-          generateParseObjectResult(req->returnValue, "Encoder:ReadCallback", "bytes", *req->bytes);
-        break;
-      }
-
-      case EncoderWorkRequest::Type::Write: {
-        sharedBufferRef.setFromWrap(env, const_cast<FLAC__byte*>(req->constBuffer), *req->bytes);
-        result = ctx->writeCbk.MakeCallback(
-          env.Global(),
-          {sharedBufferRef.value(), numberToJs(env, req->samples), numberToJs(env, req->frame)});
-        processResult = generateParseNumberResult(req->returnValue, "Encoder:WriteCallback");
-        break;
-      }
-
-      case EncoderWorkRequest::Type::Seek: {
-        result = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, *req->offset)});
-        processResult = generateParseNumberResult(req->returnValue, "Encoder:SeekCallback");
-        break;
-      }
-
-      case EncoderWorkRequest::Type::Tell: {
-        result = ctx->tellCbk.MakeCallback(env.Global(), {});
-        processResult = generateParseObjectResult(
-          req->returnValue,
-          "Encoder:TellCallback",
-          "offset",
-          *req->offset);
-        break;
-      }
-
-      case EncoderWorkRequest::Type::Metadata: {
-        auto jsMetadata = Metadata::toJs(env, const_cast<FLAC__StreamMetadata*>(req->metadata));
-        result = ctx->metadataCbk.MakeCallback(env.Global(), {jsMetadata});
-        break;
-      }
-
-      case EncoderWorkRequest::Type::Progress: {
-        result = ctx->progressCbk.MakeCallback(
-          env.Global(),
-          {
-            numberToJs(env, req->progress.bytesWritten),
-            numberToJs(env, req->progress.samplesWritten),
-            numberToJs(env, req->progress.framesWritten),
-            numberToJs(env, req->progress.totalFramesEstimate),
-          });
-        break;
-      }
+    if (std::holds_alternative<EncoderWorkRequest::Read>(req->data)) {
+      auto& readRequest = std::get<EncoderWorkRequest::Read>(req->data);
+      sharedBufferRef.setFromWrap(env, readRequest.buffer, readRequest.bytes);
+      result = ctx->readCbk.MakeCallback(env.Global(), {sharedBufferRef.value()});
+      processResult = generateParseObjectResult(
+        readRequest.returnValue,
+        "Encoder:ReadCallback",
+        "bytes",
+        readRequest.bytes);
+    } else if (std::holds_alternative<EncoderWorkRequest::Write>(req->data)) {
+      auto& writeRequest = std::get<EncoderWorkRequest::Write>(req->data);
+      sharedBufferRef.setFromWrap(
+        env,
+        const_cast<FLAC__byte*>(writeRequest.buffer),
+        writeRequest.bytes);
+      result = ctx->writeCbk.MakeCallback(
+        env.Global(),
+        {sharedBufferRef.value(),
+         numberToJs(env, writeRequest.samples),
+         numberToJs(env, writeRequest.frame)});
+      processResult = generateParseNumberResult(writeRequest.returnValue, "Encoder:WriteCallback");
+    } else if (std::holds_alternative<EncoderWorkRequest::Seek>(req->data)) {
+      auto& seekRequest = std::get<EncoderWorkRequest::Seek>(req->data);
+      result = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, seekRequest.offset)});
+      processResult = generateParseNumberResult(seekRequest.returnValue, "Encoder:SeekCallback");
+    } else if (std::holds_alternative<EncoderWorkRequest::Tell>(req->data)) {
+      auto& tellRequest = std::get<EncoderWorkRequest::Tell>(req->data);
+      result = ctx->tellCbk.MakeCallback(env.Global(), {});
+      processResult = generateParseObjectResult(
+        tellRequest.returnValue,
+        "Encoder:TellCallback",
+        "offset",
+        tellRequest.offset);
+    } else if (std::holds_alternative<EncoderWorkRequest::Metadata>(req->data)) {
+      auto& metadataRequest = std::get<EncoderWorkRequest::Metadata>(req->data);
+      auto jsMetadata =
+        Metadata::toJs(env, const_cast<FLAC__StreamMetadata*>(metadataRequest.metadata));
+      result = ctx->metadataCbk.MakeCallback(env.Global(), {jsMetadata});
+    } else if (std::holds_alternative<EncoderWorkRequest::Progress>(req->data)) {
+      auto& progressRequest = std::get<EncoderWorkRequest::Progress>(req->data);
+      result = ctx->progressCbk.MakeCallback(
+        env.Global(),
+        {
+          numberToJs(env, progressRequest.bytesWritten),
+          numberToJs(env, progressRequest.samplesWritten),
+          numberToJs(env, progressRequest.framesWritten),
+          numberToJs(env, progressRequest.totalFramesEstimate),
+        });
     }
 
     if (result.IsPromise()) {
@@ -278,4 +262,89 @@ namespace flac_bindings {
     }
   }
 
+  FLAC__StreamEncoderReadStatus AsyncEncoderWork::readCallback(
+    const FLAC__StreamEncoder*,
+    FLAC__byte buffer[],
+    size_t* bytes,
+    void* ptr) {
+    auto ctx = (EncoderWorkContext*) ptr;
+
+    auto request = std::make_shared<EncoderWorkRequest>(EncoderWorkRequest::Read {
+      buffer,
+      bytes,
+    });
+
+    ctx->asyncExecutionProgress->sendProgressAndWait(request);
+
+    return std::get<EncoderWorkRequest::Read>(request->data).returnValue;
+  }
+
+  FLAC__StreamEncoderWriteStatus AsyncEncoderWork::writeCallback(
+    const FLAC__StreamEncoder*,
+    const FLAC__byte buffer[],
+    size_t bytes,
+    unsigned samples,
+    unsigned frame,
+    void* ptr) {
+    auto ctx = (EncoderWorkContext*) ptr;
+
+    auto request = std::make_shared<EncoderWorkRequest>(
+      EncoderWorkRequest::Write {buffer, bytes, samples, frame});
+
+    ctx->asyncExecutionProgress->sendProgressAndWait(request);
+
+    return std::get<EncoderWorkRequest::Write>(request->data).returnValue;
+  }
+
+  FLAC__StreamEncoderSeekStatus
+    AsyncEncoderWork::seekCallback(const FLAC__StreamEncoder*, uint64_t offset, void* ptr) {
+    auto ctx = (EncoderWorkContext*) ptr;
+
+    auto request = std::make_shared<EncoderWorkRequest>(EncoderWorkRequest::Seek(offset));
+
+    ctx->asyncExecutionProgress->sendProgressAndWait(request);
+
+    return std::get<EncoderWorkRequest::Seek>(request->data).returnValue;
+  }
+
+  FLAC__StreamEncoderTellStatus
+    AsyncEncoderWork::tellCallback(const FLAC__StreamEncoder*, uint64_t* offset, void* ptr) {
+    auto ctx = (EncoderWorkContext*) ptr;
+
+    auto request = std::make_shared<EncoderWorkRequest>(EncoderWorkRequest::Tell(offset));
+
+    ctx->asyncExecutionProgress->sendProgressAndWait(request);
+
+    return std::get<EncoderWorkRequest::Tell>(request->data).returnValue;
+  }
+
+  void AsyncEncoderWork::metadataCallback(
+    const FLAC__StreamEncoder*,
+    const FLAC__StreamMetadata* metadata,
+    void* ptr) {
+    auto ctx = (EncoderWorkContext*) ptr;
+
+    auto request = std::make_shared<EncoderWorkRequest>(EncoderWorkRequest::Metadata(metadata));
+
+    ctx->asyncExecutionProgress->sendProgressAndWait(request);
+  }
+
+  void AsyncEncoderWork::progressCallback(
+    const FLAC__StreamEncoder*,
+    uint64_t bytesWritten,
+    uint64_t samplesWritten,
+    unsigned framesWritten,
+    unsigned totalFramesEstimate,
+    void* ptr) {
+    auto ctx = (EncoderWorkContext*) ptr;
+
+    auto request = std::make_shared<EncoderWorkRequest>(EncoderWorkRequest::Progress {
+      bytesWritten,
+      samplesWritten,
+      framesWritten,
+      totalFramesEstimate,
+    });
+
+    ctx->asyncExecutionProgress->sendProgressAndWait(request);
+  }
 }

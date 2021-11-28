@@ -18,6 +18,10 @@ export interface EncoderOptions {
   * By default is set to false.
   **/
   inputAs32?: boolean;
+  /**
+   * Alias of {@link EncoderOptions.inputAs32}.
+   */
+  is32bit?: boolean;
   /** Sample rate in Hz of the input to be encoded */
   samplerate?: number;
   /** Sample rate in Hz of the input to be encoded */
@@ -39,7 +43,7 @@ export interface EncoderOptions {
   /**
   * Set to true to enable adaptive switching between mid-side and left-right encoding
   * on stereo input. Set to false to use exhaustive searching. Setting this to true
-  * requires {@link FlacEncoderOptions.doMidSideStereo} to also be set to true in
+  * requires {@link EncoderOptions.doMidSideStereo} to also be set to true in
   * order to have any effect.
   */
   looseMidSideStereo?: boolean;

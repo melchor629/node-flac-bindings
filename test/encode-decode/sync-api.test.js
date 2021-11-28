@@ -233,19 +233,20 @@ describe('encode & decode: sync api', () => {
   })
 
   it('encode using stream (non-ogg)', () => {
-    const enc = new api.Encoder()
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w')
     deferredScope.defer(() => callbacks.close())
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.initStream(
-      callbacks.write,
-      callbacks.seek,
-      callbacks.tell,
-      null,
-    )
+
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithStream(
+        callbacks.write,
+        callbacks.seek,
+        callbacks.tell,
+        null,
+      )
 
     expect(enc.processInterleaved(encData)).toBe(true)
     expect(enc.finish()).toBe(true)
@@ -254,20 +255,21 @@ describe('encode & decode: sync api', () => {
   })
 
   it('encode using stream (ogg)', () => {
-    const enc = new api.Encoder()
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w+')
     deferredScope.defer(() => callbacks.close())
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.initOggStream(
-      callbacks.read,
-      callbacks.write,
-      callbacks.seek,
-      callbacks.tell,
-      null,
-    )
+
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithOggStream(
+        callbacks.read,
+        callbacks.write,
+        callbacks.seek,
+        callbacks.tell,
+        null,
+      )
 
     expect(enc.processInterleaved(encData)).toBe(true)
     expect(enc.finish()).toBe(true)
@@ -277,15 +279,15 @@ describe('encode & decode: sync api', () => {
 
   it('encode using file (non-ogg)', () => {
     const progressCallbackValues = []
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.initFile(
-      tmpFile.path,
-      (...args) => progressCallbackValues.push(args),
-    )
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFile(
+        tmpFile.path,
+        (...args) => progressCallbackValues.push(args),
+      )
 
     expect(enc.processInterleaved(encData)).toBe(true)
     expect(enc.finish()).toBe(true)
@@ -296,15 +298,15 @@ describe('encode & decode: sync api', () => {
 
   it('encode using file (ogg)', () => {
     const progressCallbackValues = []
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.initOggFile(
-      tmpFile.path,
-      (...args) => progressCallbackValues.push(args),
-    )
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithOggFile(
+        tmpFile.path,
+        (...args) => progressCallbackValues.push(args),
+      )
 
     expect(enc.processInterleaved(encData)).toBe(true)
     expect(enc.finish()).toBe(true)
@@ -315,15 +317,15 @@ describe('encode & decode: sync api', () => {
 
   it('encode using file with non-interleaved data (non-ogg)', () => {
     const progressCallbackValues = []
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.initFile(
-      tmpFile.path,
-      (...args) => progressCallbackValues.push(args),
-    )
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFile(
+        tmpFile.path,
+        (...args) => progressCallbackValues.push(args),
+      )
 
     expect(enc.process(encDataAlt, totalSamples)).toBe(true)
     expect(enc.finish()).toBe(true)
@@ -336,20 +338,20 @@ describe('encode & decode: sync api', () => {
     let metadataBlock = null
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w')
     deferredScope.defer(() => callbacks.close())
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.setMetadata([new api.metadata.VorbisCommentMetadata()])
-    enc.initStream(
-      callbacks.write,
-      callbacks.seek,
-      callbacks.tell,
-      (metadata) => {
-        metadataBlock = metadata
-      },
-    )
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .setMetadata([new api.metadata.VorbisCommentMetadata()])
+      .buildWithStream(
+        callbacks.write,
+        callbacks.seek,
+        callbacks.tell,
+        (metadata) => {
+          metadataBlock = metadata
+        },
+      )
 
     expect(enc.processInterleaved(encData)).toBe(true)
     expect(enc.finish()).toBe(true)
@@ -360,58 +362,58 @@ describe('encode & decode: sync api', () => {
   })
 
   it('encoder process should fail if invalid buffer size is sent', () => {
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.initFile(
-      tmpFile.path,
-    )
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFile(
+        tmpFile.path,
+      )
 
     expect(() => enc.process([encDataAlt[0].slice(4), encDataAlt[1]], totalSamples)).toThrow()
     expect(enc.finish()).toBe(true)
   })
 
   it('encoder process should fail if invalid number of channels is sent', () => {
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.initFile(
-      tmpFile.path,
-    )
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFile(
+        tmpFile.path,
+      )
 
     expect(() => enc.process([encDataAlt[0]], totalSamples)).toThrow()
     expect(enc.finish()).toBe(true)
   })
 
   it('encoder processInterleaved should fail if invalid buffer size is sent', () => {
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.initFile(
-      tmpFile.path,
-    )
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFile(
+        tmpFile.path,
+      )
 
     expect(() => enc.processInterleaved(encData.slice(4), totalSamples)).toThrow()
     expect(enc.finish()).toBe(true)
   })
 
   it('encoder get other properties work', () => {
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.totalSamplesEstimate = totalSamples
-    enc.verify = true
-    enc.initFile(
-      tmpFile.path,
-    )
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .setVerify(true)
+      .setTotalSamplesEstimate(totalSamples)
+      .buildWithFile(
+        tmpFile.path,
+      )
 
     expect(enc.verify).toBe(true)
 

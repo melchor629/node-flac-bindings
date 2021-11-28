@@ -10,6 +10,7 @@ namespace flac_bindings {
 
     Napi::ObjectReference module;
     Napi::FunctionReference decoderConstructor;
+    Napi::FunctionReference encoderBuilderConstructor;
     Napi::FunctionReference encoderConstructor;
     Napi::FunctionReference streamInfoMetadataConstructor;
     Napi::FunctionReference paddingMetadataConstructor;

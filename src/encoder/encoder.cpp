@@ -18,100 +18,56 @@ namespace flac_bindings {
       env,
       "StreamEncoder",
       {
-        InstanceMethod("setOggSerialNumber", &StreamEncoder::setOggSerialNumber),
-        InstanceAccessor("verify", &StreamEncoder::getVerify, &StreamEncoder::setVerify, attrs),
-        InstanceAccessor(
-          "streamableSubset",
-          &StreamEncoder::getStreamableSubset,
-          &StreamEncoder::setStreamableSubset,
-          attrs),
-        InstanceAccessor(
-          "channels",
-          &StreamEncoder::getChannels,
-          &StreamEncoder::setChannels,
-          attrs),
-        InstanceAccessor(
-          "bitsPerSample",
-          &StreamEncoder::getBitsPerSample,
-          &StreamEncoder::setBitsPerSample,
-          attrs),
-        InstanceAccessor(
-          "sampleRate",
-          &StreamEncoder::getSampleRate,
-          &StreamEncoder::setSampleRate,
-          attrs),
-        InstanceMethod("setCompressionLevel", &StreamEncoder::setCompressionLevel),
-        InstanceAccessor(
-          "blocksize",
-          &StreamEncoder::getBlocksize,
-          &StreamEncoder::setBlocksize,
-          attrs),
-        InstanceAccessor(
-          "doMidSideStereo",
-          &StreamEncoder::getDoMidSideStereo,
-          &StreamEncoder::setDoMidSideStereo,
-          attrs),
+        InstanceAccessor("verify", &StreamEncoder::getVerify, nullptr, attrs),
+        InstanceAccessor("streamableSubset", &StreamEncoder::getStreamableSubset, nullptr, attrs),
+        InstanceAccessor("channels", &StreamEncoder::getChannels, nullptr, attrs),
+        InstanceAccessor("bitsPerSample", &StreamEncoder::getBitsPerSample, nullptr, attrs),
+        InstanceAccessor("sampleRate", &StreamEncoder::getSampleRate, nullptr, attrs),
+        InstanceAccessor("blocksize", &StreamEncoder::getBlocksize, nullptr, attrs),
+        InstanceAccessor("doMidSideStereo", &StreamEncoder::getDoMidSideStereo, nullptr, attrs),
         InstanceAccessor(
           "looseMidSideStereo",
           &StreamEncoder::getLooseMidSideStereo,
-          &StreamEncoder::setLooseMidSideStereo,
+          nullptr,
           attrs),
-        InstanceAccessor(
-          "maxLpcOrder",
-          &StreamEncoder::getMaxLpcOrder,
-          &StreamEncoder::setMaxLpcOrder,
-          attrs),
-        InstanceAccessor(
-          "qlpCoeffPrecision",
-          &StreamEncoder::getQlpCoeffPrecision,
-          &StreamEncoder::setQlpCoeffPrecision,
-          attrs),
+        InstanceAccessor("maxLpcOrder", &StreamEncoder::getMaxLpcOrder, nullptr, attrs),
+        InstanceAccessor("qlpCoeffPrecision", &StreamEncoder::getQlpCoeffPrecision, nullptr, attrs),
         InstanceAccessor(
           "doQlpCoeffPrecSearch",
           &StreamEncoder::getDoQlpCoeffPrecSearch,
-          &StreamEncoder::setDoQlpCoeffPrecSearch,
+          nullptr,
           attrs),
-        InstanceAccessor(
-          "doEscapeCoding",
-          &StreamEncoder::getDoEscapeCoding,
-          &StreamEncoder::setDoEscapeCoding,
-          attrs),
+        InstanceAccessor("doEscapeCoding", &StreamEncoder::getDoEscapeCoding, nullptr, attrs),
         InstanceAccessor(
           "doExhaustiveModelSearch",
           &StreamEncoder::getDoExhaustiveModelSearch,
-          &StreamEncoder::setDoExhaustiveModelSearch,
+          nullptr,
           attrs),
         InstanceAccessor(
           "maxResidualPartitionOrder",
           &StreamEncoder::getMaxResidualPartitionOrder,
-          &StreamEncoder::setMaxResidualPartitionOrder,
+          nullptr,
           attrs),
         InstanceAccessor(
           "minResidualPartitionOrder",
           &StreamEncoder::getMinResidualPartitionOrder,
-          &StreamEncoder::setMinResidualPartitionOrder,
+          nullptr,
           attrs),
         InstanceAccessor(
           "riceParameterSearchDist",
           &StreamEncoder::getRiceParameterSearchDist,
-          &StreamEncoder::setRiceParameterSearchDist,
+          nullptr,
           attrs),
         InstanceAccessor(
           "totalSamplesEstimate",
           &StreamEncoder::getTotalSamplesEstimate,
-          &StreamEncoder::setTotalSamplesEstimate,
+          nullptr,
           attrs),
-        InstanceMethod("setMetadata", &StreamEncoder::setMetadata),
-        InstanceMethod("setApodization", &StreamEncoder::setApodization),
         InstanceMethod("getState", &StreamEncoder::getState),
         InstanceMethod("getVerifyDecoderState", &StreamEncoder::getVerifyDecoderState),
         InstanceMethod("getResolvedStateString", &StreamEncoder::getResolvedStateString),
         InstanceMethod("getVerifyDecoderErrorStats", &StreamEncoder::getVerifyDecoderErrorStats),
 
-        InstanceMethod("initStream", &StreamEncoder::initStream),
-        InstanceMethod("initOggStream", &StreamEncoder::initOggStream),
-        InstanceMethod("initFile", &StreamEncoder::initFile),
-        InstanceMethod("initOggFile", &StreamEncoder::initOggFile),
         InstanceMethod("finish", &StreamEncoder::finish),
         InstanceMethod("process", &StreamEncoder::process),
         InstanceMethod("processInterleaved", &StreamEncoder::processInterleaved),
@@ -119,10 +75,6 @@ namespace flac_bindings {
         InstanceMethod("finishAsync", &StreamEncoder::finishAsync),
         InstanceMethod("processAsync", &StreamEncoder::processAsync),
         InstanceMethod("processInterleavedAsync", &StreamEncoder::processInterleavedAsync),
-        InstanceMethod("initStreamAsync", &StreamEncoder::initStreamAsync),
-        InstanceMethod("initOggStreamAsync", &StreamEncoder::initOggStreamAsync),
-        InstanceMethod("initFileAsync", &StreamEncoder::initFileAsync),
-        InstanceMethod("initOggFileAsync", &StreamEncoder::initOggFileAsync),
       });
     c_enum::declareInObject(constructor, "State", createStateEnum);
     c_enum::declareInObject(constructor, "InitStatus", createInitStatusEnum);
@@ -137,31 +89,30 @@ namespace flac_bindings {
   }
 
   StreamEncoder::StreamEncoder(const CallbackInfo& info): ObjectWrap<StreamEncoder>(info) {
-    enc = FLAC__stream_encoder_new();
-    if (enc == nullptr) {
-      throw Error::New(info.Env(), "Could not allocate memory");
+    auto addon = info.Env().GetInstanceData<FlacAddon>();
+    auto checks = info.Length() != 2 || !info[0].IsObject()
+                  || !(info[1].IsNull() || info[1].IsArray())
+                  || !info[0].As<Object>().InstanceOf(addon->encoderBuilderConstructor.Value());
+    if (checks) {
+      throw Error::New(
+        info.Env(),
+        "StreamEncoder constructor cannot be called directly, use StreamEncoderBuilder instead");
     }
+
+    info.This().As<Object>().Set("__metadataArrayRef", info[1]);
   }
 
   StreamEncoder::~StreamEncoder() {
-    FLAC__stream_encoder_delete(enc);
+    if (enc != nullptr) {
+      FLAC__stream_encoder_delete(enc);
+    }
   }
 
-  void StreamEncoder::setOggSerialNumber(const CallbackInfo& info) {
-    checkIsNotInitialized(info.Env());
-    auto oggSerialNumber = numberFromJs<long>(info[0]);
-    FLAC__stream_encoder_set_ogg_serial_number(enc, oggSerialNumber);
-  }
+  // -- getters --
 
   Napi::Value StreamEncoder::getVerify(const CallbackInfo& info) {
     auto verify = FLAC__stream_encoder_get_verify(enc);
     return booleanToJs(info.Env(), verify);
-  }
-
-  void StreamEncoder::setVerify(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto verify = booleanFromJs<FLAC__bool>(value);
-    FLAC__stream_encoder_set_verify(enc, verify);
   }
 
   Napi::Value StreamEncoder::getStreamableSubset(const CallbackInfo& info) {
@@ -169,21 +120,9 @@ namespace flac_bindings {
     return booleanToJs(info.Env(), streamableSubset);
   }
 
-  void StreamEncoder::setStreamableSubset(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto streamableSubset = booleanFromJs<FLAC__bool>(value);
-    FLAC__stream_encoder_set_streamable_subset(enc, streamableSubset);
-  }
-
   Napi::Value StreamEncoder::getChannels(const CallbackInfo& info) {
     auto channels = FLAC__stream_encoder_get_channels(enc);
     return numberToJs(info.Env(), channels);
-  }
-
-  void StreamEncoder::setChannels(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto channels = numberFromJs<unsigned>(value);
-    FLAC__stream_encoder_set_channels(enc, channels);
   }
 
   Napi::Value StreamEncoder::getBitsPerSample(const CallbackInfo& info) {
@@ -191,27 +130,9 @@ namespace flac_bindings {
     return numberToJs(info.Env(), bitsPerSample);
   }
 
-  void StreamEncoder::setBitsPerSample(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto bitsPerSample = numberFromJs<unsigned>(value);
-    FLAC__stream_encoder_set_bits_per_sample(enc, bitsPerSample);
-  }
-
   Napi::Value StreamEncoder::getSampleRate(const CallbackInfo& info) {
     auto sampleRate = FLAC__stream_encoder_get_sample_rate(enc);
     return numberToJs(info.Env(), sampleRate);
-  }
-
-  void StreamEncoder::setSampleRate(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto sampleRate = numberFromJs<unsigned>(value);
-    FLAC__stream_encoder_set_sample_rate(enc, sampleRate);
-  }
-
-  void StreamEncoder::setCompressionLevel(const CallbackInfo& info) {
-    checkIsNotInitialized(info.Env());
-    auto compressionLevel = numberFromJs<unsigned>(info[0]);
-    FLAC__stream_encoder_set_compression_level(enc, compressionLevel);
   }
 
   Napi::Value StreamEncoder::getBlocksize(const CallbackInfo& info) {
@@ -219,21 +140,9 @@ namespace flac_bindings {
     return numberToJs(info.Env(), blocksize);
   }
 
-  void StreamEncoder::setBlocksize(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto blocksize = numberFromJs<unsigned>(value);
-    FLAC__stream_encoder_set_blocksize(enc, blocksize);
-  }
-
   Napi::Value StreamEncoder::getDoMidSideStereo(const CallbackInfo& info) {
     auto doMidStereo = FLAC__stream_encoder_get_do_mid_side_stereo(enc);
     return booleanToJs(info.Env(), doMidStereo);
-  }
-
-  void StreamEncoder::setDoMidSideStereo(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto doMidStereo = booleanFromJs<FLAC__bool>(value);
-    FLAC__stream_encoder_set_do_mid_side_stereo(enc, doMidStereo);
   }
 
   Napi::Value StreamEncoder::getLooseMidSideStereo(const CallbackInfo& info) {
@@ -241,21 +150,9 @@ namespace flac_bindings {
     return booleanToJs(info.Env(), looseMidStereo);
   }
 
-  void StreamEncoder::setLooseMidSideStereo(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto looseMidStereo = booleanFromJs<FLAC__bool>(value);
-    FLAC__stream_encoder_set_loose_mid_side_stereo(enc, looseMidStereo);
-  }
-
   Napi::Value StreamEncoder::getMaxLpcOrder(const CallbackInfo& info) {
     auto maxLpcOrder = FLAC__stream_encoder_get_max_lpc_order(enc);
     return numberToJs(info.Env(), maxLpcOrder);
-  }
-
-  void StreamEncoder::setMaxLpcOrder(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto maxLpcOrder = numberFromJs<unsigned>(value);
-    FLAC__stream_encoder_set_max_lpc_order(enc, maxLpcOrder);
   }
 
   Napi::Value StreamEncoder::getQlpCoeffPrecision(const CallbackInfo& info) {
@@ -263,21 +160,9 @@ namespace flac_bindings {
     return numberToJs(info.Env(), qlpCoeffPrecision);
   }
 
-  void StreamEncoder::setQlpCoeffPrecision(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto qlpCoeffPrecision = numberFromJs<unsigned>(value);
-    FLAC__stream_encoder_set_qlp_coeff_precision(enc, qlpCoeffPrecision);
-  }
-
   Napi::Value StreamEncoder::getDoQlpCoeffPrecSearch(const CallbackInfo& info) {
     auto doQlpCoeffPrecSearch = FLAC__stream_encoder_get_do_qlp_coeff_prec_search(enc);
     return booleanToJs(info.Env(), doQlpCoeffPrecSearch);
-  }
-
-  void StreamEncoder::setDoQlpCoeffPrecSearch(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto doQlpCoeffPrecSearch = booleanFromJs<FLAC__bool>(value);
-    FLAC__stream_encoder_set_do_qlp_coeff_prec_search(enc, doQlpCoeffPrecSearch);
   }
 
   Napi::Value StreamEncoder::getDoEscapeCoding(const CallbackInfo& info) {
@@ -285,22 +170,9 @@ namespace flac_bindings {
     return booleanToJs(info.Env(), doEscapeCoding);
   }
 
-  void StreamEncoder::setDoEscapeCoding(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto doEscapeCoding = booleanFromJs<FLAC__bool>(value);
-    FLAC__stream_encoder_set_do_escape_coding(enc, doEscapeCoding);
-  }
-
   Napi::Value StreamEncoder::getDoExhaustiveModelSearch(const CallbackInfo& info) {
     auto doExhaustiveModelSearch = FLAC__stream_encoder_get_do_exhaustive_model_search(enc);
     return booleanToJs(info.Env(), doExhaustiveModelSearch);
-  }
-
-  void
-    StreamEncoder::setDoExhaustiveModelSearch(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto doExhaustiveModelSearch = booleanFromJs<FLAC__bool>(value);
-    FLAC__stream_encoder_set_do_exhaustive_model_search(enc, doExhaustiveModelSearch);
   }
 
   Napi::Value StreamEncoder::getMinResidualPartitionOrder(const CallbackInfo& info) {
@@ -308,25 +180,9 @@ namespace flac_bindings {
     return numberToJs(info.Env(), minResidualPartitionOrder);
   }
 
-  void StreamEncoder::setMinResidualPartitionOrder(
-    const CallbackInfo& info,
-    const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto minResidualPartitionOrder = numberFromJs<unsigned>(value);
-    FLAC__stream_encoder_set_min_residual_partition_order(enc, minResidualPartitionOrder);
-  }
-
   Napi::Value StreamEncoder::getMaxResidualPartitionOrder(const CallbackInfo& info) {
     auto maxResidualPartitionOrder = FLAC__stream_encoder_get_max_residual_partition_order(enc);
     return numberToJs(info.Env(), maxResidualPartitionOrder);
-  }
-
-  void StreamEncoder::setMaxResidualPartitionOrder(
-    const CallbackInfo& info,
-    const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto maxResidualPartitionOrder = numberFromJs<unsigned>(value);
-    FLAC__stream_encoder_set_max_residual_partition_order(enc, maxResidualPartitionOrder);
   }
 
   Napi::Value StreamEncoder::getRiceParameterSearchDist(const CallbackInfo& info) {
@@ -334,43 +190,12 @@ namespace flac_bindings {
     return numberToJs(info.Env(), riceParameterSearchDist);
   }
 
-  void
-    StreamEncoder::setRiceParameterSearchDist(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto riceParameterSearchDist = numberFromJs<unsigned>(value);
-    FLAC__stream_encoder_set_rice_parameter_search_dist(enc, riceParameterSearchDist);
-  }
-
   Napi::Value StreamEncoder::getTotalSamplesEstimate(const CallbackInfo& info) {
     auto totalSamplesEstimate = FLAC__stream_encoder_get_total_samples_estimate(enc);
     return numberToJs(info.Env(), totalSamplesEstimate);
   }
 
-  void StreamEncoder::setTotalSamplesEstimate(const CallbackInfo& info, const Napi::Value& value) {
-    checkIsNotInitialized(info.Env());
-    auto totalSamplesEstimate = numberFromJs<uint64_t>(value);
-    FLAC__stream_encoder_set_total_samples_estimate(enc, totalSamplesEstimate);
-  }
-
-  void StreamEncoder::setMetadata(const CallbackInfo& info) {
-    checkIsNotInitialized(info.Env());
-    std::vector<FLAC__StreamMetadata*> metadatas =
-      arrayFromJs<FLAC__StreamMetadata*>(info[0], Metadata::fromJs);
-
-    auto ret = FLAC__stream_encoder_set_metadata(enc, metadatas.data(), metadatas.size());
-    if (!ret) {
-      throw Error::New(info.Env(), "Could not set the metadata");
-    }
-
-    // Save all objects inside this to hold the references until the object is destroyed
-    metadataArrayRef = Persistent(info[0].As<Object>());
-  }
-
-  void StreamEncoder::setApodization(const CallbackInfo& info) {
-    checkIsNotInitialized(info.Env());
-    auto apodization = stringFromJs(info[0]);
-    FLAC__stream_encoder_set_apodization(enc, apodization.c_str());
-  }
+  // -- state getters --
 
   Napi::Value StreamEncoder::getState(const CallbackInfo& info) {
     auto state = FLAC__stream_encoder_get_state(enc);
@@ -427,95 +252,10 @@ namespace flac_bindings {
     return info.Env().Null();
   }
 
-  void StreamEncoder::initStream(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
-    checkIsNotInitialized(info.Env());
-
-    ctx = std::make_shared<EncoderWorkContext>(this);
-    maybeFunctionIntoRef(ctx->writeCbk, info[0]);
-    maybeFunctionIntoRef(ctx->seekCbk, info[1]);
-    maybeFunctionIntoRef(ctx->tellCbk, info[2]);
-    maybeFunctionIntoRef(ctx->metadataCbk, info[3]);
-
-    auto ret = FLAC__stream_encoder_init_stream(
-      enc,
-      ctx->writeCbk.IsEmpty() ? nullptr : StreamEncoder::writeCallback,
-      ctx->seekCbk.IsEmpty() ? nullptr : StreamEncoder::seekCallback,
-      ctx->tellCbk.IsEmpty() ? nullptr : StreamEncoder::tellCallback,
-      ctx->metadataCbk.IsEmpty() ? nullptr : StreamEncoder::metadataCallback,
-      ctx.get());
-
-    if (!info.Env().IsExceptionPending()) {
-      checkInitStatus(info.Env(), ret);
-    }
-  }
-
-  void StreamEncoder::initOggStream(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
-    checkIsNotInitialized(info.Env());
-
-    ctx = std::make_shared<EncoderWorkContext>(this);
-    maybeFunctionIntoRef(ctx->readCbk, info[0]);
-    maybeFunctionIntoRef(ctx->writeCbk, info[1]);
-    maybeFunctionIntoRef(ctx->seekCbk, info[2]);
-    maybeFunctionIntoRef(ctx->tellCbk, info[3]);
-    maybeFunctionIntoRef(ctx->metadataCbk, info[4]);
-
-    auto ret = FLAC__stream_encoder_init_ogg_stream(
-      enc,
-      ctx->readCbk.IsEmpty() ? nullptr : StreamEncoder::readCallback,
-      ctx->writeCbk.IsEmpty() ? nullptr : StreamEncoder::writeCallback,
-      ctx->seekCbk.IsEmpty() ? nullptr : StreamEncoder::seekCallback,
-      ctx->tellCbk.IsEmpty() ? nullptr : StreamEncoder::tellCallback,
-      ctx->metadataCbk.IsEmpty() ? nullptr : StreamEncoder::metadataCallback,
-      ctx.get());
-
-    if (!info.Env().IsExceptionPending()) {
-      checkInitStatus(info.Env(), ret);
-    }
-  }
-
-  void StreamEncoder::initFile(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
-    checkIsNotInitialized(info.Env());
-
-    auto path = stringFromJs(info[0]);
-    ctx = std::make_shared<EncoderWorkContext>(this);
-    maybeFunctionIntoRef(ctx->progressCbk, info[1]);
-
-    auto ret = FLAC__stream_encoder_init_file(
-      enc,
-      path.c_str(),
-      ctx->progressCbk.IsEmpty() ? nullptr : StreamEncoder::progressCallback,
-      ctx.get());
-
-    if (!info.Env().IsExceptionPending()) {
-      checkInitStatus(info.Env(), ret);
-    }
-  }
-
-  void StreamEncoder::initOggFile(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
-    checkIsNotInitialized(info.Env());
-
-    auto path = stringFromJs(info[0]);
-    ctx = std::make_shared<EncoderWorkContext>(this);
-    maybeFunctionIntoRef(ctx->progressCbk, info[1]);
-
-    auto ret = FLAC__stream_encoder_init_ogg_file(
-      enc,
-      path.c_str(),
-      ctx->progressCbk.IsEmpty() ? nullptr : StreamEncoder::progressCallback,
-      ctx.get());
-
-    if (!info.Env().IsExceptionPending()) {
-      checkInitStatus(info.Env(), ret);
-    }
-  }
+  // -- operations --
 
   Napi::Value StreamEncoder::finish(const CallbackInfo& info) {
     checkPendingAsyncWork(info.Env());
-    checkIsInitialized(info.Env());
 
     auto ret = FLAC__stream_encoder_finish(enc);
     ctx = nullptr;
@@ -524,7 +264,6 @@ namespace flac_bindings {
 
   Napi::Value StreamEncoder::process(const CallbackInfo& info) {
     checkPendingAsyncWork(info.Env());
-    checkIsInitialized(info.Env());
 
     auto samples = numberFromJs<unsigned>(info[1]);
     auto channels = FLAC__stream_encoder_get_channels(enc);
@@ -536,7 +275,6 @@ namespace flac_bindings {
 
   Napi::Value StreamEncoder::processInterleaved(const CallbackInfo& info) {
     checkPendingAsyncWork(info.Env());
-    checkIsInitialized(info.Env());
 
     auto channels = FLAC__stream_encoder_get_channels(enc);
     unsigned samples;
@@ -548,7 +286,6 @@ namespace flac_bindings {
 
   Napi::Value StreamEncoder::finishAsync(const CallbackInfo& info) {
     checkPendingAsyncWork(info.Env());
-    checkIsInitialized(info.Env());
 
     AsyncEncoderWork* work = AsyncEncoderWork::forFinish({info.This()}, ctx.get());
     return enqueueWork(work);
@@ -556,7 +293,6 @@ namespace flac_bindings {
 
   Napi::Value StreamEncoder::processAsync(const CallbackInfo& info) {
     checkPendingAsyncWork(info.Env());
-    checkIsInitialized(info.Env());
 
     auto samples = numberFromJs<unsigned>(info[1]);
     auto channels = FLAC__stream_encoder_get_channels(enc);
@@ -569,7 +305,6 @@ namespace flac_bindings {
 
   Napi::Value StreamEncoder::processInterleavedAsync(const CallbackInfo& info) {
     checkPendingAsyncWork(info.Env());
-    checkIsInitialized(info.Env());
 
     auto channels = FLAC__stream_encoder_get_channels(enc);
     unsigned samples;
@@ -580,90 +315,7 @@ namespace flac_bindings {
     return enqueueWork(work);
   }
 
-  Napi::Value StreamEncoder::initStreamAsync(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
-    checkIsNotInitialized(info.Env());
-
-    ctx = std::make_shared<EncoderWorkContext>(this);
-    maybeFunctionIntoRef(ctx->writeCbk, info[0]);
-    maybeFunctionIntoRef(ctx->seekCbk, info[1]);
-    maybeFunctionIntoRef(ctx->tellCbk, info[2]);
-    maybeFunctionIntoRef(ctx->metadataCbk, info[3]);
-
-    AsyncEncoderWork* work = AsyncEncoderWork::forInitStream({info.This()}, ctx.get());
-    return enqueueWork(work);
-  }
-
-  Napi::Value StreamEncoder::initOggStreamAsync(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
-    checkIsNotInitialized(info.Env());
-
-    ctx = std::make_shared<EncoderWorkContext>(this);
-    maybeFunctionIntoRef(ctx->readCbk, info[0]);
-    maybeFunctionIntoRef(ctx->writeCbk, info[1]);
-    maybeFunctionIntoRef(ctx->seekCbk, info[2]);
-    maybeFunctionIntoRef(ctx->tellCbk, info[3]);
-    maybeFunctionIntoRef(ctx->metadataCbk, info[4]);
-
-    AsyncEncoderWork* work = AsyncEncoderWork::forInitOggStream({info.This()}, ctx.get());
-    return enqueueWork(work);
-  }
-
-  Napi::Value StreamEncoder::initFileAsync(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
-    checkIsNotInitialized(info.Env());
-
-    ctx = std::make_shared<EncoderWorkContext>(this);
-    maybeFunctionIntoRef(ctx->progressCbk, info[1]);
-
-    auto path = stringFromJs(info[0]);
-    AsyncEncoderWork* work = AsyncEncoderWork::forInitFile({info.This()}, path, ctx.get());
-    return enqueueWork(work);
-  }
-
-  Napi::Value StreamEncoder::initOggFileAsync(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
-    checkIsNotInitialized(info.Env());
-
-    ctx = std::make_shared<EncoderWorkContext>(this);
-    maybeFunctionIntoRef(ctx->progressCbk, info[1]);
-
-    auto path = stringFromJs(info[0]);
-    AsyncEncoderWork* work = AsyncEncoderWork::forInitOggFile({info.This()}, path, ctx.get());
-    return enqueueWork(work);
-  }
-
-  void StreamEncoder::checkIsInitialized(const Napi::Env& env) {
-    if (FLAC__stream_encoder_get_state(enc) == FLAC__STREAM_ENCODER_UNINITIALIZED) {
-      throw Error::New(env, "Encoder has not been initialized yet");
-    }
-  }
-
-  void StreamEncoder::checkIsNotInitialized(const Napi::Env& env) {
-    if (FLAC__stream_encoder_get_state(enc) != FLAC__STREAM_ENCODER_UNINITIALIZED) {
-      throw Error::New(env, "Encoder has been initialized already");
-    }
-  }
-
-  void StreamEncoder::checkInitStatus(Napi::Env env, FLAC__StreamEncoderInitStatus status) {
-    if (status != FLAC__STREAM_ENCODER_INIT_STATUS_OK) {
-      const char* statusString;
-      // remove prefix FLAC__STREAM_ENCODER_INIT_STATUS_
-      statusString = FLAC__StreamEncoderInitStatusString[status] + 33;
-
-      auto error = Error::New(env, "Encoder initialization failed: "s + statusString);
-      error.Set("status", numberToJs(env, status));
-      error.Set("statusString", String::New(env, statusString));
-      throw error;
-    }
-  }
-
-  Promise StreamEncoder::enqueueWork(AsyncEncoderWorkBase* work) {
-    std::lock_guard<std::mutex> lockGuard(this->mutex);
-    work->Queue();
-    busy = true;
-    return work->getPromise();
-  }
+  // -- enums --
 
   c_enum::DefineReturnType StreamEncoder::createStateEnum(const Napi::Env& env) {
     Object obj1 = Object::New(env);
@@ -804,36 +456,16 @@ namespace flac_bindings {
     return std::make_tuple(obj1, obj2);
   }
 
-  template<typename EnumType>
-  EnumType StreamEncoder::doAsyncWork(
-    EncoderWorkContext* ctx,
-    EncoderWorkRequest* req,
-    EnumType defaultReturnValue) {
-    req->returnValue = (int) defaultReturnValue;
+  // -- C callbacks --
 
-    std::shared_ptr<EncoderWorkRequest> sharedReq(req);
-    ctx->enc->asyncExecutionProgress->sendProgressAndWait(sharedReq);
-
-    return (EnumType) req->returnValue;
-  }
-
-  constexpr FLAC__StreamEncoderReadStatus defaultReadCallbackReturnValue =
-    FLAC__STREAM_ENCODER_READ_STATUS_ABORT;
   FLAC__StreamEncoderReadStatus StreamEncoder::readCallback(
     const FLAC__StreamEncoder*,
     FLAC__byte buffer[],
     size_t* bytes,
     void* ptr) {
     auto ctx = (EncoderWorkContext*) ptr;
-    if (ctx->enc->asyncExecutionProgress) {
-      auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Read);
-      req->buffer = buffer;
-      req->bytes = bytes;
-      return doAsyncWork(ctx, req, defaultReadCallbackReturnValue);
-    }
-
-    auto env = ctx->enc->Env();
-    auto returnValue = defaultReadCallbackReturnValue;
+    auto env = ctx->readCbk.Env();
+    auto returnValue = FLAC__STREAM_ENCODER_READ_STATUS_ABORT;
     HandleScope scope(env);
     Buffer<FLAC__byte> jsBuffer;
     try {
@@ -850,8 +482,6 @@ namespace flac_bindings {
     return returnValue;
   }
 
-  constexpr FLAC__StreamEncoderWriteStatus defaultWriteCallbackReturnValue =
-    FLAC__STREAM_ENCODER_WRITE_STATUS_FATAL_ERROR;
   FLAC__StreamEncoderWriteStatus StreamEncoder::writeCallback(
     const FLAC__StreamEncoder*,
     const FLAC__byte buffer[],
@@ -860,17 +490,8 @@ namespace flac_bindings {
     unsigned frame,
     void* ptr) {
     auto ctx = (EncoderWorkContext*) ptr;
-    if (ctx->enc->asyncExecutionProgress) {
-      auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Write);
-      req->constBuffer = buffer;
-      req->bytes = &bytes;
-      req->samples = samples;
-      req->frame = frame;
-      return doAsyncWork(ctx, req, defaultWriteCallbackReturnValue);
-    }
-
-    auto env = ctx->enc->Env();
-    auto returnValue = defaultWriteCallbackReturnValue;
+    auto env = ctx->writeCbk.Env();
+    auto returnValue = FLAC__STREAM_ENCODER_WRITE_STATUS_FATAL_ERROR;
     HandleScope scope(env);
     Buffer<FLAC__byte> jsBuffer;
     try {
@@ -888,19 +509,11 @@ namespace flac_bindings {
     return returnValue;
   }
 
-  constexpr FLAC__StreamEncoderSeekStatus defaultSeekCallbackReturnValue =
-    FLAC__STREAM_ENCODER_SEEK_STATUS_ERROR;
   FLAC__StreamEncoderSeekStatus
     StreamEncoder::seekCallback(const FLAC__StreamEncoder*, uint64_t offset, void* ptr) {
     auto ctx = (EncoderWorkContext*) ptr;
-    if (ctx->enc->asyncExecutionProgress) {
-      auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Seek);
-      req->offset = &offset;
-      return doAsyncWork(ctx, req, defaultSeekCallbackReturnValue);
-    }
-
-    auto env = ctx->enc->Env();
-    auto returnValue = defaultSeekCallbackReturnValue;
+    auto env = ctx->seekCbk.Env();
+    auto returnValue = FLAC__STREAM_ENCODER_SEEK_STATUS_ERROR;
     HandleScope scope(env);
     try {
       auto ret = ctx->seekCbk.MakeCallback(env.Global(), {numberToJs(env, offset)});
@@ -912,19 +525,11 @@ namespace flac_bindings {
     return returnValue;
   }
 
-  constexpr FLAC__StreamEncoderTellStatus defaultTellCallbackReturnValue =
-    FLAC__STREAM_ENCODER_TELL_STATUS_ERROR;
   FLAC__StreamEncoderTellStatus
     StreamEncoder::tellCallback(const FLAC__StreamEncoder*, uint64_t* offset, void* ptr) {
     auto ctx = (EncoderWorkContext*) ptr;
-    if (ctx->enc->asyncExecutionProgress) {
-      auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Tell);
-      req->offset = offset;
-      return doAsyncWork(ctx, req, defaultTellCallbackReturnValue);
-    }
-
-    auto env = ctx->enc->Env();
-    auto returnValue = defaultTellCallbackReturnValue;
+    auto env = ctx->tellCbk.Env();
+    auto returnValue = FLAC__STREAM_ENCODER_TELL_STATUS_ERROR;
     HandleScope scope(env);
     try {
       auto ret = ctx->tellCbk.MakeCallback(env.Global(), {numberToJs(env, *offset)});
@@ -941,14 +546,7 @@ namespace flac_bindings {
     const FLAC__StreamMetadata* metadata,
     void* ptr) {
     auto ctx = (EncoderWorkContext*) ptr;
-    if (ctx->enc->asyncExecutionProgress) {
-      auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Metadata);
-      req->metadata = metadata;
-      doAsyncWork(ctx, req, 0);
-      return;
-    }
-
-    auto env = ctx->enc->Env();
+    auto env = ctx->metadataCbk.Env();
     HandleScope scope(env);
     try {
       auto jsMetadata = Metadata::toJs(env, const_cast<FLAC__StreamMetadata*>(metadata));
@@ -966,17 +564,7 @@ namespace flac_bindings {
     unsigned totalFramesEstimate,
     void* ptr) {
     auto ctx = (EncoderWorkContext*) ptr;
-    if (ctx->enc->asyncExecutionProgress) {
-      auto req = new EncoderWorkRequest(EncoderWorkRequest::Type::Progress);
-      req->progress.bytesWritten = bytesWritten;
-      req->progress.samplesWritten = samplesWritten;
-      req->progress.framesWritten = framesWritten;
-      req->progress.totalFramesEstimate = totalFramesEstimate;
-      doAsyncWork(ctx, req, 0);
-      return;
-    }
-
-    auto env = ctx->enc->Env();
+    auto env = ctx->progressCbk.Env();
     HandleScope scope(env);
     try {
       auto args = std::vector<napi_value> {
@@ -989,6 +577,16 @@ namespace flac_bindings {
     } catch (const Error& error) {
       error.ThrowAsJavaScriptException();
     }
+  }
+
+  // -- helpers --
+
+  Promise StreamEncoder::enqueueWork(AsyncEncoderWorkBase* work) {
+    return ctx->runLocked<Promise>([this, work]() {
+      work->Queue();
+      ctx->workInProgress = true;
+      return work->getPromise();
+    });
   }
 
   static std::vector<int32_t*>

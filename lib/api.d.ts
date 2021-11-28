@@ -352,33 +352,95 @@ declare namespace Decoder {
 
 
 /**
- * FLAC Encoder class.
+ * Constructs the FLAC Encoder class.
  * @see https://xiph.org/flac/api/group__flac__stream__encoder.html
  */
-export class Encoder {
-  /** Creates a new instance of the encoder. */
-  constructor();
-  setOggSerialNumber(value: number): void;
-  setCompressionLevel(value: number): void;
-  setMetadata(metadata: metadata.AnyMetadata[]): void;
-  setApodization(apodization: string): void;
-  verify: boolean;
-  streamableSubset: boolean;
-  channels: number;
-  bitsPerSample: number;
-  sampleRate: number;
-  blocksize: number;
-  doMidSideStereo: boolean;
-  looseMidSideStereo: boolean;
-  maxLpcOrder: number;
-  qlpCoeffPrecision: number;
-  doQlpCoeffPrecSearch: boolean;
-  doEscapeCoding: boolean;
-  doExhaustiveModelSearch: boolean;
-  maxResidualPartitionOrder: number;
-  minResidualPartitionOrder: number;
-  riceParameterSearchDist: number;
-  totalSamplesEstimate: number | bigint;
+export class EncoderBuilder {
+  getState(): EnumValues<Encoder.State>;
+
+  setOggSerialNumber(value: number): EncoderBuilder;
+  setCompressionLevel(value: number): EncoderBuilder;
+  setMetadata(metadata: metadata.AnyMetadata[]): EncoderBuilder;
+  setApodization(apodization: string): EncoderBuilder;
+  setVerify(value: boolean): EncoderBuilder;
+  setStreamableSubset(value: boolean): EncoderBuilder;
+  setChannels(value: number): EncoderBuilder;
+  setBitsPerSample(value: number): EncoderBuilder;
+  setSampleRate(value: number): EncoderBuilder;
+  setBlocksize(value: number): EncoderBuilder;
+  setDoMidSideStereo(value: boolean): EncoderBuilder;
+  setLooseMidSideStereo(value: boolean): EncoderBuilder;
+  setMaxLpcOrder(value: number): EncoderBuilder;
+  setQlpCoeffPrecision(value: number): EncoderBuilder;
+  setDoQlpCoeffPrecSearch(value: boolean): EncoderBuilder;
+  setDoEscapeCoding(value: boolean): EncoderBuilder;
+  setDoExhaustiveModelSearch(value: boolean): EncoderBuilder;
+  setMaxResidualPartitionOrder(value: number): EncoderBuilder;
+  setMinResidualPartitionOrder(value: number): EncoderBuilder;
+  setRiceParameterSearchDist(value: number): EncoderBuilder;
+  setTotalSamplesEstimate(value: number | bigint): EncoderBuilder;
+
+  buildWithStream(
+    writeCbk: Encoder.WriteCallback,
+    seekCbk?: Encoder.SeekCallback | null,
+    tellCbk?: Encoder.TellCallback | null,
+    metadataCbk?: Encoder.MetadataCallback | null
+  ): Encoder;
+  buildWithOggStream(
+    readCbk: Encoder.ReadCallback | null,
+    writeCbk: Encoder.WriteCallback,
+    seekCbk?: Encoder.SeekCallback | null,
+    tellCbk?: Encoder.TellCallback | null,
+    metadataCbk?: Encoder.MetadataCallback | null
+  ): Encoder;
+  buildWithFile(file: string, progressCbk?: Encoder.ProgressCallback | null): Encoder;
+  buildWithOggFile(file: string, progressCbk?: Encoder.ProgressCallback | null): Encoder;
+
+  buildWithStreamAsync(
+    writeCbk: Encoder.WriteCallbackAsync,
+    seekCbk?: Encoder.SeekCallbackAsync,
+    tellCbk?: Encoder.TellCallbackAsync,
+    metadataCbk?: Encoder.MetadataCallbackAsync
+  ): Promise<Encoder>;
+  buildWithOggStreamAsync(
+    readCbk: Encoder.ReadCallbackAsync | null,
+    writeCbk: Encoder.WriteCallbackAsync,
+    seekCbk: Encoder.SeekCallbackAsync | null | undefined,
+    tellCbk: Encoder.TellCallbackAsync | null | undefined,
+    metadataCbk: Encoder.MetadataCallbackAsync | null | undefined
+  ): Promise<Encoder>;
+  buildWithFileAsync(
+    file: string,
+    progressCbk: Encoder.ProgressCallbackAsync | null | undefined,
+  ): Promise<Encoder>;
+  buildWithOggFileAsync(
+    file: string,
+    progressCbk: Encoder.ProgressCallbackAsync | null | undefined
+  ): Promise<Encoder>;
+}
+
+/**
+ * FLAC Encoder class. Use {@link EncoderBuilder} to construct the encoder.
+ * @see https://xiph.org/flac/api/group__flac__stream__encoder.html
+ */
+export abstract class Encoder {
+  readonly verify: boolean;
+  readonly streamableSubset: boolean;
+  readonly channels: number;
+  readonly bitsPerSample: number;
+  readonly sampleRate: number;
+  readonly blocksize: number;
+  readonly doMidSideStereo: boolean;
+  readonly looseMidSideStereo: boolean;
+  readonly maxLpcOrder: number;
+  readonly qlpCoeffPrecision: number;
+  readonly doQlpCoeffPrecSearch: boolean;
+  readonly doEscapeCoding: boolean;
+  readonly doExhaustiveModelSearch: boolean;
+  readonly maxResidualPartitionOrder: number;
+  readonly minResidualPartitionOrder: number;
+  readonly riceParameterSearchDist: number;
+  readonly totalSamplesEstimate: number | bigint;
 
   getState(): EnumValues<Encoder.State>;
   getVerifyDecoderState(): EnumValues<Decoder.State>;
@@ -392,21 +454,6 @@ export class Encoder {
     got: number;
   } | null;
 
-  initStream(
-    writeCbk: Encoder.WriteCallback,
-    seekCbk?: Encoder.SeekCallback | null,
-    tellCbk?: Encoder.TellCallback | null,
-    metadataCbk?: Encoder.MetadataCallback | null
-  ): void;
-  initOggStream(
-    readCbk: Encoder.ReadCallback | null,
-    writeCbk: Encoder.WriteCallback,
-    seekCbk?: Encoder.SeekCallback | null,
-    tellCbk?: Encoder.TellCallback | null,
-    metadataCbk?: Encoder.MetadataCallback | null
-  ): void;
-  initFile(file: string, progressCbk?: Encoder.ProgressCallback | null): void;
-  initOggFile(file: string, progressCbk?: Encoder.ProgressCallback | null): void;
   finish(): boolean;
   process(buffers: Buffer[], samples: Number): boolean;
   processInterleaved(buffer: Buffer, samples?: Number | null): boolean;
@@ -414,27 +461,6 @@ export class Encoder {
   finishAsync(): Promise<boolean>;
   processAsync(buffers: Buffer[], samples: Number): Promise<boolean>;
   processInterleavedAsync(buffer: Buffer, samples?: Number | null): Promise<boolean>;
-  initStreamAsync(
-    writeCbk: Encoder.WriteCallbackAsync,
-    seekCbk?: Encoder.SeekCallbackAsync,
-    tellCbk?: Encoder.TellCallbackAsync,
-    metadataCbk?: Encoder.MetadataCallbackAsync
-  ): Promise<void>;
-  initOggStreamAsync(
-    readCbk: Encoder.ReadCallbackAsync | null,
-    writeCbk: Encoder.WriteCallbackAsync,
-    seekCbk: Encoder.SeekCallbackAsync | null | undefined,
-    tellCbk: Encoder.TellCallbackAsync | null | undefined,
-    metadataCbk: Encoder.MetadataCallbackAsync | null | undefined
-  ): Promise<void>;
-  initFileAsync(
-    file: string,
-    progressCbk: Encoder.ProgressCallbackAsync | null | undefined,
-  ): Promise<void>;
-  initOggFileAsync(
-    file: string,
-    progressCbk: Encoder.ProgressCallbackAsync | null | undefined
-  ): Promise<void>;
 
   static readonly State: Encoder.State;
   static readonly StateString: ReverseEnum<Encoder.State>;

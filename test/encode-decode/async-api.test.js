@@ -265,19 +265,20 @@ describe('encode & decode: async api', () => {
   })
 
   it('encode using stream (non-ogg)', async () => {
-    const enc = new api.Encoder()
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w')
     deferredScope.defer(() => callbacks.close())
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    await enc.initStreamAsync(
-      callbacks.write,
-      callbacks.seek,
-      callbacks.tell,
-      null,
-    )
+
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithStreamAsync(
+        callbacks.write,
+        callbacks.seek,
+        callbacks.tell,
+        null,
+      )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
     expect(await enc.finishAsync()).toBe(true)
@@ -286,20 +287,21 @@ describe('encode & decode: async api', () => {
   })
 
   it('encode using stream (ogg)', async () => {
-    const enc = new api.Encoder()
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w+')
     deferredScope.defer(() => callbacks.close())
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    await enc.initOggStreamAsync(
-      callbacks.read,
-      callbacks.write,
-      callbacks.seek,
-      callbacks.tell,
-      null,
-    )
+
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithOggStreamAsync(
+        callbacks.read,
+        callbacks.write,
+        callbacks.seek,
+        callbacks.tell,
+        null,
+      )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
     expect(await enc.finishAsync()).toBe(true)
@@ -308,19 +310,20 @@ describe('encode & decode: async api', () => {
   })
 
   it('encode with async callbacks using stream (non-ogg)', async () => {
-    const enc = new api.Encoder()
     const callbacks = await generateFlacCallbacks.async(api.Encoder, tmpFile.path, 'w')
     deferredScope.defer(() => callbacks.close())
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    await enc.initStreamAsync(
-      callbacks.write,
-      callbacks.seek,
-      callbacks.tell,
-      null,
-    )
+
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithStreamAsync(
+        callbacks.write,
+        callbacks.seek,
+        callbacks.tell,
+        null,
+      )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
     expect(await enc.finishAsync()).toBe(true)
@@ -329,20 +332,21 @@ describe('encode & decode: async api', () => {
   })
 
   it('encode with async callbacks using stream (ogg)', async () => {
-    const enc = new api.Encoder()
     const callbacks = await generateFlacCallbacks.async(api.Encoder, tmpFile.path, 'w+')
     deferredScope.defer(() => callbacks.close())
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    await enc.initOggStreamAsync(
-      callbacks.read,
-      callbacks.write,
-      callbacks.seek,
-      callbacks.tell,
-      null,
-    )
+
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithOggStreamAsync(
+        callbacks.read,
+        callbacks.write,
+        callbacks.seek,
+        callbacks.tell,
+        null,
+      )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
     expect(await enc.finishAsync()).toBe(true)
@@ -352,15 +356,15 @@ describe('encode & decode: async api', () => {
 
   it('encode using file (non-ogg)', async () => {
     const progressCallbackValues = []
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    await enc.initFileAsync(
-      tmpFile.path,
-      (...args) => progressCallbackValues.push(args),
-    )
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFileAsync(
+        tmpFile.path,
+        (...args) => progressCallbackValues.push(args),
+      )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
     expect(await enc.finishAsync()).toBe(true)
@@ -371,15 +375,15 @@ describe('encode & decode: async api', () => {
 
   it('encode using file (ogg)', async () => {
     const progressCallbackValues = []
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    await enc.initOggFileAsync(
-      tmpFile.path,
-      (...args) => progressCallbackValues.push(args),
-    )
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithOggFileAsync(
+        tmpFile.path,
+        (...args) => progressCallbackValues.push(args),
+      )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
     expect(await enc.finishAsync()).toBe(true)
@@ -390,15 +394,15 @@ describe('encode & decode: async api', () => {
 
   it('encode using file with non-interleaved data (non-ogg)', async () => {
     const progressCallbackValues = []
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    await enc.initFileAsync(
-      tmpFile.path,
-      (...args) => progressCallbackValues.push(args),
-    )
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFileAsync(
+        tmpFile.path,
+        (...args) => progressCallbackValues.push(args),
+      )
 
     expect(await enc.processAsync(encDataAlt, totalSamples)).toBe(true)
     expect(await enc.finishAsync()).toBe(true)
@@ -411,20 +415,19 @@ describe('encode & decode: async api', () => {
     let metadataBlock = null
     const callbacks = generateFlacCallbacks.sync(api.Encoder, tmpFile.path, 'w')
     deferredScope.defer(() => callbacks.close())
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    enc.setMetadata([new api.metadata.VorbisCommentMetadata()])
-    await enc.initStreamAsync(
-      callbacks.write,
-      null,
-      null,
-      (metadata) => {
-        metadataBlock = metadata
-      },
-    )
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithStreamAsync(
+        callbacks.write,
+        callbacks.seek,
+        callbacks.tell,
+        (metadata) => {
+          metadataBlock = metadata
+        },
+      )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
     expect(await enc.finishAsync()).toBe(true)
@@ -435,15 +438,15 @@ describe('encode & decode: async api', () => {
   })
 
   it('encoder should throw if another async method is running', async () => {
-    const enc = new api.Encoder()
-    enc.bitsPerSample = 24
-    enc.channels = 2
-    enc.setCompressionLevel(9)
-    enc.sampleRate = 44100
-    await enc.initFileAsync(
-      tmpFile.path,
-      null,
-    )
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFileAsync(
+        tmpFile.path,
+        null,
+      )
 
     const promise = enc.processInterleavedAsync(encData)
 
