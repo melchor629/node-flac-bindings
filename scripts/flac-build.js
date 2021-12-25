@@ -71,8 +71,6 @@ if (envOpts.useExternalLibrary || hasGlobalInstalledFlac()) {
   debug('Trying to compile bindings using external libflac...')
   if (run('cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON').status) {
     process.exit(1)
-  } else {
-    process.exit(0)
   }
 }
 
