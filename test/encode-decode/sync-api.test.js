@@ -36,9 +36,8 @@ describe('encode & decode: sync api', () => {
   it('decode using stream (non-ogg)', () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
-    const dec = new api.Decoder()
     const allBuffers = []
-    dec.initStream(
+    const dec = new api.DecoderBuilder().buildWithStream(
       callbacks.read,
       callbacks.seek,
       callbacks.tell,
@@ -66,9 +65,8 @@ describe('encode & decode: sync api', () => {
   it('decode using stream (ogg)', () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.oga'), 'r')
     deferredScope.defer(() => callbacks.close())
-    const dec = new api.Decoder()
     const allBuffers = []
-    dec.initOggStream(
+    const dec = new api.DecoderBuilder().buildWithOggStream(
       callbacks.read,
       callbacks.seek,
       callbacks.tell,
@@ -94,9 +92,8 @@ describe('encode & decode: sync api', () => {
   })
 
   it('decode using file (non-ogg)', () => {
-    const dec = new api.Decoder()
     const allBuffers = []
-    dec.initFile(
+    const dec = new api.DecoderBuilder().buildWithFile(
       pathForFile('loop.flac'),
       (_, buffers) => {
         allBuffers.push(buffers.map((b) => Buffer.from(b)))
@@ -118,9 +115,8 @@ describe('encode & decode: sync api', () => {
   })
 
   it('decode using file (ogg)', () => {
-    const dec = new api.Decoder()
     const allBuffers = []
-    dec.initOggFile(
+    const dec = new api.DecoderBuilder().buildWithOggFile(
       pathForFile('loop.oga'),
       (_, buffers) => {
         allBuffers.push(buffers.map((b) => Buffer.from(b)))
@@ -142,8 +138,7 @@ describe('encode & decode: sync api', () => {
   })
 
   it('decoder should be able to skip a frame', () => {
-    const dec = new api.Decoder()
-    dec.initFile(
+    const dec = new api.DecoderBuilder().buildWithFile(
       pathForFile('loop.flac'),
       () => 0,
       null,
@@ -162,8 +157,7 @@ describe('encode & decode: sync api', () => {
   it('decoder should be able to seek to a sample', () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
-    const dec = new api.Decoder()
-    dec.initStream(
+    const dec = new api.DecoderBuilder().buildWithStream(
       callbacks.read,
       callbacks.seek,
       callbacks.tell,
@@ -185,9 +179,8 @@ describe('encode & decode: sync api', () => {
   })
 
   it('decoder should emit metadata', () => {
-    const dec = new api.Decoder()
     const metadataBlocks = []
-    dec.initFile(
+    const dec = new api.DecoderBuilder().buildWithFile(
       pathForFile('loop.flac'),
       () => 0,
       (metadata) => {
@@ -205,17 +198,17 @@ describe('encode & decode: sync api', () => {
   })
 
   it('decoder get other properties work', () => {
-    const dec = new api.Decoder()
-    dec.setMd5Checking(true)
-    dec.setOggSerialNumber(0x11223344)
-    dec.setMetadataIgnore(1)
-    dec.initFile(
-      pathForFile('loop.flac'),
-      () => 0,
-      () => 0,
-      // eslint-disable-next-line no-console
-      (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
-    )
+    const dec = new api.DecoderBuilder()
+      .setMd5Checking(true)
+      .setOggSerialNumber(0x11223344)
+      .setMetadataIgnore(1)
+      .buildWithFile(
+        pathForFile('loop.flac'),
+        () => 0,
+        () => 0,
+        // eslint-disable-next-line no-console
+        (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+      )
 
     expect(dec.processUntilEndOfMetadata()).toBe(true)
     expect(dec.processSingle()).toBe(true)
@@ -434,5 +427,39 @@ describe('encode & decode: sync api', () => {
     expect(enc.totalSamplesEstimate).toEqual(totalSamples)
 
     expect(enc.finish()).toBe(true)
+  })
+
+  it('encoder should throw if built with sync but called async method', async () => {
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFile(
+        tmpFile.path,
+        null,
+      )
+
+    expect(() => enc.processInterleavedAsync(encData)).toThrow(/This method cannot be called when Encoder has been created using synchronous method/)
+
+    enc.finish()
+  })
+
+  it('decoder should throw if built with sync but called async method', async () => {
+    const allBuffers = []
+    const dec = new api.DecoderBuilder().buildWithFile(
+      pathForFile('loop.flac'),
+      (_, buffers) => {
+        allBuffers.push(buffers.map((b) => Buffer.from(b)))
+        return 0
+      },
+      null,
+      // eslint-disable-next-line no-console
+      (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+    )
+
+    expect(() => dec.processUntilEndOfMetadataAsync()).toThrow(/This method cannot be called when Decoder has been created using synchronous method/)
+
+    dec.finish()
   })
 })

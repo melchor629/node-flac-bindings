@@ -267,7 +267,7 @@ namespace flac_bindings {
     EscapableHandleScope scope(info.Env());
     checkIfBuilt(info.Env());
 
-    auto ctx = std::make_shared<EncoderWorkContext>(enc);
+    auto ctx = std::make_shared<EncoderWorkContext>(enc, EncoderWorkContext::ExecutionMode::Sync);
     maybeFunctionIntoRef(ctx->writeCbk, info[0]);
     maybeFunctionIntoRef(ctx->seekCbk, info[1]);
     maybeFunctionIntoRef(ctx->tellCbk, info[2]);
@@ -289,7 +289,7 @@ namespace flac_bindings {
     EscapableHandleScope scope(info.Env());
     checkIfBuilt(info.Env());
 
-    auto ctx = std::make_shared<EncoderWorkContext>(enc);
+    auto ctx = std::make_shared<EncoderWorkContext>(enc, EncoderWorkContext::ExecutionMode::Sync);
     maybeFunctionIntoRef(ctx->readCbk, info[0]);
     maybeFunctionIntoRef(ctx->writeCbk, info[1]);
     maybeFunctionIntoRef(ctx->seekCbk, info[2]);
@@ -314,7 +314,7 @@ namespace flac_bindings {
     checkIfBuilt(info.Env());
 
     auto path = stringFromJs(info[0]);
-    auto ctx = std::make_shared<EncoderWorkContext>(enc);
+    auto ctx = std::make_shared<EncoderWorkContext>(enc, EncoderWorkContext::ExecutionMode::Sync);
     maybeFunctionIntoRef(ctx->progressCbk, info[1]);
 
     auto ret = FLAC__stream_encoder_init_file(
@@ -332,7 +332,7 @@ namespace flac_bindings {
     checkIfBuilt(info.Env());
 
     auto path = stringFromJs(info[0]);
-    auto ctx = std::make_shared<EncoderWorkContext>(enc);
+    auto ctx = std::make_shared<EncoderWorkContext>(enc, EncoderWorkContext::ExecutionMode::Sync);
     maybeFunctionIntoRef(ctx->progressCbk, info[1]);
 
     auto ret = FLAC__stream_encoder_init_ogg_file(
@@ -351,7 +351,7 @@ namespace flac_bindings {
     EscapableHandleScope scope(info.Env());
     checkIfBuilt(info.Env());
 
-    auto ctx = std::make_shared<EncoderWorkContext>(enc);
+    auto ctx = std::make_shared<EncoderWorkContext>(enc, EncoderWorkContext::ExecutionMode::Async);
     maybeFunctionIntoRef(ctx->writeCbk, info[0]);
     maybeFunctionIntoRef(ctx->seekCbk, info[1]);
     maybeFunctionIntoRef(ctx->tellCbk, info[2]);
@@ -369,7 +369,7 @@ namespace flac_bindings {
     EscapableHandleScope scope(info.Env());
     checkIfBuilt(info.Env());
 
-    auto ctx = std::make_shared<EncoderWorkContext>(enc);
+    auto ctx = std::make_shared<EncoderWorkContext>(enc, EncoderWorkContext::ExecutionMode::Async);
     maybeFunctionIntoRef(ctx->readCbk, info[0]);
     maybeFunctionIntoRef(ctx->writeCbk, info[1]);
     maybeFunctionIntoRef(ctx->seekCbk, info[2]);
@@ -387,7 +387,7 @@ namespace flac_bindings {
     EscapableHandleScope scope(info.Env());
     checkIfBuilt(info.Env());
 
-    auto ctx = std::make_shared<EncoderWorkContext>(enc);
+    auto ctx = std::make_shared<EncoderWorkContext>(enc, EncoderWorkContext::ExecutionMode::Async);
     maybeFunctionIntoRef(ctx->progressCbk, info[1]);
 
     auto path = stringFromJs(info[0]);
@@ -402,7 +402,7 @@ namespace flac_bindings {
     EscapableHandleScope scope(info.Env());
     checkIfBuilt(info.Env());
 
-    auto ctx = std::make_shared<EncoderWorkContext>(enc);
+    auto ctx = std::make_shared<EncoderWorkContext>(enc, EncoderWorkContext::ExecutionMode::Async);
     maybeFunctionIntoRef(ctx->progressCbk, info[1]);
 
     auto path = stringFromJs(info[0]);

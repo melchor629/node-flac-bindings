@@ -27,6 +27,7 @@ namespace flac_bindings {
         InstanceValue("napiVersion", Number::New(env, NAPI_VERSION), napi_enumerable),
         InstanceValue("EncoderBuilder", StreamEncoderBuilder::init(env, *this), napi_enumerable),
         InstanceValue("Encoder", StreamEncoder::init(env, *this), napi_enumerable),
+        InstanceValue("DecoderBuilder", StreamDecoderBuilder::init(env, *this), napi_enumerable),
         InstanceValue("Decoder", StreamDecoder::init(env, *this), napi_enumerable),
         InstanceValue("format", initFormat(env), napi_enumerable),
         InstanceValue(

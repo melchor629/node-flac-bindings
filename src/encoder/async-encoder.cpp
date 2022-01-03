@@ -37,7 +37,7 @@ namespace flac_bindings {
         std::bind(&AsyncEncoderWork::onProgress, this, ctx, _1, _2, _3),
         name,
         convertFunction) {
-    this->Receiver().Set("this", list.begin()->Env());
+    this->Receiver().Set("this", *list.begin());
     for (auto it = list.begin() + 1; it != list.end(); it += 1) {
       this->Receiver().Set(it - list.begin() - 1, *it);
     }

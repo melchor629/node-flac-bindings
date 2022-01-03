@@ -36,9 +36,8 @@ describe('encode & decode: async api', () => {
   it('decode using stream (non-ogg)', async () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
-    const dec = new api.Decoder()
     const allBuffers = []
-    await dec.initStreamAsync(
+    const dec = await new api.DecoderBuilder().buildWithStreamAsync(
       callbacks.read,
       callbacks.seek,
       callbacks.tell,
@@ -66,9 +65,8 @@ describe('encode & decode: async api', () => {
   it('decode using stream (ogg)', async () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.oga'), 'r')
     deferredScope.defer(() => callbacks.close())
-    const dec = new api.Decoder()
     const allBuffers = []
-    await dec.initOggStreamAsync(
+    const dec = await new api.DecoderBuilder().buildWithOggStreamAsync(
       callbacks.read,
       callbacks.seek,
       callbacks.tell,
@@ -96,9 +94,8 @@ describe('encode & decode: async api', () => {
   it('decode with async callbacks using stream (non-ogg)', async () => {
     const callbacks = await generateFlacCallbacks.async(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
-    const dec = new api.Decoder()
     const allBuffers = []
-    await dec.initStreamAsync(
+    const dec = await new api.DecoderBuilder().buildWithStreamAsync(
       callbacks.read,
       callbacks.seek,
       callbacks.tell,
@@ -126,9 +123,8 @@ describe('encode & decode: async api', () => {
   it('decode with async callbacks using stream (ogg)', async () => {
     const callbacks = await generateFlacCallbacks.async(api.Decoder, pathForFile('loop.oga'), 'r')
     deferredScope.defer(() => callbacks.close())
-    const dec = new api.Decoder()
     const allBuffers = []
-    await dec.initOggStreamAsync(
+    const dec = await new api.DecoderBuilder().buildWithOggStreamAsync(
       callbacks.read,
       callbacks.seek,
       callbacks.tell,
@@ -154,9 +150,8 @@ describe('encode & decode: async api', () => {
   })
 
   it('decode using file (non-ogg)', async () => {
-    const dec = new api.Decoder()
     const allBuffers = []
-    await dec.initFileAsync(
+    const dec = await new api.DecoderBuilder().buildWithFileAsync(
       pathForFile('loop.flac'),
       (_, buffers) => {
         allBuffers.push(buffers.map((b) => Buffer.from(b)))
@@ -178,9 +173,8 @@ describe('encode & decode: async api', () => {
   })
 
   it('decode using file (ogg)', async () => {
-    const dec = new api.Decoder()
     const allBuffers = []
-    await dec.initOggFileAsync(
+    const dec = await new api.DecoderBuilder().buildWithOggFileAsync(
       pathForFile('loop.oga'),
       (_, buffers) => {
         allBuffers.push(buffers.map((b) => Buffer.from(b)))
@@ -202,8 +196,7 @@ describe('encode & decode: async api', () => {
   })
 
   it('decoder should be able to skip a frame', async () => {
-    const dec = new api.Decoder()
-    await dec.initFileAsync(
+    const dec = await new api.DecoderBuilder().buildWithFileAsync(
       pathForFile('loop.flac'),
       () => 0,
       null,
@@ -222,8 +215,7 @@ describe('encode & decode: async api', () => {
   it('decoder should be able to seek to a sample', async () => {
     const callbacks = await generateFlacCallbacks.async(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
-    const dec = new api.Decoder()
-    await dec.initStreamAsync(
+    const dec = await new api.DecoderBuilder().buildWithStreamAsync(
       callbacks.read,
       callbacks.seek,
       callbacks.tell,
@@ -238,16 +230,15 @@ describe('encode & decode: async api', () => {
     expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
     expect(await dec.processSingleAsync()).toBe(true)
     expect(await dec.seekAbsoluteAsync(totalSamples / 5)).toBe(true)
-    expect(dec.getDecodePosition()).toBe(157036)
+    expect(await dec.getDecodePositionAsync()).toBe(157036)
     expect(await dec.processSingleAsync()).toBe(true)
     expect(await dec.flushAsync()).toBe(true)
     expect(await dec.finishAsync()).toBe(true)
   })
 
   it('decoder should emit metadata', async () => {
-    const dec = new api.Decoder()
     const metadataBlocks = []
-    await dec.initFileAsync(
+    const dec = await new api.DecoderBuilder().buildWithFileAsync(
       pathForFile('loop.flac'),
       () => 0,
       (metadata) => {
@@ -456,10 +447,25 @@ describe('encode & decode: async api', () => {
     await enc.finishAsync()
   })
 
+  it('encoder should throw if built with async but called sync method', async () => {
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFileAsync(
+        tmpFile.path,
+        null,
+      )
+
+    expect(() => enc.processInterleaved(encData)).toThrow(/This method cannot be called when Encoder has been created using asynchronous method/)
+
+    await enc.finishAsync()
+  })
+
   it('decoder should throw if another async method is running', async () => {
-    const dec = new api.Decoder()
     const allBuffers = []
-    await dec.initFileAsync(
+    const dec = await new api.DecoderBuilder().buildWithFileAsync(
       pathForFile('loop.flac'),
       (_, buffers) => {
         allBuffers.push(buffers.map((b) => Buffer.from(b)))
@@ -479,6 +485,24 @@ describe('encode & decode: async api', () => {
     await promise
     const f = await dec.processUntilEndOfStreamAsync()
     expect(f).toBe(true)
+    await dec.finishAsync()
+  })
+
+  it('decoder should throw if built with async but called sync method', async () => {
+    const allBuffers = []
+    const dec = await new api.DecoderBuilder().buildWithFileAsync(
+      pathForFile('loop.flac'),
+      (_, buffers) => {
+        allBuffers.push(buffers.map((b) => Buffer.from(b)))
+        return 0
+      },
+      null,
+      // eslint-disable-next-line no-console
+      (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+    )
+
+    expect(() => dec.processUntilEndOfMetadata()).toThrow(/This method cannot be called when Decoder has been created using asynchronous method/)
+
     await dec.finishAsync()
   })
 })

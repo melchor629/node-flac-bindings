@@ -5,19 +5,175 @@ export type ReverseEnum<T extends { [k in keyof T]: number }> = { [k in EnumValu
 export type PerhapsAsync<T> = Promise<T> | T;
 
 /**
+ * Constructs the FLAC Decoder class.
  * @see https://xiph.org/flac/api/group__flac__stream__decoder.html
  */
-export class Decoder {
-  /** Creates a new instance of the decoder. */
-  constructor();
-  setOggSerialNumber(value: number): void;
-  setMd5Checking(value: boolean): void;
-  setMetadataRespond(type: metadata.MetadataTypes): void;
-  setMetadataRespondApplication(applicationId: Buffer): void;
-  setMetadataRespondAll(): void;
-  setMetadataIgnore(type: metadata.MetadataTypes): void;
-  setMetadataIgnoreApplication(applicationId: Buffer): void;
-  setMetadataIgnoreAll(): void;
+export class DecoderBuilder {
+  /**
+   * Gets the state of the decoder.
+   */
+  getState(): EnumValues<Decoder.State>;
+
+  setOggSerialNumber(value: number): DecoderBuilder;
+  setMd5Checking(value: boolean): DecoderBuilder;
+  setMetadataRespond(type: metadata.MetadataTypes): DecoderBuilder;
+  setMetadataRespondApplication(applicationId: Buffer): DecoderBuilder;
+  setMetadataRespondAll(): DecoderBuilder;
+  setMetadataIgnore(type: metadata.MetadataTypes): DecoderBuilder;
+  setMetadataIgnoreApplication(applicationId: Buffer): DecoderBuilder;
+  setMetadataIgnoreAll(): DecoderBuilder;
+
+  /**
+   * Builds a {@link Decoder} using a stream input. The decoder can only use **synchronous**
+   * methods.
+   * @param readCallback Read callback (mandatory)
+   * @param seekCallback Seek callback
+   * @param tellCallback Tell callback
+   * @param lengthCallback Length callback
+   * @param eofCallback End Of File callback
+   * @param writeCallback Write callback (mandatory)
+   * @param metadataCallback Metadata callback
+   * @param errorCallback Decoder error callback
+   */
+  buildWithStream(
+    readCallback: Decoder.ReadCallback,
+    seekCallback: Decoder.SeekCallback | null,
+    tellCallback: Decoder.TellCallback | null,
+    lengthCallback: Decoder.LengthCallback | null,
+    eofCallback: Decoder.EOFCallback | null,
+    writeCallback: Decoder.WriteCallback,
+    metadataCallback: Decoder.MetadataCallback | null,
+    errorCallback: Decoder.ErrorCallback
+  ): Decoder;
+  /**
+   * Builds a {@link Decoder} using an Ogg stream input. The decoder can only use **synchronous**
+   * methods.
+   * @param readCallback Read callback (mandatory)
+   * @param seekCallback Seek callback
+   * @param tellCallback Tell callback
+   * @param lengthCallback Length callback
+   * @param eofCallback End Of File callback
+   * @param writeCallback Write callback (mandatory)
+   * @param metadataCallback Metadata callback
+   * @param errorCallback Decoder error callback (mndatory)
+   */
+  buildWithOggStream(
+    readCallback: Decoder.ReadCallback,
+    seekCallback: Decoder.SeekCallback | null,
+    tellCallback: Decoder.TellCallback | null,
+    lengthCallback: Decoder.LengthCallback | null,
+    eofCallback: Decoder.EOFCallback | null,
+    writeCallback: Decoder.WriteCallback,
+    metadataCallback: Decoder.MetadataCallback | null,
+    errorCallback: Decoder.ErrorCallback
+  ): Decoder;
+  /**
+   * Builds a {@link Decoder} using a `.flac` file from the file system. The decoder can only
+   * use **synchronous** methods.
+   * @param path Path to the file in the file system
+   * @param writeCallback Write callback (mandatory)
+   * @param metadataCallback Metadata callback
+   * @param errorCallback Decoder error callback (mandatory)
+   */
+  buildWithFile(
+    path: string,
+    writeCallback: Decoder.WriteCallback,
+    metadataCallback: Decoder.MetadataCallback | null,
+    errorCallback: Decoder.ErrorCallback
+  ): Decoder;
+  /**
+   * Builds a {@link Decoder} using an `.ogg` file containing FLAC from the file system. The decoder
+   * can only use **synchronous** methods.
+   * @param path Path to the file in the file system
+   * @param writeCallback Write callback (mandatory)
+   * @param metadataCallback Metadata callback
+   * @param errorCallback Decoder error callback (mandatory)
+   */
+  buildWithOggFile(
+    path: string,
+    writeCallback: Decoder.WriteCallback,
+    metadataCallback: Decoder.MetadataCallback | null,
+    errorCallback: Decoder.ErrorCallback
+  ): Decoder;
+
+  /**
+   * Builds a {@link Decoder} using a stream input. The decoder can only use **asynchronous**
+   * methods.
+   * @param readCallback Read callback (mandatory)
+   * @param seekCallback Seek callback
+   * @param tellCallback Tell callback
+   * @param lengthCallback Length callback
+   * @param eofCallback End Of File callback
+   * @param writeCallback Write callback (mandatory)
+   * @param metadataCallback Metadata callback
+   * @param errorCallback Decoder error callback
+   */
+  buildWithStreamAsync(
+    readCallback: Decoder.ReadCallbackAsync,
+    seekCallback: Decoder.SeekCallbackAsync | null,
+    tellCallback: Decoder.TellCallbackAsync | null,
+    lengthCallback: Decoder.LengthCallbackAsync | null,
+    eofCallback: Decoder.EOFCallbackAsync | null,
+    writeCallback: Decoder.WriteCallbackAsync,
+    metadataCallback: Decoder.MetadataCallbackAsync | null,
+    errorCallback: Decoder.ErrorCallbackAsync
+  ): Promise<Decoder>;
+  /**
+   * Builds a {@link Decoder} using an Ogg stream input. The decoder can only use **asynchronous**
+   * methods.
+   * @param readCallback Read callback (mandatory)
+   * @param seekCallback Seek callback
+   * @param tellCallback Tell callback
+   * @param lengthCallback Length callback
+   * @param eofCallback End Of File callback
+   * @param writeCallback Write callback (mandatory)
+   * @param metadataCallback Metadata callback
+   * @param errorCallback Decoder error callback (mndatory)
+   */
+  buildWithOggStreamAsync(
+    readCallback: Decoder.ReadCallbackAsync,
+    seekCallback: Decoder.SeekCallbackAsync | null,
+    tellCallback: Decoder.TellCallbackAsync | null,
+    lengthCallback: Decoder.LengthCallbackAsync | null,
+    eofCallback: Decoder.EOFCallbackAsync | null,
+    writeCallback: Decoder.WriteCallbackAsync,
+    metadataCallback: Decoder.MetadataCallbackAsync | null,
+    errorCallback: Decoder.ErrorCallbackAsync
+  ): Promise<Decoder>;
+  /**
+   * Builds a {@link Decoder} using a `.flac` file from the file system. The decoder can only
+   * use **asynchronous** methods.
+   * @param path Path to the file in the file system
+   * @param writeCallback Write callback (mandatory)
+   * @param metadataCallback Metadata callback
+   * @param errorCallback Decoder error callback (mandatory)
+   */
+  buildWithFileAsync(
+    path: string,
+    writeCallback: Decoder.WriteCallbackAsync,
+    metadataCallback: Decoder.MetadataCallbackAsync | null,
+    errorCallback: Decoder.ErrorCallbackAsync
+  ): Promise<Decoder>;
+  /**
+   * Builds a {@link Decoder} using an `.ogg` file containing FLAC from the file system. The decoder
+   * can only use **asynchronous** methods.
+   * @param path Path to the file in the file system
+   * @param writeCallback Write callback (mandatory)
+   * @param metadataCallback Metadata callback
+   * @param errorCallback Decoder error callback (mandatory)
+   */
+  buildWithOggFileAsync(
+    path: string,
+    writeCallback: Decoder.WriteCallbackAsync,
+    metadataCallback: Decoder.MetadataCallbackAsync | null,
+    errorCallback: Decoder.ErrorCallbackAsync
+  ): Promise<Decoder>;
+}
+
+/**
+ * @see https://xiph.org/flac/api/group__flac__stream__decoder.html
+ */
+export abstract class Decoder {
   getState(): EnumValues<Decoder.State>;
   getResolvedStateString(): string;
   getMd5Checking(): boolean;
@@ -27,39 +183,7 @@ export class Decoder {
   getBitsPerSample(): number;
   getSampleRate(): number;
   getBlocksize(): number;
-  getDecodePosition(): number | bigint | null;
-  initStream(
-    readCallback: Decoder.ReadCallback,
-    seekCallback: Decoder.SeekCallback | null,
-    tellCallback: Decoder.TellCallback | null,
-    lengthCallback: Decoder.LengthCallback | null,
-    eofCallback: Decoder.EOFCallback | null,
-    writeCallback: Decoder.WriteCallback,
-    metadataCallback: Decoder.MetadataCallback | null,
-    errorCallback: Decoder.ErrorCallback
-  ): void;
-  initOggStream(
-    readCallback: Decoder.ReadCallback,
-    seekCallback: Decoder.SeekCallback | null,
-    tellCallback: Decoder.TellCallback | null,
-    lengthCallback: Decoder.LengthCallback | null,
-    eofCallback: Decoder.EOFCallback | null,
-    writeCallback: Decoder.WriteCallback,
-    metadataCallback: Decoder.MetadataCallback | null,
-    errorCallback: Decoder.ErrorCallback
-  ): void;
-  initFile(
-    path: string,
-    writeCallback: Decoder.WriteCallback,
-    metadataCallback: Decoder.MetadataCallback | null,
-    errorCallback: Decoder.ErrorCallback
-  ): void;
-  initOggFile(
-    path: string,
-    writeCallback: Decoder.WriteCallback,
-    metadataCallback: Decoder.MetadataCallback | null,
-    errorCallback: Decoder.ErrorCallback
-  ): void;
+
   finish(): boolean;
   flush(): boolean;
   reset(): boolean;
@@ -68,6 +192,7 @@ export class Decoder {
   processUntilEndOfMetadata(): boolean;
   skipSingleFrame(): boolean;
   seekAbsolute(position: number | bigint): boolean;
+  getDecodePosition(): number | bigint | null;
 
   finishAsync(): Promise<boolean>;
   flushAsync(): Promise<boolean>;
@@ -76,38 +201,7 @@ export class Decoder {
   processUntilEndOfMetadataAsync(): Promise<boolean>;
   skipSingleFrameAsync(): Promise<boolean>;
   seekAbsoluteAsync(position: number | bigint): Promise<boolean>;
-  initStreamAsync(
-    readCallback: Decoder.ReadCallbackAsync,
-    seekCallback: Decoder.SeekCallbackAsync | null,
-    tellCallback: Decoder.TellCallbackAsync | null,
-    lengthCallback: Decoder.LengthCallbackAsync | null,
-    eofCallback: Decoder.EOFCallbackAsync | null,
-    writeCallback: Decoder.WriteCallbackAsync,
-    metadataCallback: Decoder.MetadataCallbackAsync | null,
-    errorCallback: Decoder.ErrorCallbackAsync
-  ): Promise<void>;
-  initOggStreamAsync(
-    readCallback: Decoder.ReadCallbackAsync,
-    seekCallback: Decoder.SeekCallbackAsync | null,
-    tellCallback: Decoder.TellCallbackAsync | null,
-    lengthCallback: Decoder.LengthCallbackAsync | null,
-    eofCallback: Decoder.EOFCallbackAsync | null,
-    writeCallback: Decoder.WriteCallbackAsync,
-    metadataCallback: Decoder.MetadataCallbackAsync | null,
-    errorCallback: Decoder.ErrorCallbackAsync
-  ): Promise<void>;
-  initFileAsync(
-    path: string,
-    writeCallback: Decoder.WriteCallbackAsync,
-    metadataCallback: Decoder.MetadataCallbackAsync | null,
-    errorCallback: Decoder.ErrorCallbackAsync
-  ): Promise<void>;
-  initOggFileAsync(
-    path: string,
-    writeCallback: Decoder.WriteCallbackAsync,
-    metadataCallback: Decoder.MetadataCallbackAsync | null,
-    errorCallback: Decoder.ErrorCallbackAsync
-  ): Promise<void>;
+  getDecodePositionAsync(): Promise<number | bigint | null>;
 
   static readonly State: Decoder.State;
   static readonly StateString: ReverseEnum<Decoder.State>;
@@ -356,6 +450,9 @@ declare namespace Decoder {
  * @see https://xiph.org/flac/api/group__flac__stream__encoder.html
  */
 export class EncoderBuilder {
+  /**
+   * Gets the state of the encoder.
+   */
   getState(): EnumValues<Encoder.State>;
 
   setOggSerialNumber(value: number): EncoderBuilder;
@@ -380,12 +477,29 @@ export class EncoderBuilder {
   setRiceParameterSearchDist(value: number): EncoderBuilder;
   setTotalSamplesEstimate(value: number | bigint): EncoderBuilder;
 
+  /**
+   * Builds a {@link Encoder} to write into a stream. The encoder can only use **synchronous**
+   * methods.
+   * @param writeCbk Write callback (mandatory)
+   * @param seekCbk Seek callback
+   * @param tellCbk Tell callback
+   * @param metadataCbk Metadata callback
+   */
   buildWithStream(
     writeCbk: Encoder.WriteCallback,
     seekCbk?: Encoder.SeekCallback | null,
     tellCbk?: Encoder.TellCallback | null,
     metadataCbk?: Encoder.MetadataCallback | null
   ): Encoder;
+  /**
+   * Builds a {@link Encoder} to write into an ogg stream. The encoder can only use **synchronous**
+   * methods.
+   * @param readCbk Read callback (recommended)
+   * @param writeCbk Write callback (mandatory)
+   * @param seekCbk Seek callback
+   * @param tellCbk Tell callback
+   * @param metadataCbk Metadata callback
+   */
   buildWithOggStream(
     readCbk: Encoder.ReadCallback | null,
     writeCbk: Encoder.WriteCallback,
@@ -393,15 +507,44 @@ export class EncoderBuilder {
     tellCbk?: Encoder.TellCallback | null,
     metadataCbk?: Encoder.MetadataCallback | null
   ): Encoder;
-  buildWithFile(file: string, progressCbk?: Encoder.ProgressCallback | null): Encoder;
-  buildWithOggFile(file: string, progressCbk?: Encoder.ProgressCallback | null): Encoder;
+  /**
+   * Builds a {@link Encoder} to write into a `.flac` file in the file system. The encoder can only
+   * use **synchronous** methods. Can overwrite existing files.
+   * @param file Path in the file system where the output is going to be stored
+   * @param progressCbk Progress callback
+   */
+  buildWithFile(file: string, progressCbk?: Encoder.ProgressCallback | null): Encoder;
+  /**
+   * Builds a {@link Encoder} to write into an `.ogg` file in the file system. The encoder can only
+   * use **synchronous** methods. Can overwrite existing files.
+   * @param file Path in the file system where the output is going to be stored
+   * @param progressCbk Progress callback
+   */
+  buildWithOggFile(file: string, progressCbk?: Encoder.ProgressCallback | null): Encoder;
 
+  /**
+   * Builds a {@link Encoder} to write into a stream. The encoder can only use **asynchronous**
+   * methods.
+   * @param writeCbk Write callback (mandatory)
+   * @param seekCbk Seek callback
+   * @param tellCbk Tell callback
+   * @param metadataCbk Metadata callback
+   */
   buildWithStreamAsync(
     writeCbk: Encoder.WriteCallbackAsync,
     seekCbk?: Encoder.SeekCallbackAsync,
     tellCbk?: Encoder.TellCallbackAsync,
     metadataCbk?: Encoder.MetadataCallbackAsync
   ): Promise<Encoder>;
+  /**
+   * Builds a {@link Encoder} to write into an ogg stream. The encoder can only use **asynchronous**
+   * methods.
+   * @param readCbk Read callback (recommended)
+   * @param writeCbk Write callback (mandatory)
+   * @param seekCbk Seek callback
+   * @param tellCbk Tell callback
+   * @param metadataCbk Metadata callback
+   */
   buildWithOggStreamAsync(
     readCbk: Encoder.ReadCallbackAsync | null,
     writeCbk: Encoder.WriteCallbackAsync,
@@ -409,13 +552,25 @@ export class EncoderBuilder {
     tellCbk: Encoder.TellCallbackAsync | null | undefined,
     metadataCbk: Encoder.MetadataCallbackAsync | null | undefined
   ): Promise<Encoder>;
+  /**
+   * Builds a {@link Encoder} to write into a `.flac` file in the file system. The encoder can only
+   * use **asynchronous** methods. Can overwrite existing files.
+   * @param file Path in the file system where the output is going to be stored
+   * @param progressCbk Progress callback
+   */
   buildWithFileAsync(
     file: string,
-    progressCbk: Encoder.ProgressCallbackAsync | null | undefined,
+    progressCbk: Encoder.ProgressCallbackAsync | null | undefined,
   ): Promise<Encoder>;
+  /**
+   * Builds a {@link Encoder} to write into an `.ogg` file in the file system. The encoder can only
+   * use **asynchronous** methods. Can overwrite existing files.
+   * @param file Path in the file system where the output is going to be stored
+   * @param progressCbk Progress callback
+   */
   buildWithOggFileAsync(
     file: string,
-    progressCbk: Encoder.ProgressCallbackAsync | null | undefined
+    progressCbk: Encoder.ProgressCallbackAsync | null | undefined
   ): Promise<Encoder>;
 }
 
@@ -778,7 +933,7 @@ export namespace format {
 declare namespace metadata {
   // NOTE: TS has a limitation in the values inside the enum type (see https://github.com/microsoft/TypeScript/issues/43505)
   type UnknownMetadataTypes = 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 | 126;
-  type MetadataTypes = 0 | 1 | 2 | 3 | 4 | 5 | 6 | UnknownMetadataTypes;
+  type MetadataTypes = 0 | 1 | 2 | 3 | 4 | 5 | 6 | UnknownMetadataTypes;
   type AnyMetadata = ApplicationMetadata | CueSheetMetadata | PaddingMetadata | PictureMetadata
     | SeekTableMetadata | StreamInfoMetadata | VorbisCommentMetadata | UnknownMetadata;
 
@@ -1023,7 +1178,7 @@ declare namespace metadata {
     /** @see https://xiph.org/flac/api/group__flac__metadata__object.html#ga23d79d11e427e1590f406a7137c8bff2 */
     findEntryFrom(initialPos: number, key: string): number;
     /** @see https://xiph.org/flac/api/group__flac__metadata__object.html#ga017d743b3200a27b8567ef33592224b8 */
-    removeEntryMatching(key: string): -1 | 0 | 1;
+    removeEntryMatching(key: string): -1 | 0 | 1;
     /** @see https://xiph.org/flac/api/group__flac__metadata__object.html#ga5a3ff5856098c449622ba850684aec75 */
     removeEntriesMatching(key: string): number;
     /**
@@ -1309,9 +1464,9 @@ declare namespace fns {
     /** An array of buffers (its length determines the number of channels) */
     buffers: Buffer[];
     /** The input bytes per sample (by default 4) */
-    inBps?: 1 | 2 | 3 | 4;
+    inBps?: 1 | 2 | 3 | 4;
     /** The output bytes per sample (by default 4) */
-    outBps?: 1 | 2 | 3 | 4;
+    outBps?: 1 | 2 | 3 | 4;
   }
 
   /**
@@ -1336,9 +1491,9 @@ declare namespace fns {
      */
     samples?: number | bigint;
     /** The input bytes per sample (by default 4) */
-    inBps?: 1 | 2 | 3 | 4;
+    inBps?: 1 | 2 | 3 | 4;
     /** The output bytes per sample (by default 4) */
-    outBps?: 1 | 2 | 3 | 4;
+    outBps?: 1 | 2 | 3 | 4;
   }
 
   /**
@@ -1359,9 +1514,9 @@ declare namespace fns {
      */
     samples?: number | bigint;
     /** The input bytes per sample (by default 4) */
-    inBps?: 1 | 2 | 3 | 4;
+    inBps?: 1 | 2 | 3 | 4;
     /** The output bytes per sample (by default 4) */
-    outBps?: 1 | 2 | 3 | 4;
+    outBps?: 1 | 2 | 3 | 4;
   }
 
   /**

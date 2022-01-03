@@ -81,8 +81,13 @@ namespace flac_bindings {
     bool workInProgress = false;
     AsyncEncoderWorkBase::ExecutionProgress* asyncExecutionProgress = nullptr;
     FLAC__StreamEncoder* enc;
+    enum ExecutionMode {
+      Sync,
+      Async,
+    } mode;
 
-    EncoderWorkContext(FLAC__StreamEncoder* encoder): enc(encoder) {}
+    EncoderWorkContext(FLAC__StreamEncoder* encoder, ExecutionMode mode):
+        enc(encoder), mode(mode) {}
     virtual ~EncoderWorkContext() {
       if (!readCbk.IsEmpty())
         readCbk.Unref();
@@ -197,18 +202,27 @@ namespace flac_bindings {
     Napi::Value processAsync(const CallbackInfo&);
     Napi::Value processInterleavedAsync(const CallbackInfo&);
 
-    inline void checkPendingAsyncWork(const Napi::Env& env) {
-      this->ctx->runLocked([this, env]() {
+    inline void checkPendingAsyncWork(
+      const Napi::Env& env,
+      std::optional<EncoderWorkContext::ExecutionMode> mode = std::nullopt) {
+      this->ctx->runLocked([this, &env, &mode]() {
         if (this->ctx->workInProgress) {
           throw Error::New(env, "There is still an operation running on this object");
+        }
+
+        if (mode != std::nullopt && this->ctx->mode != mode) {
+          auto modeString =
+            (this->ctx->mode == EncoderWorkContext::ExecutionMode::Sync ? "synchronous"
+                                                                        : "asynchronous");
+          throw Error::New(
+            env,
+            "This method cannot be called when Encoder has been created using "s + modeString
+              + " method"s);
         }
       });
     }
 
     Promise enqueueWork(AsyncEncoderWorkBase*);
-    template<typename EnumType>
-    static EnumType
-      doAsyncWork(EncoderWorkContext* ctx, EncoderWorkRequest* req, EnumType defaultReturnValue);
 
     static c_enum::DefineReturnType createStateEnum(const Napi::Env&);
     static c_enum::DefineReturnType createInitStatusEnum(const Napi::Env&);

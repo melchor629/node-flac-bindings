@@ -255,7 +255,7 @@ namespace flac_bindings {
   // -- operations --
 
   Napi::Value StreamEncoder::finish(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
+    checkPendingAsyncWork(info.Env(), EncoderWorkContext::ExecutionMode::Sync);
 
     auto ret = FLAC__stream_encoder_finish(enc);
     ctx = nullptr;
@@ -263,7 +263,7 @@ namespace flac_bindings {
   }
 
   Napi::Value StreamEncoder::process(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
+    checkPendingAsyncWork(info.Env(), EncoderWorkContext::ExecutionMode::Sync);
 
     auto samples = numberFromJs<unsigned>(info[1]);
     auto channels = FLAC__stream_encoder_get_channels(enc);
@@ -274,7 +274,7 @@ namespace flac_bindings {
   }
 
   Napi::Value StreamEncoder::processInterleaved(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
+    checkPendingAsyncWork(info.Env(), EncoderWorkContext::ExecutionMode::Sync);
 
     auto channels = FLAC__stream_encoder_get_channels(enc);
     unsigned samples;
@@ -285,14 +285,14 @@ namespace flac_bindings {
   }
 
   Napi::Value StreamEncoder::finishAsync(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
+    checkPendingAsyncWork(info.Env(), EncoderWorkContext::ExecutionMode::Async);
 
     AsyncEncoderWork* work = AsyncEncoderWork::forFinish({info.This()}, ctx.get());
     return enqueueWork(work);
   }
 
   Napi::Value StreamEncoder::processAsync(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
+    checkPendingAsyncWork(info.Env(), EncoderWorkContext::ExecutionMode::Async);
 
     auto samples = numberFromJs<unsigned>(info[1]);
     auto channels = FLAC__stream_encoder_get_channels(enc);
@@ -304,7 +304,7 @@ namespace flac_bindings {
   }
 
   Napi::Value StreamEncoder::processInterleavedAsync(const CallbackInfo& info) {
-    checkPendingAsyncWork(info.Env());
+    checkPendingAsyncWork(info.Env(), EncoderWorkContext::ExecutionMode::Async);
 
     auto channels = FLAC__stream_encoder_get_channels(enc);
     unsigned samples;

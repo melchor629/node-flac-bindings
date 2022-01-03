@@ -9,6 +9,7 @@ namespace flac_bindings {
     FlacAddon(Napi::Env env, Napi::Object exports);
 
     Napi::ObjectReference module;
+    Napi::FunctionReference decoderBuilderConstructor;
     Napi::FunctionReference decoderConstructor;
     Napi::FunctionReference encoderBuilderConstructor;
     Napi::FunctionReference encoderConstructor;

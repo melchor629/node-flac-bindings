@@ -177,6 +177,7 @@ namespace flac_bindings {
       ProgressCallback;
     typedef std::function<void(ExecutionProgress&)> FunctionCallback;
     typedef std::function<Value(Napi::Env, T)> ValueMapFunction;
+    typedef T ValueType;
 
   protected:
     ExecutionProgress* context = nullptr;
