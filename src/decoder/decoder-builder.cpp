@@ -264,9 +264,9 @@ namespace flac_bindings {
 
     // why no mutex? JS runs in a single thread, and the check has already been done
     AsyncDecoderWork* work = AsyncDecoderWork::forInitStream({info.This()}, ctx, *this);
-    work->Queue();
     workInProgress = true;
     ctx->workInProgress = true;
+    work->Queue();
     return scope.Escape(work->getPromise());
   }
 
@@ -285,9 +285,9 @@ namespace flac_bindings {
     maybeFunctionIntoRef(ctx->errorCbk, info[7]);
 
     AsyncDecoderWork* work = AsyncDecoderWork::forInitOggStream({info.This()}, ctx, *this);
-    work->Queue();
     workInProgress = true;
     ctx->workInProgress = true;
+    work->Queue();
     return scope.Escape(work->getPromise());
   }
 
@@ -302,9 +302,9 @@ namespace flac_bindings {
     maybeFunctionIntoRef(ctx->errorCbk, info[3]);
 
     AsyncDecoderWork* work = AsyncDecoderWork::forInitFile({info.This()}, path, ctx, *this);
-    work->Queue();
     workInProgress = true;
     ctx->workInProgress = true;
+    work->Queue();
     return scope.Escape(work->getPromise());
   }
 
@@ -319,9 +319,9 @@ namespace flac_bindings {
     maybeFunctionIntoRef(ctx->errorCbk, info[3]);
 
     AsyncDecoderWork* work = AsyncDecoderWork::forInitOggFile({info.This()}, path, ctx, *this);
-    work->Queue();
     workInProgress = true;
     ctx->workInProgress = true;
+    work->Queue();
     return scope.Escape(work->getPromise());
   }
 

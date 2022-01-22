@@ -72,7 +72,7 @@ namespace flac_bindings {
 
   struct DecoderWorkContext {
     FunctionReference readCbk, seekCbk, tellCbk, lengthCbk, eofCbk, writeCbk, metadataCbk, errorCbk;
-    bool workInProgress = false;
+    std::atomic_bool workInProgress = false;
     AsyncDecoderWorkBase::ExecutionProgress* asyncExecutionProgress = nullptr;
     FLAC__StreamDecoder* dec;
     enum ExecutionMode {
@@ -191,7 +191,7 @@ namespace flac_bindings {
       const Napi::Env& env,
       std::optional<DecoderWorkContext::ExecutionMode> mode = std::nullopt) {
       this->ctx->runLocked([this, &env, &mode]() {
-        if (this->ctx->workInProgress) {
+        if (this->ctx->workInProgress.load()) {
           throw Error::New(env, "There is still an operation running on this object");
         }
 

@@ -583,8 +583,8 @@ namespace flac_bindings {
 
   Promise StreamEncoder::enqueueWork(AsyncEncoderWorkBase* work) {
     return ctx->runLocked<Promise>([this, work]() {
-      work->Queue();
       ctx->workInProgress = true;
+      work->Queue();
       return work->getPromise();
     });
   }

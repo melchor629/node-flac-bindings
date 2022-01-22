@@ -359,9 +359,9 @@ namespace flac_bindings {
 
     // why no mutex? JS runs in a single thread, and the check has already been done
     AsyncEncoderWork* work = AsyncEncoderWork::forInitStream({info.This()}, ctx, *this);
-    work->Queue();
     workInProgress = true;
     ctx->workInProgress = true;
+    work->Queue();
     return scope.Escape(work->getPromise());
   }
 
@@ -377,9 +377,9 @@ namespace flac_bindings {
     maybeFunctionIntoRef(ctx->metadataCbk, info[4]);
 
     AsyncEncoderWork* work = AsyncEncoderWork::forInitOggStream({info.This()}, ctx, *this);
-    work->Queue();
     workInProgress = true;
     ctx->workInProgress = true;
+    work->Queue();
     return scope.Escape(work->getPromise());
   }
 
@@ -392,9 +392,9 @@ namespace flac_bindings {
 
     auto path = stringFromJs(info[0]);
     AsyncEncoderWork* work = AsyncEncoderWork::forInitFile({info.This()}, path, ctx, *this);
-    work->Queue();
     workInProgress = true;
     ctx->workInProgress = true;
+    work->Queue();
     return scope.Escape(work->getPromise());
   }
 
@@ -407,9 +407,9 @@ namespace flac_bindings {
 
     auto path = stringFromJs(info[0]);
     AsyncEncoderWork* work = AsyncEncoderWork::forInitOggFile({info.This()}, path, ctx, *this);
-    work->Queue();
     workInProgress = true;
     ctx->workInProgress = true;
+    work->Queue();
     return scope.Escape(work->getPromise());
   }
 

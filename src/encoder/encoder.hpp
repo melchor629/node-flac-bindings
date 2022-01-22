@@ -78,7 +78,7 @@ namespace flac_bindings {
 
   struct EncoderWorkContext {
     FunctionReference readCbk, writeCbk, seekCbk, tellCbk, metadataCbk, progressCbk;
-    bool workInProgress = false;
+    std::atomic_bool workInProgress = false;
     AsyncEncoderWorkBase::ExecutionProgress* asyncExecutionProgress = nullptr;
     FLAC__StreamEncoder* enc;
     enum ExecutionMode {
@@ -206,7 +206,7 @@ namespace flac_bindings {
       const Napi::Env& env,
       std::optional<EncoderWorkContext::ExecutionMode> mode = std::nullopt) {
       this->ctx->runLocked([this, &env, &mode]() {
-        if (this->ctx->workInProgress) {
+        if (this->ctx->workInProgress.load()) {
           throw Error::New(env, "There is still an operation running on this object");
         }
 

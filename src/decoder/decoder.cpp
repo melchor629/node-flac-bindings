@@ -121,7 +121,6 @@ namespace flac_bindings {
     checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Sync);
 
     auto ret = FLAC__stream_decoder_finish(dec);
-    ctx = nullptr;
     return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
   }
 
@@ -136,7 +135,6 @@ namespace flac_bindings {
     checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Sync);
 
     auto ret = FLAC__stream_decoder_reset(dec);
-    ctx = nullptr;
     return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
   }
 
@@ -392,8 +390,8 @@ namespace flac_bindings {
 
   Promise StreamDecoder::enqueueWork(AsyncDecoderWorkBase* work) {
     return ctx->runLocked<Promise>([this, work]() {
-      work->Queue();
       ctx->workInProgress = true;
+      work->Queue();
       return work->getPromise();
     });
   }
