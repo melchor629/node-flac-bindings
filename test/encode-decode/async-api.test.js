@@ -526,4 +526,27 @@ describe('encode & decode: async api', () => {
 
     expect(await enc2.finishAsync()).not.toBeNull()
   })
+
+  it('decoder builder can be reused', async () => {
+    const dec = await new api.DecoderBuilder()
+      .buildWithFileAsync(
+        pathForFile('loop.flac'),
+        () => api.Decoder.WriteStatus.CONTINUE,
+        null,
+        () => {},
+      )
+
+    const builder = await dec.finishAsync()
+    expect(builder).not.toBeNull()
+
+    const dec2 = await builder
+      .buildWithOggFileAsync(
+        pathForFile('loop.oga'),
+        () => api.Decoder.WriteStatus.CONTINUE,
+        null,
+        () => {},
+      )
+
+    expect(await dec2.finishAsync()).not.toBeNull()
+  })
 })

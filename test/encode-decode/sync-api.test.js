@@ -222,7 +222,7 @@ describe('encode & decode: sync api', () => {
     expect(dec.getMd5Checking()).toBe(true)
     expect(dec.getDecodePosition()).toBe(22862)
 
-    expect(dec.finish()).toBe(false)
+    expect(dec.finish()).toBeNull()
   })
 
   it('encode using stream (non-ogg)', () => {
@@ -482,5 +482,28 @@ describe('encode & decode: sync api', () => {
       .buildWithFile(tmpFile.path, null)
 
     expect(enc2.finish()).not.toBeNull()
+  })
+
+  it('decoder builder can be reused', () => {
+    const dec = new api.DecoderBuilder()
+      .buildWithFile(
+        pathForFile('loop.flac'),
+        () => api.Decoder.WriteStatus.CONTINUE,
+        null,
+        () => {},
+      )
+
+    const builder = dec.finish()
+    expect(builder).not.toBeNull()
+
+    const dec2 = builder
+      .buildWithOggFile(
+        pathForFile('loop.oga'),
+        () => api.Decoder.WriteStatus.CONTINUE,
+        null,
+        () => {},
+      )
+
+    expect(dec2.finish()).not.toBeNull()
   })
 })
