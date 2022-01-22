@@ -100,12 +100,15 @@ namespace flac_bindings {
     }
 
     info.This().As<Object>().Set("__metadataArrayRef", info[1]);
+    builder = Napi::Persistent(info[0].As<Object>());
   }
 
   StreamEncoder::~StreamEncoder() {
     if (enc != nullptr) {
       FLAC__stream_encoder_delete(enc);
     }
+
+    builder.Unref();
   }
 
   // -- getters --
@@ -258,8 +261,19 @@ namespace flac_bindings {
     checkPendingAsyncWork(info.Env(), EncoderWorkContext::ExecutionMode::Sync);
 
     auto ret = FLAC__stream_encoder_finish(enc);
-    ctx = nullptr;
-    return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
+    if (info.Env().IsExceptionPending()) {
+      return Napi::Value();
+    }
+
+    if (ret) {
+      EscapableHandleScope scope(info.Env());
+      auto builder = StreamEncoderBuilder::Unwrap(this->builder.Value());
+      builder->enc = enc;
+      enc = nullptr;
+      return scope.Escape(this->builder.Value());
+    }
+
+    return info.Env().Null();
   }
 
   Napi::Value StreamEncoder::process(const CallbackInfo& info) {
@@ -287,7 +301,7 @@ namespace flac_bindings {
   Napi::Value StreamEncoder::finishAsync(const CallbackInfo& info) {
     checkPendingAsyncWork(info.Env(), EncoderWorkContext::ExecutionMode::Async);
 
-    AsyncEncoderWork* work = AsyncEncoderWork::forFinish({info.This()}, ctx.get());
+    AsyncEncoderWork* work = AsyncEncoderWork::forFinish({info.This()}, *this);
     return enqueueWork(work);
   }
 

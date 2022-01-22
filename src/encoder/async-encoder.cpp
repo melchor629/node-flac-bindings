@@ -43,16 +43,30 @@ namespace flac_bindings {
     }
   }
 
-  AsyncEncoderWork* AsyncEncoderWork::forFinish(const StoreList& list, EncoderWorkContext* ctx) {
-    auto workFunction = [ctx]() {
-      return FLAC__stream_encoder_finish(ctx->enc);
+  AsyncEncoderWork* AsyncEncoderWork::forFinish(const StoreList& list, StreamEncoder& encoder) {
+    auto workFunction = [&encoder]() {
+      return FLAC__stream_encoder_finish(encoder.ctx->enc);
+    };
+
+    auto convertFunction = [&encoder](auto env, auto value) {
+      if (value) {
+        EscapableHandleScope scope(env);
+        auto builderJs = encoder.builder.Value();
+        auto builder = StreamEncoderBuilder::Unwrap(builderJs);
+        builder->enc = encoder.enc;
+        encoder.enc = nullptr;
+        return scope.Escape(builderJs);
+      }
+
+      return env.Null();
     };
 
     return new AsyncEncoderWork(
       list,
       workFunction,
       "flac_bindings::StreamEncoder::finishAsync",
-      ctx);
+      encoder.ctx.get(),
+      convertFunction);
   }
 
   AsyncEncoderWork* AsyncEncoderWork::forProcess(

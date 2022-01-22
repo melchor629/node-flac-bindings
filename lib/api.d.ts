@@ -609,11 +609,11 @@ export abstract class Encoder {
     got: number;
   } | null;
 
-  finish(): boolean;
+  finish(): EncoderBuilder | null;
   process(buffers: Buffer[], samples: Number): boolean;
   processInterleaved(buffer: Buffer, samples?: Number | null): boolean;
 
-  finishAsync(): Promise<boolean>;
+  finishAsync(): Promise<EncoderBuilder | null>;
   processAsync(buffers: Buffer[], samples: Number): Promise<boolean>;
   processInterleavedAsync(buffer: Buffer, samples?: Number | null): Promise<boolean>;
 

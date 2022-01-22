@@ -425,12 +425,13 @@ namespace flac_bindings {
     auto metadataArrayReference = self.As<Napi::Object>().Get("__metadataArrayRef");
     auto encoderJs = addon->encoderConstructor.New({self, metadataArrayReference});
 
-    auto encoder = ObjectWrap<StreamEncoder>::Unwrap(encoderJs);
+    auto encoder = StreamEncoder::Unwrap(encoderJs);
     encoder->enc = enc;
     encoder->ctx = ctx;
 
     // encoder is built, cannot be used in builder
     enc = nullptr;
+    workInProgress = false;
 
     return scope.Escape(encoderJs);
   }

@@ -120,6 +120,7 @@ namespace flac_bindings {
 
   class StreamEncoderBuilder: public ObjectWrap<StreamEncoderBuilder> {
     friend class AsyncEncoderWork;
+    friend class StreamEncoder;
 
     Napi::Value getState(const CallbackInfo&);
 
@@ -170,6 +171,7 @@ namespace flac_bindings {
   };
 
   class StreamEncoder: public ObjectWrap<StreamEncoder> {
+    friend class AsyncEncoderWork;
     friend class StreamEncoderBuilder;
 
     Napi::Value getVerify(const CallbackInfo&);
@@ -248,6 +250,7 @@ namespace flac_bindings {
 
     FLAC__StreamEncoder* enc = nullptr;
     std::shared_ptr<EncoderWorkContext> ctx;
+    Napi::ObjectReference builder;
 
   public:
     static Function init(Napi::Env env, FlacAddon& addon);
@@ -293,7 +296,7 @@ namespace flac_bindings {
     pointer::BufferReference<FLAC__byte> sharedBufferRef;
 
   public:
-    static AsyncEncoderWork* forFinish(const StoreList&, EncoderWorkContext* ctx);
+    static AsyncEncoderWork* forFinish(const StoreList&, StreamEncoder& encoder);
     static AsyncEncoderWork* forProcess(
       const StoreList&,
       const std::vector<int32_t*>& buffers,
