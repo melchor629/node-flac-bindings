@@ -55,7 +55,7 @@ describe('encode & decode: async api', () => {
     expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
     expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
     expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).toBe(true)
+    expect(await dec.finishAsync()).not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
     expect(samples).toEqual(totalSamples)
@@ -84,7 +84,7 @@ describe('encode & decode: async api', () => {
     expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
     expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
     expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).toBe(true)
+    expect(await dec.finishAsync()).not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
     expect(samples).toEqual(totalSamples)
@@ -113,7 +113,7 @@ describe('encode & decode: async api', () => {
     expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
     expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
     expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).toBe(true)
+    expect(await dec.finishAsync()).not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
     expect(samples).toEqual(totalSamples)
@@ -142,7 +142,7 @@ describe('encode & decode: async api', () => {
     expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
     expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
     expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).toBe(true)
+    expect(await dec.finishAsync()).not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
     expect(samples).toEqual(totalSamples)
@@ -165,7 +165,7 @@ describe('encode & decode: async api', () => {
     expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
     expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
     expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).toBe(true)
+    expect(await dec.finishAsync()).not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
     expect(samples).toEqual(totalSamples)
@@ -188,7 +188,7 @@ describe('encode & decode: async api', () => {
     expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
     expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
     expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).toBe(true)
+    expect(await dec.finishAsync()).not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
     expect(samples).toEqual(totalSamples)
@@ -209,7 +209,7 @@ describe('encode & decode: async api', () => {
     expect(await dec.skipSingleFrameAsync()).toBe(true)
     expect(await dec.processSingleAsync()).toBe(true)
     expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).toBe(true)
+    expect(await dec.finishAsync()).not.toBeNull()
   })
 
   it('decoder should be able to seek to a sample', async () => {
@@ -233,7 +233,7 @@ describe('encode & decode: async api', () => {
     expect(await dec.getDecodePositionAsync()).toBe(157036)
     expect(await dec.processSingleAsync()).toBe(true)
     expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).toBe(true)
+    expect(await dec.finishAsync()).not.toBeNull()
   })
 
   it('decoder should emit metadata', async () => {
@@ -250,7 +250,7 @@ describe('encode & decode: async api', () => {
     )
 
     expect(await dec.processSingleAsync()).toBe(true)
-    expect(await dec.finishAsync()).toBe(true)
+    expect(await dec.finishAsync()).not.toBeNull()
 
     expect(metadataBlocks).toHaveLength(1)
   })
@@ -272,7 +272,7 @@ describe('encode & decode: async api', () => {
       )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).toBe(true)
+    expect(await enc.finishAsync()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
   })
@@ -295,7 +295,7 @@ describe('encode & decode: async api', () => {
       )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).toBe(true)
+    expect(await enc.finishAsync()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24, true)
   })
@@ -317,7 +317,7 @@ describe('encode & decode: async api', () => {
       )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).toBe(true)
+    expect(await enc.finishAsync()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
   })
@@ -340,7 +340,7 @@ describe('encode & decode: async api', () => {
       )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).toBe(true)
+    expect(await enc.finishAsync()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24, true)
   })
@@ -358,7 +358,7 @@ describe('encode & decode: async api', () => {
       )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).toBe(true)
+    expect(await enc.finishAsync()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
     expect(progressCallbackValues).toHaveLength(41)
@@ -377,7 +377,7 @@ describe('encode & decode: async api', () => {
       )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).toBe(true)
+    expect(await enc.finishAsync()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24, true)
     expect(progressCallbackValues).toHaveLength(30)
@@ -396,7 +396,7 @@ describe('encode & decode: async api', () => {
       )
 
     expect(await enc.processAsync(encDataAlt, totalSamples)).toBe(true)
-    expect(await enc.finishAsync()).toBe(true)
+    expect(await enc.finishAsync()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
     expect(progressCallbackValues).toHaveLength(41)
@@ -421,7 +421,7 @@ describe('encode & decode: async api', () => {
       )
 
     expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).toBe(true)
+    expect(await enc.finishAsync()).not.toBeNull()
 
     expect(metadataBlock).not.toBeNull()
     expect(metadataBlock.type).toBe(0)
@@ -504,5 +504,26 @@ describe('encode & decode: async api', () => {
     expect(() => dec.processUntilEndOfMetadata()).toThrow(/This method cannot be called when Decoder has been created using asynchronous method/)
 
     await dec.finishAsync()
+  })
+
+  it('encoder builder can be reused', async () => {
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .buildWithFileAsync(tmpFile.path, null)
+
+    const builder = await enc.finishAsync()
+    expect(builder).not.toBeNull()
+
+    const enc2 = await builder
+      .setBitsPerSample(16)
+      .setChannels(1)
+      .setCompressionLevel(7)
+      .setSampleRate(88200)
+      .buildWithFileAsync(tmpFile.path, null)
+
+    expect(await enc2.finishAsync()).not.toBeNull()
   })
 })
