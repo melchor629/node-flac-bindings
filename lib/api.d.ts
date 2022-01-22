@@ -184,7 +184,7 @@ export abstract class Decoder {
   getSampleRate(): number;
   getBlocksize(): number;
 
-  finish(): boolean;
+  finish(): DecoderBuilder | null;
   flush(): boolean;
   reset(): boolean;
   processSingle(): boolean;
@@ -194,7 +194,7 @@ export abstract class Decoder {
   seekAbsolute(position: number | bigint): boolean;
   getDecodePosition(): number | bigint | null;
 
-  finishAsync(): Promise<boolean>;
+  finishAsync(): Promise<DecoderBuilder | null>;
   flushAsync(): Promise<boolean>;
   processSingleAsync(): Promise<boolean>;
   processUntilEndOfStreamAsync(): Promise<boolean>;

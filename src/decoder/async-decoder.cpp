@@ -49,16 +49,29 @@ namespace flac_bindings {
     }
   }
 
-  AsyncDecoderWork* AsyncDecoderWork::forFinish(const StoreList& list, DecoderWorkContext* ctx) {
-    auto workFunction = [ctx]() -> int {
-      return FLAC__stream_decoder_finish(ctx->dec);
+  AsyncDecoderWork* AsyncDecoderWork::forFinish(const StoreList& list, StreamDecoder& decoder) {
+    auto workFunction = [&decoder]() -> int {
+      return FLAC__stream_decoder_finish(decoder.ctx->dec);
     };
+
+    auto convertFunction = [&decoder](auto env, auto value) {
+      if (std::get<int>(value)) {
+        EscapableHandleScope scope(env);
+        auto builder = StreamDecoderBuilder::Unwrap(decoder.builder.Value());
+        builder->dec = decoder.dec;
+        decoder.dec = nullptr;
+        return scope.Escape(decoder.builder.Value());
+      }
+
+      return env.Null();
+    };
+
     return new AsyncDecoderWork(
       list,
       workFunction,
       "flac_bindings::StreamDecoder::finishAsync",
-      ctx,
-      variantIntToJsBoolean);
+      decoder.ctx.get(),
+      convertFunction);
   }
 
   AsyncDecoderWork* AsyncDecoderWork::forFlush(const StoreList& list, DecoderWorkContext* ctx) {

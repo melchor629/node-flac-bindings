@@ -118,6 +118,7 @@ namespace flac_bindings {
 
   class StreamDecoderBuilder: public ObjectWrap<StreamDecoderBuilder> {
     friend class AsyncDecoderWork;
+    friend class StreamDecoder;
 
     Napi::Value getState(const CallbackInfo&);
 
@@ -156,6 +157,7 @@ namespace flac_bindings {
 
   class StreamDecoder: public ObjectWrap<StreamDecoder> {
     friend class StreamDecoderBuilder;
+    friend class AsyncDecoderWork;
 
     Napi::Value getMd5Checking(const CallbackInfo&);
     Napi::Value getTotalSamples(const CallbackInfo&);
@@ -232,6 +234,7 @@ namespace flac_bindings {
 
     FLAC__StreamDecoder* dec = nullptr;
     std::shared_ptr<DecoderWorkContext> ctx;
+    ObjectReference builder;
 
   public:
     static Function init(Napi::Env env, FlacAddon& addon);
@@ -275,7 +278,7 @@ namespace flac_bindings {
     pointer::BufferReference<int32_t> writeSharedBufferRefs[FLAC__MAX_CHANNELS];
 
   public:
-    static AsyncDecoderWork* forFinish(const StoreList&, DecoderWorkContext*);
+    static AsyncDecoderWork* forFinish(const StoreList&, StreamDecoder&);
     static AsyncDecoderWork* forFlush(const StoreList&, DecoderWorkContext*);
     static AsyncDecoderWork* forProcessSingle(const StoreList&, DecoderWorkContext*);
     static AsyncDecoderWork* forProcessUntilEndOfMetadata(const StoreList&, DecoderWorkContext*);

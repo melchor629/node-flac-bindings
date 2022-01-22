@@ -70,12 +70,16 @@ namespace flac_bindings {
         info.Env(),
         "StreamDecoder constructor cannot be called directly, use StreamDecoderBuilder instead");
     }
+
+    builder = Napi::Persistent(info[0].As<Object>());
   }
 
   StreamDecoder::~StreamDecoder() {
     if (dec != nullptr) {
       FLAC__stream_decoder_delete(dec);
     }
+
+    builder.Unref();
   }
 
   // -- getters --
@@ -121,7 +125,19 @@ namespace flac_bindings {
     checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Sync);
 
     auto ret = FLAC__stream_decoder_finish(dec);
-    return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
+    if (info.Env().IsExceptionPending()) {
+      return Napi::Value();
+    }
+
+    if (ret) {
+      EscapableHandleScope scope(info.Env());
+      auto builder = StreamDecoderBuilder::Unwrap(this->builder.Value());
+      builder->dec = dec;
+      dec = nullptr;
+      return scope.Escape(this->builder.Value());
+    }
+
+    return info.Env().Null();
   }
 
   Napi::Value StreamDecoder::flush(const CallbackInfo& info) {
@@ -203,7 +219,7 @@ namespace flac_bindings {
   Napi::Value StreamDecoder::finishAsync(const CallbackInfo& info) {
     checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Async);
 
-    AsyncDecoderWork* work = AsyncDecoderWork::forFinish({info.This()}, ctx.get());
+    AsyncDecoderWork* work = AsyncDecoderWork::forFinish({info.This()}, *this);
     return enqueueWork(work);
   }
 

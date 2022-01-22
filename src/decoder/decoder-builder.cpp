@@ -342,6 +342,7 @@ namespace flac_bindings {
 
     // decoder is build, cannot be used in builder
     dec = nullptr;
+    workInProgress = false;
 
     return scope.Escape(decoderJs);
   }
