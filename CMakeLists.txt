@@ -48,7 +48,7 @@ if(NOT MSVC)
 endif()
 
 check_ipo_supported(RESULT LTO_SUPPORTED)
-if(LTO_SUPPORTED)
+if(LTO_SUPPORTED AND CMAKE_BUILD_TYPE STREQUAL "Release")
   message("-- LTO/IPO supported and enabled")
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
