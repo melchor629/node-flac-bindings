@@ -1,5 +1,12 @@
-import cp from 'child_process'
+import cp from 'node:child_process'
+import fs, { createReadStream, createWriteStream } from 'node:fs'
+import path from 'node:path'
+import { pipeline } from 'node:stream'
+import { promisify } from 'node:util'
+import zlib from 'node:zlib'
 import debugFactory from 'debug'
+import detectLibc from 'detect-libc'
+import tar from 'tar-stream'
 
 const debug = debugFactory('flac:build')
 
@@ -59,9 +66,49 @@ const hasGlobalInstalledFlac = () => {
   return false
 }
 
+const getFromPrebuilt = async () => {
+  debug('Looking for prebuild packages')
+  const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
+  const [napiVersion] = packageJson.binary.napi_versions
+    .filter(v => v <= parseInt(process.versions.napi, 10))
+    .sort((a, b) => a - b)
+  const tarPath = path.join(
+    'prebuilds',
+    [
+      packageJson.name,
+      '-v', packageJson.version,
+      '-napi',
+      '-v', napiVersion,
+      '-', process.platform,
+      (detectLibc.isNonGlibcLinuxSync() && detectLibc.familySync()) || '',
+      '-', process.arch,
+      '.tar.gz',
+    ].join(''),
+  )
+
+  if (!fs.existsSync(tarPath)) {
+    debug('No suitable prebuild packages found')
+    return false
+  }
+
+  debug(`Found one prebuild package: ${tarPath}`)
+  const tarStream = tar.extract()
+  tarStream.on('entry', (header, stream, next) => {
+    debug(`Extracting file ${header.name}`)
+    fs.mkdirSync(path.dirname(header.name), { recursive: true })
+    stream.pipe(createWriteStream(header.name))
+    stream.on('end', next)
+    stream.resume()
+  })
+
+  await promisify(pipeline)(createReadStream(tarPath), zlib.createGunzip(), tarStream)
+
+  return true
+}
+
 if (!envOpts.useExternalLibrary) {
   debug('Trying to install from prebuilt package...')
-  if (!run('prebuild-install -r napi').status) {
+  if (await getFromPrebuilt()) {
     debug('Installed succesfully')
     process.exit(0)
   }

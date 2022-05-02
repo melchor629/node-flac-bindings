@@ -37,7 +37,7 @@ Callbacks don't follow exactly the same signature that shows in Encoder and Deco
 
 There are asynchronous functions and methods for IO bound tasks. The syncrhonous API will be faster, but will block node. If you are writing an server or expect high concurrency, use the asynchronous API.
 
-You need node version that supports v8 N-API ([see compatibility table](https://nodejs.org/docs/latest-v16.x/api/n-api.html#n_api_node_api_version_matrix)), which is supported in node v12.22.0/v14.17.0/v16.0.0 or higher. Recommended use of `BigInt` when possible to have numbers be represented without truncation (`Number` can only store 53 bit integers! 🤨).
+You need node version that supports v8 N-API ([see compatibility table](https://nodejs.org/docs/latest-v16.x/api/n-api.html#n_api_node_api_version_matrix)), which is supported in node v14.17.0/v16.0.0 or higher. Recommended use of `BigInt` when possible to have numbers be represented without truncation (`Number` can only store 53 bit integers! 🤨).
 
 > **Note**: starting from Node 14.x and 12.19.0, `Buffer` had a rewrite that tracks pointers across the whole JS env. In order to share pointers from flac to node, the native code cleans up the trackings time to time when required. But this also means that buffers from `Encoder`, `Decoder` and `IO Callbacks` (metadata level 2) has a strict lifetime: buffers are ensured to be valid inside the callback itself, if the buffer must be used outside the callback make a copy.
 
@@ -129,6 +129,9 @@ Then, you just need to recompile the package with: `npm rebuild flac-bindings`. 
 For more advanced commands for compilation inside the repo tree, see below:
 
 ```sh
+# If desired, tell cmake to run with parallel jobs (faster)
+export CMAKE_BUILD_PARALLEL_LEVEL=4
+
 # Compile (debug version)
 npx cmake-js build --debug
 
@@ -151,7 +154,7 @@ With a dev environment, and being able to compile the project, ensure to have in
 The recommended steps are:
 
 ```sh
-# Do not run tests with sanitizers enabled, it's tricker to make it work
+# Do not run tests with sanitizers enabled, it's tricky to make it work
 npx cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
 npx cmake-js build --debug
 npm test
