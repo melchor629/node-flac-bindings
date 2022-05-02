@@ -33,25 +33,25 @@
     "bindings": "^1.5.0",
     "cmake-js": "^6.3.0",
     "debug": "^4.3.4",
-    "node-addon-api": "^4.3.0",
+    "node-addon-api": "^5.0.0",
     "prebuild-install": "^7.1.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.7",
     "@types/jest": "^27.4.1",
-    "@types/node": "^14.18.15",
+    "@types/node": "^14.18.16",
     "@types/temp": "^0.9.1",
     "eslint": "^8.14.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jest": "^26.1.5",
-    "jest": "^28.0.1",
+    "jest": "^28.0.3",
     "jest-extended": "^2.0.0",
     "prebuild": "^11.0.3",
     "temp": "^0.9.4"
   },
   "engines": {
-    "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+    "node": "^14.13.1 || >=16.0.0"
   },
   "binary": {
     "napi_versions": [
