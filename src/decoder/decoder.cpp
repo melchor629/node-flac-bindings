@@ -399,6 +399,11 @@ namespace flac_bindings {
       obj2,
       "UNPARSEABLE_STREAM",
       FLAC__STREAM_DECODER_ERROR_STATUS_UNPARSEABLE_STREAM);
+    c_enum::defineValue(
+      obj1,
+      obj2,
+      "BAD_METADATA",
+      4); // FLAC__STREAM_DECODER_ERROR_STATUS_BAD_METADATA);
     return std::make_tuple(obj1, obj2);
   }
 

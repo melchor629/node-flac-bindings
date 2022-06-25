@@ -94,6 +94,11 @@ const getFromPrebuilt = async () => {
   debug(`Found one prebuild package: ${tarPath}`)
   const tarStream = tar.extract()
   tarStream.on('entry', (header, stream, next) => {
+    if (!path.resolve(header.name).startsWith(process.cwd())) {
+      debug(`File ${header.name} will exit the current folder, ignoring`)
+      return
+    }
+
     debug(`Extracting file ${header.name}`)
     fs.mkdirSync(path.dirname(header.name), { recursive: true })
     stream.pipe(createWriteStream(header.name))

@@ -441,6 +441,7 @@ declare namespace Decoder {
     BAD_HEADER: 1;
     FRAME_CRC_MISMATCH: 2;
     UNPARSEABLE_STREAM: 3;
+    BAD_METADATA: 4;
   }
 }
 
