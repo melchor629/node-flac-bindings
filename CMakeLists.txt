@@ -83,7 +83,7 @@ else()
   FetchContent_Declare(
     FLAC
     GIT_REPOSITORY  https://gitlab.xiph.org/xiph/flac.git
-    GIT_TAG         27c615706cedd252a206dd77e3910dfa395dcc49
+    GIT_TAG         c2daa371041305ffa85bef7d32b97c93890c696e
   )
 
   option(WITH_OGG YES)
