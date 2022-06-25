@@ -39,6 +39,7 @@ const readFiles = async (dirPath) => {
   return files.map((p) => path.join(dirPath, p))
 }
 
+await fs.mkdir(path.resolve('prebuilds'), { recursive: true })
 for (const napiVersion of opts.napiVersions) {
   const tarPath = path.join(
     'prebuilds',
