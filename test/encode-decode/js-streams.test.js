@@ -24,10 +24,10 @@ const temp = tempUntracked.track()
 let tmpFile
 beforeEach(() => {
   tmpFile = temp.openSync('flac-bindings.encode-decode.js-streams')
+  fs.closeSync(tmpFile.fd)
 })
 
 afterEach(() => {
-  fs.closeSync(tmpFile.fd)
   temp.cleanupSync()
 })
 

@@ -24,10 +24,10 @@ let deferredScope = null
 beforeEach(() => {
   tmpFile = temp.openSync('flac-bindings.encode-decode.async-api')
   deferredScope = createDeferredScope()
+  fs.closeSync(tmpFile.fd)
 })
 
 afterEach(() => {
-  fs.closeSync(tmpFile.fd)
   temp.cleanupSync()
   return deferredScope.finalize()
 })

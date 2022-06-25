@@ -433,11 +433,11 @@ describe('Chain & Iterator', () => {
     let tmpFile
     beforeEach(() => {
       tmpFile = temp.openSync('flac-bindings.metadata2.chain-iterator')
+      oldfs.closeSync(tmpFile.fd)
       oldfs.copyFileSync(pathForFile('no.flac'), tmpFile.path)
     })
 
     afterEach(() => {
-      oldfs.closeSync(tmpFile.fd)
       temp.cleanupSync()
     })
 

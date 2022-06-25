@@ -304,11 +304,11 @@ describe('SimpleIterator', () => {
     let tmpFile
     beforeEach(() => {
       tmpFile = temp.openSync('flac-bindings.metadata1.simpleiterator')
+      oldfs.closeSync(tmpFile.fd)
       oldfs.copyFileSync(pathForFile('no.flac'), tmpFile.path)
     })
 
     afterEach(() => {
-      oldfs.closeSync(tmpFile.fd)
       temp.cleanupSync()
     })
 
@@ -387,6 +387,7 @@ describe('SimpleIterator', () => {
     let tmpFile
     beforeEach(() => {
       tmpFile = temp.openSync('flac-bindings.metadata1.simpleiterator')
+      oldfs.closeSync(tmpFile.fd)
       oldfs.copyFileSync(pathForFile('no.flac'), tmpFile.path)
     })
 
