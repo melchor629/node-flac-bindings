@@ -13,10 +13,10 @@ Nodejs bindings to [libFLAC](https://xiph.org/flac/download.html)
 
 The module will be divided in various sections:
 
-- [StreamEncoder](https://github.com/melchor629/node-flac-bindings/blob/dev/lib/encoder.d.ts) - a `stream.Transform` class for encoding raw PCM streams
-- [FileEncoder](https://github.com/melchor629/node-flac-bindings/blob/dev/lib/encoder.d.ts) - a `stream.Writable` class for encoding raw PCM streams into a file
-- [StreamDecoder](https://github.com/melchor629/node-flac-bindings/blob/dev/lib/decoder.d.ts) - a `stream.Transform` class for decoding FLAC into a PCM stream
-- [FileDecoder](https://github.com/melchor629/node-flac-bindings/blob/dev/lib/decoder.d.ts) - a `stream.Readable` class for decoding FLAC file into a PCM stream
+- [StreamEncoder](https://github.com/melchor629/node-flac-bindings/blob/dev/lib/encoder/index.d.ts) - a `stream.Transform` class for encoding raw PCM streams
+- [FileEncoder](https://github.com/melchor629/node-flac-bindings/blob/dev/lib/encoder/index.d.ts) - a `stream.Writable` class for encoding raw PCM streams into a file
+- [StreamDecoder](https://github.com/melchor629/node-flac-bindings/blob/dev/lib/decoder/index.d.ts) - a `stream.Transform` class for decoding FLAC into a PCM stream
+- [FileDecoder](https://github.com/melchor629/node-flac-bindings/blob/dev/lib/decoder/index.d.ts) - a `stream.Readable` class for decoding FLAC file into a PCM stream
 - `api` - the native bindings
     - [format](https://xiph.org/flac/api/group__flac__format.html) - includes only the functions and some types
     - [Encoder](https://xiph.org/flac/api/group__flac__encoder.html) - the `StreamEncoder` API
@@ -39,7 +39,7 @@ There are asynchronous functions and methods for IO bound tasks. The syncrhonous
 
 You need node version that supports v8 N-API ([see compatibility table](https://nodejs.org/docs/latest-v16.x/api/n-api.html#n_api_node_api_version_matrix)), which is supported in node v14.17.0/v16.0.0 or higher. Recommended use of `BigInt` when possible to have numbers be represented without truncation (`Number` can only store 53 bit integers! 🤨).
 
-> **Note**: starting from Node 14.x and 12.19.0, `Buffer` had a rewrite that tracks pointers across the whole JS env. In order to share pointers from flac to node, the native code cleans up the trackings time to time when required. But this also means that buffers from `Encoder`, `Decoder` and `IO Callbacks` (metadata level 2) has a strict lifetime: buffers are ensured to be valid inside the callback itself, if the buffer must be used outside the callback make a copy.
+> **Note**: Buffers from `Encoder`, `Decoder` and `IO Callbacks` (metadata level 2) has a strict lifetime: buffers are ensured to be valid inside the callback itself, if the buffer must be used outside the callback, make a copy.
 
 ## How to install
 
@@ -154,6 +154,9 @@ With a dev environment, and being able to compile the project, ensure to have in
 The recommended steps are:
 
 ```sh
+# (optional) Parallelize build
+export CMAKE_BUILD_PARALLEL_LEVEL=4
+
 # Do not run tests with sanitizers enabled, it's tricky to make it work
 npx cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
 npx cmake-js build --debug

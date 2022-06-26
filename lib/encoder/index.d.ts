@@ -1,3 +1,3 @@
-export { default as FileEncoder, FileEncoderOptions } from './file-encoder'
-export { default as StreamEncoder } from './stream-encoder'
-export { EncoderOptions } from './interfaces'
+export { default as FileEncoder, FileEncoderOptions } from './file-encoder.js'
+export { default as StreamEncoder } from './stream-encoder.js'
+export type { EncoderOptions } from './interfaces.js'

@@ -1,6 +1,6 @@
 import { Writable } from 'stream'
-import { Encoder, EnumValues } from '../api'
-import { BaseEncoder, EncoderOptions } from './interfaces'
+import { Encoder, EnumValues } from '../api.js'
+import { BaseEncoder, EncoderOptions } from './interfaces.js'
 
 /** Options to be set to the encoder before starting to encode. */
 export interface FileEncoderOptions extends EncoderOptions {

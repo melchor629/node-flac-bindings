@@ -1,4 +1,4 @@
-import { format } from '../api'
+import { format } from '../api.js'
 
 /** Options to be set to the decoder before starting to decode. */
 export interface DecoderOptions {
