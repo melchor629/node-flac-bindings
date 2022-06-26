@@ -11,7 +11,7 @@ import tar from 'tar-stream'
 const packageJson = JSON.parse(await fs.readFile('./package.json', 'utf-8'))
 
 const opts = {
-  arch: process.arch,
+  arch: process.env.NODE_ARCH || process.arch,
   libc: process.env.LIBC || (await detectLibc.isNonGlibcLinux() && await detectLibc.family()) || '',
   name: packageJson.name,
   napiVersions: packageJson.binary.napi_versions,
@@ -43,7 +43,7 @@ await fs.mkdir(path.resolve('prebuilds'), { recursive: true })
 for (const napiVersion of opts.napiVersions) {
   const tarPath = path.join(
     'prebuilds',
-    `${opts.name}-v${opts.version}-napi-v${napiVersion}-${opts.platform}${opts.libc}-${opts.arch}.tar.gz`,
+    `${opts.name}-v${opts.version}-napi-v${napiVersion}-${opts.platform}${opts.libc}-${opts.arch}.tar.br`,
   )
 
   // build
@@ -71,9 +71,9 @@ for (const napiVersion of opts.napiVersions) {
   process.stdout.write(`\n> Packaging for napi v${napiVersion}\n`)
   const tarStream = tar.pack()
   const outputStream = createWriteStream(tarPath)
-  const gzipStream = zlib.createGzip({ level: 9 })
+  const brotliStream = zlib.createBrotliCompress()
 
-  tarStream.pipe(gzipStream).pipe(outputStream)
+  tarStream.pipe(brotliStream).pipe(outputStream)
 
   for (const releaseFilePath of await readFiles(path.join('build', 'Release'))) {
     const releaseFileStat = await fs.stat(releaseFilePath)

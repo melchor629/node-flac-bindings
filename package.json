@@ -91,7 +91,6 @@
     "lib/*",
     "src/*",
     "scripts/flac-build.js",
-    "prebuilds/*",
     "CMakeLists.txt",
     "LICENSE",
     "readme.md"

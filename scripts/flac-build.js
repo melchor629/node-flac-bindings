@@ -1,5 +1,6 @@
 import cp from 'node:child_process'
 import fs, { createReadStream, createWriteStream } from 'node:fs'
+import https from 'node:https'
 import path from 'node:path'
 import { pipeline } from 'node:stream'
 import { promisify } from 'node:util'
@@ -66,32 +67,25 @@ const hasGlobalInstalledFlac = () => {
   return false
 }
 
-const getFromPrebuilt = async () => {
-  debug('Looking for prebuild packages')
-  const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
-  const [napiVersion] = packageJson.binary.napi_versions
-    .filter(v => v <= parseInt(process.versions.napi, 10))
-    .sort((a, b) => a - b)
-  const tarPath = path.join(
-    'prebuilds',
-    [
-      packageJson.name,
-      '-v', packageJson.version,
-      '-napi',
-      '-v', napiVersion,
-      '-', process.platform,
-      (detectLibc.isNonGlibcLinuxSync() && detectLibc.familySync()) || '',
-      '-', process.arch,
-      '.tar.gz',
-    ].join(''),
-  )
+/**
+ * @param {string | URL} url url
+ * @returns {Promise<import('http').IncomingMessage>} promise
+ */
+const fetchGet = (url) =>
+  new Promise((resolve, reject) => https.get(url, (res) => {
+    if (res.statusCode === 302) {
+      // follow redirection
+      fetchGet(res.headers.location).then(resolve).catch(reject)
+    } else {
+      resolve(res)
+    }
+  }).on('error', reject))
 
-  if (!fs.existsSync(tarPath)) {
-    debug('No suitable prebuild packages found')
-    return false
-  }
-
-  debug(`Found one prebuild package: ${tarPath}`)
+/**
+ * @param {import('stream').Readable} stream read stream
+ * @returns {Promise<void>} promise
+ */
+const extractTarStream = async (stream) => {
   const tarStream = tar.extract()
   tarStream.on('entry', (header, stream, next) => {
     if (!path.resolve(header.name).startsWith(process.cwd())) {
@@ -106,7 +100,58 @@ const getFromPrebuilt = async () => {
     stream.resume()
   })
 
-  await promisify(pipeline)(createReadStream(tarPath), zlib.createGunzip(), tarStream)
+  await promisify(pipeline)(stream, zlib.createBrotliDecompress(), tarStream)
+}
+
+const getFromPrebuilt = async () => {
+  debug('Looking for prebuild packages')
+  const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
+  const [napiVersion] = packageJson.binary.napi_versions
+    .filter(v => v <= parseInt(process.versions.napi, 10))
+    .sort((a, b) => a - b)
+  const fileName = [
+    packageJson.name,
+    '-v', packageJson.version,
+    '-napi',
+    '-v', napiVersion,
+    '-', process.platform,
+    (detectLibc.isNonGlibcLinuxSync() && detectLibc.familySync()) || '',
+    '-', process.arch,
+    '.tar.br',
+  ].join('')
+  const tarPath = path.join('prebuilds', fileName)
+  const tarUrl = new URL(`releases/download/v${packageJson.version}/${fileName}`, packageJson.repository)
+
+  debug(`Downloading from ${tarUrl}`)
+  const res = await fetchGet(tarUrl).catch((e) => {
+    debug(`Donload failed: ${e.message}`)
+    return null
+  })
+  if (res?.statusCode === 200) {
+    debug(`Found one prebuild package: ${tarUrl}`)
+    await extractTarStream(res)
+    return true
+  } else if (res) {
+    res.setEncoding('utf-8')
+    const chunks = []
+    for await (const chunk of res) {
+      chunks.push(chunk)
+    }
+
+    debug(`Download failed ${res.statusCode} ${res.statusMessage}`)
+    if (res.statusCode !== 404) {
+      debug(chunks.join(''))
+    }
+  }
+
+  debug(`Reading from ${tarPath}`)
+  if (!fs.existsSync(tarPath)) {
+    debug('No suitable prebuild packages found')
+    return false
+  }
+
+  debug(`Found one prebuild package: ${tarPath}`)
+  await extractTarStream(createReadStream(tarPath))
 
   return true
 }
