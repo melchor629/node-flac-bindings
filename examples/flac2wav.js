@@ -35,10 +35,19 @@ decoder.once('data', (chunk) => {
     })
 })
 
-decoder.on('end', () => {
-  const { totalSeconds } = decoder.getProgress()
-  process.stdout.write(`\r[${(100).toFixed(1)}%] ${totalSeconds.toFixed(1)}s / ${totalSeconds.toFixed(1)}s\n`)
-})
+decoder
+  .on('end', () => {
+    const { totalSeconds } = decoder.getProgress()
+    process.stdout.write(`\r[${(100).toFixed(1)}%] ${totalSeconds.toFixed(1)}s / ${totalSeconds.toFixed(1)}s\n`)
+  })
+  // FLAC errors on the decoder side will be emitted using this event
+  .on('flac-error', (error) => {
+    console.error(error)
+  })
+  // FLAC metadata blocks can be read using this other event
+  .on('metadata', (metadata) => {
+    console.log(metadata)
+  })
 
 setInterval(() => {
   const { percentage, totalSeconds, currentSeconds } = decoder.getProgress()

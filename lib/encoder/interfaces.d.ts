@@ -1,4 +1,4 @@
-import { Encoder, EnumValues, metadata } from '../api'
+import { Encoder, EnumValues, metadata } from '../api.js'
 
 /** Options to be set to the encoder before starting to encode. */
 export interface EncoderOptions {

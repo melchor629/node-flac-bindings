@@ -1,6 +1,6 @@
 import { Transform } from 'stream'
-import { Encoder, EnumValues } from '../api'
-import { BaseEncoder, EncoderOptions } from './interfaces'
+import { Encoder, EnumValues } from '../api.js'
+import { BaseEncoder, EncoderOptions } from './interfaces.js'
 
 /**
  * FLAC encoder which receives an interleaved PCM stream and transforms it into
