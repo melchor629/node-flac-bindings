@@ -6,6 +6,7 @@ import { BaseDecoder, DecoderOptions, DecoderPosition } from './interfaces'
  * a interleaved raw PCM stream.
  * @emits metadata When a metadata block is received, the event will be fired
  * @emits format When the decoder knows the exact format of the flac
+ * @emits flac-error When the decoder found an error
  */
 export default class StreamDecoder extends Transform implements BaseDecoder {
   constructor(props: DecoderOptions)
