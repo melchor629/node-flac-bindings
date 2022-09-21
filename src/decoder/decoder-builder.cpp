@@ -11,6 +11,7 @@ namespace flac_bindings {
       "StreamDecoderBuilder",
       {
         InstanceMethod("getState", &StreamDecoderBuilder::getState),
+        InstanceMethod("getMd5Checking", &StreamDecoderBuilder::getMd5Checking),
 
         InstanceMethod("setOggSerialNumber", &StreamDecoderBuilder::setOggSerialNumber),
         InstanceMethod("setMd5Checking", &StreamDecoderBuilder::setMd5Checking),
@@ -55,11 +56,18 @@ namespace flac_bindings {
     }
   }
 
+  // -- getters --
+
   Napi::Value StreamDecoderBuilder::getState(const CallbackInfo& info) {
     checkIfBuilt(info.Env());
 
     auto state = FLAC__stream_decoder_get_state(dec);
     return numberToJs(info.Env(), state);
+  }
+
+  Napi::Value StreamDecoderBuilder::getMd5Checking(const CallbackInfo& info) {
+    auto md5Checking = FLAC__stream_decoder_get_md5_checking(dec);
+    return booleanToJs(info.Env(), md5Checking);
   }
 
   // -- setters --

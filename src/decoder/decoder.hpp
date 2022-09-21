@@ -121,6 +121,7 @@ namespace flac_bindings {
     friend class StreamDecoder;
 
     Napi::Value getState(const CallbackInfo&);
+    Napi::Value getMd5Checking(const CallbackInfo&);
 
     Napi::Value setOggSerialNumber(const CallbackInfo&);
     Napi::Value setMd5Checking(const CallbackInfo&);

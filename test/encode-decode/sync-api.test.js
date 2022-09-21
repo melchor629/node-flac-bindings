@@ -404,6 +404,7 @@ describe('encode & decode: sync api', () => {
       .setSampleRate(44100)
       .setVerify(true)
       .setTotalSamplesEstimate(totalSamples)
+      .setLimitMinBitrate(false)
       .buildWithFile(
         tmpFile.path,
       )
@@ -425,6 +426,7 @@ describe('encode & decode: sync api', () => {
     expect(enc.maxResidualPartitionOrder).toBe(6)
     expect(enc.riceParameterSearchDist).toBe(0)
     expect(enc.totalSamplesEstimate).toEqual(totalSamples)
+    expect(enc.limitMinBitrate).toBe(false)
 
     expect(enc.finish()).not.toBeNull()
   })

@@ -13,6 +13,7 @@ export class DecoderBuilder {
    * Gets the state of the decoder.
    */
   getState(): EnumValues<Decoder.State>;
+  getMd5Checking(): boolean;
 
   setOggSerialNumber(value: number): DecoderBuilder;
   setMd5Checking(value: boolean): DecoderBuilder;
