@@ -11,6 +11,32 @@ namespace flac_bindings {
       "StreamEncoderBuilder",
       {
         InstanceMethod("getState", &StreamEncoderBuilder::getState),
+        InstanceMethod("getVerify", &StreamEncoderBuilder::getVerify),
+        InstanceMethod("getStreamableSubset", &StreamEncoderBuilder::getStreamableSubset),
+        InstanceMethod("getChannels", &StreamEncoderBuilder::getChannels),
+        InstanceMethod("getBitsPerSample", &StreamEncoderBuilder::getBitsPerSample),
+        InstanceMethod("getSampleRate", &StreamEncoderBuilder::getSampleRate),
+        InstanceMethod("getBlocksize", &StreamEncoderBuilder::getBlocksize),
+        InstanceMethod("getDoMidSideStereo", &StreamEncoderBuilder::getDoMidSideStereo),
+        InstanceMethod("getLooseMidSideStereo", &StreamEncoderBuilder::getLooseMidSideStereo),
+        InstanceMethod("getMaxLpcOrder", &StreamEncoderBuilder::getMaxLpcOrder),
+        InstanceMethod("getQlpCoeffPrecision", &StreamEncoderBuilder::getQlpCoeffPrecision),
+        InstanceMethod("getDoQlpCoeffPrecSearch", &StreamEncoderBuilder::getDoQlpCoeffPrecSearch),
+        InstanceMethod("getDoEscapeCoding", &StreamEncoderBuilder::getDoEscapeCoding),
+        InstanceMethod(
+          "getDoExhaustiveModelSearch",
+          &StreamEncoderBuilder::getDoExhaustiveModelSearch),
+        InstanceMethod(
+          "getMinResidualPartitionOrder",
+          &StreamEncoderBuilder::getMinResidualPartitionOrder),
+        InstanceMethod(
+          "getMaxResidualPartitionOrder",
+          &StreamEncoderBuilder::getMaxResidualPartitionOrder),
+        InstanceMethod(
+          "getRiceParameterSearchDist",
+          &StreamEncoderBuilder::getRiceParameterSearchDist),
+        InstanceMethod("getLimitMinBitrate", &StreamEncoderBuilder::getLimitMinBitrate),
+        InstanceMethod("getTotalSamplesEstimate", &StreamEncoderBuilder::getTotalSamplesEstimate),
 
         InstanceMethod("setOggSerialNumber", &StreamEncoderBuilder::setOggSerialNumber),
         InstanceMethod("setVerify", &StreamEncoderBuilder::setVerify),
@@ -75,7 +101,117 @@ namespace flac_bindings {
     }
   }
 
-  // -- state getters --
+  // -- getters --
+
+  Napi::Value StreamEncoderBuilder::getVerify(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto verify = FLAC__stream_encoder_get_verify(enc);
+    return booleanToJs(info.Env(), verify);
+  }
+
+  Napi::Value StreamEncoderBuilder::getStreamableSubset(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto streamableSubset = FLAC__stream_encoder_get_streamable_subset(enc);
+    return booleanToJs(info.Env(), streamableSubset);
+  }
+
+  Napi::Value StreamEncoderBuilder::getChannels(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto channels = FLAC__stream_encoder_get_channels(enc);
+    return numberToJs(info.Env(), channels);
+  }
+
+  Napi::Value StreamEncoderBuilder::getBitsPerSample(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto bitsPerSample = FLAC__stream_encoder_get_bits_per_sample(enc);
+    return numberToJs(info.Env(), bitsPerSample);
+  }
+
+  Napi::Value StreamEncoderBuilder::getSampleRate(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto sampleRate = FLAC__stream_encoder_get_sample_rate(enc);
+    return numberToJs(info.Env(), sampleRate);
+  }
+
+  Napi::Value StreamEncoderBuilder::getBlocksize(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto blocksize = FLAC__stream_encoder_get_blocksize(enc);
+    return numberToJs(info.Env(), blocksize);
+  }
+
+  Napi::Value StreamEncoderBuilder::getDoMidSideStereo(const CallbackInfo& info) {
+    auto doMidStereo = FLAC__stream_encoder_get_do_mid_side_stereo(enc);
+    return booleanToJs(info.Env(), doMidStereo);
+  }
+
+  Napi::Value StreamEncoderBuilder::getLooseMidSideStereo(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto looseMidStereo = FLAC__stream_encoder_get_loose_mid_side_stereo(enc);
+    return booleanToJs(info.Env(), looseMidStereo);
+  }
+
+  Napi::Value StreamEncoderBuilder::getMaxLpcOrder(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto maxLpcOrder = FLAC__stream_encoder_get_max_lpc_order(enc);
+    return numberToJs(info.Env(), maxLpcOrder);
+  }
+
+  Napi::Value StreamEncoderBuilder::getQlpCoeffPrecision(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto qlpCoeffPrecision = FLAC__stream_encoder_get_qlp_coeff_precision(enc);
+    return numberToJs(info.Env(), qlpCoeffPrecision);
+  }
+
+  Napi::Value StreamEncoderBuilder::getDoQlpCoeffPrecSearch(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto doQlpCoeffPrecSearch = FLAC__stream_encoder_get_do_qlp_coeff_prec_search(enc);
+    return booleanToJs(info.Env(), doQlpCoeffPrecSearch);
+  }
+
+  Napi::Value StreamEncoderBuilder::getDoEscapeCoding(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto doEscapeCoding = FLAC__stream_encoder_get_do_escape_coding(enc);
+    return booleanToJs(info.Env(), doEscapeCoding);
+  }
+
+  Napi::Value StreamEncoderBuilder::getDoExhaustiveModelSearch(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto doExhaustiveModelSearch = FLAC__stream_encoder_get_do_exhaustive_model_search(enc);
+    return booleanToJs(info.Env(), doExhaustiveModelSearch);
+  }
+
+  Napi::Value StreamEncoderBuilder::getMinResidualPartitionOrder(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto minResidualPartitionOrder = FLAC__stream_encoder_get_min_residual_partition_order(enc);
+    return numberToJs(info.Env(), minResidualPartitionOrder);
+  }
+
+  Napi::Value StreamEncoderBuilder::getMaxResidualPartitionOrder(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto maxResidualPartitionOrder = FLAC__stream_encoder_get_max_residual_partition_order(enc);
+    return numberToJs(info.Env(), maxResidualPartitionOrder);
+  }
+
+  Napi::Value StreamEncoderBuilder::getRiceParameterSearchDist(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+    auto riceParameterSearchDist = FLAC__stream_encoder_get_rice_parameter_search_dist(enc);
+    return numberToJs(info.Env(), riceParameterSearchDist);
+  }
+
+  Napi::Value StreamEncoderBuilder::getLimitMinBitrate(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+#if FLAC_API_VERSION_CURRENT >= 12
+    auto value = FLAC__stream_encoder_get_limit_min_bitrate(enc);
+    return booleanToJs(info.Env(), value);
+#else
+    return info.Undefined();
+#endif
+  }
+
+  Napi::Value StreamEncoderBuilder::getTotalSamplesEstimate(const CallbackInfo& info) {
+    auto totalSamplesEstimate = FLAC__stream_encoder_get_total_samples_estimate(enc);
+    return numberToJs(info.Env(), totalSamplesEstimate);
+  }
 
   Napi::Value StreamEncoderBuilder::getState(const CallbackInfo& info) {
     checkIfBuilt(info.Env());
@@ -268,9 +404,8 @@ namespace flac_bindings {
 #if FLAC_API_VERSION_CURRENT >= 12
     auto value = booleanFromJs<FLAC__bool>(info[0]);
     FLAC__stream_encoder_set_limit_min_bitrate(enc, value);
-#else
-    return info.Undefined();
 #endif
+    return info.This();
   }
 
   // -- builder methods --

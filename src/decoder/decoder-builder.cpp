@@ -66,6 +66,8 @@ namespace flac_bindings {
   }
 
   Napi::Value StreamDecoderBuilder::getMd5Checking(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+
     auto md5Checking = FLAC__stream_decoder_get_md5_checking(dec);
     return booleanToJs(info.Env(), md5Checking);
   }

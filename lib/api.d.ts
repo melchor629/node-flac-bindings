@@ -456,6 +456,24 @@ export class EncoderBuilder {
    * Gets the state of the encoder.
    */
   getState(): EnumValues<Encoder.State>;
+  getVerify(): boolean;
+  getStreamableSubset(): boolean;
+  getChannels(): number;
+  getBitsPerSample(): number;
+  getSampleRate(): number;
+  getBlocksize(): number;
+  getDoMidSideStereo(): boolean;
+  getLooseMidSideStereo(): boolean;
+  getMaxLpcOrder(): number;
+  getQlpCoeffPrecision(): number;
+  getDoQlpCoeffPrecSearch(): boolean;
+  getDoEscapeCoding(): boolean;
+  getDoExhaustiveModelSearch(): boolean;
+  getMaxResidualPartitionOrder(): number;
+  getMinResidualPartitionOrder(): number;
+  getRiceParameterSearchDist(): number;
+  getLimitMinBitrate(): boolean;
+  getTotalSamplesEstimate(): number | bigint;
 
   setOggSerialNumber(value: number): EncoderBuilder;
   setCompressionLevel(value: number): EncoderBuilder;

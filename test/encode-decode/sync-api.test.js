@@ -431,6 +431,37 @@ describe('encode & decode: sync api', () => {
     expect(enc.finish()).not.toBeNull()
   })
 
+  it('encoder get other properties work (builder version)', () => {
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .setVerify(true)
+      .setTotalSamplesEstimate(totalSamples)
+      .setLimitMinBitrate(false)
+
+    expect(enc.getVerify()).toBe(true)
+
+    expect(enc.getChannels()).toBe(2)
+    expect(enc.getBitsPerSample()).toBe(24)
+    expect(enc.getSampleRate()).toBe(44100)
+    // NOTE: not set yet
+    expect(enc.getBlocksize()).toBe(0)
+    expect(enc.getDoMidSideStereo()).toBe(true)
+    expect(enc.getLooseMidSideStereo()).toBe(false)
+    expect(enc.getMaxLpcOrder()).toBe(12)
+    expect(enc.getQlpCoeffPrecision()).toBe(15)
+    expect(enc.getDoQlpCoeffPrecSearch()).toBe(false)
+    expect(enc.getDoEscapeCoding()).toBe(false)
+    expect(enc.getDoExhaustiveModelSearch()).toBe(false)
+    expect(enc.getMinResidualPartitionOrder()).toBe(0)
+    expect(enc.getMaxResidualPartitionOrder()).toBe(6)
+    expect(enc.getRiceParameterSearchDist()).toBe(0)
+    expect(enc.getTotalSamplesEstimate()).toEqual(totalSamples)
+    expect(enc.getLimitMinBitrate()).toBe(false)
+  })
+
   it('encoder should throw if built with sync but called async method', async () => {
     const enc = new api.EncoderBuilder()
       .setBitsPerSample(24)

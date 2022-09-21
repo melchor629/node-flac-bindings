@@ -123,6 +123,24 @@ namespace flac_bindings {
     friend class StreamEncoder;
 
     Napi::Value getState(const CallbackInfo&);
+    Napi::Value getVerify(const CallbackInfo&);
+    Napi::Value getStreamableSubset(const CallbackInfo&);
+    Napi::Value getChannels(const CallbackInfo&);
+    Napi::Value getBitsPerSample(const CallbackInfo&);
+    Napi::Value getSampleRate(const CallbackInfo&);
+    Napi::Value getBlocksize(const CallbackInfo&);
+    Napi::Value getDoMidSideStereo(const CallbackInfo&);
+    Napi::Value getLooseMidSideStereo(const CallbackInfo&);
+    Napi::Value getMaxLpcOrder(const CallbackInfo&);
+    Napi::Value getQlpCoeffPrecision(const CallbackInfo&);
+    Napi::Value getDoQlpCoeffPrecSearch(const CallbackInfo&);
+    Napi::Value getDoEscapeCoding(const CallbackInfo&);
+    Napi::Value getDoExhaustiveModelSearch(const CallbackInfo&);
+    Napi::Value getMinResidualPartitionOrder(const CallbackInfo&);
+    Napi::Value getMaxResidualPartitionOrder(const CallbackInfo&);
+    Napi::Value getRiceParameterSearchDist(const CallbackInfo&);
+    Napi::Value getLimitMinBitrate(const CallbackInfo&);
+    Napi::Value getTotalSamplesEstimate(const CallbackInfo&);
 
     Napi::Value setOggSerialNumber(const CallbackInfo&);
     Napi::Value setVerify(const CallbackInfo&);
