@@ -13,7 +13,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     container:
-      image: node:14-buster
+      image: node:16-buster
       env:
         CI: true
     steps:
