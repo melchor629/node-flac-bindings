@@ -145,6 +145,7 @@ namespace flac_bindings {
     Napi::Value setTotalSamplesEstimate(const CallbackInfo&);
     Napi::Value setMetadata(const CallbackInfo&);
     Napi::Value setApodization(const CallbackInfo&);
+    Napi::Value setLimitMinBitrate(const CallbackInfo&);
 
     Napi::Value buildWithStream(const CallbackInfo&);
     Napi::Value buildWithOggStream(const CallbackInfo&);
@@ -190,6 +191,7 @@ namespace flac_bindings {
     Napi::Value getMinResidualPartitionOrder(const CallbackInfo&);
     Napi::Value getMaxResidualPartitionOrder(const CallbackInfo&);
     Napi::Value getRiceParameterSearchDist(const CallbackInfo&);
+    Napi::Value getLimitMinBitrate(const CallbackInfo&);
     Napi::Value getTotalSamplesEstimate(const CallbackInfo&);
     Napi::Value getState(const CallbackInfo&);
     Napi::Value getVerifyDecoderState(const CallbackInfo&);

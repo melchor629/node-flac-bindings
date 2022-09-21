@@ -41,6 +41,7 @@ namespace flac_bindings {
         InstanceMethod("setTotalSamplesEstimate", &StreamEncoderBuilder::setTotalSamplesEstimate),
         InstanceMethod("setMetadata", &StreamEncoderBuilder::setMetadata),
         InstanceMethod("setApodization", &StreamEncoderBuilder::setApodization),
+        InstanceMethod("setLimitMinBitrate", &StreamEncoderBuilder::setLimitMinBitrate),
 
         InstanceMethod("buildWithStream", &StreamEncoderBuilder::buildWithStream),
         InstanceMethod("buildWithOggStream", &StreamEncoderBuilder::buildWithOggStream),
@@ -259,6 +260,17 @@ namespace flac_bindings {
     auto apodization = stringFromJs(info[0]);
     FLAC__stream_encoder_set_apodization(enc, apodization.c_str());
     return info.This();
+  }
+
+  Napi::Value StreamEncoderBuilder::setLimitMinBitrate(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+
+#if FLAC_API_VERSION_CURRENT >= 12
+    auto value = booleanFromJs<FLAC__bool>(info[0]);
+    FLAC__stream_encoder_set_limit_min_bitrate(enc, value);
+#else
+    return info.Undefined();
+#endif
   }
 
   // -- builder methods --

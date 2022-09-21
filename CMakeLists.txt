@@ -91,11 +91,11 @@ else()
   # expected target is different in FLAC, so creating an alias to be able to use it
   add_library(Ogg::ogg ALIAS ogg)
 
-  # fetch flac (post v1.3.3 - to reduce compilation time by disabling lots of targets)
+  # fetch flac (v1.4.0)
   FetchContent_Declare(
     FLAC
     GIT_REPOSITORY  https://gitlab.xiph.org/xiph/flac.git
-    GIT_TAG         c2daa371041305ffa85bef7d32b97c93890c696e
+    GIT_TAG         2ab4677750138640ba3f5099f6158ede3d011ad5
   )
 
   option(WITH_OGG YES)

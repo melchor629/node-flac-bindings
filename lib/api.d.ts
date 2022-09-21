@@ -476,6 +476,7 @@ export class EncoderBuilder {
   setMaxResidualPartitionOrder(value: number): EncoderBuilder;
   setMinResidualPartitionOrder(value: number): EncoderBuilder;
   setRiceParameterSearchDist(value: number): EncoderBuilder;
+  setLimitMinBitrate(value: boolean): EncoderBuilder;
   setTotalSamplesEstimate(value: number | bigint): EncoderBuilder;
 
   /**
@@ -596,6 +597,7 @@ export abstract class Encoder {
   readonly maxResidualPartitionOrder: number;
   readonly minResidualPartitionOrder: number;
   readonly riceParameterSearchDist: number;
+  readonly limitMinBitrate: boolean;
   readonly totalSamplesEstimate: number | bigint;
 
   getState(): EnumValues<Encoder.State>;

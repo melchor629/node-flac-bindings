@@ -100,6 +100,27 @@ namespace flac_bindings {
         break;
 
       case FLAC__SUBFRAME_TYPE_VERBATIM:
+#if FLAC_API_VERSION_CURRENT >= 12
+        if (subframe.data.verbatim.data_type == FLAC__VERBATIM_SUBFRAME_DATA_TYPE_INT32) {
+          obj.DefineProperty(PropertyDescriptor::Value(
+            "data",
+            Buffer<int32_t>::New(
+              env,
+              const_cast<int32_t*>(subframe.data.verbatim.data.int32),
+              (size_t) header.blocksize * header.bits_per_sample / sizeof(int32_t)),
+            attrs));
+        } else if (subframe.data.verbatim.data_type == FLAC__VERBATIM_SUBFRAME_DATA_TYPE_INT64) {
+          obj.DefineProperty(PropertyDescriptor::Value(
+            "data",
+            Buffer<int64_t>::New(
+              env,
+              const_cast<int64_t*>(subframe.data.verbatim.data.int64),
+              (size_t) header.blocksize * header.bits_per_sample / sizeof(int32_t)),
+            attrs));
+        } else {
+          obj.DefineProperty(PropertyDescriptor::Value("data", env.Null(), attrs));
+        }
+#else
         obj.DefineProperty(PropertyDescriptor::Value(
           "data",
           Buffer<int32_t>::New(
@@ -107,6 +128,8 @@ namespace flac_bindings {
             (int32_t*) subframe.data.verbatim.data,
             (size_t) header.blocksize * header.bits_per_sample / sizeof(int32_t)),
           attrs));
+#endif
+
         break;
     }
 

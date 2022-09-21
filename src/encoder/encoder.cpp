@@ -63,6 +63,7 @@ namespace flac_bindings {
           &StreamEncoder::getTotalSamplesEstimate,
           nullptr,
           attrs),
+        InstanceAccessor("limitMinBitrate", &StreamEncoder::getLimitMinBitrate, nullptr, attrs),
         InstanceMethod("getState", &StreamEncoder::getState),
         InstanceMethod("getVerifyDecoderState", &StreamEncoder::getVerifyDecoderState),
         InstanceMethod("getResolvedStateString", &StreamEncoder::getResolvedStateString),
@@ -191,6 +192,15 @@ namespace flac_bindings {
   Napi::Value StreamEncoder::getRiceParameterSearchDist(const CallbackInfo& info) {
     auto riceParameterSearchDist = FLAC__stream_encoder_get_rice_parameter_search_dist(enc);
     return numberToJs(info.Env(), riceParameterSearchDist);
+  }
+
+  Napi::Value StreamEncoder::getLimitMinBitrate(const CallbackInfo& info) {
+#if FLAC_API_VERSION_CURRENT >= 12
+    auto value = FLAC__stream_encoder_get_limit_min_bitrate(enc);
+    return booleanToJs(info.Env(), value);
+#else
+    return info.Undefined();
+#endif
   }
 
   Napi::Value StreamEncoder::getTotalSamplesEstimate(const CallbackInfo& info) {
