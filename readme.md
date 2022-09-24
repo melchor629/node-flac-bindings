@@ -1,13 +1,10 @@
 # flac-bindings
 
-Nodejs bindings to [libFLAC](https://xiph.org/flac/download.html)
+Nodejs bindings to [libFLAC](https://github.com/xiph/flac)
 
 ![Node-API v8](https://raw.githubusercontent.com/nodejs/abi-stable-node/doc/assets/Node-API%20v8%20Badge.svg)
-
-| master | dev |
-|--------|-----|
-|![Node CI](https://github.com/melchor629/node-flac-bindings/workflows/Node%20CI/badge.svg?branch=master)|![Node CI](https://github.com/melchor629/node-flac-bindings/workflows/Node%20CI/badge.svg?branch=dev)|
-|[![Coverage Status](https://coveralls.io/repos/github/melchor629/node-flac-bindings/badge.svg?branch=master)](https://coveralls.io/github/melchor629/node-flac-bindings?branch=master)|[![Coverage Status](https://coveralls.io/repos/github/melchor629/node-flac-bindings/badge.svg?branch=dev)](https://coveralls.io/github/melchor629/node-flac-bindings?branch=dev)|
+![Node CI](https://github.com/melchor629/node-flac-bindings/workflows/Node%20CI/badge.svg?branch=dev)
+[![Coverage Status](https://coveralls.io/repos/github/melchor629/node-flac-bindings/badge.svg?branch=dev)](https://coveralls.io/github/melchor629/node-flac-bindings?branch=dev)
 
 ## How to install
 
@@ -32,7 +29,13 @@ For use it, include with
 
 ```javascript
 // ESM import (Streams and native API alias)
-import { api, FileDecoder, StreamDecoder, FileEncoder, StreamEncoder } from 'flac-bindings';
+import {
+  api,
+  FileDecoder,
+  StreamDecoder,
+  FileEncoder,
+  StreamEncoder,
+} from 'flac-bindings';
 
 // ESM import for native API
 import {
