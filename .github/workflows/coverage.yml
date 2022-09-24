@@ -25,10 +25,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build & Test
-        run: |
-          id
-          ls -lha
-          ./scripts/coverage.sh rebuild
+        run: ./scripts/coverage.sh rebuild
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:

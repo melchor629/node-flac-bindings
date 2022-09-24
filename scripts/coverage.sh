@@ -8,13 +8,16 @@ if [[ -d coverage ]]; then
   rm -rf coverage
 fi
 mkdir coverage
+ls -lha coverage
 
 if [[ ! -z "$1" ]] && [[ "$1" = "rebuild" ]]; then
+  echo Compiling native code
   npx cmake-js clean
   npx cmake-js configure --CDCOVERAGE=ON --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
   npx cmake-js build --debug
 fi
 
+echo Running tests
 npx jest --coverage
 
 echo Extracting coverage report from C++
