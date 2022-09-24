@@ -204,7 +204,7 @@ namespace flac_bindings {
     auto value = FLAC__stream_encoder_get_limit_min_bitrate(enc);
     return booleanToJs(info.Env(), value);
 #else
-    return info.Undefined();
+    return booleanToJs(info.Env(), false);
 #endif
   }
 
