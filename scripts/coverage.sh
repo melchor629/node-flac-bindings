@@ -8,7 +8,7 @@ if [[ -d coverage ]]; then
   rm -rf coverage
 fi
 mkdir coverage
-ls -lha coverage
+touch coverage/js.info
 
 if [[ ! -z "$1" ]] && [[ "$1" = "rebuild" ]]; then
   echo Compiling native code
