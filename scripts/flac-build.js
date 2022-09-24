@@ -14,6 +14,7 @@ const debug = debugFactory('flac:build')
 const envOpts = {
   useExternalLibrary: typeof process.env.FLAC_BINDINGS_USE_EXTERNAL_LIBRARY === 'string',
   pkgConfigPath: process.env.PKG_CONFIG_PATH,
+  ci: typeof process.env.CI === 'string',
 }
 
 const run = (command, pipe = true) => {
@@ -154,6 +155,11 @@ const getFromPrebuilt = async () => {
   await extractTarStream(createReadStream(tarPath))
 
   return true
+}
+
+if (envOpts.ci) {
+  debug('CI environment, stopping build')
+  process.exit(0)
 }
 
 if (!envOpts.useExternalLibrary) {

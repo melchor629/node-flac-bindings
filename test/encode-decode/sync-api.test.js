@@ -451,7 +451,8 @@ describe('encode & decode: sync api', () => {
     expect(enc.getDoMidSideStereo()).toBe(true)
     expect(enc.getLooseMidSideStereo()).toBe(false)
     expect(enc.getMaxLpcOrder()).toBe(12)
-    expect(enc.getQlpCoeffPrecision()).toBe(15)
+    // NOTE: not set yet
+    expect(enc.getQlpCoeffPrecision()).toBe(0)
     expect(enc.getDoQlpCoeffPrecSearch()).toBe(false)
     expect(enc.getDoEscapeCoding()).toBe(false)
     expect(enc.getDoExhaustiveModelSearch()).toBe(false)
