@@ -60,30 +60,6 @@
       8
     ]
   },
-  "jest": {
-    "coveragePathIgnorePatterns": [
-      "test/",
-      "node_modules"
-    ],
-    "coverageProvider": "v8",
-    "coverageReporters": [
-      [
-        "lcovonly",
-        {
-          "file": "js.info"
-        }
-      ],
-      "text"
-    ],
-    "roots": [
-      "test"
-    ],
-    "setupFilesAfterEnv": [
-      "jest-extended/all"
-    ],
-    "testEnvironment": "node",
-    "transform": {}
-  },
   "funding": {
     "type": "individual",
     "url": "https://ko-fi.com/melchor629"

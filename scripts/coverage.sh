@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 export NODE_OPTIONS=--experimental-vm-modules
 
