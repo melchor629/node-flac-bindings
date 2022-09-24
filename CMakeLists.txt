@@ -53,7 +53,7 @@ if(LTO_SUPPORTED AND CMAKE_BUILD_TYPE STREQUAL "Release")
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-option(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY NO)
+option(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY OFF)
 set(FLAC_TARGET FLAC)
 
 if(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY)
@@ -71,7 +71,7 @@ if(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY)
 else()
   include(FetchContent)
 
-  option(BUILD_TESTING NO)
+  option(BUILD_TESTING OFF)
 
   # fetch libogg (v1.3.5)
   FetchContent_Declare(
@@ -91,17 +91,20 @@ else()
   # expected target is different in FLAC, so creating an alias to be able to use it
   add_library(Ogg::ogg ALIAS ogg)
 
-  # fetch flac (v1.4.0)
+  # fetch flac (v1.4.1)
   FetchContent_Declare(
     FLAC
     GIT_REPOSITORY  https://gitlab.xiph.org/xiph/flac.git
-    GIT_TAG         2ab4677750138640ba3f5099f6158ede3d011ad5
+    GIT_TAG         b6fbd6b3d97e2da4481bdbd25176f263fd6a5e75
   )
 
   option(WITH_OGG YES)
-  option(BUILD_PROGRAMS NO)
-  option(BUILD_EXAMPLES NO)
-  option(BUILD_CXXLIBS NO)
+  option(BUILD_PROGRAMS OFF)
+  option(BUILD_EXAMPLES OFF)
+  option(BUILD_CXXLIBS OFF)
+  option(BUILD_TESTING OFF)
+  option(BUILD_DOCS OFF)
+  option(INSTALL_MANPAGES OFF)
   FetchContent_GetProperties(FLAC)
   if(NOT flac_POPULATED)
     FetchContent_Populate(FLAC)

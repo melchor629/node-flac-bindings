@@ -23,7 +23,7 @@ jobs:
           apt-get update
           apt-get install -y cmake libflac-dev flac lcov
       - name: Install
-        run: npm install
+        run: npm ci
       - name: Build & Test
         run: ./scripts/coverage.sh rebuild
       - name: Coveralls
