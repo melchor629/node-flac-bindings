@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
+cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0042 NEW)
+
 project(flac-bindings)
 
 include(CheckCCompilerFlag)
@@ -112,28 +115,20 @@ else()
   endif()
 endif()
 
-execute_process(
-  COMMAND node -p "require('node-addon-api').include"
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  OUTPUT_VARIABLE NODE_ADDON_API_DIR
-)
-string(REPLACE "\n" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
-string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
-
 file(GLOB_RECURSE SOURCE_FILES "src/**/*.cpp" "src/**/*.hpp" "src/**/*.h" "src/*.cpp")
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 
 set(napi_build_version 8 CACHE STRING "N-API Version")
 message("-- Using N-API ${napi_build_version}")
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12.0)
-  add_compile_definitions(NAPI_VERSION=${napi_build_version} NAPI_EXPERIMENTAL NODE_ADDON_API_DISABLE_DEPRECATED)
-else()
-  add_definitions(NAPI_VERSION=${napi_build_version} NAPI_EXPERIMENTAL NODE_ADDON_API_DISABLE_DEPRECATED)
-endif()
+add_compile_definitions(NAPI_VERSION=${napi_build_version} NAPI_EXPERIMENTAL NODE_ADDON_API_DISABLE_DEPRECATED)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_JS_INC} ${NODE_ADDON_API_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_JS_INC})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
 target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB} ${FLAC_TARGET})
+
+if(MSVC AND CMAKE_JS_NODELIB_DEF AND CMAKE_JS_NODELIBTARGET)
+  execute_process(COMMAND ${CMAKE_AR} /def:${CMAKE_JS_NODELIB_DEF} /out:${CMAKE_JS_NODELIB_TARGET} ${CMAKE_STATIC_LINKER_FLAGS})
+endif()
 
 if(NOT FLAC_BINDINGS_USE_EXTERNAL_LIBRARY)
   if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" OR "${CMAKE_SYSTEM_NAME}" STREQUAL "Android")

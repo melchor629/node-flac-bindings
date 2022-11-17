@@ -141,19 +141,17 @@ Then, you just need to recompile the package with: `npm rebuild flac-bindings`. 
 For more advanced commands for compilation inside the repo tree, see below:
 
 ```sh
-# If desired, tell cmake to run with parallel jobs (faster)
-export CMAKE_BUILD_PARALLEL_LEVEL=4
-
 # Compile (debug version)
-npx cmake-js build --debug
+# -p -> If desired, tell cmake to run with parallel jobs (faster)
+npx cmake-js build --debug -p 4
 
 # Compile with sanitizers (only available on Linux and macOS)
-npx cmake-js configure --CDSANITIZE=ON --debug
-npx cmake-js build --debug
+npx cmake-js configure --CDSANITIZE=ON --debug -p 4
+npx cmake-js build --debug -p 4
 
 # Compile with external FLAC library (can be combined with sanitizers)
-npx cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
-npx cmake-js build --debug
+npx cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug -p 4
+npx cmake-js build --debug -p 4
 
 # Clean compilation folder
 npx cmake-js clean
@@ -166,12 +164,9 @@ With a dev environment, and being able to compile the project, ensure to have in
 The recommended steps are:
 
 ```sh
-# (optional) Parallelize build
-export CMAKE_BUILD_PARALLEL_LEVEL=4
-
 # Do not run tests with sanitizers enabled, it's tricky to make it work
-npx cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
-npx cmake-js build --debug
+npx cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug -p 4
+npx cmake-js build --debug -p 4
 npm test
 
 # To run tests with coverage (requires lcov to be installed)

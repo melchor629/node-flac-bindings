@@ -23,10 +23,6 @@ const run = async (command, args = [], pipe = true) => {
   const proc = cp.spawn(command, args, {
     encoding: 'utf-8',
     stdio: pipe ? 'inherit' : undefined,
-    env: {
-      ...process.env,
-      CMAKE_BUILD_PARALLEL_LEVEL: os.cpus().length,
-    },
   })
 
   await once(proc, 'exit')
@@ -48,7 +44,7 @@ for (const napiVersion of opts.napiVersions) {
 
   // build
   process.stdout.write(`> Compiling for napi v${napiVersion}\n\n`)
-  await run('npx', ['cmake-js', 'rebuild', `--arch=${opts.arch}`, `--CDnapi_build_version=${napiVersion}`])
+  await run('npx', ['cmake-js', 'rebuild', `--arch=${opts.arch}`, `--CDnapi_build_version=${napiVersion}`, '-p', os.cpus().length.toString()])
 
   // strip
   if (process.platform !== 'win32') {

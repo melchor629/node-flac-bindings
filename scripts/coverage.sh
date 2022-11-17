@@ -13,7 +13,7 @@ touch coverage/js.info
 if [[ ! -z "$1" ]] && [[ "$1" = "rebuild" ]]; then
   echo Compiling native code
   npx cmake-js clean
-  npx cmake-js configure --CDCOVERAGE=ON --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug
+  npx cmake-js configure --CDCOVERAGE=ON --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug -p 4
   npx cmake-js build --debug
 fi
 
