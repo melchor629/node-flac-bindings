@@ -14,6 +14,8 @@ $ npm install flac-bindings
 $ yarn add flac-bindings
 ```
 
+This is a pure ESM package. If you get an error like `require() of ES Module`, then [read this gist](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c). This kind of modules cannot be imported in CommonJS packages.
+
 The library has some native code that binds the JS code to the flac library. Depending on your platform, an already-compiled library is available for you. The following logic applies:
 
 - If your CPU is `amd64`/`x86_64` and the OS is `Linux/glibc`, `Linux/musl`, `macOS` or `Windows`, and node version is in the [N-API compatibility table](https://nodejs.org/dist/latest-v16.x/docs/api/n-api.html#n_api_node_api_version_matrix) for v8, then the prebuild version will download.
