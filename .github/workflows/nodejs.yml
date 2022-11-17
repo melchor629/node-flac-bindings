@@ -13,7 +13,7 @@ jobs:
             napi: 8
     runs-on: ubuntu-latest
     container:
-      image: node:${{ matrix.node.version }}
+      image: node:${{ matrix.node.version }}-bullseye
       env:
         CI: true
     steps:
