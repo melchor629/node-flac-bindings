@@ -11,7 +11,7 @@ jobs:
             napi: 8
           - version: 18
             napi: 8
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     container:
       image: node:${{ matrix.node.version }}-buster
       env:
