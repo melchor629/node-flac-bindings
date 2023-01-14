@@ -214,7 +214,7 @@ describe('VorbisCommentMetadata', () => {
 
     const pos = vc.findEntryFrom(0, 'ARTIST')
 
-    expect(pos).toEqual(-1)
+    expect(pos).toBe(-1)
   })
 
   it('findEntryFrom() should throw if the first argument is not a number', () => {
