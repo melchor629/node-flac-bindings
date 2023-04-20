@@ -79,8 +79,8 @@ else()
   # fetch libogg (v1.3.5)
   FetchContent_Declare(
     Ogg
-    GIT_REPOSITORY  https://gitlab.xiph.org/xiph/ogg.git
-    GIT_TAG         3069cc2bb44160982cdb21b2b8f0660c76b17572
+    GIT_REPOSITORY  https://github.com/xiph/ogg
+    GIT_TAG         v1.3.5
   )
 
   # polyfill for FetchContent_MakeAvailable
@@ -97,8 +97,8 @@ else()
   # fetch flac (v1.4.1)
   FetchContent_Declare(
     FLAC
-    GIT_REPOSITORY  https://gitlab.xiph.org/xiph/flac.git
-    GIT_TAG         b6fbd6b3d97e2da4481bdbd25176f263fd6a5e75
+    GIT_REPOSITORY  https://github.com/xiph/flac.git
+    GIT_TAG         1.4.2
   )
 
   option(WITH_OGG YES)
