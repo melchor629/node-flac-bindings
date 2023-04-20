@@ -1,8 +1,11 @@
 plugins:
-  - jest
-env:
-  jest: true
-  jest/globals: true
+  - vitest
 extends:
-  - plugin:jest/recommended
-  - plugin:jest/style
+  - plugin:vitest/all
+rules:
+  import/no-extraneous-dependencies:
+    - error
+    - devDependencies: true
+  vitest/max-expects: [0]
+  vitest/no-hooks: [0]
+  vitest/require-to-throw-message: [0]

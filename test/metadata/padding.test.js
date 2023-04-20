@@ -1,10 +1,11 @@
+import { describe, expect, it } from 'vitest'
 import { format, metadata } from '../../lib/api.js'
 import { gc } from '../helper/index.js'
 
 const { PaddingMetadata } = metadata
 const { MetadataType } = format
 
-describe('PaddingMetadata', () => {
+describe('paddingMetadata', () => {
   it('create new object should work', () => {
     expect(new PaddingMetadata()).not.toBeNull()
   })
@@ -12,7 +13,7 @@ describe('PaddingMetadata', () => {
   it('the object should have the right type', () => {
     const p = new PaddingMetadata()
 
-    expect(p.type).toEqual(MetadataType.PADDING)
+    expect(p.type).toStrictEqual(MetadataType.PADDING)
   })
 
   it('the object initially has 0 bytes of padding', () => {

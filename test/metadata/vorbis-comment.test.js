@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { format, metadata, metadata0 } from '../../lib/api.js'
 import { gc, pathForFile as fullPathForFile } from '../helper/index.js'
 
@@ -6,7 +7,7 @@ const { getTags } = metadata0
 const { MetadataType } = format
 const { tags: pathForFile } = fullPathForFile
 
-describe('VorbisCommentMetadata', () => {
+describe('vorbisCommentMetadata', () => {
   it('create new object should work', () => {
     expect(new VorbisCommentMetadata()).not.toBeNull()
   })
@@ -14,7 +15,7 @@ describe('VorbisCommentMetadata', () => {
   it('object has the right type', () => {
     const vc = new VorbisCommentMetadata()
 
-    expect(vc.type).toEqual(MetadataType.VORBIS_COMMENT)
+    expect(vc.type).toStrictEqual(MetadataType.VORBIS_COMMENT)
   })
 
   it('vendor string can be modified', () => {
@@ -38,35 +39,35 @@ describe('VorbisCommentMetadata', () => {
   })
 
   it('iterator should iterate over all the expected comments', () => {
-    const it = getTags(pathForFile('vc-p.flac'))[Symbol.iterator]()
+    const si = getTags(pathForFile('vc-p.flac'))[Symbol.iterator]()
     let m
 
-    m = it.next()
-    expect(m.done).toBe(false)
+    m = si.next()
+    expect(m.done).toBeFalsy()
     expect(m.value).toBe('TITLE=Metadata Test')
 
-    m = it.next()
-    expect(m.done).toBe(false)
+    m = si.next()
+    expect(m.done).toBeFalsy()
     expect(m.value).toBe('ARTIST=melchor629')
 
-    m = it.next()
-    expect(m.done).toBe(false)
+    m = si.next()
+    expect(m.done).toBeFalsy()
     expect(m.value).toBe('ALBUM=flac-bindings')
 
-    m = it.next()
-    expect(m.done).toBe(false)
+    m = si.next()
+    expect(m.done).toBeFalsy()
     expect(m.value).toBe('COMMENT=Nice comment tho')
 
-    m = it.next()
-    expect(m.done).toBe(false)
+    m = si.next()
+    expect(m.done).toBeFalsy()
     expect(m.value).toBe('DATE=2019')
 
-    m = it.next()
-    expect(m.done).toBe(false)
+    m = si.next()
+    expect(m.done).toBeFalsy()
     expect(m.value).toBe('TRACKNUMBER=1')
 
-    m = it.next()
-    expect(m.done).toBe(true)
+    m = si.next()
+    expect(m.done).toBeTruthy()
   })
 
   it('get() should get the value of an existing entry', () => {
@@ -93,9 +94,9 @@ describe('VorbisCommentMetadata', () => {
   it('resizeComments() should add and remove comment entries', () => {
     const vc = new VorbisCommentMetadata()
 
-    expect(vc.resizeComments(10)).toBe(true)
+    expect(vc.resizeComments(10)).toBeTruthy()
     expect(vc.count).toBe(10)
-    expect(vc.resizeComments(1)).toBe(true)
+    expect(vc.resizeComments(1)).toBeTruthy()
     expect(vc.count).toBe(1)
   })
 
@@ -109,7 +110,7 @@ describe('VorbisCommentMetadata', () => {
     const vc = new VorbisCommentMetadata()
     vc.resizeComments(1)
 
-    expect(vc.setComment(0, 'ARTIST=Mario')).toBe(true)
+    expect(vc.setComment(0, 'ARTIST=Mario')).toBeTruthy()
 
     expect(vc.count).toBe(1)
     expect(Array.from(vc)[0]).toBe('ARTIST=Mario')
@@ -135,7 +136,7 @@ describe('VorbisCommentMetadata', () => {
   it('insertComment() should add a new comment entry if the position is valid', () => {
     const vc = new VorbisCommentMetadata()
 
-    expect(vc.insertComment(0, 'TITLE=tests')).toBe(true)
+    expect(vc.insertComment(0, 'TITLE=tests')).toBeTruthy()
 
     expect(vc.count).toBe(1)
     expect(Array.from(vc)[0]).toBe('TITLE=tests')
@@ -159,7 +160,7 @@ describe('VorbisCommentMetadata', () => {
   it('appendComment() should add a new comment entry', () => {
     const vc = new VorbisCommentMetadata()
 
-    expect(vc.appendComment('TITLE=tests')).toBe(true)
+    expect(vc.appendComment('TITLE=tests')).toBeTruthy()
 
     expect(vc.count).toBe(1)
     expect(Array.from(vc)[0]).toBe('TITLE=tests')
@@ -173,7 +174,7 @@ describe('VorbisCommentMetadata', () => {
     const vc = new VorbisCommentMetadata()
     vc.appendComment('TITLE=E')
 
-    expect(vc.replaceComment('TITLE=tests', true)).toBe(true)
+    expect(vc.replaceComment('TITLE=tests', true)).toBeTruthy()
 
     expect(vc.count).toBe(1)
     expect(Array.from(vc)[0]).toBe('TITLE=tests')
@@ -183,7 +184,7 @@ describe('VorbisCommentMetadata', () => {
     const vc = new VorbisCommentMetadata()
     vc.resizeComments(1)
 
-    expect(vc.deleteComment(0, 'TITLE=tests')).toBe(true)
+    expect(vc.deleteComment(0, 'TITLE=tests')).toBeTruthy()
 
     expect(vc.count).toBe(0)
   })

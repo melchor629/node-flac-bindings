@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { format, metadata, SimpleIterator } from '../../lib/api.js'
 import { gc, pathForFile as fullPathForFile } from '../helper/index.js'
 
@@ -5,7 +6,7 @@ const { SeekTableMetadata, SeekPoint } = metadata
 const { MetadataType } = format
 const { tags: pathForFile } = fullPathForFile
 
-describe('SeekTableMetadata', () => {
+describe('seekTableMetadata', () => {
   it('create new object should work', () => {
     expect(new SeekTableMetadata()).not.toBeNull()
   })
@@ -13,14 +14,14 @@ describe('SeekTableMetadata', () => {
   it('object has the right type', () => {
     const st = new SeekTableMetadata()
 
-    expect(st.type).toEqual(MetadataType.SEEKTABLE)
+    expect(st.type).toStrictEqual(MetadataType.SEEKTABLE)
   })
 
   it('.points gets all points in the object', () => {
-    const it = new SimpleIterator()
-    it.init(pathForFile('vc-cs.flac'), true)
-    it.next()
-    const points = Array.from(it.getBlock())
+    const si = new SimpleIterator()
+    si.init(pathForFile('vc-cs.flac'), true)
+    si.next()
+    const points = Array.from(si.getBlock())
 
     expect(points).toHaveLength(2)
     expect(points[0].sampleNumber).toBe(0)
@@ -32,35 +33,35 @@ describe('SeekTableMetadata', () => {
   })
 
   it('iterator should iterate over all points in the object', () => {
-    const it = new SimpleIterator()
-    it.init(pathForFile('vc-cs.flac'), true)
-    it.next()
-    const st = it.getBlock()
+    const si = new SimpleIterator()
+    si.init(pathForFile('vc-cs.flac'), true)
+    si.next()
+    const st = si.getBlock()
     const i = st[Symbol.iterator]()
 
     let v = i.next()
-    expect(v.done).toBe(false)
+    expect(v.done).toBeFalsy()
     expect(v.value.sampleNumber).toBe(0)
     expect(v.value.streamOffset).toBe(0)
     expect(v.value.frameSamples).toBe(4096)
 
     v = i.next()
-    expect(v.done).toBe(false)
+    expect(v.done).toBeFalsy()
     expect(v.value.sampleNumber).toBe(16384)
     expect(v.value.streamOffset).toBe(8780)
     expect(v.value.frameSamples).toBe(4096)
 
     v = i.next()
-    expect(v.done).toBe(true)
+    expect(v.done).toBeTruthy()
   })
 
   it('resizePoints() should insert and remove points', () => {
     const st = new SeekTableMetadata()
 
     expect(st.count).toBe(0)
-    expect(st.resizePoints(10)).toBe(true)
+    expect(st.resizePoints(10)).toBeTruthy()
     expect(st.count).toBe(10)
-    expect(st.resizePoints(1)).toBe(true)
+    expect(st.resizePoints(1)).toBeTruthy()
     expect(st.count).toBe(1)
   })
 
@@ -73,7 +74,7 @@ describe('SeekTableMetadata', () => {
   it('insertPoint() should insert a point if the position is valid', () => {
     const st = new SeekTableMetadata()
 
-    expect(st.insertPoint(0, new SeekPoint())).toBe(true)
+    expect(st.insertPoint(0, new SeekPoint())).toBeTruthy()
 
     expect(st.count).toBe(1)
   })
@@ -137,7 +138,7 @@ describe('SeekTableMetadata', () => {
     const st = new SeekTableMetadata()
     st.insertPoint(0, new SeekPoint())
 
-    expect(st.deletePoint(0)).toBe(true)
+    expect(st.deletePoint(0)).toBeTruthy()
 
     expect(st.count).toBe(0)
   })
@@ -161,7 +162,7 @@ describe('SeekTableMetadata', () => {
     const st = new SeekTableMetadata()
     st.insertPoint(0, new SeekPoint(998877665544332211n))
 
-    expect(st.templateAppendPlaceholders(10)).toBe(true)
+    expect(st.templateAppendPlaceholders(10)).toBeTruthy()
 
     const points = Array.from(st)
     expect(points).toHaveLength(11)
@@ -178,7 +179,7 @@ describe('SeekTableMetadata', () => {
     const st = new SeekTableMetadata()
     st.insertPoint(0, new SeekPoint(998877665544332211n))
 
-    expect(st.templateAppendPoint(675n)).toBe(true)
+    expect(st.templateAppendPoint(675n)).toBeTruthy()
 
     const points = Array.from(st)
     expect(points).toHaveLength(2)
@@ -196,7 +197,7 @@ describe('SeekTableMetadata', () => {
     const st = new SeekTableMetadata()
     st.insertPoint(0, new SeekPoint(998877665544332211n))
 
-    expect(st.templateAppendPoints([675n, 879n, 213n])).toBe(true)
+    expect(st.templateAppendPoints([675n, 879n, 213n])).toBeTruthy()
 
     const points = Array.from(st)
     expect(points).toHaveLength(4)
@@ -222,16 +223,16 @@ describe('SeekTableMetadata', () => {
     const st = new SeekTableMetadata()
     st.insertPoint(0, new SeekPoint(123n))
 
-    expect(st.templateAppendSpacedPoints(5, 25n)).toBe(true)
+    expect(st.templateAppendSpacedPoints(5, 25n)).toBeTruthy()
 
     const points = Array.from(st)
     expect(points).toHaveLength(6)
     expect(points[0].sampleNumber).toBe(123)
-    expect(points[1].sampleNumber).toEqual(5 * 0)
-    expect(points[2].sampleNumber).toEqual(5 * 1)
-    expect(points[3].sampleNumber).toEqual(5 * 2)
-    expect(points[4].sampleNumber).toEqual(5 * 3)
-    expect(points[5].sampleNumber).toEqual(5 * 4)
+    expect(points[1].sampleNumber).toStrictEqual(5 * 0)
+    expect(points[2].sampleNumber).toStrictEqual(5 * 1)
+    expect(points[3].sampleNumber).toStrictEqual(5 * 2)
+    expect(points[4].sampleNumber).toStrictEqual(5 * 3)
+    expect(points[5].sampleNumber).toStrictEqual(5 * 4)
   })
 
   it('templateAppendSpacedPoints() should throw if totalSamples is 0', () => {
@@ -250,16 +251,16 @@ describe('SeekTableMetadata', () => {
     const st = new SeekTableMetadata()
     st.insertPoint(0, new SeekPoint(123n))
 
-    expect(st.templateAppendSpacedPointsBySamples(5, 25)).toBe(true)
+    expect(st.templateAppendSpacedPointsBySamples(5, 25)).toBeTruthy()
 
     const points = Array.from(st)
     expect(points).toHaveLength(6)
     expect(points[0].sampleNumber).toBe(123)
-    expect(points[1].sampleNumber).toEqual(5 * 0)
-    expect(points[2].sampleNumber).toEqual(5 * 1)
-    expect(points[3].sampleNumber).toEqual(5 * 2)
-    expect(points[4].sampleNumber).toEqual(5 * 3)
-    expect(points[5].sampleNumber).toEqual(5 * 4)
+    expect(points[1].sampleNumber).toStrictEqual(5 * 0)
+    expect(points[2].sampleNumber).toStrictEqual(5 * 1)
+    expect(points[3].sampleNumber).toStrictEqual(5 * 2)
+    expect(points[4].sampleNumber).toStrictEqual(5 * 3)
+    expect(points[5].sampleNumber).toStrictEqual(5 * 4)
   })
 
   it('templateAppendSpacedPointsBySamples() should throw if samples is 0', () => {
@@ -287,15 +288,15 @@ describe('SeekTableMetadata', () => {
     st.insertPoint(4, new SeekPoint(500n))
     st.insertPoint(7, new SeekPoint(5n, 5n))
 
-    expect(st.templateSort()).toBe(true)
+    expect(st.templateSort()).toBeTruthy()
 
     const points = Array.from(st)
     expect(points).toHaveLength(8)
-    expect(points[0].sampleNumber).toEqual(5 * 0)
-    expect(points[1].sampleNumber).toEqual(5 * 1)
-    expect(points[2].sampleNumber).toEqual(5 * 2)
-    expect(points[3].sampleNumber).toEqual(5 * 3)
-    expect(points[4].sampleNumber).toEqual(5 * 4)
+    expect(points[0].sampleNumber).toStrictEqual(5 * 0)
+    expect(points[1].sampleNumber).toStrictEqual(5 * 1)
+    expect(points[2].sampleNumber).toStrictEqual(5 * 2)
+    expect(points[3].sampleNumber).toStrictEqual(5 * 3)
+    expect(points[4].sampleNumber).toStrictEqual(5 * 4)
     expect(points[5].sampleNumber).toBe(123)
     expect(points[6].sampleNumber).toBe(500)
     expect(points[7].sampleNumber).toBe(18446744073709551615n)
@@ -308,22 +309,22 @@ describe('SeekTableMetadata', () => {
     st.insertPoint(4, new SeekPoint(500n))
     st.insertPoint(7, new SeekPoint(5n, 5n))
 
-    expect(st.templateSort(true)).toBe(true)
+    expect(st.templateSort(true)).toBeTruthy()
 
     const points = Array.from(st)
     expect(points).toHaveLength(7)
-    expect(points[0].sampleNumber).toEqual(5 * 0)
-    expect(points[1].sampleNumber).toEqual(5 * 1)
-    expect(points[2].sampleNumber).toEqual(5 * 2)
-    expect(points[3].sampleNumber).toEqual(5 * 3)
-    expect(points[4].sampleNumber).toEqual(5 * 4)
+    expect(points[0].sampleNumber).toStrictEqual(5 * 0)
+    expect(points[1].sampleNumber).toStrictEqual(5 * 1)
+    expect(points[2].sampleNumber).toStrictEqual(5 * 2)
+    expect(points[3].sampleNumber).toStrictEqual(5 * 3)
+    expect(points[4].sampleNumber).toStrictEqual(5 * 4)
     expect(points[5].sampleNumber).toBe(123)
     expect(points[6].sampleNumber).toBe(500)
   })
 
   it('isLegal() should work', () => {
     const st = new SeekTableMetadata()
-    expect(st.isLegal()).toBe(true)
+    expect(st.isLegal()).toBeTruthy()
   })
 
   describe('gc', () => {

@@ -1,9 +1,10 @@
+import { describe, expect, it } from 'vitest'
 import { metadata } from '../../lib/api.js'
 import { gc } from '../helper/index.js'
 
 const { SeekPoint } = metadata
 
-describe('SeekPoint', () => {
+describe('seekPoint', () => {
   it('create new object should work', () => {
     expect(new SeekPoint()).not.toBeNull()
   })

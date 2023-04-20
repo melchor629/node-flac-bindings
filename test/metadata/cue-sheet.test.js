@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { format, metadata, metadata0 } from '../../lib/api.js'
 import { pathForFile as fullPathForFile, gc } from '../helper/index.js'
 
@@ -6,14 +7,14 @@ const { MetadataType } = format
 const { getCuesheet } = metadata0
 const { tags: pathForFile } = fullPathForFile
 
-describe('CueSheetMetadata', () => {
+describe('cueSheetMetadata', () => {
   it('create new object should work', () => {
     expect(new CueSheetMetadata()).not.toBeNull()
   })
 
   it('the object should have the right type', () => {
     const cs = new CueSheetMetadata()
-    expect(cs.type).toEqual(MetadataType.CUESHEET)
+    expect(cs.type).toStrictEqual(MetadataType.CUESHEET)
   })
 
   it(
@@ -66,7 +67,7 @@ describe('CueSheetMetadata', () => {
   it('iterator should contain the expected tracks', () => {
     const cs = getCuesheet(pathForFile('vc-cs.flac'))
 
-    expect(cs).not.toBe(false)
+    expect(cs).not.toBeFalsy()
     const tracks = Array.from(cs)
 
     expect(tracks).toHaveLength(2)
@@ -74,13 +75,13 @@ describe('CueSheetMetadata', () => {
     expect(tracks[0].number).toBe(1)
     expect(tracks[0].isrc).toBe('')
     expect(tracks[0].type).toBe(0)
-    expect(tracks[0].preEmphasis).toBe(false)
+    expect(tracks[0].preEmphasis).toBeFalsy()
     expect(tracks[0].count).toBe(2)
     expect(tracks[1].offset).toBe(441000)
     expect(tracks[1].number).toBe(170)
     expect(tracks[1].isrc).toBe('')
     expect(tracks[1].type).toBe(0)
-    expect(tracks[1].preEmphasis).toBe(false)
+    expect(tracks[1].preEmphasis).toBeFalsy()
     expect(tracks[1].count).toBe(0)
   })
 
@@ -115,7 +116,7 @@ describe('CueSheetMetadata', () => {
     it('insertBlankTrack() should insert a new track', () => {
       const cs = new CueSheetMetadata()
 
-      expect(cs.insertBlankTrack(0)).toBe(true)
+      expect(cs.insertBlankTrack(0)).toBeTruthy()
 
       expect(cs.count).toBe(1)
     })
@@ -132,7 +133,7 @@ describe('CueSheetMetadata', () => {
       const cs = new CueSheetMetadata()
       const cst = new CueSheetTrack()
 
-      expect(cs.insertTrack(0, cst)).toBe(true)
+      expect(cs.insertTrack(0, cst)).toBeTruthy()
 
       expect(cs.count).toBe(1)
     })
@@ -141,12 +142,12 @@ describe('CueSheetMetadata', () => {
       const cs = new CueSheetMetadata()
       const cst = new CueSheetTrack()
 
-      expect(cs.insertTrack(0, cst)).toBe(true)
+      expect(cs.insertTrack(0, cst)).toBeTruthy()
       cst.offset = 123n
 
       const tracks = Array.from(cs)
       expect(tracks).toHaveLength(1)
-      expect(tracks[0].offset).not.toEqual(cst.offset)
+      expect(tracks[0].offset).not.toStrictEqual(cst.offset)
     })
 
     it('insertTrack() should throw if the index is invalid', () => {
@@ -172,8 +173,8 @@ describe('CueSheetMetadata', () => {
       const cst = new CueSheetTrack()
       cst.offset = 123n
 
-      expect(cs.insertBlankTrack(0)).toBe(true)
-      expect(cs.setTrack(0, cst)).toBe(true)
+      expect(cs.insertBlankTrack(0)).toBeTruthy()
+      expect(cs.setTrack(0, cst)).toBeTruthy()
 
       const tracks = Array.from(cs)
       expect(tracks).toHaveLength(1)
@@ -185,7 +186,7 @@ describe('CueSheetMetadata', () => {
       const cst = new CueSheetTrack()
 
       expect(() => cs.setTrack(0, cst)).toThrow()
-      expect(cs.insertBlankTrack(0)).toBe(true)
+      expect(cs.insertBlankTrack(0)).toBeTruthy()
       expect(() => cs.setTrack(1, cst)).toThrow()
       expect(() => cs.setTrack(-1, cst)).toThrow()
       expect(() => cs.setTrack(null, cst)).toThrow()
@@ -194,15 +195,15 @@ describe('CueSheetMetadata', () => {
     it('setTrack() should throw if the track is not CueSheetTrack', () => {
       const cs = new CueSheetMetadata()
 
-      expect(cs.insertBlankTrack(0)).toBe(true)
+      expect(cs.insertBlankTrack(0)).toBeTruthy()
       expect(() => cs.setTrack(0, null)).toThrow()
     })
 
     it('deleteTrack() should remove the track', () => {
       const cs = new CueSheetMetadata()
-      expect(cs.insertBlankTrack(0)).toBe(true)
+      expect(cs.insertBlankTrack(0)).toBeTruthy()
 
-      expect(cs.deleteTrack(0)).toBe(true)
+      expect(cs.deleteTrack(0)).toBeTruthy()
 
       expect(cs.count).toBe(0)
     })
@@ -211,7 +212,7 @@ describe('CueSheetMetadata', () => {
       const cs = new CueSheetMetadata()
 
       expect(() => cs.deleteTrack(0)).toThrow()
-      expect(cs.insertBlankTrack(0)).toBe(true)
+      expect(cs.insertBlankTrack(0)).toBeTruthy()
       expect(() => cs.deleteTrack(-1)).toThrow()
       expect(() => cs.deleteTrack(11)).toThrow()
       expect(() => cs.deleteTrack(null)).toThrow()
@@ -220,9 +221,9 @@ describe('CueSheetMetadata', () => {
     it('resizeTracks() should work', () => {
       const cs = new CueSheetMetadata()
 
-      expect(cs.resizeTracks(10)).toBe(true)
+      expect(cs.resizeTracks(10)).toBeTruthy()
       expect(cs.count).toBe(10)
-      expect(cs.resizeTracks(1)).toBe(true)
+      expect(cs.resizeTracks(1)).toBeTruthy()
       expect(cs.count).toBe(1)
     })
 
@@ -238,9 +239,9 @@ describe('CueSheetMetadata', () => {
       const cs = new CueSheetMetadata()
       cs.insertBlankTrack(0)
 
-      expect(cs.trackResizeIndices(0, 10)).toBe(true)
+      expect(cs.trackResizeIndices(0, 10)).toBeTruthy()
       expect(Array.from(cs)[0].count).toBe(10)
-      expect(cs.trackResizeIndices(0, 1)).toBe(true)
+      expect(cs.trackResizeIndices(0, 1)).toBeTruthy()
       expect(Array.from(cs)[0].count).toBe(1)
     })
 
@@ -248,7 +249,7 @@ describe('CueSheetMetadata', () => {
       const cs = new CueSheetMetadata()
 
       expect(() => cs.trackResizeIndices(0, 1)).toThrow()
-      expect(cs.insertBlankTrack(0)).toBe(true)
+      expect(cs.insertBlankTrack(0)).toBeTruthy()
       expect(() => cs.trackResizeIndices(11, 1)).toThrow()
       expect(() => cs.trackResizeIndices(-1, 1)).toThrow()
     })
@@ -275,7 +276,7 @@ describe('CueSheetMetadata', () => {
       const cs = new CueSheetMetadata()
       cs.insertBlankTrack(0)
 
-      expect(cs.trackInsertIndex(0, 0, new CueSheetIndex(1n, 0))).toBe(true)
+      expect(cs.trackInsertIndex(0, 0, new CueSheetIndex(1n, 0))).toBeTruthy()
 
       expect(Array.from(cs)[0].count).toBe(1)
     })
@@ -287,7 +288,7 @@ describe('CueSheetMetadata', () => {
         const csi = new CueSheetIndex(1n, 2)
 
         expect(() => cs.trackInsertIndex(0, 0, csi)).toThrow()
-        expect(cs.insertBlankTrack(0)).toBe(true)
+        expect(cs.insertBlankTrack(0)).toBeTruthy()
         expect(() => cs.trackInsertIndex(11, 0, csi)).toThrow()
         expect(() => cs.trackInsertIndex(-1, 0, csi)).toThrow()
       },
@@ -338,7 +339,7 @@ describe('CueSheetMetadata', () => {
         const cs = new CueSheetMetadata()
         cs.insertBlankTrack(0)
 
-        expect(cs.trackInsertBlankIndex(0, 0)).toBe(true)
+        expect(cs.trackInsertBlankIndex(0, 0)).toBeTruthy()
 
         expect(Array.from(cs)[0].count).toBe(1)
       },
@@ -350,7 +351,7 @@ describe('CueSheetMetadata', () => {
         const cs = new CueSheetMetadata()
 
         expect(() => cs.trackInsertBlankIndex(0, 0)).toThrow()
-        expect(cs.insertBlankTrack(0)).toBe(true)
+        expect(cs.insertBlankTrack(0)).toBeTruthy()
         expect(() => cs.trackInsertBlankIndex(11, 0)).toThrow()
         expect(() => cs.trackInsertBlankIndex(-1, 0)).toThrow()
       },
@@ -390,7 +391,7 @@ describe('CueSheetMetadata', () => {
       cs.insertBlankTrack(0)
       cs.trackInsertBlankIndex(0, 0)
 
-      expect(cs.trackDeleteIndex(0, 0)).toBe(true)
+      expect(cs.trackDeleteIndex(0, 0)).toBeTruthy()
 
       expect(Array.from(cs)[0].count).toBe(0)
     })
@@ -401,7 +402,7 @@ describe('CueSheetMetadata', () => {
         const cs = new CueSheetMetadata()
 
         expect(() => cs.trackDeleteIndex(0, 0)).toThrow()
-        expect(cs.insertBlankTrack(0)).toBe(true)
+        expect(cs.insertBlankTrack(0)).toBeTruthy()
         expect(() => cs.trackDeleteIndex(34, 0)).toThrow()
         expect(() => cs.trackDeleteIndex(-1, 0)).toThrow()
       },
@@ -411,7 +412,7 @@ describe('CueSheetMetadata', () => {
       'trackDeleteIndex() should throw if the index index is invalid',
       () => {
         const cs = new CueSheetMetadata()
-        expect(cs.insertBlankTrack(0)).toBe(true)
+        expect(cs.insertBlankTrack(0)).toBeTruthy()
 
         expect(() => cs.trackDeleteIndex(0, 12)).toThrow()
         expect(() => cs.trackDeleteIndex(0, -1)).toThrow()

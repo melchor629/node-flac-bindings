@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { fns } from '../lib/api.js'
 
 describe('fns', () => {
@@ -69,7 +70,7 @@ describe('fns', () => {
         outBps: 1,
       })
 
-      expect(returnedBuffer).toEqual(expectedBuffer)
+      expect(returnedBuffer).toStrictEqual(expectedBuffer)
     })
 
     it('scales up properly', () => {
@@ -91,7 +92,7 @@ describe('fns', () => {
         inBps: 2,
       })
 
-      expect(returnedBuffer).toEqual(expectedBuffer)
+      expect(returnedBuffer).toStrictEqual(expectedBuffer)
     })
 
     it('larger buffer with samples provided returns smaller buffer', () => {
@@ -111,7 +112,7 @@ describe('fns', () => {
         samples: 2,
       })
 
-      expect(returnedBuffer).toEqual(expectedBuffer)
+      expect(returnedBuffer).toStrictEqual(expectedBuffer)
     })
   })
 
@@ -188,7 +189,7 @@ describe('fns', () => {
         outBps: 2,
       })
 
-      expect(returnedBuffer).toEqual(expectedBuffer)
+      expect(returnedBuffer).toStrictEqual(expectedBuffer)
     })
 
     it('returns interleaved audio scaled down', () => {
@@ -220,7 +221,7 @@ describe('fns', () => {
         outBps: 2,
       })
 
-      expect(returnedBuffer).toEqual(expectedBuffer)
+      expect(returnedBuffer).toStrictEqual(expectedBuffer)
     })
 
     it('returns interleaved audio scaled up', () => {
@@ -256,7 +257,7 @@ describe('fns', () => {
         outBps: 3,
       })
 
-      expect(returnedBuffer).toEqual(expectedBuffer)
+      expect(returnedBuffer).toStrictEqual(expectedBuffer)
     })
   })
 
@@ -335,7 +336,7 @@ describe('fns', () => {
         outBps: 2,
       })
 
-      expect(returnedBuffer).toEqual(expectedBuffers)
+      expect(returnedBuffer).toStrictEqual(expectedBuffers)
     })
 
     it('returns interleaved audio scaled down', () => {
@@ -367,7 +368,7 @@ describe('fns', () => {
         outBps: 2,
       })
 
-      expect(returnedBuffer).toEqual(expectedBuffers)
+      expect(returnedBuffer).toStrictEqual(expectedBuffers)
     })
 
     it('returns interleaved audio scaled up', () => {
@@ -403,7 +404,7 @@ describe('fns', () => {
         outBps: 3,
       })
 
-      expect(returnedBuffer).toEqual(expectedBuffers)
+      expect(returnedBuffer).toStrictEqual(expectedBuffers)
     })
   })
 })

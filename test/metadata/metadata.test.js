@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { metadata } from '../../lib/api.js'
 import { gc } from '../helper/index.js'
 
@@ -6,7 +7,7 @@ const {
   Metadata,
 } = metadata
 
-describe('Metadata', () => {
+describe('metadata', () => {
   it('create metadata object should throw', () => {
     expect(() => new Metadata(1)).toThrow()
   })
@@ -14,7 +15,7 @@ describe('Metadata', () => {
   it('get isLast should work', () => {
     const m = new ApplicationMetadata()
 
-    expect(m.isLast).toBe(false)
+    expect(m.isLast).toBeFalsy()
   })
 
   it('isEqual() returns true if the objects are similar', () => {
@@ -25,8 +26,8 @@ describe('Metadata', () => {
     am2.data = am1.data
     am2.id = am1.id
 
-    expect(am1.isEqual(am2)).toBe(true)
-    expect(am2.isEqual(am1)).toBe(true)
+    expect(am1.isEqual(am2)).toBeTruthy()
+    expect(am2.isEqual(am1)).toBeTruthy()
   })
 
   it('isEqual() returns false if the objects are different', () => {
@@ -37,8 +38,8 @@ describe('Metadata', () => {
     am2.id = am1.data
     am2.data = am1.id
 
-    expect(am1.isEqual(am2)).toBe(false)
-    expect(am2.isEqual(am1)).toBe(false)
+    expect(am1.isEqual(am2)).toBeFalsy()
+    expect(am2.isEqual(am1)).toBeFalsy()
   })
 
   it('isEqual() throws if first argument is not provided', () => {
@@ -56,9 +57,9 @@ describe('Metadata', () => {
 
     const am2 = am1.clone()
 
-    expect(am1.isEqual(am2)).toBe(true)
-    expect(am2.isEqual(am1)).toBe(true)
-    expect(Object.is(am1, am2)).toBe(false)
+    expect(am1.isEqual(am2)).toBeTruthy()
+    expect(am2.isEqual(am1)).toBeTruthy()
+    expect(Object.is(am1, am2)).toBeFalsy()
   })
 
   describe('gc', () => {

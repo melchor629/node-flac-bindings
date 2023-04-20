@@ -1,6 +1,13 @@
-import events from 'events'
-import fs from 'fs'
+import events from 'node:events'
+import fs from 'node:fs'
 import tempUntracked from 'temp'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'vitest'
 import {
   FileDecoder,
   FileEncoder,
@@ -22,17 +29,18 @@ const {
 const temp = tempUntracked.track()
 
 let tmpFile
-beforeEach(() => {
-  tmpFile = temp.openSync('flac-bindings.encode-decode.js-streams')
-  fs.closeSync(tmpFile.fd)
-})
-
-afterEach(() => {
-  temp.cleanupSync()
-})
 
 describe('encode & decode: js streams', () => {
-  describe('Stream', () => {
+  beforeEach(() => {
+    tmpFile = temp.openSync('flac-bindings.encode-decode.js-streams')
+    fs.closeSync(tmpFile.fd)
+  })
+
+  afterEach(() => {
+    temp.cleanupSync()
+  })
+
+  describe('stream', () => {
     it('encode/decode using stream (non-ogg)', async () => {
       const dec = new StreamDecoder({ outputAs32: false })
       const enc = new StreamEncoder({
@@ -50,9 +58,9 @@ describe('encode & decode: js streams', () => {
       enc.pipe(output)
       await events.once(output, 'close')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(dec.processedSamples).toEqual(totalSamples)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
@@ -74,9 +82,9 @@ describe('encode & decode: js streams', () => {
       enc.pipe(output)
       await events.once(output, 'close')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(dec.processedSamples).toEqual(totalSamples)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
@@ -91,7 +99,7 @@ describe('encode & decode: js streams', () => {
 
       const raw = Buffer.concat(chunks)
       expect(raw).toHaveLength(totalSamples * 3 * 2)
-      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
 
@@ -106,7 +114,7 @@ describe('encode & decode: js streams', () => {
 
       const raw = Buffer.concat(chunks)
       expect(raw).toHaveLength(totalSamples * 4 * 2)
-      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, raw, 32)
     })
 
@@ -121,7 +129,7 @@ describe('encode & decode: js streams', () => {
 
       const raw = Buffer.concat(chunks)
       expect(raw).toHaveLength(totalSamples * 3 * 2)
-      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
 
@@ -139,8 +147,8 @@ describe('encode & decode: js streams', () => {
       enc.end(raw)
       await events.once(output, 'close')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
@@ -162,8 +170,8 @@ describe('encode & decode: js streams', () => {
       enc.end(chunkazo)
       await events.once(output, 'close')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
@@ -182,8 +190,8 @@ describe('encode & decode: js streams', () => {
       enc.end(raw)
       await events.once(output, 'close')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
@@ -197,13 +205,13 @@ describe('encode & decode: js streams', () => {
       expect(dec.getBitsPerSample()).toBe(24)
       expect(dec.getChannels()).toBe(2)
       expect(dec.getChannelAssignment()).toBe(3)
-      expect(dec.getTotalSamples()).toEqual(totalSamples)
+      expect(dec.getTotalSamples()).toStrictEqual(totalSamples)
       expect(dec.getSampleRate()).toBe(44100)
 
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
 
-      expect(dec.getProgress()).toEqual({
+      expect(dec.getProgress()).toStrictEqual({
         position: totalSamples,
         totalSamples,
         percentage: 1,
@@ -225,7 +233,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       expect(format).not.toBeNull()
-      expect(format).toEqual({
+      expect(format).toStrictEqual({
         channels: 2,
         bitDepth: 24,
         bitsPerSample: 24,
@@ -281,9 +289,9 @@ describe('encode & decode: js streams', () => {
       enc.pipe(output)
       await events.once(output, 'close')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(dec.processedSamples).toEqual(totalSamples)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
@@ -335,7 +343,7 @@ describe('encode & decode: js streams', () => {
     })
   })
 
-  describe('File', () => {
+  describe('file', () => {
     it('encode/decode using file (non-ogg)', async () => {
       const dec = new FileDecoder({ file: pathForFile('loop.flac'), outputAs32: false })
       const enc = new FileEncoder({
@@ -349,9 +357,9 @@ describe('encode & decode: js streams', () => {
       dec.pipe(enc)
       await events.once(enc, 'finish')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(dec.processedSamples).toEqual(totalSamples)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
@@ -369,9 +377,9 @@ describe('encode & decode: js streams', () => {
       dec.pipe(enc)
       await events.once(enc, 'finish')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(dec.processedSamples).toEqual(totalSamples)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
@@ -388,9 +396,9 @@ describe('encode & decode: js streams', () => {
       dec.pipe(enc)
       await events.once(enc, 'finish')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(dec.processedSamples).toEqual(totalSamples)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
@@ -403,7 +411,7 @@ describe('encode & decode: js streams', () => {
 
       const raw = Buffer.concat(chunks)
       expect(raw).toHaveLength(totalSamples * 3 * 2)
-      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
 
@@ -416,7 +424,7 @@ describe('encode & decode: js streams', () => {
 
       const raw = Buffer.concat(chunks)
       expect(raw).toHaveLength(totalSamples * 4 * 2)
-      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, raw, 32)
     })
 
@@ -429,7 +437,7 @@ describe('encode & decode: js streams', () => {
 
       const raw = Buffer.concat(chunks)
       expect(raw).toHaveLength(totalSamples * 3 * 2)
-      expect(dec.processedSamples).toEqual(totalSamples)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, raw, 24)
     })
 
@@ -447,8 +455,8 @@ describe('encode & decode: js streams', () => {
       enc.end(raw)
       await events.once(enc, 'finish')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
@@ -470,8 +478,8 @@ describe('encode & decode: js streams', () => {
       enc.end(chunkazo)
       await events.once(enc, 'finish')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24)
     })
 
@@ -490,8 +498,8 @@ describe('encode & decode: js streams', () => {
       enc.end(raw)
       await events.once(enc, 'finish')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 
@@ -503,13 +511,13 @@ describe('encode & decode: js streams', () => {
       expect(dec.getBitsPerSample()).toBe(24)
       expect(dec.getChannels()).toBe(2)
       expect(dec.getChannelAssignment()).toBe(3)
-      expect(dec.getTotalSamples()).toEqual(totalSamples)
+      expect(dec.getTotalSamples()).toStrictEqual(totalSamples)
       expect(dec.getSampleRate()).toBe(44100)
 
       dec.on('data', () => undefined)
       await events.once(dec, 'end')
 
-      expect(dec.getProgress()).toEqual({
+      expect(dec.getProgress()).toStrictEqual({
         position: totalSamples,
         totalSamples,
         percentage: 1,
@@ -529,7 +537,7 @@ describe('encode & decode: js streams', () => {
       await events.once(dec, 'end')
 
       expect(format).not.toBeNull()
-      expect(format).toEqual({
+      expect(format).toStrictEqual({
         channels: 2,
         bitDepth: 24,
         bitsPerSample: 24,
@@ -588,9 +596,9 @@ describe('encode & decode: js streams', () => {
       dec.pipe(enc)
       await events.once(enc, 'finish')
 
-      expect((await fs.promises.stat(tmpFile.path)).size > 660 * 1000).toBe(true)
-      expect(dec.processedSamples).toEqual(totalSamples)
-      expect(enc.processedSamples).toEqual(totalSamples)
+      expect((await fs.promises.stat(tmpFile.path)).size).toBeGreaterThan(660 * 1000)
+      expect(dec.processedSamples).toStrictEqual(totalSamples)
+      expect(enc.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, tmpFile.path, 24, true)
     })
 

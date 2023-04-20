@@ -1,6 +1,13 @@
-import oldfs from 'fs'
-import fs from 'fs/promises'
+import oldfs from 'node:fs'
+import fs from 'node:fs/promises'
 import tempUntracked from 'temp'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'vitest'
 import {
   Chain, Iterator, metadata, format,
 } from '../lib/api.js'
@@ -13,7 +20,7 @@ import {
 const temp = tempUntracked.track()
 const { tags: pathForFile } = fullPathForFile
 
-describe('Chain & Iterator', () => {
+describe('chain & Iterator', () => {
   describe('read', () => {
     it('throws if the first argument is not a Metadata', () => {
       expect(() => new Chain().read({})).toThrow()
@@ -38,7 +45,7 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      expect(ch.status()).toEqual(Chain.Status.OK)
+      expect(ch.status()).toStrictEqual(Chain.Status.OK)
       await fs.access(filePath)
     })
   })
@@ -67,7 +74,7 @@ describe('Chain & Iterator', () => {
 
       await ch.readAsync(filePath)
 
-      expect(ch.status()).toEqual(Chain.Status.OK)
+      expect(ch.status()).toStrictEqual(Chain.Status.OK)
       await fs.access(filePath)
     })
   })
@@ -116,65 +123,65 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      const it = ch.createIterator()
-      const i = it[Symbol.iterator]()
+      const si = ch.createIterator()
+      const i = si[Symbol.iterator]()
 
       let m = i.next()
-      expect(m.done).toBe(false)
-      expect(m.value.type).toEqual(format.MetadataType.STREAMINFO)
+      expect(m.done).toBeFalsy()
+      expect(m.value.type).toStrictEqual(format.MetadataType.STREAMINFO)
 
       m = i.next()
-      expect(m.done).toBe(false)
-      expect(m.value.type).toEqual(format.MetadataType.APPLICATION)
+      expect(m.done).toBeFalsy()
+      expect(m.value.type).toStrictEqual(format.MetadataType.APPLICATION)
 
       m = i.next()
-      expect(m.done).toBe(false)
-      expect(m.value.type).toEqual(format.MetadataType.PICTURE)
+      expect(m.done).toBeFalsy()
+      expect(m.value.type).toStrictEqual(format.MetadataType.PICTURE)
 
       m = i.next()
-      expect(m.done).toBe(false)
-      expect(m.value.type).toEqual(format.MetadataType.PADDING)
+      expect(m.done).toBeFalsy()
+      expect(m.value.type).toStrictEqual(format.MetadataType.PADDING)
 
       m = i.next()
-      expect(m.done).toBe(false)
-      expect(m.value.type).toEqual(format.MetadataType.VORBIS_COMMENT)
+      expect(m.done).toBeFalsy()
+      expect(m.value.type).toStrictEqual(format.MetadataType.VORBIS_COMMENT)
 
       m = i.next()
-      expect(m.done).toBe(true)
+      expect(m.done).toBeTruthy()
     })
 
     it('new Iterator() creates an iterator from the chain and iterates over the blocks correctly', () => {
       const filePath = pathForFile('vc-p.flac')
       const ch = new Chain()
-      const it = new Iterator()
+      const si = new Iterator()
 
       ch.read(filePath)
 
-      it.init(ch)
-      const i = it[Symbol.iterator]()
+      si.init(ch)
+      const i = si[Symbol.iterator]()
 
       let m = i.next()
-      expect(m.done).toBe(false)
-      expect(m.value.type).toEqual(format.MetadataType.STREAMINFO)
+      expect(m.done).toBeFalsy()
+      expect(m.value.type).toStrictEqual(format.MetadataType.STREAMINFO)
 
       m = i.next()
-      expect(m.done).toBe(false)
-      expect(m.value.type).toEqual(format.MetadataType.APPLICATION)
+      expect(m.done).toBeFalsy()
+      expect(m.value.type).toStrictEqual(format.MetadataType.APPLICATION)
 
       m = i.next()
-      expect(m.done).toBe(false)
-      expect(m.value.type).toEqual(format.MetadataType.PICTURE)
+      expect(m.done).toBeFalsy()
+      expect(m.value.type).toStrictEqual(format.MetadataType.PICTURE)
 
       m = i.next()
-      expect(m.done).toBe(false)
-      expect(m.value.type).toEqual(format.MetadataType.PADDING)
+      expect(m.done).toBeFalsy()
+      expect(m.value.type).toStrictEqual(format.MetadataType.PADDING)
 
       m = i.next()
-      expect(m.done).toBe(false)
-      expect(m.value.type).toEqual(format.MetadataType.VORBIS_COMMENT)
+      expect(m.done).toBeFalsy()
+      expect(m.value.type).toStrictEqual(format.MetadataType.VORBIS_COMMENT)
 
       m = i.next()
-      expect(m.done).toBe(true)
+      expect(m.done).toBeTruthy()
     })
   })
 
@@ -185,27 +192,27 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      const it = ch.createIterator()
-      expect(it.getBlockType()).toEqual(format.MetadataType.STREAMINFO)
-      expect(it.getBlock() instanceof metadata.StreamInfoMetadata).toBe(true)
+      const si = ch.createIterator()
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.STREAMINFO)
+      expect(si.getBlock() instanceof metadata.StreamInfoMetadata).toBeTruthy()
 
-      expect(it.next()).toBe(true)
-      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
-      expect(it.getBlock() instanceof metadata.ApplicationMetadata).toBe(true)
+      expect(si.next()).toBeTruthy()
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.APPLICATION)
+      expect(si.getBlock() instanceof metadata.ApplicationMetadata).toBeTruthy()
 
-      expect(it.next()).toBe(true)
-      expect(it.getBlockType()).toEqual(format.MetadataType.PICTURE)
-      expect(it.getBlock() instanceof metadata.PictureMetadata).toBe(true)
+      expect(si.next()).toBeTruthy()
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.PICTURE)
+      expect(si.getBlock() instanceof metadata.PictureMetadata).toBeTruthy()
 
-      expect(it.next()).toBe(true)
-      expect(it.getBlockType()).toEqual(format.MetadataType.PADDING)
-      expect(it.getBlock() instanceof metadata.PaddingMetadata).toBe(true)
+      expect(si.next()).toBeTruthy()
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.PADDING)
+      expect(si.getBlock() instanceof metadata.PaddingMetadata).toBeTruthy()
 
-      expect(it.next()).toBe(true)
-      expect(it.getBlockType()).toEqual(format.MetadataType.VORBIS_COMMENT)
-      expect(it.getBlock() instanceof metadata.VorbisCommentMetadata).toBe(true)
+      expect(si.next()).toBeTruthy()
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.VORBIS_COMMENT)
+      expect(si.getBlock() instanceof metadata.VorbisCommentMetadata).toBeTruthy()
 
-      expect(it.next()).toBe(false)
+      expect(si.next()).toBeFalsy()
     })
 
     it('should iterate backwards and get info about them correctly', () => {
@@ -214,29 +221,29 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      const it = ch.createIterator()
+      const si = ch.createIterator()
       // eslint-disable-next-line curly
-      while (it.next());
+      while (si.next());
 
-      expect(it.getBlockType()).toEqual(format.MetadataType.VORBIS_COMMENT)
-      expect(it.getBlock() instanceof metadata.VorbisCommentMetadata).toBe(true)
-      expect(it.prev()).toBe(true)
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.VORBIS_COMMENT)
+      expect(si.getBlock() instanceof metadata.VorbisCommentMetadata).toBeTruthy()
+      expect(si.prev()).toBeTruthy()
 
-      expect(it.getBlockType()).toEqual(format.MetadataType.PADDING)
-      expect(it.getBlock() instanceof metadata.PaddingMetadata).toBe(true)
-      expect(it.prev()).toBe(true)
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.PADDING)
+      expect(si.getBlock() instanceof metadata.PaddingMetadata).toBeTruthy()
+      expect(si.prev()).toBeTruthy()
 
-      expect(it.getBlockType()).toEqual(format.MetadataType.PICTURE)
-      expect(it.getBlock() instanceof metadata.PictureMetadata).toBe(true)
-      expect(it.prev()).toBe(true)
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.PICTURE)
+      expect(si.getBlock() instanceof metadata.PictureMetadata).toBeTruthy()
+      expect(si.prev()).toBeTruthy()
 
-      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
-      expect(it.getBlock() instanceof metadata.ApplicationMetadata).toBe(true)
-      expect(it.prev()).toBe(true)
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.APPLICATION)
+      expect(si.getBlock() instanceof metadata.ApplicationMetadata).toBeTruthy()
+      expect(si.prev()).toBeTruthy()
 
-      expect(it.getBlockType()).toEqual(format.MetadataType.STREAMINFO)
-      expect(it.getBlock() instanceof metadata.StreamInfoMetadata).toBe(true)
-      expect(it.prev()).toBe(false)
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.STREAMINFO)
+      expect(si.getBlock() instanceof metadata.StreamInfoMetadata).toBeTruthy()
+      expect(si.prev()).toBeFalsy()
     })
   })
 
@@ -249,7 +256,7 @@ describe('Chain & Iterator', () => {
 
       ch.sortPadding()
 
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.APPLICATION,
         format.MetadataType.PICTURE,
@@ -266,12 +273,12 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      const it = ch.createIterator()
+      const si = ch.createIterator()
       // eslint-disable-next-line curly
-      while (it.next());
-      it.insertBlockBefore(new metadata.PaddingMetadata(100))
+      while (si.next());
+      si.insertBlockBefore(new metadata.PaddingMetadata(100))
 
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.APPLICATION,
         format.MetadataType.PICTURE,
@@ -282,7 +289,7 @@ describe('Chain & Iterator', () => {
 
       ch.mergePadding()
 
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.APPLICATION,
         format.MetadataType.PICTURE,
@@ -311,8 +318,8 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      expect(ch.createIterator().setBlock(new metadata.PaddingMetadata())).toBe(false)
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      expect(ch.createIterator().setBlock(new metadata.PaddingMetadata())).toBeFalsy()
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.SEEKTABLE,
         format.MetadataType.VORBIS_COMMENT,
@@ -326,12 +333,12 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      const it = ch.createIterator()
-      expect(it.next()).toBe(true)
-      expect(it.next()).toBe(true)
-      expect(it.setBlock(new metadata.PaddingMetadata())).toBe(true)
-      expect(it.getBlockType()).toEqual(format.MetadataType.PADDING)
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      const si = ch.createIterator()
+      expect(si.next()).toBeTruthy()
+      expect(si.next()).toBeTruthy()
+      expect(si.setBlock(new metadata.PaddingMetadata())).toBeTruthy()
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.PADDING)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.SEEKTABLE,
         format.MetadataType.PADDING,
@@ -345,8 +352,8 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      expect(ch.createIterator().deleteBlock()).toBe(false)
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      expect(ch.createIterator().deleteBlock()).toBeFalsy()
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.SEEKTABLE,
         format.MetadataType.VORBIS_COMMENT,
@@ -360,12 +367,12 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      const it = ch.createIterator()
-      expect(it.next()).toBe(true)
-      expect(it.next()).toBe(true)
-      expect(it.deleteBlock(true)).toBe(true)
-      expect(it.getBlockType()).toEqual(format.MetadataType.SEEKTABLE)
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      const si = ch.createIterator()
+      expect(si.next()).toBeTruthy()
+      expect(si.next()).toBeTruthy()
+      expect(si.deleteBlock(true)).toBeTruthy()
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.SEEKTABLE)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.SEEKTABLE,
         format.MetadataType.PADDING,
@@ -379,8 +386,8 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      expect(ch.createIterator().insertBlockBefore(new metadata.ApplicationMetadata())).toBe(false)
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      expect(ch.createIterator().insertBlockBefore(new metadata.ApplicationMetadata())).toBeFalsy()
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.SEEKTABLE,
         format.MetadataType.VORBIS_COMMENT,
@@ -394,12 +401,12 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      const it = ch.createIterator()
-      expect(it.next()).toBe(true)
-      expect(it.next()).toBe(true)
-      expect(it.insertBlockBefore(new metadata.ApplicationMetadata())).toBe(true)
-      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      const si = ch.createIterator()
+      expect(si.next()).toBeTruthy()
+      expect(si.next()).toBeTruthy()
+      expect(si.insertBlockBefore(new metadata.ApplicationMetadata())).toBeTruthy()
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.APPLICATION)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.SEEKTABLE,
         format.MetadataType.APPLICATION,
@@ -414,12 +421,12 @@ describe('Chain & Iterator', () => {
 
       ch.read(filePath)
 
-      const it = ch.createIterator()
-      expect(it.next()).toBe(true)
-      expect(it.next()).toBe(true)
-      expect(it.insertBlockAfter(new metadata.ApplicationMetadata())).toBe(true)
-      expect(it.getBlockType()).toEqual(format.MetadataType.APPLICATION)
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      const si = ch.createIterator()
+      expect(si.next()).toBeTruthy()
+      expect(si.next()).toBeTruthy()
+      expect(si.insertBlockAfter(new metadata.ApplicationMetadata())).toBeTruthy()
+      expect(si.getBlockType()).toStrictEqual(format.MetadataType.APPLICATION)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.SEEKTABLE,
         format.MetadataType.VORBIS_COMMENT,
@@ -444,19 +451,19 @@ describe('Chain & Iterator', () => {
     it('modify the blocks and write should modify the file correctly (sync)', () => {
       const ch = new Chain()
       ch.read(tmpFile.path)
-      const it = ch.createIterator()
+      const si = ch.createIterator()
 
       const vc = new metadata.VorbisCommentMetadata()
       vc.vendorString = 'flac-bindings 2.0.0'
-      expect(it.insertBlockAfter(vc)).toBe(true)
+      expect(si.insertBlockAfter(vc)).toBeTruthy()
 
-      expect(it.insertBlockAfter(new metadata.PaddingMetadata(50))).toBe(true)
-      expect(it.insertBlockAfter(new metadata.ApplicationMetadata())).toBe(true)
-      expect(it.next()).toBe(true)
+      expect(si.insertBlockAfter(new metadata.PaddingMetadata(50))).toBeTruthy()
+      expect(si.insertBlockAfter(new metadata.ApplicationMetadata())).toBeTruthy()
+      expect(si.next()).toBeTruthy()
 
       ch.write(false)
 
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.VORBIS_COMMENT,
         format.MetadataType.PADDING,
@@ -468,19 +475,19 @@ describe('Chain & Iterator', () => {
     it('modify the blocks and write should modify the file correctly (async)', async () => {
       const ch = new Chain()
       await ch.readAsync(tmpFile.path)
-      const it = ch.createIterator()
+      const si = ch.createIterator()
 
       const vc = new metadata.VorbisCommentMetadata()
       vc.vendorString = 'flac-bindings 2.0.0'
-      expect(it.insertBlockAfter(vc)).toBe(true)
+      expect(si.insertBlockAfter(vc)).toBeTruthy()
 
-      expect(it.insertBlockAfter(new metadata.PaddingMetadata(50))).toBe(true)
-      expect(it.insertBlockAfter(new metadata.ApplicationMetadata())).toBe(true)
-      expect(it.next()).toBe(true)
+      expect(si.insertBlockAfter(new metadata.PaddingMetadata(50))).toBeTruthy()
+      expect(si.insertBlockAfter(new metadata.ApplicationMetadata())).toBeTruthy()
+      expect(si.next()).toBeTruthy()
 
       await ch.writeAsync(false)
 
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.VORBIS_COMMENT,
         format.MetadataType.PADDING,
@@ -493,21 +500,21 @@ describe('Chain & Iterator', () => {
       const readCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r')
       const ch = new Chain()
       await ch.readWithCallbacks(readCallbacks).finally(() => readCallbacks.close())
-      const it = ch.createIterator()
+      const si = ch.createIterator()
 
       const vc = new metadata.VorbisCommentMetadata()
       vc.vendorString = 'flac-bindings 2.0.0'
-      expect(it.insertBlockAfter(vc)).toBe(true)
+      expect(si.insertBlockAfter(vc)).toBeTruthy()
 
-      expect(it.insertBlockAfter(new metadata.PaddingMetadata(50))).toBe(true)
-      expect(it.insertBlockAfter(new metadata.ApplicationMetadata())).toBe(true)
-      expect(it.next()).toBe(true)
+      expect(si.insertBlockAfter(new metadata.PaddingMetadata(50))).toBeTruthy()
+      expect(si.insertBlockAfter(new metadata.ApplicationMetadata())).toBeTruthy()
+      expect(si.next()).toBeTruthy()
 
       const writeCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r+')
-      expect(ch.checkIfTempFileIsNeeded()).toBe(false)
+      expect(ch.checkIfTempFileIsNeeded()).toBeFalsy()
       await ch.writeWithCallbacks(writeCallbacks).finally(() => writeCallbacks.close())
 
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.VORBIS_COMMENT,
         format.MetadataType.PADDING,
@@ -520,24 +527,24 @@ describe('Chain & Iterator', () => {
       const readCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r')
       const ch = new Chain()
       await ch.readWithCallbacks(readCallbacks).finally(() => readCallbacks.close())
-      const it = ch.createIterator()
+      const si = ch.createIterator()
 
       const vc = new metadata.VorbisCommentMetadata()
       vc.vendorString = 'flac-bindings 2.0.0'
-      expect(it.insertBlockAfter(vc)).toBe(true)
+      expect(si.insertBlockAfter(vc)).toBeTruthy()
 
-      expect(it.insertBlockAfter(new metadata.PaddingMetadata(50))).toBe(true)
-      expect(it.insertBlockAfter(new metadata.ApplicationMetadata())).toBe(true)
-      expect(it.next()).toBe(true)
+      expect(si.insertBlockAfter(new metadata.PaddingMetadata(50))).toBeTruthy()
+      expect(si.insertBlockAfter(new metadata.ApplicationMetadata())).toBeTruthy()
+      expect(si.next()).toBeTruthy()
 
       const tmpFile2 = temp.openSync('flac-bindings.metadata2.chain-iterator')
       const writeCallbacks = await generateFlacCallbacks.flacio(tmpFile.path, 'r+')
       const writeCallbacks2 = await generateFlacCallbacks.flacio(tmpFile2.path, 'r+')
-      expect(ch.checkIfTempFileIsNeeded(false)).toBe(true)
+      expect(ch.checkIfTempFileIsNeeded(false)).toBeTruthy()
       await ch.writeWithCallbacksAndTempFile(false, writeCallbacks, writeCallbacks2)
         .finally(() => writeCallbacks.close().finally(() => writeCallbacks2.close()))
 
-      expect(Array.from(ch.createIterator()).map((i) => i.type)).toEqual([
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
         format.MetadataType.STREAMINFO,
         format.MetadataType.VORBIS_COMMENT,
         format.MetadataType.PADDING,
@@ -553,7 +560,7 @@ describe('Chain & Iterator', () => {
       const ch = new Chain()
       await ch.readAsync(filePath)
 
-      expect(ch.checkIfTempFileIsNeeded()).toBe(false)
+      expect(ch.checkIfTempFileIsNeeded()).toBeFalsy()
     })
   })
 

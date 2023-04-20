@@ -1,7 +1,7 @@
 {
   "name": "flac-bindings",
   "version": "3.0.0",
-  "libflac": "1.4.1",
+  "libflac": "1.4.2",
   "libogg": "1.3.5",
   "description": "libflac bindings to node.js with easy to use API",
   "repository": "https://github.com/melchor629/node-flac-bindings/",
@@ -15,7 +15,7 @@
   },
   "types": "./lib/index.d.ts",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "vitest run",
     "coverage": "./scripts/coverage.sh",
     "install": "node scripts/flac-build.js",
     "prebuild": "node ./scripts/flac-prebuild.js",
@@ -39,18 +39,19 @@
   },
   "devDependencies": {
     "@types/debug": "^4.1.7",
-    "@types/jest": "^29.2.5",
     "@types/node": "^18.13.0",
     "@types/tar-stream": "^2.2.2",
     "@types/temp": "^0.9.1",
+    "@vitest/coverage-c8": "^0.30.1",
     "eslint": "^8.18.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.26.0",
-    "eslint-plugin-jest": "^27.1.0",
+    "eslint-plugin-vitest": "^0.1.4",
     "jest": "^29.0.3",
     "jest-extended": "^3.1.0",
     "temp": "^0.9.4",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "vitest": "^0.30.1"
   },
   "engines": {
     "node": "^14.13.1 || >=16.0.0",

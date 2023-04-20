@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { metadata, metadata0 } from '../../lib/api.js'
 import { pathForFile as fullPathForFile, gc } from '../helper/index.js'
 
@@ -5,7 +6,7 @@ const { CueSheetTrack, CueSheetIndex } = metadata
 const { getCuesheet } = metadata0
 const { tags: pathForFile } = fullPathForFile
 
-describe('CueSheetTrack', () => {
+describe('cueSheetTrack', () => {
   it('create a new object should work', () => {
     expect(new CueSheetTrack()).toBeTruthy()
   })
@@ -61,10 +62,10 @@ describe('CueSheetTrack', () => {
   it('iterator should get all index items', () => {
     const cs = getCuesheet(pathForFile('vc-cs.flac'))
 
-    expect(cs).not.toBe(false)
+    expect(cs).not.toBeFalsy()
     const results = Array.from(Array.from(cs)[0])
-    expect(results[0]).toEqual(new CueSheetIndex(0, 0))
-    expect(results[1]).toEqual(new CueSheetIndex(18816, 1))
+    expect(results[0]).toStrictEqual(new CueSheetIndex(0, 0))
+    expect(results[1]).toStrictEqual(new CueSheetIndex(18816, 1))
   })
 
   it('clone should get a different object but equal in contents', () => {
@@ -73,7 +74,7 @@ describe('CueSheetTrack', () => {
 
     const copy = cst.clone()
 
-    expect(copy).toEqual(cst)
+    expect(copy).toStrictEqual(cst)
     expect(copy).not.toBe(cst)
   })
 

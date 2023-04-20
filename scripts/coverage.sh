@@ -2,8 +2,6 @@
 
 set -e
 
-export NODE_OPTIONS=--experimental-vm-modules
-
 if [[ -d coverage ]]; then
   rm -rf coverage
 fi
@@ -18,7 +16,7 @@ if [[ ! -z "$1" ]] && [[ "$1" = "rebuild" ]]; then
 fi
 
 echo Running tests
-npx jest --coverage
+npm test -- --coverage
 
 echo Extracting coverage report from C++
 lcov -c --quiet --directory build/CMakeFiles/flac-bindings.dir/src --base-directory src -o coverage/cpp.info --no-external

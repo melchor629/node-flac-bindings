@@ -1,5 +1,12 @@
+import fs from 'node:fs'
 import tempUntracked from 'temp'
-import fs from 'fs'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'vitest'
 import { api } from '../../lib/index.js'
 import {
   pathForFile as fullPathForFile,
@@ -21,18 +28,19 @@ const temp = tempUntracked.track()
 
 let tmpFile
 let deferredScope = null
-beforeEach(() => {
-  tmpFile = temp.openSync('flac-bindings.encode-decode.sync-api')
-  deferredScope = createDeferredScope()
-  fs.closeSync(tmpFile.fd)
-})
-
-afterEach(() => {
-  temp.cleanupSync()
-  deferredScope.finalize()
-})
 
 describe('encode & decode: sync api', () => {
+  beforeEach(() => {
+    tmpFile = temp.openSync('flac-bindings.encode-decode.sync-api')
+    deferredScope = createDeferredScope()
+    fs.closeSync(tmpFile.fd)
+  })
+
+  afterEach(() => {
+    temp.cleanupSync()
+    deferredScope.finalize()
+  })
+
   it('decode using stream (non-ogg)', () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
@@ -52,13 +60,13 @@ describe('encode & decode: sync api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(dec.processUntilEndOfMetadata()).toBe(true)
-    expect(dec.processUntilEndOfStream()).toBe(true)
-    expect(dec.flush()).toBe(true)
+    expect(dec.processUntilEndOfMetadata()).toBeTruthy()
+    expect(dec.processUntilEndOfStream()).toBeTruthy()
+    expect(dec.flush()).toBeTruthy()
     expect(dec.finish()).not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    expect(samples).toEqual(totalSamples)
+    expect(samples).toStrictEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
@@ -81,13 +89,13 @@ describe('encode & decode: sync api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(dec.processUntilEndOfMetadata()).toBe(true)
-    expect(dec.processUntilEndOfStream()).toBe(true)
-    expect(dec.flush()).toBe(true)
+    expect(dec.processUntilEndOfMetadata()).toBeTruthy()
+    expect(dec.processUntilEndOfStream()).toBeTruthy()
+    expect(dec.flush()).toBeTruthy()
     expect(dec.finish()).not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    expect(samples).toEqual(totalSamples)
+    expect(samples).toStrictEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
@@ -104,13 +112,13 @@ describe('encode & decode: sync api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(dec.processUntilEndOfMetadata()).toBe(true)
-    expect(dec.processUntilEndOfStream()).toBe(true)
-    expect(dec.flush()).toBe(true)
+    expect(dec.processUntilEndOfMetadata()).toBeTruthy()
+    expect(dec.processUntilEndOfStream()).toBeTruthy()
+    expect(dec.flush()).toBeTruthy()
     expect(dec.finish()).not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    expect(samples).toEqual(totalSamples)
+    expect(samples).toStrictEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
@@ -127,13 +135,13 @@ describe('encode & decode: sync api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(dec.processUntilEndOfMetadata()).toBe(true)
-    expect(dec.processUntilEndOfStream()).toBe(true)
-    expect(dec.flush()).toBe(true)
+    expect(dec.processUntilEndOfMetadata()).toBeTruthy()
+    expect(dec.processUntilEndOfStream()).toBeTruthy()
+    expect(dec.flush()).toBeTruthy()
     expect(dec.finish()).not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    expect(samples).toEqual(totalSamples)
+    expect(samples).toStrictEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
@@ -146,11 +154,11 @@ describe('encode & decode: sync api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(dec.processUntilEndOfMetadata()).toBe(true)
-    expect(dec.processSingle()).toBe(true)
-    expect(dec.skipSingleFrame()).toBe(true)
-    expect(dec.processSingle()).toBe(true)
-    expect(dec.flush()).toBe(true)
+    expect(dec.processUntilEndOfMetadata()).toBeTruthy()
+    expect(dec.processSingle()).toBeTruthy()
+    expect(dec.skipSingleFrame()).toBeTruthy()
+    expect(dec.processSingle()).toBeTruthy()
+    expect(dec.flush()).toBeTruthy()
     expect(dec.finish()).not.toBeNull()
   })
 
@@ -169,12 +177,12 @@ describe('encode & decode: sync api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(dec.processUntilEndOfMetadata()).toBe(true)
-    expect(dec.processSingle()).toBe(true)
-    expect(dec.seekAbsolute(totalSamples / 5)).toBe(true)
+    expect(dec.processUntilEndOfMetadata()).toBeTruthy()
+    expect(dec.processSingle()).toBeTruthy()
+    expect(dec.seekAbsolute(totalSamples / 5)).toBeTruthy()
     expect(dec.getDecodePosition()).toBe(157036)
-    expect(dec.processSingle()).toBe(true)
-    expect(dec.flush()).toBe(true)
+    expect(dec.processSingle()).toBeTruthy()
+    expect(dec.flush()).toBeTruthy()
     expect(dec.finish()).not.toBeNull()
   })
 
@@ -191,7 +199,7 @@ describe('encode & decode: sync api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(dec.processSingle()).toBe(true)
+    expect(dec.processSingle()).toBeTruthy()
     expect(dec.finish()).not.toBeNull()
 
     expect(metadataBlocks).toHaveLength(1)
@@ -210,16 +218,16 @@ describe('encode & decode: sync api', () => {
         (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
       )
 
-    expect(dec.processUntilEndOfMetadata()).toBe(true)
-    expect(dec.processSingle()).toBe(true)
+    expect(dec.processUntilEndOfMetadata()).toBeTruthy()
+    expect(dec.processSingle()).toBeTruthy()
 
     expect(dec.getChannels()).toBe(2)
     expect(dec.getBitsPerSample()).toBe(24)
     expect(dec.getSampleRate()).toBe(44100)
-    expect(dec.getChannelAssignment()).toEqual(api.format.ChannelAssignment.MID_SIDE)
+    expect(dec.getChannelAssignment()).toStrictEqual(api.format.ChannelAssignment.MID_SIDE)
     expect(dec.getBlocksize()).toBe(4096)
-    expect(dec.getTotalSamples()).toEqual(totalSamples)
-    expect(dec.getMd5Checking()).toBe(true)
+    expect(dec.getTotalSamples()).toStrictEqual(totalSamples)
+    expect(dec.getMd5Checking()).toBeTruthy()
     expect(dec.getDecodePosition()).toBe(22862)
 
     expect(dec.finish()).toBeNull()
@@ -241,7 +249,7 @@ describe('encode & decode: sync api', () => {
         null,
       )
 
-    expect(enc.processInterleaved(encData)).toBe(true)
+    expect(enc.processInterleaved(encData)).toBeTruthy()
     expect(enc.finish()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
@@ -264,7 +272,7 @@ describe('encode & decode: sync api', () => {
         null,
       )
 
-    expect(enc.processInterleaved(encData)).toBe(true)
+    expect(enc.processInterleaved(encData)).toBeTruthy()
     expect(enc.finish()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24, true)
@@ -282,7 +290,7 @@ describe('encode & decode: sync api', () => {
         (...args) => progressCallbackValues.push(args),
       )
 
-    expect(enc.processInterleaved(encData)).toBe(true)
+    expect(enc.processInterleaved(encData)).toBeTruthy()
     expect(enc.finish()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
@@ -301,7 +309,7 @@ describe('encode & decode: sync api', () => {
         (...args) => progressCallbackValues.push(args),
       )
 
-    expect(enc.processInterleaved(encData)).toBe(true)
+    expect(enc.processInterleaved(encData)).toBeTruthy()
     expect(enc.finish()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24, true)
@@ -320,7 +328,7 @@ describe('encode & decode: sync api', () => {
         (...args) => progressCallbackValues.push(args),
       )
 
-    expect(enc.process(encDataAlt, totalSamples)).toBe(true)
+    expect(enc.process(encDataAlt, totalSamples)).toBeTruthy()
     expect(enc.finish()).not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
@@ -346,12 +354,12 @@ describe('encode & decode: sync api', () => {
         },
       )
 
-    expect(enc.processInterleaved(encData)).toBe(true)
+    expect(enc.processInterleaved(encData)).toBeTruthy()
     expect(enc.finish()).not.toBeNull()
 
     expect(metadataBlock).not.toBeNull()
     expect(metadataBlock.type).toBe(0)
-    expect(metadataBlock.totalSamples).toEqual(totalSamples)
+    expect(metadataBlock.totalSamples).toStrictEqual(totalSamples)
   })
 
   it('encoder process should fail if invalid buffer size is sent', () => {
@@ -409,24 +417,24 @@ describe('encode & decode: sync api', () => {
         tmpFile.path,
       )
 
-    expect(enc.verify).toBe(true)
+    expect(enc.verify).toBeTruthy()
 
     expect(enc.channels).toBe(2)
     expect(enc.bitsPerSample).toBe(24)
     expect(enc.sampleRate).toBe(44100)
     expect(enc.blocksize).toBe(4096)
-    expect(enc.doMidSideStereo).toBe(true)
-    expect(enc.looseMidSideStereo).toBe(false)
+    expect(enc.doMidSideStereo).toBeTruthy()
+    expect(enc.looseMidSideStereo).toBeFalsy()
     expect(enc.maxLpcOrder).toBe(12)
     expect(enc.qlpCoeffPrecision).toBe(15)
-    expect(enc.doQlpCoeffPrecSearch).toBe(false)
-    expect(enc.doEscapeCoding).toBe(false)
-    expect(enc.doExhaustiveModelSearch).toBe(false)
+    expect(enc.doQlpCoeffPrecSearch).toBeFalsy()
+    expect(enc.doEscapeCoding).toBeFalsy()
+    expect(enc.doExhaustiveModelSearch).toBeFalsy()
     expect(enc.minResidualPartitionOrder).toBe(0)
     expect(enc.maxResidualPartitionOrder).toBe(6)
     expect(enc.riceParameterSearchDist).toBe(0)
-    expect(enc.totalSamplesEstimate).toEqual(totalSamples)
-    expect(enc.limitMinBitrate).toBe(false)
+    expect(enc.totalSamplesEstimate).toStrictEqual(totalSamples)
+    expect(enc.limitMinBitrate).toBeFalsy()
 
     expect(enc.finish()).not.toBeNull()
   })
@@ -441,26 +449,26 @@ describe('encode & decode: sync api', () => {
       .setTotalSamplesEstimate(totalSamples)
       .setLimitMinBitrate(false)
 
-    expect(enc.getVerify()).toBe(true)
+    expect(enc.getVerify()).toBeTruthy()
 
     expect(enc.getChannels()).toBe(2)
     expect(enc.getBitsPerSample()).toBe(24)
     expect(enc.getSampleRate()).toBe(44100)
     // NOTE: not set yet
     expect(enc.getBlocksize()).toBe(0)
-    expect(enc.getDoMidSideStereo()).toBe(true)
-    expect(enc.getLooseMidSideStereo()).toBe(false)
+    expect(enc.getDoMidSideStereo()).toBeTruthy()
+    expect(enc.getLooseMidSideStereo()).toBeFalsy()
     expect(enc.getMaxLpcOrder()).toBe(12)
     // NOTE: not set yet
     expect(enc.getQlpCoeffPrecision()).toBe(0)
-    expect(enc.getDoQlpCoeffPrecSearch()).toBe(false)
-    expect(enc.getDoEscapeCoding()).toBe(false)
-    expect(enc.getDoExhaustiveModelSearch()).toBe(false)
+    expect(enc.getDoQlpCoeffPrecSearch()).toBeFalsy()
+    expect(enc.getDoEscapeCoding()).toBeFalsy()
+    expect(enc.getDoExhaustiveModelSearch()).toBeFalsy()
     expect(enc.getMinResidualPartitionOrder()).toBe(0)
     expect(enc.getMaxResidualPartitionOrder()).toBe(6)
     expect(enc.getRiceParameterSearchDist()).toBe(0)
-    expect(enc.getTotalSamplesEstimate()).toEqual(totalSamples)
-    expect(enc.getLimitMinBitrate()).toBe(false)
+    expect(enc.getTotalSamplesEstimate()).toStrictEqual(totalSamples)
+    expect(enc.getLimitMinBitrate()).toBeFalsy()
   })
 
   it('encoder should throw if built with sync but called async method', async () => {

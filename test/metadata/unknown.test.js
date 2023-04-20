@@ -1,10 +1,11 @@
+import { describe, expect, it } from 'vitest'
 import { format, metadata } from '../../lib/api.js'
 import { gc } from '../helper/index.js'
 
 const { UnknownMetadata } = metadata
 const { MetadataType } = format
 
-describe('UnknownMetadata', () => {
+describe('unknownMetadata', () => {
   it('create new object should work', () => {
     expect(new UnknownMetadata()).not.toBeNull()
   })
@@ -12,31 +13,31 @@ describe('UnknownMetadata', () => {
   it('object has the right type', () => {
     const st = new UnknownMetadata()
 
-    expect(st.type).toEqual(MetadataType.UNDEFINED)
+    expect(st.type).toStrictEqual(MetadataType.UNDEFINED)
   })
 
   it('object with custom type has that type', () => {
     const st = new UnknownMetadata(MetadataType.UNDEFINED + 5)
 
-    expect(st.type).toEqual(MetadataType.UNDEFINED)
+    expect(st.type).toStrictEqual(MetadataType.UNDEFINED)
   })
 
   it('object with valid metadata type should have UNDEFINED type', () => {
     const st = new UnknownMetadata(MetadataType.CUESHEET)
 
-    expect(st.type).toEqual(MetadataType.UNDEFINED)
+    expect(st.type).toStrictEqual(MetadataType.UNDEFINED)
   })
 
   it('object with a really high type should have maximum valid number as type', () => {
     const st = new UnknownMetadata(MetadataType.MAX_METADATA_TYPE * 38)
 
-    expect(st.type).toEqual(MetadataType.UNDEFINED)
+    expect(st.type).toStrictEqual(MetadataType.UNDEFINED)
   })
 
-  it('data is a buffer', () => {
+  it('data is a null', () => {
     const st = new UnknownMetadata()
 
-    expect(Buffer.isBuffer(st.data) || st.data === null).toBe(true)
+    expect(st.data).toBeNull()
   })
 
   describe('gc', () => {

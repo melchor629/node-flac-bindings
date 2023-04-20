@@ -9,7 +9,7 @@
     "browser": false
   },
   "parserOptions": {
-    "ecmaVersion": 11
+    "ecmaVersion": 12
   },
   "rules": {
     "semi": [

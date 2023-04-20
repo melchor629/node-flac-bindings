@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { format, metadata, metadata0 } from '../../lib/api.js'
 import { gc, pathForFile as fullPathForFile } from '../helper/index.js'
 
@@ -6,7 +7,7 @@ const { MetadataType } = format
 const { getStreaminfoAsync } = metadata0
 const { tags: pathForFile } = fullPathForFile
 
-describe('StreamInfoMetadata', () => {
+describe('streamInfoMetadata', () => {
   it('create new object should work', () => {
     expect(new StreamInfoMetadata()).not.toBeNull()
   })
@@ -14,7 +15,7 @@ describe('StreamInfoMetadata', () => {
   it('object has the right type', () => {
     const st = new StreamInfoMetadata()
 
-    expect(st.type).toEqual(MetadataType.STREAMINFO)
+    expect(st.type).toStrictEqual(MetadataType.STREAMINFO)
   })
 
   it('set minBlocksize should work', () => {
@@ -150,7 +151,7 @@ describe('StreamInfoMetadata', () => {
 
     st.md5sum = Buffer.allocUnsafe(16)
 
-    expect(Buffer.isBuffer(st.md5sum)).toBe(true)
+    expect(Buffer.isBuffer(st.md5sum)).toBeTruthy()
   })
 
   it('set md5sum should throw if value is not a buffer', () => {
@@ -176,7 +177,7 @@ describe('StreamInfoMetadata', () => {
     expect(st.channels).toBe(2)
     expect(st.maxBlocksize).toBe(4096)
     expect(st.minBlocksize).toBe(4096)
-    expect(st.md5sum).toEqual(Buffer.from('7ÓË©ó»PLÀ8H_pG', 'ascii'))
+    expect(st.md5sum).toStrictEqual(Buffer.from('7ÓË©ó»PLÀ8H_pG', 'ascii'))
     expect(st.maxFramesize).toBe(4214)
     expect(st.minFramesize).toBe(2565)
     expect(st.sampleRate).toBe(44100)

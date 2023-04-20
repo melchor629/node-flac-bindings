@@ -1,10 +1,11 @@
+import { describe, expect, it } from 'vitest'
 import { format, metadata } from '../../lib/api.js'
 import { gc } from '../helper/index.js'
 
 const { PictureMetadata } = metadata
 const { MetadataType } = format
 
-describe('PictureMetadata', () => {
+describe('pictureMetadata', () => {
   it('create new object should work', () => {
     expect(new PictureMetadata()).not.toBeNull()
   })
@@ -12,7 +13,7 @@ describe('PictureMetadata', () => {
   it('object has the right type', () => {
     const p = new PictureMetadata()
 
-    expect(p.type).toEqual(MetadataType.PICTURE)
+    expect(p.type).toStrictEqual(MetadataType.PICTURE)
   })
 
   it('pictureType should change', () => {
@@ -116,7 +117,7 @@ describe('PictureMetadata', () => {
 
     expect(p.data).toBeNull()
     p.data = Buffer.from('\x89PNG')
-    expect(p.data).toEqual(Buffer.from('\x89PNG'))
+    expect(p.data).toStrictEqual(Buffer.from('\x89PNG'))
   })
 
   it('change data to empty buffer should work', () => {

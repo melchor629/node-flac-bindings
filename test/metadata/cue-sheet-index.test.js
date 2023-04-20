@@ -1,9 +1,10 @@
+import { describe, expect, it } from 'vitest'
 import { metadata } from '../../lib/api.js'
 import { gc } from '../helper/index.js'
 
 const { CueSheetIndex } = metadata
 
-describe('CueSheetIndex', () => {
+describe('cueSheetIndex', () => {
   it('create a new object with parameters should work', () => {
     const csi = new CueSheetIndex(10, 0)
 

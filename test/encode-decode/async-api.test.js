@@ -1,5 +1,12 @@
+import fs from 'node:fs'
 import tempUntracked from 'temp'
-import fs from 'fs'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'vitest'
 import { api } from '../../lib/index.js'
 import {
   pathForFile as fullPathForFile,
@@ -21,18 +28,19 @@ const temp = tempUntracked.track()
 
 let tmpFile
 let deferredScope = null
-beforeEach(() => {
-  tmpFile = temp.openSync('flac-bindings.encode-decode.async-api')
-  deferredScope = createDeferredScope()
-  fs.closeSync(tmpFile.fd)
-})
-
-afterEach(() => {
-  temp.cleanupSync()
-  return deferredScope.finalize()
-})
 
 describe('encode & decode: async api', () => {
+  beforeEach(() => {
+    tmpFile = temp.openSync('flac-bindings.encode-decode.async-api')
+    deferredScope = createDeferredScope()
+    fs.closeSync(tmpFile.fd)
+  })
+
+  afterEach(() => {
+    temp.cleanupSync()
+    return deferredScope.finalize()
+  })
+
   it('decode using stream (non-ogg)', async () => {
     const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r')
     deferredScope.defer(() => callbacks.close())
@@ -52,13 +60,13 @@ describe('encode & decode: async api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
-    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
-    expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).not.toBeNull()
+    await expect(dec.processUntilEndOfMetadataAsync()).resolves.toBeTruthy()
+    await expect(dec.processUntilEndOfStreamAsync()).resolves.toBeTruthy()
+    await expect(dec.flushAsync()).resolves.toBeTruthy()
+    await expect(dec.finishAsync()).resolves.not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    expect(samples).toEqual(totalSamples)
+    expect(samples).toStrictEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
@@ -81,13 +89,13 @@ describe('encode & decode: async api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
-    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
-    expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).not.toBeNull()
+    await expect(dec.processUntilEndOfMetadataAsync()).resolves.toBeTruthy()
+    await expect(dec.processUntilEndOfStreamAsync()).resolves.toBeTruthy()
+    await expect(dec.flushAsync()).resolves.toBeTruthy()
+    await expect(dec.finishAsync()).resolves.not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    expect(samples).toEqual(totalSamples)
+    expect(samples).toStrictEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
@@ -110,13 +118,13 @@ describe('encode & decode: async api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
-    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
-    expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).not.toBeNull()
+    await expect(dec.processUntilEndOfMetadataAsync()).resolves.toBeTruthy()
+    await expect(dec.processUntilEndOfStreamAsync()).resolves.toBeTruthy()
+    await expect(dec.flushAsync()).resolves.toBeTruthy()
+    await expect(dec.finishAsync()).resolves.not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    expect(samples).toEqual(totalSamples)
+    expect(samples).toStrictEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
@@ -139,13 +147,13 @@ describe('encode & decode: async api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
-    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
-    expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).not.toBeNull()
+    await expect(dec.processUntilEndOfMetadataAsync()).resolves.toBeTruthy()
+    await expect(dec.processUntilEndOfStreamAsync()).resolves.toBeTruthy()
+    await expect(dec.flushAsync()).resolves.toBeTruthy()
+    await expect(dec.finishAsync()).resolves.not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    expect(samples).toEqual(totalSamples)
+    expect(samples).toStrictEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
@@ -162,13 +170,13 @@ describe('encode & decode: async api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
-    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
-    expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).not.toBeNull()
+    await expect(dec.processUntilEndOfMetadataAsync()).resolves.toBeTruthy()
+    await expect(dec.processUntilEndOfStreamAsync()).resolves.toBeTruthy()
+    await expect(dec.flushAsync()).resolves.toBeTruthy()
+    await expect(dec.finishAsync()).resolves.not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    expect(samples).toEqual(totalSamples)
+    expect(samples).toStrictEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
@@ -185,13 +193,13 @@ describe('encode & decode: async api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
-    expect(await dec.processUntilEndOfStreamAsync()).toBe(true)
-    expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).not.toBeNull()
+    await expect(dec.processUntilEndOfMetadataAsync()).resolves.toBeTruthy()
+    await expect(dec.processUntilEndOfStreamAsync()).resolves.toBeTruthy()
+    await expect(dec.flushAsync()).resolves.toBeTruthy()
+    await expect(dec.finishAsync()).resolves.not.toBeNull()
 
     const [finalBuffer, samples] = joinIntoInterleaved(allBuffers)
-    expect(samples).toEqual(totalSamples)
+    expect(samples).toStrictEqual(totalSamples)
     comparePCM(okData, finalBuffer, 32)
   })
 
@@ -204,12 +212,12 @@ describe('encode & decode: async api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
-    expect(await dec.processSingleAsync()).toBe(true)
-    expect(await dec.skipSingleFrameAsync()).toBe(true)
-    expect(await dec.processSingleAsync()).toBe(true)
-    expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).not.toBeNull()
+    await expect(dec.processUntilEndOfMetadataAsync()).resolves.toBeTruthy()
+    await expect(dec.processSingleAsync()).resolves.toBeTruthy()
+    await expect(dec.skipSingleFrameAsync()).resolves.toBeTruthy()
+    await expect(dec.processSingleAsync()).resolves.toBeTruthy()
+    await expect(dec.flushAsync()).resolves.toBeTruthy()
+    await expect(dec.finishAsync()).resolves.not.toBeNull()
   })
 
   it('decoder should be able to seek to a sample', async () => {
@@ -227,13 +235,13 @@ describe('encode & decode: async api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(await dec.processUntilEndOfMetadataAsync()).toBe(true)
-    expect(await dec.processSingleAsync()).toBe(true)
-    expect(await dec.seekAbsoluteAsync(totalSamples / 5)).toBe(true)
-    expect(await dec.getDecodePositionAsync()).toBe(157036)
-    expect(await dec.processSingleAsync()).toBe(true)
-    expect(await dec.flushAsync()).toBe(true)
-    expect(await dec.finishAsync()).not.toBeNull()
+    await expect(dec.processUntilEndOfMetadataAsync()).resolves.toBeTruthy()
+    await expect(dec.processSingleAsync()).resolves.toBeTruthy()
+    await expect(dec.seekAbsoluteAsync(totalSamples / 5)).resolves.toBeTruthy()
+    await expect(dec.getDecodePositionAsync()).resolves.toBe(157036)
+    await expect(dec.processSingleAsync()).resolves.toBeTruthy()
+    await expect(dec.flushAsync()).resolves.toBeTruthy()
+    await expect(dec.finishAsync()).resolves.not.toBeNull()
   })
 
   it('decoder should emit metadata', async () => {
@@ -249,8 +257,8 @@ describe('encode & decode: async api', () => {
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
-    expect(await dec.processSingleAsync()).toBe(true)
-    expect(await dec.finishAsync()).not.toBeNull()
+    await expect(dec.processSingleAsync()).resolves.toBeTruthy()
+    await expect(dec.finishAsync()).resolves.not.toBeNull()
 
     expect(metadataBlocks).toHaveLength(1)
   })
@@ -271,8 +279,8 @@ describe('encode & decode: async api', () => {
         null,
       )
 
-    expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).not.toBeNull()
+    await expect(enc.processInterleavedAsync(encData)).resolves.toBeTruthy()
+    await expect(enc.finishAsync()).resolves.not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
   })
@@ -294,8 +302,8 @@ describe('encode & decode: async api', () => {
         null,
       )
 
-    expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).not.toBeNull()
+    await expect(enc.processInterleavedAsync(encData)).resolves.toBeTruthy()
+    await expect(enc.finishAsync()).resolves.not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24, true)
   })
@@ -316,8 +324,8 @@ describe('encode & decode: async api', () => {
         null,
       )
 
-    expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).not.toBeNull()
+    await expect(enc.processInterleavedAsync(encData)).resolves.toBeTruthy()
+    await expect(enc.finishAsync()).resolves.not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
   })
@@ -339,8 +347,8 @@ describe('encode & decode: async api', () => {
         null,
       )
 
-    expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).not.toBeNull()
+    await expect(enc.processInterleavedAsync(encData)).resolves.toBeTruthy()
+    await expect(enc.finishAsync()).resolves.not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24, true)
   })
@@ -357,8 +365,8 @@ describe('encode & decode: async api', () => {
         (...args) => progressCallbackValues.push(args),
       )
 
-    expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).not.toBeNull()
+    await expect(enc.processInterleavedAsync(encData)).resolves.toBeTruthy()
+    await expect(enc.finishAsync()).resolves.not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
     expect(progressCallbackValues).toHaveLength(41)
@@ -376,8 +384,8 @@ describe('encode & decode: async api', () => {
         (...args) => progressCallbackValues.push(args),
       )
 
-    expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).not.toBeNull()
+    await expect(enc.processInterleavedAsync(encData)).resolves.toBeTruthy()
+    await expect(enc.finishAsync()).resolves.not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24, true)
     expect(progressCallbackValues).toHaveLength(30)
@@ -395,8 +403,8 @@ describe('encode & decode: async api', () => {
         (...args) => progressCallbackValues.push(args),
       )
 
-    expect(await enc.processAsync(encDataAlt, totalSamples)).toBe(true)
-    expect(await enc.finishAsync()).not.toBeNull()
+    await expect(enc.processAsync(encDataAlt, totalSamples)).resolves.toBeTruthy()
+    await expect(enc.finishAsync()).resolves.not.toBeNull()
 
     comparePCM(okData, tmpFile.path, 24)
     expect(progressCallbackValues).toHaveLength(41)
@@ -420,12 +428,12 @@ describe('encode & decode: async api', () => {
         },
       )
 
-    expect(await enc.processInterleavedAsync(encData)).toBe(true)
-    expect(await enc.finishAsync()).not.toBeNull()
+    await expect(enc.processInterleavedAsync(encData)).resolves.toBeTruthy()
+    await expect(enc.finishAsync()).resolves.not.toBeNull()
 
     expect(metadataBlock).not.toBeNull()
     expect(metadataBlock.type).toBe(0)
-    expect(metadataBlock.totalSamples).toEqual(totalSamples)
+    expect(metadataBlock.totalSamples).toStrictEqual(totalSamples)
   })
 
   it('encoder should throw if another async method is running', async () => {
@@ -477,14 +485,14 @@ describe('encode & decode: async api', () => {
     )
 
     const e = await dec.processUntilEndOfMetadataAsync()
-    expect(e).toBe(true)
+    expect(e).toBeTruthy()
 
     const promise = dec.processSingleAsync()
     expect(() => dec.processSingleAsync()).toThrow(/There is still an operation running/)
 
     await promise
     const f = await dec.processUntilEndOfStreamAsync()
-    expect(f).toBe(true)
+    expect(f).toBeTruthy()
     await dec.finishAsync()
   })
 
@@ -524,7 +532,7 @@ describe('encode & decode: async api', () => {
       .setSampleRate(88200)
       .buildWithFileAsync(tmpFile.path, null)
 
-    expect(await enc2.finishAsync()).not.toBeNull()
+    await expect(enc2.finishAsync()).resolves.not.toBeNull()
   })
 
   it('decoder builder can be reused', async () => {
@@ -547,6 +555,6 @@ describe('encode & decode: async api', () => {
         () => {},
       )
 
-    expect(await dec2.finishAsync()).not.toBeNull()
+    await expect(dec2.finishAsync()).resolves.not.toBeNull()
   })
 })

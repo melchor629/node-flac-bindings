@@ -1,4 +1,5 @@
-import fs from 'fs/promises'
+import fs from 'node:fs/promises'
+import { describe, expect, it } from 'vitest'
 import { metadata0, metadata, format } from '../lib/api.js'
 import { pathForFile as fullPathForFile, gc } from './helper/index.js'
 
@@ -34,10 +35,10 @@ describe('metadata0', () => {
       const tags = metadata0.getTags(filePath)
 
       expect(tags).not.toBeNull()
-      expect(tags instanceof metadata.VorbisCommentMetadata).toBe(true)
+      expect(tags instanceof metadata.VorbisCommentMetadata).toBeTruthy()
     })
 
-    it('VorbisComment should contain the right tags for the file', () => {
+    it('vorbisComment should contain the right tags for the file', () => {
       const filePath = pathForFile('vc-p.flac')
 
       const tags = metadata0.getTags(filePath)
@@ -59,14 +60,14 @@ describe('metadata0', () => {
     it('should return null if the file does not exist', async () => {
       const filePath = pathForFile('el.flac')
 
-      expect(await metadata0.getTagsAsync(filePath)).toBeNull()
+      await expect(metadata0.getTagsAsync(filePath)).resolves.toBeNull()
       await expect(() => fs.access(filePath)).rejects.toThrow()
     })
 
     it('should return null if the file does not have tags', async () => {
       const filePath = pathForFile('no.flac')
 
-      expect(await metadata0.getTagsAsync(filePath)).toBeNull()
+      await expect(metadata0.getTagsAsync(filePath)).resolves.toBeNull()
 
       await fs.access(filePath)
     })
@@ -77,10 +78,10 @@ describe('metadata0', () => {
       const tags = await metadata0.getTagsAsync(filePath)
 
       expect(tags).not.toBeNull()
-      expect(tags instanceof metadata.VorbisCommentMetadata).toBe(true)
+      expect(tags instanceof metadata.VorbisCommentMetadata).toBeTruthy()
     })
 
-    it('VorbisComment should contain the right tags for the file', async () => {
+    it('vorbisComment should contain the right tags for the file', async () => {
       const filePath = pathForFile('vc-p.flac')
 
       const tags = await metadata0.getTagsAsync(filePath)
@@ -123,10 +124,10 @@ describe('metadata0', () => {
       const picture = metadata0.getPicture(filePath)
 
       expect(picture).not.toBeNull()
-      expect(picture instanceof metadata.PictureMetadata).toBe(true)
+      expect(picture instanceof metadata.PictureMetadata).toBeTruthy()
     })
 
-    it('Picture should contain the right tags for the file', () => {
+    it('picture should contain the right tags for the file', () => {
       const filePath = pathForFile('vc-p.flac')
 
       const picture = metadata0.getPicture(filePath)
@@ -136,7 +137,7 @@ describe('metadata0', () => {
       expect(picture.description).toBe('o.O.png')
       expect(picture.height).toBe(168)
       expect(picture.mimeType).toBe('image/png')
-      expect(picture.pictureType).toEqual(format.PictureType.FRONT_COVER)
+      expect(picture.pictureType).toStrictEqual(format.PictureType.FRONT_COVER)
       expect(picture.width).toBe(150)
       expect(picture.data).toHaveLength(17094)
     })
@@ -150,14 +151,14 @@ describe('metadata0', () => {
     it('should return null if the file does not exist', async () => {
       const filePath = pathForFile('el.flac')
 
-      expect(await metadata0.getPictureAsync(filePath)).toBeNull()
+      await expect(metadata0.getPictureAsync(filePath)).resolves.toBeNull()
       await expect(() => fs.access(filePath)).rejects.toThrow()
     })
 
     it('should return null if the file does not have a picture', async () => {
       const filePath = pathForFile('no.flac')
 
-      expect(await metadata0.getPictureAsync(filePath)).toBeNull()
+      await expect(metadata0.getPictureAsync(filePath)).resolves.toBeNull()
       await fs.access(filePath)
     })
 
@@ -167,10 +168,10 @@ describe('metadata0', () => {
       const picture = await metadata0.getPictureAsync(filePath)
 
       expect(picture).not.toBeNull()
-      expect(picture instanceof metadata.PictureMetadata).toBe(true)
+      expect(picture instanceof metadata.PictureMetadata).toBeTruthy()
     })
 
-    it('Picture should contain the right tags for the file', async () => {
+    it('picture should contain the right tags for the file', async () => {
       const filePath = pathForFile('vc-p.flac')
 
       const picture = await metadata0.getPictureAsync(filePath)
@@ -180,7 +181,7 @@ describe('metadata0', () => {
       expect(picture.description).toBe('o.O.png')
       expect(picture.height).toBe(168)
       expect(picture.mimeType).toBe('image/png')
-      expect(picture.pictureType).toEqual(format.PictureType.FRONT_COVER)
+      expect(picture.pictureType).toStrictEqual(format.PictureType.FRONT_COVER)
       expect(picture.width).toBe(150)
       expect(picture.data).toHaveLength(17094)
     })
@@ -215,10 +216,10 @@ describe('metadata0', () => {
       const cueSheet = metadata0.getCuesheet(filePath)
 
       expect(cueSheet).not.toBeNull()
-      expect(cueSheet instanceof metadata.CueSheetMetadata).toBe(true)
+      expect(cueSheet instanceof metadata.CueSheetMetadata).toBeTruthy()
     })
 
-    it('CueSheet should contain the right tracks for the file', () => {
+    it('cueSheet should contain the right tracks for the file', () => {
       const filePath = pathForFile('vc-cs.flac')
 
       const cueSheet = metadata0.getCuesheet(filePath)
@@ -227,13 +228,13 @@ describe('metadata0', () => {
       const indices0 = Array.from(tracks[0])
       expect(cueSheet.mediaCatalogNumber).toBe('')
       expect(cueSheet.leadIn).toBe(88200)
-      expect(cueSheet.isCd).toBe(true)
+      expect(cueSheet.isCd).toBeTruthy()
       expect(tracks).toHaveLength(2)
       expect(tracks[0].offset).toBe(0)
       expect(tracks[0].number).toBe(1)
       expect(tracks[0].isrc).toBe('')
       expect(tracks[0].type).toBe(0)
-      expect(tracks[0].preEmphasis).toBe(false)
+      expect(tracks[0].preEmphasis).toBeFalsy()
       expect(indices0).toHaveLength(2)
       expect(indices0[0].offset).toBe(0)
       expect(indices0[0].number).toBe(0)
@@ -252,14 +253,14 @@ describe('metadata0', () => {
     it('should return null if the file does not exist', async () => {
       const filePath = pathForFile('el.flac')
 
-      expect(await metadata0.getCuesheetAsync(filePath)).toBeNull()
+      await expect(metadata0.getCuesheetAsync(filePath)).resolves.toBeNull()
       await expect(() => fs.access(filePath)).rejects.toThrow()
     })
 
     it('should return null if the file does not have a cue sheet', async () => {
       const filePath = pathForFile('no.flac')
 
-      expect(await metadata0.getCuesheetAsync(filePath)).toBeNull()
+      await expect(metadata0.getCuesheetAsync(filePath)).resolves.toBeNull()
       await fs.access(filePath)
     })
 
@@ -269,10 +270,10 @@ describe('metadata0', () => {
       const cueSheet = await metadata0.getCuesheetAsync(filePath)
 
       expect(cueSheet).not.toBeNull()
-      expect(cueSheet instanceof metadata.CueSheetMetadata).toBe(true)
+      expect(cueSheet instanceof metadata.CueSheetMetadata).toBeTruthy()
     })
 
-    it('CueSheet should contain the right tracks for the file', async () => {
+    it('cueSheet should contain the right tracks for the file', async () => {
       const filePath = pathForFile('vc-cs.flac')
 
       const cueSheet = await metadata0.getCuesheetAsync(filePath)
@@ -281,13 +282,13 @@ describe('metadata0', () => {
       const indices0 = Array.from(tracks[0])
       expect(cueSheet.mediaCatalogNumber).toBe('')
       expect(cueSheet.leadIn).toBe(88200)
-      expect(cueSheet.isCd).toBe(true)
+      expect(cueSheet.isCd).toBeTruthy()
       expect(tracks).toHaveLength(2)
       expect(tracks[0].offset).toBe(0)
       expect(tracks[0].number).toBe(1)
       expect(tracks[0].isrc).toBe('')
       expect(tracks[0].type).toBe(0)
-      expect(tracks[0].preEmphasis).toBe(false)
+      expect(tracks[0].preEmphasis).toBeFalsy()
       expect(indices0).toHaveLength(2)
       expect(indices0[0].offset).toBe(0)
       expect(indices0[0].number).toBe(0)
@@ -312,7 +313,7 @@ describe('metadata0', () => {
       await expect(() => fs.access(filePath)).rejects.toThrow()
     })
 
-    it('StreamInfo should contain the right info for the file', () => {
+    it('streamInfo should contain the right info for the file', () => {
       const filePath = pathForFile('vc-cs.flac')
 
       const streamInfo = metadata0.getStreaminfo(filePath)
@@ -327,7 +328,7 @@ describe('metadata0', () => {
       expect(streamInfo.totalSamples).toBe(441000)
       expect(
         Buffer.from('c5671d66cdca83ac483dcc302ae169af', 'hex').equals(streamInfo.md5sum),
-      ).toBe(true)
+      ).toBeTruthy()
     })
   })
 
@@ -339,11 +340,11 @@ describe('metadata0', () => {
     it('should return null if the file does not exist', async () => {
       const filePath = pathForFile('el.flac')
 
-      expect(await metadata0.getStreaminfoAsync(filePath)).toBeNull()
+      await expect(metadata0.getStreaminfoAsync(filePath)).resolves.toBeNull()
       await expect(() => fs.access(filePath)).rejects.toThrow()
     })
 
-    it('StreamInfo should contain the right info for the file', async () => {
+    it('streamInfo should contain the right info for the file', async () => {
       const filePath = pathForFile('vc-cs.flac')
 
       const streamInfo = await metadata0.getStreaminfoAsync(filePath)
@@ -358,7 +359,7 @@ describe('metadata0', () => {
       expect(streamInfo.totalSamples).toBe(441000)
       expect(
         Buffer.from('c5671d66cdca83ac483dcc302ae169af', 'hex').equals(streamInfo.md5sum),
-      ).toBe(true)
+      ).toBeTruthy()
     })
   })
 

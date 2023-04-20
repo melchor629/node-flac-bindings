@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest'
 import { gc } from '../helper/index.js'
 import {
   metadata,
@@ -7,18 +8,18 @@ import {
 const { ApplicationMetadata } = metadata
 const { MetadataType } = format
 
-describe('ApplicationMetadata', () => {
+describe('applicationMetadata', () => {
   it('new object has the right type', () => {
     const am = new ApplicationMetadata()
 
-    expect(am.type).toEqual(MetadataType.APPLICATION)
+    expect(am.type).toStrictEqual(MetadataType.APPLICATION)
   })
 
   it('set id of object should work', () => {
     const am = new ApplicationMetadata()
 
     am.id = Buffer.from('1234')
-    expect(am.id).toEqual(Buffer.from('1234'))
+    expect(am.id).toStrictEqual(Buffer.from('1234'))
   })
 
   it('set id of object having less than 4 bytes should throw', () => {
@@ -33,14 +34,14 @@ describe('ApplicationMetadata', () => {
     const am = new ApplicationMetadata()
 
     am.id = Buffer.from('1234===-><-')
-    expect(am.id).toEqual(Buffer.from('1234'))
+    expect(am.id).toStrictEqual(Buffer.from('1234'))
   })
 
   it('set data of object should work', () => {
     const am = new ApplicationMetadata()
 
     am.data = Buffer.from('this is a wonderful data that is useless per se, pero bueno')
-    expect(am.data).toEqual(Buffer.from('this is a wonderful data that is useless per se, pero bueno'))
+    expect(am.data).toStrictEqual(Buffer.from('this is a wonderful data that is useless per se, pero bueno'))
   })
 
   describe('gc', () => {
