@@ -1,6 +1,6 @@
 {
   "name": "flac-bindings",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "libflac": "1.4.2",
   "libogg": "1.3.5",
   "description": "libflac bindings to node.js with easy to use API",
