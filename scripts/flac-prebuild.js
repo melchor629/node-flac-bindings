@@ -17,6 +17,7 @@ const opts = {
   napiVersions: packageJson.binary.napi_versions,
   platform: process.platform,
   version: packageJson.version,
+  npx: process.env.NPX || (process.platform === 'win32' ? 'npx.cmd' : 'npx'),
 }
 
 const run = async (command, args = [], pipe = true) => {
@@ -44,7 +45,19 @@ for (const napiVersion of opts.napiVersions) {
 
   // build
   process.stdout.write(`> Compiling for napi v${napiVersion}\n\n`)
-  await run('npx', ['cmake-js', 'rebuild', `--arch=${opts.arch}`, `--CDnapi_build_version=${napiVersion}`, '-p', os.cpus().length.toString()])
+  const compileProcess = await run(opts.npx, [
+    'cmake-js',
+    'rebuild',
+    `--arch=${opts.arch}`,
+    `--CDnapi_build_version=${napiVersion}`,
+    '-p',
+    os.cpus().length.toString(),
+  ])
+
+  if (compileProcess.exitCode) {
+    process.stderr.write('> Compilation failed!')
+    process.exit(1)
+  }
 
   // strip
   if (process.platform !== 'win32') {
