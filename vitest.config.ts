@@ -10,6 +10,7 @@ export default defineConfig({
         ['lcovonly', { file: 'js.info' }],
       ],
     },
+    include: ['test/**/*.test.[jt]s'],
     reporters: ['default', 'junit'],
     setupFiles: './test/helper/setup.js',
     outputFile: 'tests.junit.xml',

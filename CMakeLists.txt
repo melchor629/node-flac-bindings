@@ -104,7 +104,7 @@ if(USE_FLAC_SOURCES OR NOT FLAC_FOUND)
   FetchContent_Declare(
     FLAC
     GIT_REPOSITORY  https://github.com/xiph/flac
-    GIT_TAG         1.4.2
+    GIT_TAG         1.4.3
   )
 
   option(WITH_OGG YES)

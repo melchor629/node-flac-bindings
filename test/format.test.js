@@ -23,8 +23,7 @@ describe('format', () => {
 
   it('sampleRateIsValid() should throw if the argument is not number', () => {
     expect(() => format.sampleRateIsValid('p')).toThrow(/Expected p to be number/)
-    expect(format.sampleRateIsValid(Infinity)).toBeFalse()
-    expect(format.sampleRateIsValid(NaN)).toBeFalse()
+    expect(() => format.sampleRateIsValid(-1)).toThrow(/unsigned/)
   })
 
   it('blocksizeIsSubset() should work', () => {
