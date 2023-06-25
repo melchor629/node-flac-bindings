@@ -119,6 +119,8 @@ if(USE_FLAC_SOURCES OR NOT FLAC_FOUND)
     FetchContent_Populate(FLAC)
     add_subdirectory(${flac_SOURCE_DIR} ${flac_BINARY_DIR})
   endif()
+
+  set(FLAC_TARGET FLAC)
 endif()
 
 file(GLOB_RECURSE SOURCE_FILES "src/**/*.cpp" "src/**/*.hpp" "src/**/*.h" "src/*.cpp")
