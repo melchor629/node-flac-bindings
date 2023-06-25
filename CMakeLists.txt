@@ -56,22 +56,28 @@ if(LTO_SUPPORTED AND CMAKE_BUILD_TYPE STREQUAL "Release")
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-option(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY OFF)
+option(USE_FLAC_SOURCES OFF)
 set(FLAC_TARGET FLAC)
 
-if(FLAC_BINDINGS_USE_EXTERNAL_LIBRARY)
+if(NOT USE_FLAC_SOURCES)
   if(MSVC)
-    find_package(FLAC 1.3 REQUIRED)
+    find_package(FLAC 1.3 QUIET)
   else()
     find_package(FLAC 1.3 QUIET)
     if(NOT FLAC_FOUND)
       include(FindPkgConfig)
 
-      pkg_check_modules(FLAC REQUIRED IMPORTED_TARGET flac>=1.3)
+      pkg_check_modules(FLAC QUIET IMPORTED_TARGET flac>=1.3)
       set(FLAC_TARGET PkgConfig::FLAC)
     endif()
   endif()
-else()
+endif()
+
+if(USE_FLAC_SOURCES OR NOT FLAC_FOUND)
+  if(NOT USE_FLAC_SOURCES)
+    message("-- No libflac detected on system that can be used, fall back to compile from sources")
+  endif()
+
   include(FetchContent)
 
   option(BUILD_TESTING OFF)
@@ -97,7 +103,7 @@ else()
   # fetch flac (v1.4.1)
   FetchContent_Declare(
     FLAC
-    GIT_REPOSITORY  https://github.com/xiph/flac.git
+    GIT_REPOSITORY  https://github.com/xiph/flac
     GIT_TAG         1.4.2
   )
 

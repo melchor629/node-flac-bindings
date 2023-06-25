@@ -12,7 +12,7 @@ import tar from 'tar-stream'
 const debug = debugFactory('flac:build')
 
 const envOpts = {
-  useExternalLibrary: typeof process.env.FLAC_BINDINGS_USE_EXTERNAL_LIBRARY === 'string',
+  useFlacSources: typeof process.env.FLAC_BINDINGS_USE_FLAC_SOURCES === 'string',
   pkgConfigPath: process.env.PKG_CONFIG_PATH,
   ci: typeof process.env.CI === 'string',
 }
@@ -29,43 +29,6 @@ const run = (command, pipe = true) => {
   }
 
   return proc
-}
-
-// from https://github.com/lovell/sharp/blob/master/lib/libvips.js
-const pkgConfigPath = () => {
-  if (process.platform !== 'win32') {
-    debug('Retrieving pkg-config path')
-    const brewPkgConfigPath = run(
-      'which brew >/dev/null 2>&1 && eval $(brew --env) && echo $PKG_CONFIG_LIBDIR',
-      false,
-    ).stdout || ''
-    return [brewPkgConfigPath.trim(), envOpts.pkgConfigPath, '/usr/local/lib/pkgconfig', '/usr/lib/pkgconfig']
-      .filter((p) => !!p)
-      .join(':')
-  }
-  return ''
-}
-
-const hasGlobalInstalledFlac = () => {
-  if (process.platform !== 'win32') {
-    debug('Checking if libflac is available')
-    const flacVersion = (
-      run(
-        `PKG_CONFIG_PATH="${pkgConfigPath()}" pkg-config --modversion flac`,
-        false,
-      ).stdout || ''
-    ).trim()
-    if (!flacVersion) {
-      debug('No libflac found')
-      return false
-    }
-
-    debug(`libflac found with version ${flacVersion}`)
-    const [major, minor] = flacVersion.split('.').map((n) => parseInt(n, 10))
-    return major === 1 && minor >= 3
-  }
-
-  return false
 }
 
 /**
@@ -162,22 +125,20 @@ if (envOpts.ci) {
   process.exit(0)
 }
 
-if (!envOpts.useExternalLibrary) {
-  debug('Trying to install from prebuilt package...')
-  if (await getFromPrebuilt()) {
-    debug('Installed succesfully')
-    process.exit(0)
-  }
+debug('Trying to install from prebuilt package...')
+if (await getFromPrebuilt()) {
+  debug('Installed succesfully')
+  process.exit(0)
 }
 
-if (envOpts.useExternalLibrary || hasGlobalInstalledFlac()) {
+if (envOpts.useFlacSources) {
   debug('Trying to compile bindings using external libflac...')
-  if (run('cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON').status) {
+  if (run('cmake-js configure --CDUSE_FLAC_SOURCES').status) {
     process.exit(1)
   }
 }
 
 debug('Trying to compile with built-in libflac...')
-if (run('cmake-js build').status) {
+if (run(`cmake-js build -p ${os.cpus().length}`).status) {
   process.exit(1)
 }

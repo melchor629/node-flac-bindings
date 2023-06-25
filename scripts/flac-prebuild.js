@@ -7,8 +7,7 @@ import path from 'node:path'
 import zlib from 'node:zlib'
 import detectLibc from 'detect-libc'
 import tar from 'tar-stream'
-
-const packageJson = JSON.parse(await fs.readFile('./package.json', 'utf-8'))
+import packageJson from '../package.json' assert { type: 'json' }
 
 const opts = {
   arch: process.env.NODE_ARCH || process.arch,
@@ -50,6 +49,7 @@ for (const napiVersion of opts.napiVersions) {
     'rebuild',
     `--arch=${opts.arch}`,
     `--CDnapi_build_version=${napiVersion}`,
+    '--CDUSE_FLAC_SOURCES',
     '-p',
     os.cpus().length.toString(),
   ])

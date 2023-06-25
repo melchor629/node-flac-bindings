@@ -132,7 +132,7 @@ You can also try to debug the native code by setting up a test JS file and launc
 
 To compile the bindings you need [Cmake](https://www.cmake.org) installed in your system and accessible from the terminal, and the C and C++ compilers as well. On Windows, the compilers can be installed easily with `npm install --global --production windows-build-tools`. Don't forget `git`. It is mandatory!
 
-There are some options to use when compiling. If you have a FLAC dev package already installed (`apt install libflac-dev`, `pacman -S flac`, `apk add flac-dev`, `brew install flac`...) and you want to compile the bindings to use this library instead, define the environment variable `FLAC_BINDINGS_USE_EXTERNAL_LIBRARY` (this will be the default option if no prebuild version is available, but a dev package is available).
+There are some options to use when compiling. The build tries to use an already installed compatible dev package of `libflac` (`apt install libflac-dev`, `pacman -S flac`, `apk add flac-dev`, `brew install flac`...), but with `FLAC_BINDINGS_USE_FLAC_SOURCES` will force to download the sources and compile everything from there.
 
 > Supported `libFLAC` versions are 1.3.x and 1.4.x (binary versions 10 and 12).
 
@@ -149,8 +149,8 @@ npx cmake-js build --debug -p 4
 npx cmake-js configure --CDSANITIZE=ON --debug -p 4
 npx cmake-js build --debug -p 4
 
-# Compile with external FLAC library (can be combined with sanitizers)
-npx cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug -p 4
+# Force-compile with FLAC sources (can be combined with sanitizers)
+npx cmake-js configure --CDUSE_FLAC_SOURCES --debug -p 4
 npx cmake-js build --debug -p 4
 
 # Clean compilation folder
@@ -159,13 +159,13 @@ npx cmake-js clean
 
 ## How to run the tests
 
-With a dev environment, and being able to compile the project, ensure to have installed the `flac` CLI (`apt install flac`, `pacman -S flac`, `apk add flac`, `brew install flac`...) and present in the `$PATH`. It is recommended to have installed the FLAC dev package and to have configured the project with `--CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON`. Also ensure to have installed [Cmake](https://www.cmake.org) and available in the `$PATH`.
+With a dev environment, and being able to compile the project, ensure to have installed the `flac` CLI (`apt install flac`, `pacman -S flac`, `apk add flac`, `brew install flac`...) and present in the `$PATH`. It is recommended to have installed the FLAC dev package. Also ensure to have installed [Cmake](https://www.cmake.org) and available in the `$PATH`.
 
 The recommended steps are:
 
 ```sh
 # Do not run tests with sanitizers enabled, it's tricky to make it work
-npx cmake-js configure --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=ON --debug -p 4
+npx cmake-js configure --debug
 npx cmake-js build --debug -p 4
 npm test
 

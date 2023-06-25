@@ -30,7 +30,7 @@ jobs:
       # Compile code manually (autobuild does not work with this workflow)
       - run: |
           npm ci
-          npx cmake-js build --CDFLAC_BINDINGS_USE_EXTERNAL_LIBRARY=OFF
+          npx cmake-js build
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v1
