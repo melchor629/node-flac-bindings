@@ -15,9 +15,11 @@ jobs:
             napi: 8
           - version: 18
             napi: 8
+          - version: 20
+            napi: 8
     runs-on: ubuntu-latest
     container:
-      image: node:${{ matrix.node.version }}-bullseye
+      image: node:${{ matrix.node.version }}-bookworm
       env:
         CI: true
     steps:
