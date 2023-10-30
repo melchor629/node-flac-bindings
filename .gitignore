@@ -43,3 +43,4 @@ test*.js
 !test/data/**/*.flac
 upload.sh
 .vscode
+lib/index.cjs
