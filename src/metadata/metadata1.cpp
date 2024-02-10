@@ -105,9 +105,10 @@ namespace flac_bindings {
         });
       c_enum::declareInObject(constructor, "Status", createStatusEnum);
 
+      constructor.Freeze();
       addon.simpleIteratorConstructor = Persistent(constructor);
 
-      return scope.Escape(objectFreeze(constructor)).As<Function>();
+      return scope.Escape(constructor).As<Function>();
     }
 
     SimpleIterator(const CallbackInfo& info): ObjectWrap<SimpleIterator>(info) {

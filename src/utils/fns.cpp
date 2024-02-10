@@ -1,5 +1,4 @@
 #include "converters.hpp"
-#include "js_utils.hpp"
 #include "pointer.hpp"
 
 namespace flac_bindings {
@@ -254,7 +253,8 @@ namespace flac_bindings {
         napi_enumerable),
     });
 
-    return scope.Escape(objectFreeze(obj)).As<Object>();
+    obj.Freeze();
+    return scope.Escape(obj).As<Object>();
   }
 
 }

@@ -70,7 +70,7 @@ namespace flac_bindings {
         InstanceValue("fns", initFns(env), napi_enumerable),
       });
 
-    objectFreeze(exports);
+    exports.Freeze();
 
     module = Persistent(exports);
   }

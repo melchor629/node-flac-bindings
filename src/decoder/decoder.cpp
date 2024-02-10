@@ -56,9 +56,10 @@ namespace flac_bindings {
     c_enum::declareInObject(constructor, "WriteStatus", createWriteStatusEnum);
     c_enum::declareInObject(constructor, "ErrorStatus", createErrorStatusEnum);
 
+    constructor.Freeze();
     addon.decoderConstructor = Persistent(constructor);
 
-    return scope.Escape(objectFreeze(constructor)).As<Function>();
+    return scope.Escape(constructor).As<Function>();
   }
 
   StreamDecoder::StreamDecoder(const CallbackInfo& info): ObjectWrap<StreamDecoder>(info) {

@@ -319,7 +319,8 @@ namespace flac_bindings {
     c_enum::declareInObject(format, "FrameNumberType", createFrameNumberTypeEnum);
     c_enum::declareInObject(format, "PictureType", createPictureTypeEnum);
 
-    return scope.Escape(objectFreeze(format)).As<Object>();
+    format.Freeze();
+    return scope.Escape(format).As<Object>();
   }
 
 }

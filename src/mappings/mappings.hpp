@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../flac_addon.hpp"
 #include "../utils/converters.hpp"
 #include "mapping.hpp"
 #include <FLAC/format.h>

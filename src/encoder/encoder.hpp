@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../flac_addon.hpp"
 #include "../utils/async.hpp"
 #include "../utils/converters.hpp"
 #include "../utils/enum.hpp"

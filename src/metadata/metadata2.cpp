@@ -1,4 +1,5 @@
 #include "metadata2.hpp"
+#include "../flac_addon.hpp"
 #include "../mappings/mappings.hpp"
 #include "../mappings/native_iterator.hpp"
 #include "../utils/converters.hpp"
@@ -71,9 +72,10 @@ namespace flac_bindings {
         });
       c_enum::declareInObject(constructor, "Status", createStatusEnum);
 
+      constructor.Freeze();
       addon.chainConstructor = Persistent(constructor);
 
-      return scope.Escape(objectFreeze(constructor)).As<Function>();
+      return scope.Escape(constructor).As<Function>();
     }
 
     Chain(const CallbackInfo& info): ObjectWrap<Chain>(info) {
@@ -323,9 +325,10 @@ namespace flac_bindings {
           InstanceMethod("insertBlockAfter", &Iterator::insertBlockAfter),
         });
 
+      constructor.Freeze();
       addon.iteratorConstructor = Persistent(constructor);
 
-      return scope.Escape(objectFreeze(constructor)).As<Function>();
+      return scope.Escape(constructor).As<Function>();
     }
 
     Iterator(const CallbackInfo& info): ObjectWrap<Iterator>(info) {

@@ -1,6 +1,5 @@
 #include "../mappings/mappings.hpp"
 #include "../utils/async.hpp"
-#include "../utils/js_utils.hpp"
 #include <FLAC/metadata.h>
 
 namespace flac_bindings {
@@ -153,7 +152,8 @@ namespace flac_bindings {
       PropertyDescriptor::Function(env, metadata0, "getPictureAsync", &getPictureAsync, attrs),
     });
 
-    return scope.Escape(objectFreeze(metadata0)).As<Object>();
+    metadata0.Freeze();
+    return scope.Escape(metadata0).As<Object>();
   }
 
 }

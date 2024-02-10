@@ -21,14 +21,10 @@ namespace flac_bindings {
 
     template<typename Type>
     inline static void detach(Napi::Buffer<Type> buffer) {
-#if NAPI_VERSION >= 7
       auto arrayBuffer = buffer.ArrayBuffer();
       if (!arrayBuffer.IsDetached()) {
         arrayBuffer.Detach();
       }
-#else
-      (void) buffer;
-#endif
     }
 
     template<typename Type = void>

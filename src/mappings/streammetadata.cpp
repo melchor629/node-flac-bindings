@@ -1,4 +1,3 @@
-#include "../flac_addon.hpp"
 #include "../utils/pointer.hpp"
 #include "mappings.hpp"
 #include <FLAC/metadata.h>

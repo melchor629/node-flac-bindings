@@ -37,9 +37,10 @@ namespace flac_bindings {
         InstanceMethod("buildWithOggFileAsync", &StreamDecoderBuilder::buildWithOggFileAsync),
       });
 
+    constructor.Freeze();
     addon.decoderBuilderConstructor = Persistent(constructor);
 
-    return scope.Escape(objectFreeze(constructor)).As<Function>();
+    return scope.Escape(constructor).As<Function>();
   }
 
   StreamDecoderBuilder::StreamDecoderBuilder(const CallbackInfo& info):

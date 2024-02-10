@@ -1,5 +1,4 @@
 #include "../utils/converters.hpp"
-#include "../utils/js_utils.hpp"
 #include <FLAC/format.h>
 #include <numeric>
 
@@ -36,7 +35,8 @@ namespace flac_bindings {
         attrs));
     }
 
-    return scope.Escape(objectFreeze(obj)).As<Object>();
+    obj.Freeze();
+    return scope.Escape(obj).As<Object>();
   }
 
   Object
@@ -133,7 +133,8 @@ namespace flac_bindings {
         break;
     }
 
-    return scope.Escape(objectFreeze(obj)).As<Object>();
+    obj.Freeze();
+    return scope.Escape(obj).As<Object>();
   }
 
   Array subframesToJs(const Env& env, const FLAC__Frame* frame) {
@@ -151,7 +152,9 @@ namespace flac_bindings {
     auto obj = Object::New(env);
     obj.DefineProperty(
       PropertyDescriptor::Value("crc", numberToJs(env, footer.crc), napi_enumerable));
-    return scope.Escape(objectFreeze(obj)).As<Object>();
+
+    obj.Freeze();
+    return scope.Escape(obj).As<Object>();
   }
 
   Object frameToJs(const Env& env, const FLAC__Frame* frame) {
@@ -163,7 +166,9 @@ namespace flac_bindings {
       PropertyDescriptor::Value("subframes", subframesToJs(env, frame), attrs),
       PropertyDescriptor::Value("footer", frameFooterToJs(env, frame->footer), attrs),
     });
-    return scope.Escape(objectFreeze(obj)).As<Object>();
+
+    obj.Freeze();
+    return scope.Escape(obj).As<Object>();
   }
 
 }

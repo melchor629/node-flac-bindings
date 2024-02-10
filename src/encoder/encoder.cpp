@@ -1,4 +1,5 @@
 #include "encoder.hpp"
+#include "../flac_addon.hpp"
 #include "../mappings/mappings.hpp"
 #include "../utils/defer.hpp"
 #include "../utils/encoder_decoder_utils.hpp"
@@ -84,9 +85,10 @@ namespace flac_bindings {
     c_enum::declareInObject(constructor, "SeekStatus", createSeekStatusEnum);
     c_enum::declareInObject(constructor, "TellStatus", createTellStatusEnum);
 
+    constructor.Freeze();
     addon.encoderConstructor = Persistent(constructor);
 
-    return scope.Escape(objectFreeze(constructor)).As<Function>();
+    return scope.Escape(constructor).As<Function>();
   }
 
   StreamEncoder::StreamEncoder(const CallbackInfo& info): ObjectWrap<StreamEncoder>(info) {
@@ -259,7 +261,8 @@ namespace flac_bindings {
         Napi::PropertyDescriptor::Value("expected", numberToJs(info.Env(), expected), attrs),
         Napi::PropertyDescriptor::Value("got", numberToJs(info.Env(), got), attrs),
       });
-      return objectFreeze(obj);
+      obj.Freeze();
+      return obj;
     }
 
     return info.Env().Null();
