@@ -18,12 +18,6 @@ export default defineConfig({
     include: ['test/**/*.test.[jt]s'],
     reporters: isCI ? ['default', 'junit'] : ['default'],
     setupFiles: './test/helper/setup.js',
-    globalSetup: './test/helper/global-setup.js',
     outputFile: 'tests.junit.xml',
-    poolOptions: {
-      threads: {
-        useAtomics: true,
-      },
-    },
   },
 })
