@@ -1,7 +1,8 @@
 plugins:
   - vitest
 extends:
-  - plugin:vitest/all
+  - plugin:vitest/legacy-recommended
+  - plugin:vitest/legacy-all
 rules:
   import/no-extraneous-dependencies:
     - error
@@ -9,3 +10,4 @@ rules:
   vitest/max-expects: [0]
   vitest/no-hooks: [0]
   vitest/require-to-throw-message: [0]
+  vitest/prefer-expect-assertions: [0]

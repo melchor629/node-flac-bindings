@@ -130,6 +130,8 @@ You can also try to debug the native code by setting up a test JS file and launc
 
 ## How to compile
 
+In case you need to compile or want to, ensure to install the optional peer dependencies! These are optional because they are not required in general terms as the pre-compiled code is enought for most cases.
+
 To compile the bindings you need [Cmake](https://www.cmake.org) installed in your system and accessible from the terminal, and the C and C++ compilers as well. On Windows, the compilers can be installed easily with `npm install --global --production windows-build-tools`. Don't forget `git`. It is mandatory!
 
 There are some options to use when compiling. The build tries to use an already installed compatible dev package of `libflac` (`apt install libflac-dev`, `pacman -S flac`, `apk add flac-dev`, `brew install flac`...), but with `FLAC_BINDINGS_USE_FLAC_SOURCES` will force to download the sources and compile everything from there.

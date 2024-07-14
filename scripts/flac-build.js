@@ -1,9 +1,9 @@
 import cp from 'node:child_process'
 import fs, { createReadStream, createWriteStream } from 'node:fs'
-import https from 'node:https'
 import path from 'node:path'
 import { pipeline } from 'node:stream'
 import { promisify } from 'node:util'
+import os from 'node:os'
 import zlib from 'node:zlib'
 import debugFactory from 'debug'
 import detectLibc from 'detect-libc'
@@ -32,26 +32,12 @@ const run = (command, pipe = true) => {
 }
 
 /**
- * @param {string | URL} url url
- * @returns {Promise<import('http').IncomingMessage>} promise
- */
-const fetchGet = (url) =>
-  new Promise((resolve, reject) => https.get(url, (res) => {
-    if (res.statusCode === 302) {
-      // follow redirection
-      fetchGet(res.headers.location).then(resolve).catch(reject)
-    } else {
-      resolve(res)
-    }
-  }).on('error', reject))
-
-/**
- * @param {import('node:stream').Readable} stream read stream
+ * @param {import('node:stream').Readable | ReadableStream<Int8Array>} stream read stream
  * @returns {Promise<void>} promise
  */
 const extractTarStream = async (stream) => {
   const tarStream = tar.extract()
-  tarStream.on('entry', (header, stream, next) => {
+  tarStream.on('entry', (header, entryStream, next) => {
     if (!path.resolve(header.name).startsWith(process.cwd())) {
       debug(`File ${header.name} will exit the current folder, ignoring`)
       return
@@ -59,9 +45,9 @@ const extractTarStream = async (stream) => {
 
     debug(`Extracting file ${header.name}`)
     fs.mkdirSync(path.dirname(header.name), { recursive: true })
-    stream.pipe(createWriteStream(header.name))
-    stream.on('end', next)
-    stream.resume()
+    entryStream.pipe(createWriteStream(header.name))
+    entryStream.on('end', next)
+    entryStream.resume()
   })
 
   await promisify(pipeline)(stream, zlib.createBrotliDecompress(), tarStream)
@@ -71,7 +57,7 @@ const getFromPrebuilt = async () => {
   debug('Looking for prebuild packages')
   const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
   const [napiVersion] = packageJson.binary.napi_versions
-    .filter(v => v <= parseInt(process.versions.napi, 10))
+    .filter((v) => v <= parseInt(process.versions.napi, 10))
     .sort((a, b) => a - b)
   const fileName = [
     packageJson.name,
@@ -87,25 +73,24 @@ const getFromPrebuilt = async () => {
   const tarUrl = new URL(`releases/download/v${packageJson.version}/${fileName}`, packageJson.repository)
 
   debug(`Downloading from ${tarUrl}`)
-  const res = await fetchGet(tarUrl).catch((e) => {
+  const res = await fetch(tarUrl, { redirect: 'follow' }).catch((e) => {
     debug(`Donload failed: ${e.message}`)
     return null
   })
-  if (res?.statusCode === 200) {
-    debug(`Found one prebuild package: ${tarUrl}`)
-    await extractTarStream(res)
-    return true
-  } else if (res) {
-    res.setEncoding('utf-8')
-    const chunks = []
-    for await (const chunk of res) {
-      chunks.push(chunk)
-    }
+  if (!res) {
+    return false
+  }
 
-    debug(`Download failed ${res.statusCode} ${res.statusMessage}`)
-    if (res.statusCode !== 404) {
-      debug(chunks.join(''))
-    }
+  if (res.status === 200) {
+    debug(`Found one prebuild package: ${tarUrl}`)
+    await extractTarStream(res.body)
+    return true
+  }
+
+  debug(`Download failed ${res.statusCode} ${res.statusMessage}`)
+  if (res.statusCode !== 404) {
+    const chunks = await res.text()
+    debug(chunks)
   }
 
   debug(`Reading from ${tarPath}`)
@@ -120,6 +105,32 @@ const getFromPrebuilt = async () => {
   return true
 }
 
+const checkBuildDeps = async () => {
+  let hasSomethingWrong = false
+  // first check deps
+  const [cmakeJs, nodeAddonApi] = await Promise.all([
+    import('cmake-js').catch(() => null),
+    import('node-addon-api').catch(() => null),
+  ])
+  if (!cmakeJs) {
+    process.stderr.write('[!!] cmake-js peer dependency is not installed. It is required to build the sources.\n')
+    hasSomethingWrong = true
+  }
+  if (!nodeAddonApi) {
+    process.stderr.write('[!!] node-addon-api peer dependency is not installed. It is required to build the sources.\n')
+    hasSomethingWrong = true
+  }
+
+  // then check if cmake is installed
+  const cmakeResult = run('cmake --version', false)
+  if (cmakeResult.status) {
+    process.stderr.write('[!!] cmake cli is required to build the sources.\n')
+    hasSomethingWrong = true
+  }
+
+  return hasSomethingWrong
+}
+
 if (envOpts.ci) {
   debug('CI environment, stopping build')
   process.exit(0)
@@ -129,6 +140,11 @@ debug('Trying to install from prebuilt package...')
 if (await getFromPrebuilt()) {
   debug('Installed succesfully')
   process.exit(0)
+}
+
+debug('Checking build dependencies before building source...')
+if (await checkBuildDeps()) {
+  process.exit(1)
 }
 
 if (envOpts.useFlacSources) {
