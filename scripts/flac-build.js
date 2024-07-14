@@ -46,7 +46,7 @@ const fetchGet = (url) =>
   }).on('error', reject))
 
 /**
- * @param {import('stream').Readable} stream read stream
+ * @param {import('node:stream').Readable} stream read stream
  * @returns {Promise<void>} promise
  */
 const extractTarStream = async (stream) => {

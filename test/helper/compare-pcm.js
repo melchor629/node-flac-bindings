@@ -1,4 +1,4 @@
-import cp from 'child_process'
+import cp from 'node:child_process'
 
 /**
  * Decodes a flac file using `flac` cli tool

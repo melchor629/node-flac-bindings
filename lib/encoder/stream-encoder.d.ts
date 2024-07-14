@@ -1,4 +1,4 @@
-import { Transform } from 'stream'
+import { Transform } from 'node:stream'
 import { Encoder, EnumValues } from '../api.js'
 import { BaseEncoder, EncoderOptions } from './interfaces.js'
 

@@ -1,4 +1,4 @@
-import { Readable } from 'stream'
+import { Readable } from 'node:stream'
 import { BaseDecoder, DecoderOptions, DecoderPosition } from './interfaces.js'
 
 /** Options to be set to the decoder before starting to decode. */

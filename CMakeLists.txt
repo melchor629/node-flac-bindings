@@ -128,7 +128,14 @@ add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 
 set(napi_build_version 8 CACHE STRING "N-API Version")
 message("-- Using N-API ${napi_build_version}")
-add_compile_definitions(NAPI_VERSION=${napi_build_version} NAPI_EXPERIMENTAL NODE_ADDON_API_DISABLE_DEPRECATED)
+add_compile_definitions(
+  NAPI_VERSION=${napi_build_version}
+  NAPI_EXPERIMENTAL
+  NODE_ADDON_API_DISABLE_DEPRECATED
+  NODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT
+)
+# NODE_API_EXPERIMENTAL_NOGC_ENV_OPT_OUT node-addon-api does not support nogc versions of the API
+# see https://github.com/nodejs/node-addon-api/issues/1508
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_JS_INC})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")

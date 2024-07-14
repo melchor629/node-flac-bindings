@@ -1,4 +1,4 @@
-import { Writable } from 'stream'
+import { Writable } from 'node:stream'
 import { Encoder, EnumValues } from '../api.js'
 import { BaseEncoder, EncoderOptions } from './interfaces.js'
 

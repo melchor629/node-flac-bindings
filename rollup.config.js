@@ -10,7 +10,7 @@ export default defineConfig({
   },
   external: [
     ...Object.keys(packageJson.dependencies),
-    'stream',
-    'url',
+    'node:stream',
+    'node:url',
   ],
 })
