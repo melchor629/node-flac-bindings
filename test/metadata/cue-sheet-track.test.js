@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { metadata, metadata0 } from '../../lib/api.js'
 import { pathForFile as fullPathForFile, gc } from '../helper/index.js'
 
-const { CueSheetTrack, CueSheetIndex } = metadata
+const { CueSheetIndex, CueSheetTrack } = metadata
 const { getCuesheet } = metadata0
 const { tags: pathForFile } = fullPathForFile
 

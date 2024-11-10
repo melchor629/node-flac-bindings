@@ -26,7 +26,7 @@ describe('async', () => {
         const values = []
         try {
           await testAsync(endMode, (c) => values.push(c))
-        } catch (e) {
+        } catch {
           // nothing to do here
         }
         expect(values).toStrictEqual(progressValues)
@@ -36,7 +36,7 @@ describe('async', () => {
         const values = []
         try {
           await testAsync(endMode, (c) => Promise.resolve(values.push(c)))
-        } catch (e) {
+        } catch {
           // nothing to do here
         }
         expect(values).toStrictEqual(progressValues)

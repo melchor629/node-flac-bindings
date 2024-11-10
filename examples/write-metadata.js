@@ -14,7 +14,6 @@ const asyncVersion = async (file) => {
   await iterator.initAsync(file)
 
   // look for the tags metadata block
-  // eslint-disable-next-line no-await-in-loop
   while (await iterator.nextAsync()
     && iterator.getBlockType() !== format.MetadataType.VORBIS_COMMENT);
 

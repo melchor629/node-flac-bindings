@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { format, metadata, SimpleIterator } from '../../lib/api.js'
 import { gc, pathForFile as fullPathForFile } from '../helper/index.js'
 
-const { SeekTableMetadata, SeekPoint } = metadata
+const { SeekPoint, SeekTableMetadata } = metadata
 const { MetadataType } = format
 const { tags: pathForFile } = fullPathForFile
 

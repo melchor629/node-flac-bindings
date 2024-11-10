@@ -50,6 +50,6 @@ decoder
   })
 
 setInterval(() => {
-  const { percentage, totalSeconds, currentSeconds } = decoder.getProgress()
+  const { currentSeconds, percentage, totalSeconds } = decoder.getProgress()
   process.stdout.write(`\r[${(percentage * 100).toFixed(1)}%] ${currentSeconds.toFixed(1)}s / ${totalSeconds.toFixed(1)}s`)
 }, 500).unref()

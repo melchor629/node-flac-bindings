@@ -222,7 +222,7 @@ describe('chain & Iterator', () => {
       ch.read(filePath)
 
       const si = ch.createIterator()
-      // eslint-disable-next-line curly
+
       while (si.next());
 
       expect(si.getBlockType()).toStrictEqual(format.MetadataType.VORBIS_COMMENT)
@@ -274,7 +274,7 @@ describe('chain & Iterator', () => {
       ch.read(filePath)
 
       const si = ch.createIterator()
-      // eslint-disable-next-line curly
+
       while (si.next());
       si.insertBlockBefore(new metadata.PaddingMetadata(100))
 

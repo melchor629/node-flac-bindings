@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop */
 import { SimpleIterator } from 'flac-bindings/api'
 import createArgs from './_args.js'
 import printMetadata from './_print-metadata.js'

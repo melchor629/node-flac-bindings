@@ -178,7 +178,7 @@ describe('simpleIterator', () => {
       const si = new SimpleIterator()
 
       si.init(filePath)
-      // eslint-disable-next-line curly
+
       while (si.next());
 
       expect(si.isLast()).toBeTruthy()
@@ -267,7 +267,7 @@ describe('simpleIterator', () => {
       const si = new SimpleIterator()
 
       await si.initAsync(filePath)
-      // eslint-disable-next-line no-await-in-loop
+
       while (await si.nextAsync());
 
       expect(si.isLast()).toBeTruthy()

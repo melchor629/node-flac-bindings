@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'rollup'
-import packageJson from './package.json' assert { type: 'json' }
+import packageJson from './package.json' with { type: 'json' }
 
 export default defineConfig({
   input: resolve('lib/index.js'),

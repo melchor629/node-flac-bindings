@@ -23,8 +23,8 @@ import {
 
 const { audio: pathForFile } = fullPathForFile
 const {
-  totalSamples,
   okData,
+  totalSamples,
 } = loopPcmAudio
 const temp = tempUntracked.track()
 

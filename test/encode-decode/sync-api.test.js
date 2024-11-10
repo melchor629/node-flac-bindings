@@ -19,10 +19,10 @@ import {
 
 const { audio: pathForFile } = fullPathForFile
 const {
-  totalSamples,
   encData,
   encDataAlt,
   okData,
+  totalSamples,
 } = loopPcmAudio
 const temp = tempUntracked.track()
 
@@ -56,7 +56,7 @@ describe('encode & decode: sync api', () => {
         return 0
       },
       null,
-      // eslint-disable-next-line no-console
+
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
@@ -85,7 +85,7 @@ describe('encode & decode: sync api', () => {
         return 0
       },
       null,
-      // eslint-disable-next-line no-console
+
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
@@ -108,7 +108,7 @@ describe('encode & decode: sync api', () => {
         return 0
       },
       null,
-      // eslint-disable-next-line no-console
+
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
@@ -131,7 +131,7 @@ describe('encode & decode: sync api', () => {
         return 0
       },
       null,
-      // eslint-disable-next-line no-console
+
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
@@ -150,7 +150,7 @@ describe('encode & decode: sync api', () => {
       pathForFile('loop.flac'),
       () => 0,
       null,
-      // eslint-disable-next-line no-console
+
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
@@ -173,7 +173,7 @@ describe('encode & decode: sync api', () => {
       callbacks.eof,
       () => 0,
       null,
-      // eslint-disable-next-line no-console
+
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
@@ -195,7 +195,7 @@ describe('encode & decode: sync api', () => {
         metadataBlocks.push(metadata)
         return 0
       },
-      // eslint-disable-next-line no-console
+
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
@@ -214,7 +214,7 @@ describe('encode & decode: sync api', () => {
         pathForFile('loop.flac'),
         () => 0,
         () => 0,
-        // eslint-disable-next-line no-console
+
         (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
       )
 
@@ -496,7 +496,7 @@ describe('encode & decode: sync api', () => {
         return 0
       },
       null,
-      // eslint-disable-next-line no-console
+
       (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
     )
 
