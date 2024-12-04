@@ -11,14 +11,14 @@ import {
 import {
   FileDecoder,
   FileEncoder,
-  StreamEncoder,
   StreamDecoder,
+  StreamEncoder,
 } from '../../lib/index.js'
 import {
-  pathForFile as fullPathForFile,
   comparePCM,
   gc,
   loopPcmAudio,
+  pathForFile as fullPathForFile,
 } from '../helper/index.js'
 
 const { audio: pathForFile } = fullPathForFile

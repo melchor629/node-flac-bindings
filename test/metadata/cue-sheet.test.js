@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { format, metadata, metadata0 } from '../../lib/api.js'
-import { pathForFile as fullPathForFile, gc } from '../helper/index.js'
+import { format, metadata0, metadata } from '../../lib/api.js'
+import { gc, pathForFile as fullPathForFile } from '../helper/index.js'
 
 const { CueSheetIndex, CueSheetMetadata, CueSheetTrack } = metadata
 const { MetadataType } = format

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { gc } from '../helper/index.js'
 import {
-  metadata,
   format,
+  metadata,
 } from '../../lib/api.js'
+import { gc } from '../helper/index.js'
 
 const { ApplicationMetadata } = metadata
 const { MetadataType } = format

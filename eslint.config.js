@@ -7,6 +7,7 @@ export default [
     noJsx: true,
   }),
   {
+    name: 'flac-bindings:vitest',
     files: ['test/**'],
     plugins: {
       vitest,
@@ -16,6 +17,7 @@ export default [
     },
   },
   {
+    name: 'flac-bindings:examples',
     files: ['examples/**'],
     rules: {
       'import/no-unresolved': 'off',

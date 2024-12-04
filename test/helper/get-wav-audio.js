@@ -1,6 +1,6 @@
 import fs from 'node:fs'
-import pathForFile from './path-for-file.js'
 import { getPCMData } from './compare-pcm.js'
+import pathForFile from './path-for-file.js'
 
 const cache = new Map()
 

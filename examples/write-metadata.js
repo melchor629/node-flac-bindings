@@ -1,6 +1,6 @@
-import { format, SimpleIterator, metadata } from 'flac-bindings'
-import { basename } from 'path'
-import { homedir } from 'os'
+import { homedir } from 'node:os'
+import { basename } from 'node:path'
+import { SimpleIterator, format, metadata } from 'flac-bindings'
 import createArgs from './_args.js'
 
 const args = createArgs(import.meta.url)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { format, metadata, SimpleIterator } from '../../lib/api.js'
+import { SimpleIterator, format, metadata } from '../../lib/api.js'
 import { gc, pathForFile as fullPathForFile } from '../helper/index.js'
 
 const { SeekPoint, SeekTableMetadata } = metadata

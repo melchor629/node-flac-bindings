@@ -8,8 +8,8 @@ import {
   expect,
   it,
 } from 'vitest'
-import { SimpleIterator, metadata, format } from '../lib/api.js'
-import { pathForFile as fullPathForFile, gc } from './helper/index.js'
+import { SimpleIterator, format, metadata } from '../lib/api.js'
+import { gc, pathForFile as fullPathForFile } from './helper/index.js'
 
 const temp = tempUntracked.track()
 const { tags: pathForFile } = fullPathForFile

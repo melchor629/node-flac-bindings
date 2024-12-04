@@ -9,12 +9,12 @@ import {
 } from 'vitest'
 import { api } from '../../lib/index.js'
 import {
-  pathForFile as fullPathForFile,
-  createDeferredScope,
   comparePCM,
+  createDeferredScope,
   generateFlacCallbacks,
   joinIntoInterleaved,
   loopPcmAudio,
+  pathForFile as fullPathForFile,
 } from '../helper/index.js'
 
 const { audio: pathForFile } = fullPathForFile

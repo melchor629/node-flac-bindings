@@ -1,6 +1,6 @@
-import { format, Chain, metadata } from 'flac-bindings/api'
-import { basename } from 'path'
-import { homedir } from 'os'
+import { homedir } from 'node:os'
+import { basename } from 'node:path'
+import { Chain, format, metadata } from 'flac-bindings/api'
 import createArgs from './_args.js'
 
 const args = createArgs(import.meta.url)

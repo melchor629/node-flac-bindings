@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { format, metadata, metadata0 } from '../../lib/api.js'
+import { format, metadata0, metadata } from '../../lib/api.js'
 import { gc, pathForFile as fullPathForFile } from '../helper/index.js'
 
 const { StreamInfoMetadata } = metadata

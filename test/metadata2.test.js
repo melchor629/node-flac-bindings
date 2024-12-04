@@ -9,12 +9,12 @@ import {
   it,
 } from 'vitest'
 import {
-  Chain, Iterator, metadata, format,
+  Chain, Iterator, format, metadata,
 } from '../lib/api.js'
 import {
-  pathForFile as fullPathForFile,
-  generateFlacCallbacks,
   gc,
+  generateFlacCallbacks,
+  pathForFile as fullPathForFile,
 } from './helper/index.js'
 
 const temp = tempUntracked.track()

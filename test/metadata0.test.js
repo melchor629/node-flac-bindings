@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
-import { metadata0, metadata, format } from '../lib/api.js'
-import { pathForFile as fullPathForFile, gc } from './helper/index.js'
+import { format, metadata0, metadata } from '../lib/api.js'
+import { gc, pathForFile as fullPathForFile } from './helper/index.js'
 
 const { tags: pathForFile } = fullPathForFile
 

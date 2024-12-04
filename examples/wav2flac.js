@@ -1,6 +1,6 @@
 import fs from 'fs'
-import wav from 'wav'
 import { FileEncoder } from 'flac-bindings'
+import wav from 'wav'
 import createArgs from './_args.js'
 
 const args = createArgs(import.meta.url)
