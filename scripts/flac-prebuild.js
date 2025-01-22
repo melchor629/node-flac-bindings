@@ -1,13 +1,13 @@
 import cp from 'node:child_process'
 import { once } from 'node:events'
 import { createReadStream, createWriteStream } from 'node:fs'
-import os from 'node:os'
 import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import detectLibc from 'detect-libc'
 import tar from 'tar-stream'
-import packageJson from '../package.json' assert { type: 'json' }
+import packageJson from '../package.json' with { type: 'json' }
 
 const opts = {
   arch: process.env.NODE_ARCH || process.arch,
@@ -61,7 +61,7 @@ for (const napiVersion of opts.napiVersions) {
 
   // strip
   if (process.platform !== 'win32') {
-    process.stdout.write(`\n> Stripping binaries\n`)
+    process.stdout.write('\n> Stripping binaries\n')
     for (const releaseFilePath of await readFiles(path.join('build', 'Release'))) {
       if (releaseFilePath.endsWith('.node')) {
         process.stdout.write(`  - ${releaseFilePath}\n`)

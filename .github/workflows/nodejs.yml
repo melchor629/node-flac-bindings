@@ -11,8 +11,6 @@ jobs:
     strategy:
       matrix:
         node:
-          - version: 18
-            napi: 8
           - version: 20
             napi: 8
           - version: 22
