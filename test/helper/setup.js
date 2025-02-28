@@ -1,4 +1,4 @@
-/* eslint-disable import/no-extraneous-dependencies */
+/* eslint-disable import-x/no-extraneous-dependencies */
 import * as matchers from 'jest-extended'
 import { expect } from 'vitest'
 

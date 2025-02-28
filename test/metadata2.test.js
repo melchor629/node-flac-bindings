@@ -552,6 +552,64 @@ describe('chain & Iterator', () => {
         format.MetadataType.PADDING,
       ])
     })
+
+    it('modify the blocks and write should modify the file correctly (sync + new file)', () => {
+      const tmpFile2 = temp.openSync('flac-bindings.metadata2.chain-iterator-new')
+      oldfs.closeSync(tmpFile2.fd)
+
+      const ch = new Chain()
+      ch.read(tmpFile.path)
+      const si = ch.createIterator()
+
+      const vc = new metadata.VorbisCommentMetadata()
+      vc.vendorString = 'flac-bindings 2.0.0'
+      expect(si.insertBlockAfter(vc)).toBeTruthy()
+
+      expect(si.insertBlockAfter(new metadata.PaddingMetadata(50))).toBeTruthy()
+      expect(si.insertBlockAfter(new metadata.ApplicationMetadata())).toBeTruthy()
+      expect(si.next()).toBeTruthy()
+
+      ch.writeNewFile(tmpFile2.path, false)
+
+      const ch2 = new Chain()
+      ch2.read(tmpFile2.path)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.PADDING,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.PADDING,
+      ])
+    })
+
+    it('modify the blocks and write should modify the file correctly (async + new file)', async () => {
+      const tmpFile2 = temp.openSync('flac-bindings.metadata2.chain-iterator-new')
+      oldfs.closeSync(tmpFile2.fd)
+
+      const ch = new Chain()
+      ch.read(tmpFile.path)
+      const si = ch.createIterator()
+
+      const vc = new metadata.VorbisCommentMetadata()
+      vc.vendorString = 'flac-bindings 2.0.0'
+      expect(si.insertBlockAfter(vc)).toBeTruthy()
+
+      expect(si.insertBlockAfter(new metadata.PaddingMetadata(50))).toBeTruthy()
+      expect(si.insertBlockAfter(new metadata.ApplicationMetadata())).toBeTruthy()
+      expect(si.next()).toBeTruthy()
+
+      await ch.writeNewFileAsync(tmpFile2.path, false)
+
+      const ch2 = new Chain()
+      ch2.read(tmpFile2.path)
+      expect(Array.from(ch.createIterator()).map((i) => i.type)).toStrictEqual([
+        format.MetadataType.STREAMINFO,
+        format.MetadataType.VORBIS_COMMENT,
+        format.MetadataType.PADDING,
+        format.MetadataType.APPLICATION,
+        format.MetadataType.PADDING,
+      ])
+    })
   })
 
   describe('other', () => {

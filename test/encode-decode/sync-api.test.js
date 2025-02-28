@@ -186,6 +186,50 @@ describe('encode & decode: sync api', () => {
     expect(dec.finish()).not.toBeNull()
   })
 
+  it('decoder should be able to decode one chained link', () => {
+    const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('chained.oga'), 'r')
+    deferredScope.defer(() => callbacks.close())
+    const dec = new api.DecoderBuilder().setDecodeChainedStream(true).buildWithOggStream(
+      callbacks.read,
+      callbacks.seek,
+      callbacks.tell,
+      callbacks.length,
+      callbacks.eof,
+      () => 0,
+      null,
+
+      (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+    )
+
+    expect(dec.processUntilEndOfLink()).toBeTruthy()
+    expect(dec.getState()).toBe(api.Decoder.State.END_OF_LINK)
+    expect(dec.finishLink()).toBeTruthy()
+    expect(dec.getState()).toBe(api.Decoder.State.SEARCH_FOR_METADATA)
+    expect(dec.getDecodePosition()).toBeNull()
+    expect(dec.finish()).not.toBeNull()
+  })
+
+  it('decoder should be able to skip one chained link', () => {
+    const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('chained.oga'), 'r')
+    deferredScope.defer(() => callbacks.close())
+    const dec = new api.DecoderBuilder().setDecodeChainedStream(true).buildWithOggStream(
+      callbacks.read,
+      callbacks.seek,
+      callbacks.tell,
+      callbacks.length,
+      callbacks.eof,
+      () => 0,
+      null,
+
+      (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+    )
+
+    expect(dec.skipSingleLink()).toBeTruthy()
+    expect(dec.getState()).toBe(api.Decoder.State.SEARCH_FOR_METADATA)
+    expect(dec.getDecodePosition()).toBeNull()
+    expect(dec.finish()).not.toBeNull()
+  })
+
   it('decoder should emit metadata', () => {
     const metadataBlocks = []
     const dec = new api.DecoderBuilder().buildWithFile(
@@ -203,6 +247,43 @@ describe('encode & decode: sync api', () => {
     expect(dec.finish()).not.toBeNull()
 
     expect(metadataBlocks).toHaveLength(1)
+  })
+
+  it('decoder can get total samples (file)', () => {
+    const dec = new api.DecoderBuilder()
+      .setDecodeChainedStream(true)
+      .buildWithOggFile(
+        pathForFile('chained.oga'),
+        () => 0,
+        null,
+        (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+      )
+
+    const totalSamples = dec.findTotalSamples()
+    expect(dec.finish()).not.toBeNull()
+
+    expect(totalSamples).toBe(496125)
+  })
+
+  it('decoder cannot get total samples (stream)', () => {
+    const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r')
+    deferredScope.defer(() => callbacks.close())
+    const dec = new api.DecoderBuilder()
+      .buildWithStream(
+        callbacks.read,
+        null,
+        null,
+        callbacks.length,
+        callbacks.eof,
+        () => 0,
+        null,
+        (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+      )
+
+    const totalSamples = dec.findTotalSamples()
+    expect(dec.finish()).not.toBeNull()
+
+    expect(totalSamples).toBe(0)
   })
 
   it('decoder get other properties work', () => {
@@ -314,6 +395,29 @@ describe('encode & decode: sync api', () => {
 
     comparePCM(okData, tmpFile.path, 24, true)
     expect(progressCallbackValues).toHaveLength(30)
+  })
+
+  it('encode with multi-threading (non-ogg)', async () => {
+    const cpus = await (import('node:os').then((e) => Math.min(64, e.cpus().length)))
+
+    const progressCallbackValues = []
+    const enc = new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .setNumThreads(cpus)
+      .buildWithFile(
+        tmpFile.path,
+        (...args) => progressCallbackValues.push(args),
+      )
+
+    expect(enc.numThreads).toBe(cpus)
+    expect(enc.processInterleaved(encData)).toBeTruthy()
+    expect(enc.finish()).not.toBeNull()
+
+    comparePCM(okData, tmpFile.path, 24)
+    expect(progressCallbackValues).toHaveLength(41)
   })
 
   it('encode using file with non-interleaved data (non-ogg)', () => {
@@ -469,6 +573,7 @@ describe('encode & decode: sync api', () => {
     expect(enc.getRiceParameterSearchDist()).toBe(0)
     expect(enc.getTotalSamplesEstimate()).toStrictEqual(totalSamples)
     expect(enc.getLimitMinBitrate()).toBeFalsy()
+    expect(enc.getNumThreads()).toBe(1)
   })
 
   it('encoder should throw if built with sync but called async method', async () => {

@@ -65,6 +65,7 @@ namespace flac_bindings {
           nullptr,
           attrs),
         InstanceAccessor("limitMinBitrate", &StreamEncoder::getLimitMinBitrate, nullptr, attrs),
+        InstanceAccessor("numThreads", &StreamEncoder::getNumThreads, nullptr, attrs),
         InstanceMethod("getState", &StreamEncoder::getState),
         InstanceMethod("getVerifyDecoderState", &StreamEncoder::getVerifyDecoderState),
         InstanceMethod("getResolvedStateString", &StreamEncoder::getResolvedStateString),
@@ -202,6 +203,15 @@ namespace flac_bindings {
     return booleanToJs(info.Env(), value);
 #else
     return booleanToJs(info.Env(), false);
+#endif
+  }
+
+  Napi::Value StreamEncoder::getNumThreads(const CallbackInfo& info) {
+#if FLAC_API_VERSION_CURRENT >= 14
+    auto value = FLAC__stream_encoder_get_num_threads(enc);
+    return numberToJs(info.Env(), value);
+#else
+    return numberToJs(info.Env(), 1);
 #endif
   }
 

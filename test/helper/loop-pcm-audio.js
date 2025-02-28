@@ -1,5 +1,5 @@
-import getWavAudio from './get-wav-audio.js'
 import { fns } from '../../lib/api.js'
+import getWavAudio from './get-wav-audio.js'
 
 const totalSamples = 992250 / 3 / 2
 

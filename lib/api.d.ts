@@ -14,6 +14,7 @@ export class DecoderBuilder {
    */
   getState(): EnumValues<Decoder.State>;
   getMd5Checking(): boolean;
+  getDecodeChainedStream(): boolean;
 
   setOggSerialNumber(value: number): DecoderBuilder;
   setMd5Checking(value: boolean): DecoderBuilder;
@@ -23,6 +24,7 @@ export class DecoderBuilder {
   setMetadataIgnore(type: metadata.MetadataTypes): DecoderBuilder;
   setMetadataIgnoreApplication(applicationId: Buffer): DecoderBuilder;
   setMetadataIgnoreAll(): DecoderBuilder;
+  setDecodeChainedStream(value: boolean): DecoderBuilder;
 
   /**
    * Builds a {@link Decoder} using a stream input. The decoder can only use **synchronous**
@@ -184,25 +186,34 @@ export abstract class Decoder {
   getBitsPerSample(): number;
   getSampleRate(): number;
   getBlocksize(): number;
+  getLinkLengths(): ReadonlyArray<number | bigint>;
 
   finish(): DecoderBuilder | null;
+  finishLink(): boolean;
   flush(): boolean;
   reset(): boolean;
   processSingle(): boolean;
   processUntilEndOfStream(): boolean;
   processUntilEndOfMetadata(): boolean;
+  processUntilEndOfLink(): boolean;
   skipSingleFrame(): boolean;
+  skipSingleLink(): boolean;
   seekAbsolute(position: number | bigint): boolean;
   getDecodePosition(): number | bigint | null;
+  findTotalSamples(): number | bigint | null;
 
   finishAsync(): Promise<DecoderBuilder | null>;
+  finishLinkAsync(): Promise<boolean>;
   flushAsync(): Promise<boolean>;
   processSingleAsync(): Promise<boolean>;
   processUntilEndOfStreamAsync(): Promise<boolean>;
   processUntilEndOfMetadataAsync(): Promise<boolean>;
+  processUntilEndOfLinkAsync(): Promise<boolean>;
   skipSingleFrameAsync(): Promise<boolean>;
+  skipSingleLinkAsync(): Promise<boolean>;
   seekAbsoluteAsync(position: number | bigint): Promise<boolean>;
   getDecodePositionAsync(): Promise<number | bigint | null>;
+  findTotalSamplesAsync(): Promise<number | bigint | null>;
 
   static readonly State: Decoder.State;
   static readonly StateString: ReverseEnum<Decoder.State>;
@@ -369,6 +380,7 @@ declare namespace Decoder {
     ABORTED: 7;
     MEMORY_ALLOCATION_ERROR: 8;
     UNINITIALIZED: 9;
+    END_OF_LINK: 10;
   }
 
   /**
@@ -392,6 +404,7 @@ declare namespace Decoder {
     CONTINUE: 0;
     END_OF_STREAM: 1;
     ABORT: 2;
+    ND_OF_LINK: 3;
   }
 
   /**
@@ -443,6 +456,8 @@ declare namespace Decoder {
     FRAME_CRC_MISMATCH: 2;
     UNPARSEABLE_STREAM: 3;
     BAD_METADATA: 4;
+    OUT_OF_BOUNDS: 5;
+    MISSING_FRAME: 6;
   }
 }
 
@@ -474,6 +489,7 @@ export class EncoderBuilder {
   getRiceParameterSearchDist(): number;
   getLimitMinBitrate(): boolean;
   getTotalSamplesEstimate(): number | bigint;
+  getNumThreads(): number;
 
   setOggSerialNumber(value: number): EncoderBuilder;
   setCompressionLevel(value: number): EncoderBuilder;
@@ -497,6 +513,7 @@ export class EncoderBuilder {
   setRiceParameterSearchDist(value: number): EncoderBuilder;
   setLimitMinBitrate(value: boolean): EncoderBuilder;
   setTotalSamplesEstimate(value: number | bigint): EncoderBuilder;
+  setNumThreads(threads: number): EncoderBuilder;
 
   /**
    * Builds a {@link Encoder} to write into a stream. The encoder can only use **synchronous**
@@ -618,12 +635,13 @@ export abstract class Encoder {
   readonly riceParameterSearchDist: number;
   readonly limitMinBitrate: boolean;
   readonly totalSamplesEstimate: number | bigint;
+  readonly numThreads: number;
 
   getState(): EnumValues<Encoder.State>;
   getVerifyDecoderState(): EnumValues<Decoder.State>;
   getResolvedStateString(): string;
   getVerifyDecoderErrorStats(): {
-      absoluteSample: number | bigint;
+    absoluteSample: number | bigint;
     frameBuffer: number;
     channel: number;
     sample: number;
@@ -1347,12 +1365,16 @@ export class Chain {
   readOggWithCallbacks(callbacks: Chain.IOCallbacks): Promise<void>;
   /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46bf9cf7d426078101b9297ba80bb835 */
   write(padding?: boolean, preserve?: boolean): void;
+  /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga7a4e69cb6201d19dce066418ccaeeaa5 */
+  writeNewFile(filename: string, padding?: boolean): void;
   /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46bf9cf7d426078101b9297ba80bb835 */
   writeAsync(padding?: boolean, preserve?: boolean): Promise<void>;
   /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga70532b3705294dc891d8db649a4d4843 */
   writeWithCallbacks(callbacks: Chain.IOCallbacks, usePadding?: boolean): Promise<void>;
   /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga72facaa621e8d798036a4a7da3643e41 */
   writeWithCallbacksAndTempFile(usePadding: boolean, callbacks: Chain.IOCallbacks, tempCallbacks: Chain.IOCallbacks): Promise<void>;
+  /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga7a4e69cb6201d19dce066418ccaeeaa5 */
+  writeNewFileAsync(filename: string, padding?: boolean): Promise<void>;
   /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga46602f64d423cfe5d5f8a4155f8a97e2 */
   checkIfTempFileIsNeeded(usePadding?: boolean): boolean;
   /** @see https://xiph.org/flac/api/group__flac__metadata__level2.html#ga0a43897914edb751cb87f7e281aff3dc */

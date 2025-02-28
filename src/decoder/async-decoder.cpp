@@ -74,6 +74,19 @@ namespace flac_bindings {
       convertFunction);
   }
 
+  AsyncDecoderWork* AsyncDecoderWork::forFinishLink(const StoreList& list, DecoderWorkContext* ctx) {
+    auto workFunction = [ctx]() -> int {
+      return FLAC__stream_decoder_finish_link(ctx->dec);
+    };
+
+    return new AsyncDecoderWork(
+      list,
+      workFunction,
+      "flac_bindings::StreamDecoder::finishLinkAsync",
+      ctx,
+      variantIntToJsBoolean);
+  }
+
   AsyncDecoderWork* AsyncDecoderWork::forFlush(const StoreList& list, DecoderWorkContext* ctx) {
     auto workFunction = [ctx]() {
       return FLAC__stream_decoder_flush(ctx->dec);
@@ -126,6 +139,19 @@ namespace flac_bindings {
   }
 
   AsyncDecoderWork*
+    AsyncDecoderWork::forProcessUntilEndOfLink(const StoreList& list, DecoderWorkContext* ctx) {
+    auto workFunction = [ctx]() {
+      return FLAC__stream_decoder_process_until_end_of_link(ctx->dec);
+    };
+    return new AsyncDecoderWork(
+      list,
+      workFunction,
+      "flac_bindings::StreamDecoder::processUntilEndOfLinkAsync",
+      ctx,
+      variantIntToJsBoolean);
+  }
+
+  AsyncDecoderWork*
     AsyncDecoderWork::forSkipSingleFrame(const StoreList& list, DecoderWorkContext* ctx) {
     auto workFunction = [ctx]() {
       return FLAC__stream_decoder_skip_single_frame(ctx->dec);
@@ -134,6 +160,19 @@ namespace flac_bindings {
       list,
       workFunction,
       "flac_bindings::StreamDecoder::skipSingleFrameAsync",
+      ctx,
+      variantIntToJsBoolean);
+  }
+
+  AsyncDecoderWork*
+    AsyncDecoderWork::forSkipSingleLink(const StoreList& list, DecoderWorkContext* ctx) {
+    auto workFunction = [ctx]() {
+      return FLAC__stream_decoder_skip_single_link(ctx->dec);
+    };
+    return new AsyncDecoderWork(
+      list,
+      workFunction,
+      "flac_bindings::StreamDecoder::skipSingleLinkAsync",
       ctx,
       variantIntToJsBoolean);
   }
@@ -285,7 +324,27 @@ namespace flac_bindings {
     return new AsyncDecoderWork(
       list,
       workFunction,
-      "flac_bindings::StreamDecoder::getDecoderPosition",
+      "flac_bindings::StreamDecoder::getDecoderPositionAsync",
+      ctx,
+      convertFunction);
+  }
+
+  AsyncDecoderWork*
+    AsyncDecoderWork::forFindTotalSamples(const StoreList& list, DecoderWorkContext* ctx) {
+    auto workFunction = [ctx]() -> AsyncDecoderWork::ValueType {
+      return FLAC__stream_decoder_find_total_samples(ctx->dec);
+    };
+    auto convertFunction = [](const Napi::Env& env, AsyncDecoderWork::ValueType value) {
+      if (std::holds_alternative<uint64_t>(value)) {
+        return numberToJs(env, std::get<uint64_t>(value));
+      }
+
+      return env.Null();
+    };
+    return new AsyncDecoderWork(
+      list,
+      workFunction,
+      "flac_bindings::StreamDecoder::findTotalSamplesAsync",
       ctx,
       convertFunction);
   }

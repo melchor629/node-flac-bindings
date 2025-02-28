@@ -142,6 +142,7 @@ namespace flac_bindings {
     Napi::Value getRiceParameterSearchDist(const CallbackInfo&);
     Napi::Value getLimitMinBitrate(const CallbackInfo&);
     Napi::Value getTotalSamplesEstimate(const CallbackInfo&);
+    Napi::Value getNumThreads(const CallbackInfo&);
 
     Napi::Value setOggSerialNumber(const CallbackInfo&);
     Napi::Value setVerify(const CallbackInfo&);
@@ -165,6 +166,7 @@ namespace flac_bindings {
     Napi::Value setMetadata(const CallbackInfo&);
     Napi::Value setApodization(const CallbackInfo&);
     Napi::Value setLimitMinBitrate(const CallbackInfo&);
+    Napi::Value setNumThreads(const CallbackInfo&);
 
     Napi::Value buildWithStream(const CallbackInfo&);
     Napi::Value buildWithOggStream(const CallbackInfo&);
@@ -216,6 +218,7 @@ namespace flac_bindings {
     Napi::Value getVerifyDecoderState(const CallbackInfo&);
     Napi::Value getResolvedStateString(const CallbackInfo&);
     Napi::Value getVerifyDecoderErrorStats(const CallbackInfo&);
+    Napi::Value getNumThreads(const CallbackInfo&);
 
     Napi::Value finish(const CallbackInfo&);
     Napi::Value process(const CallbackInfo&);

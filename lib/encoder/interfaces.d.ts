@@ -89,6 +89,12 @@ export interface EncoderOptions {
   * @see https://xiph.org/flac/api/group__flac__stream__encoder.html#ga9c1098e664d7997947493901ed869b64
   */
   metadata?: metadata.AnyMetadata[];
+  /**
+   * Enables or disables multithreading. If `true`, then will use the number of threads
+   * available in the system. Note that there is a limit which may make creating the
+   * encoder to fail. If the value is too high, try lowering.
+   */
+  numThreads?: number | boolean;
 }
 
 export interface BaseEncoder {

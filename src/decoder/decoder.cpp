@@ -20,21 +20,27 @@ namespace flac_bindings {
         InstanceMethod("getBitsPerSample", &StreamDecoder::getBitsPerSample),
         InstanceMethod("getSampleRate", &StreamDecoder::getSampleRate),
         InstanceMethod("getBlocksize", &StreamDecoder::getBlocksize),
+        InstanceMethod("getLinkLengths", &StreamDecoder::getLinkLengths),
 
         InstanceMethod("finish", &StreamDecoder::finish),
+        InstanceMethod("finishLink", &StreamDecoder::finishLink),
         InstanceMethod("flush", &StreamDecoder::flush),
         InstanceMethod("reset", &StreamDecoder::reset),
         InstanceMethod("processSingle", &StreamDecoder::processSingle),
         InstanceMethod("processUntilEndOfMetadata", &StreamDecoder::processUntilEndOfMetadata),
         InstanceMethod("processUntilEndOfStream", &StreamDecoder::processUntilEndOfStream),
+        InstanceMethod("processUntilEndOfLink", &StreamDecoder::processUntilEndOfLink),
         InstanceMethod("skipSingleFrame", &StreamDecoder::skipSingleFrame),
+        InstanceMethod("skipSingleLink", &StreamDecoder::skipSingleLink),
         InstanceMethod("seekAbsolute", &StreamDecoder::seekAbsolute),
         InstanceMethod("getDecodePosition", &StreamDecoder::getDecodePosition),
+        InstanceMethod("findTotalSamples", &StreamDecoder::findTotalSamples),
 
         InstanceMethod("getState", &StreamDecoder::getState),
         InstanceMethod("getResolvedStateString", &StreamDecoder::getResolvedStateString),
 
         InstanceMethod("finishAsync", &StreamDecoder::finishAsync),
+        InstanceMethod("finishLinkAsync", &StreamDecoder::finishLinkAsync),
         InstanceMethod("flushAsync", &StreamDecoder::flushAsync),
         InstanceMethod("processSingleAsync", &StreamDecoder::processSingleAsync),
         InstanceMethod(
@@ -43,9 +49,12 @@ namespace flac_bindings {
         InstanceMethod(
           "processUntilEndOfStreamAsync",
           &StreamDecoder::processUntilEndOfStreamAsync),
+        InstanceMethod("processUntilEndOfLinkAsync", &StreamDecoder::processUntilEndOfLinkAsync),
         InstanceMethod("skipSingleFrameAsync", &StreamDecoder::skipSingleFrameAsync),
+        InstanceMethod("skipSingleLinkAsync", &StreamDecoder::skipSingleLinkAsync),
         InstanceMethod("seekAbsoluteAsync", &StreamDecoder::seekAbsoluteAsync),
         InstanceMethod("getDecodePositionAsync", &StreamDecoder::getDecodePositionAsync),
+        InstanceMethod("findTotalSamplesAsync", &StreamDecoder::findTotalSamplesAsync),
       });
     c_enum::declareInObject(constructor, "State", createStateEnum);
     c_enum::declareInObject(constructor, "InitStatus", createInitStatusEnum);
@@ -120,6 +129,35 @@ namespace flac_bindings {
     return numberToJs(info.Env(), blocksize);
   }
 
+  Napi::Value StreamDecoder::getLinkLengths(const CallbackInfo& info) {
+#if FLAC_API_VERSION_CURRENT >= 14
+    FLAC__uint64* link_lengths = nullptr;
+    DEFER({ if (link_lengths) free(link_lengths); });
+
+    auto status = FLAC__stream_decoder_get_link_lengths(dec, &link_lengths);
+    if (status < 0) {
+      const char* message = nullptr;
+      if (status == FLAC__STREAM_DECODER_GET_LINK_LENGTHS_INVALID) {
+        message = "Decoder is not in a valid state or is not processing a chained stream";
+      } else if (status == FLAC__STREAM_DECODER_GET_LINK_LENGTHS_NOT_INDEXED) {
+        message = "Decode has not indexed the stream yet, keep processing until the end or use findTotalSamples()/findTotalSamplesAsync()";
+      } else if (status == FLAC__STREAM_DECODER_GET_LINK_LENGTHS_MEMORY_ALLOCATION_ERROR) {
+        message = "Allocation error";
+      } else {
+        message = "Unknown error...";
+      }
+      auto error = Napi::Error::New(info.Env(), message);
+      error.ThrowAsJavaScriptException();
+      return info.Env().Undefined();
+    }
+
+    std::vector<FLAC__uint64> link_lengths_list(link_lengths, link_lengths + status);
+    return arrayToJs(info.Env(), link_lengths_list);
+#else
+    return throwUnsupportedVersion(info.Env());
+#endif
+  }
+
   // -- sync operations --
 
   Napi::Value StreamDecoder::finish(const CallbackInfo& info) {
@@ -139,6 +177,21 @@ namespace flac_bindings {
     }
 
     return info.Env().Null();
+  }
+
+  Napi::Value StreamDecoder::finishLink(const CallbackInfo& info) {
+    checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Sync);
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    auto ret = FLAC__stream_decoder_finish_link(dec);
+    if (info.Env().IsExceptionPending()) {
+      return Napi::Value();
+    }
+
+    return booleanToJs(info.Env(), ret);
+#else
+    return throwUnsupportedVersion(info.Env());
+#endif
   }
 
   Napi::Value StreamDecoder::flush(const CallbackInfo& info) {
@@ -176,11 +229,41 @@ namespace flac_bindings {
     return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
   }
 
+  Napi::Value StreamDecoder::processUntilEndOfLink(const CallbackInfo& info) {
+    checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Sync);
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    auto ret = FLAC__stream_decoder_process_until_end_of_link(dec);
+    if (info.Env().IsExceptionPending()) {
+      return Napi::Value();
+    }
+
+    return booleanToJs(info.Env(), ret);
+#else
+    return throwUnsupportedVersion(info.Env());
+#endif
+  }
+
   Napi::Value StreamDecoder::skipSingleFrame(const CallbackInfo& info) {
     checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Sync);
 
     auto ret = FLAC__stream_decoder_skip_single_frame(dec);
     return info.Env().IsExceptionPending() ? Napi::Value() : booleanToJs(info.Env(), ret);
+  }
+
+  Napi::Value StreamDecoder::skipSingleLink(const CallbackInfo& info) {
+    checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Sync);
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    auto ret = FLAC__stream_decoder_skip_single_link(dec);
+    if (info.Env().IsExceptionPending()) {
+      return Napi::Value();
+    }
+
+    return booleanToJs(info.Env(), ret);
+#else
+    return throwUnsupportedVersion(info.Env());
+#endif
   }
 
   Napi::Value StreamDecoder::seekAbsolute(const CallbackInfo& info) {
@@ -203,6 +286,21 @@ namespace flac_bindings {
     return info.Env().IsExceptionPending() ? Napi::Value() : info.Env().Null();
   }
 
+  Napi::Value StreamDecoder::findTotalSamples(const CallbackInfo& info) {
+    checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Sync);
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    auto ret = FLAC__stream_decoder_find_total_samples(dec);
+    if (!info.Env().IsExceptionPending()) {
+      return numberToJs(info.Env(), ret);
+    }
+
+    return info.Env().IsExceptionPending() ? Napi::Value() : info.Env().Null();
+#else
+    return throwUnsupportedVersion(info.Env());
+#endif
+  }
+
   // -- state getters --
 
   Napi::Value StreamDecoder::getState(const CallbackInfo& info) {
@@ -222,6 +320,17 @@ namespace flac_bindings {
 
     AsyncDecoderWork* work = AsyncDecoderWork::forFinish({info.This()}, *this);
     return enqueueWork(work);
+  }
+
+  Napi::Value StreamDecoder::finishLinkAsync(const CallbackInfo& info) {
+    checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Async);
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    AsyncDecoderWork* work = AsyncDecoderWork::forFinishLink({info.This()}, ctx.get());
+    return enqueueWork(work);
+#else
+    return throwUnsupportedVersion(info.Env());
+#endif
   }
 
   Napi::Value StreamDecoder::flushAsync(const CallbackInfo& info) {
@@ -253,11 +362,33 @@ namespace flac_bindings {
     return enqueueWork(work);
   }
 
+  Napi::Value StreamDecoder::processUntilEndOfLinkAsync(const CallbackInfo& info) {
+    checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Async);
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    AsyncDecoderWork* work = AsyncDecoderWork::forProcessUntilEndOfLink({info.This()}, ctx.get());
+    return enqueueWork(work);
+#else
+    return throwUnsupportedVersion(info.Env());
+#endif
+  }
+
   Napi::Value StreamDecoder::skipSingleFrameAsync(const CallbackInfo& info) {
     checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Async);
 
     AsyncDecoderWork* work = AsyncDecoderWork::forSkipSingleFrame({info.This()}, ctx.get());
     return enqueueWork(work);
+  }
+
+  Napi::Value StreamDecoder::skipSingleLinkAsync(const CallbackInfo& info) {
+    checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Async);
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    AsyncDecoderWork* work = AsyncDecoderWork::forSkipSingleLink({info.This()}, ctx.get());
+    return enqueueWork(work);
+#else
+    return throwUnsupportedVersion(info.Env());
+#endif
   }
 
   Napi::Value StreamDecoder::seekAbsoluteAsync(const CallbackInfo& info) {
@@ -273,6 +404,17 @@ namespace flac_bindings {
 
     auto work = AsyncDecoderWork::forGetDecoderPosition({info.This()}, ctx.get());
     return enqueueWork(work);
+  }
+
+  Napi::Value StreamDecoder::findTotalSamplesAsync(const CallbackInfo& info) {
+    checkPendingAsyncWork(info.Env(), DecoderWorkContext::ExecutionMode::Async);
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    AsyncDecoderWork* work = AsyncDecoderWork::forFindTotalSamples({info.This()}, ctx.get());
+    return enqueueWork(work);
+#else
+    return throwUnsupportedVersion(info.Env());
+#endif
   }
 
   // -- enums --
@@ -302,6 +444,9 @@ namespace flac_bindings {
       "MEMORY_ALLOCATION_ERROR",
       FLAC__STREAM_DECODER_MEMORY_ALLOCATION_ERROR);
     c_enum::defineValue(obj1, obj2, "UNINITIALIZED", FLAC__STREAM_DECODER_UNINITIALIZED);
+#if FLAC_API_VERSION_CURRENT >= 14
+    c_enum::defineValue(obj1, obj2, "END_OF_LINK", FLAC__STREAM_DECODER_END_OF_LINK);
+#endif
     return std::make_tuple(obj1, obj2);
   }
 
@@ -347,6 +492,9 @@ namespace flac_bindings {
       "END_OF_STREAM",
       FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM);
     c_enum::defineValue(obj1, obj2, "ABORT", FLAC__STREAM_DECODER_READ_STATUS_ABORT);
+#if FLAC_API_VERSION_CURRENT >= 14
+    c_enum::defineValue(obj1, obj2, "END_OF_LINK", FLAC__STREAM_DECODER_READ_STATUS_END_OF_LINK);
+#endif
     return std::make_tuple(obj1, obj2);
   }
 
@@ -402,6 +550,10 @@ namespace flac_bindings {
       FLAC__STREAM_DECODER_ERROR_STATUS_UNPARSEABLE_STREAM);
 #if FLAC_API_VERSION_CURRENT >= 12
     c_enum::defineValue(obj1, obj2, "BAD_METADATA", FLAC__STREAM_DECODER_ERROR_STATUS_BAD_METADATA);
+#endif
+#if FLAC_API_VERSION_CURRENT >= 14
+    c_enum::defineValue(obj1, obj2, "OUT_OF_BOUNDS", FLAC__STREAM_DECODER_ERROR_STATUS_OUT_OF_BOUNDS);
+    c_enum::defineValue(obj1, obj2, "MISSING_FRAME", FLAC__STREAM_DECODER_ERROR_STATUS_MISSING_FRAME);
 #endif
     return std::make_tuple(obj1, obj2);
   }
@@ -561,7 +713,7 @@ namespace flac_bindings {
     auto env = ctx->errorCbk.Env();
     HandleScope scope(env);
     try {
-      ctx->metadataCbk.MakeCallback(env.Global(), {numberToJs(env, errorCode)});
+      ctx->errorCbk.MakeCallback(env.Global(), {numberToJs(env, errorCode)});
     } catch (const Error& error) {
       error.ThrowAsJavaScriptException();
     }

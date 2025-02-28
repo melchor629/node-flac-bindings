@@ -204,4 +204,11 @@ namespace flac_bindings {
     }
   }
 
+  static inline Napi::Value throwUnsupportedVersion(const Napi::Env& env) {
+    throw Napi::Error::New(
+      env,
+      "This method is not implemented with the current libFLAC version"
+    );
+  }
+
 }

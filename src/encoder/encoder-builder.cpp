@@ -37,6 +37,7 @@ namespace flac_bindings {
           &StreamEncoderBuilder::getRiceParameterSearchDist),
         InstanceMethod("getLimitMinBitrate", &StreamEncoderBuilder::getLimitMinBitrate),
         InstanceMethod("getTotalSamplesEstimate", &StreamEncoderBuilder::getTotalSamplesEstimate),
+        InstanceMethod("getNumThreads", &StreamEncoderBuilder::getNumThreads),
 
         InstanceMethod("setOggSerialNumber", &StreamEncoderBuilder::setOggSerialNumber),
         InstanceMethod("setVerify", &StreamEncoderBuilder::setVerify),
@@ -68,6 +69,7 @@ namespace flac_bindings {
         InstanceMethod("setMetadata", &StreamEncoderBuilder::setMetadata),
         InstanceMethod("setApodization", &StreamEncoderBuilder::setApodization),
         InstanceMethod("setLimitMinBitrate", &StreamEncoderBuilder::setLimitMinBitrate),
+        InstanceMethod("setNumThreads", &StreamEncoderBuilder::setNumThreads),
 
         InstanceMethod("buildWithStream", &StreamEncoderBuilder::buildWithStream),
         InstanceMethod("buildWithOggStream", &StreamEncoderBuilder::buildWithOggStream),
@@ -205,13 +207,23 @@ namespace flac_bindings {
     auto value = FLAC__stream_encoder_get_limit_min_bitrate(enc);
     return booleanToJs(info.Env(), value);
 #else
-    return booleanToJs(info.Env(), false);
+    return throwUnsupportedVersion();
 #endif
   }
 
   Napi::Value StreamEncoderBuilder::getTotalSamplesEstimate(const CallbackInfo& info) {
     auto totalSamplesEstimate = FLAC__stream_encoder_get_total_samples_estimate(enc);
     return numberToJs(info.Env(), totalSamplesEstimate);
+  }
+
+  Napi::Value StreamEncoderBuilder::getNumThreads(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+#if FLAC_API_VERSION_CURRENT >= 14
+    auto value = FLAC__stream_encoder_get_num_threads(enc);
+    return numberToJs(info.Env(), value);
+#else
+    return throwUnsupportedVersion();
+#endif
   }
 
   Napi::Value StreamEncoderBuilder::getState(const CallbackInfo& info) {
@@ -405,8 +417,37 @@ namespace flac_bindings {
 #if FLAC_API_VERSION_CURRENT >= 12
     auto value = booleanFromJs<FLAC__bool>(info[0]);
     FLAC__stream_encoder_set_limit_min_bitrate(enc, value);
-#endif
     return info.This();
+#else
+    return throwUnsupportedVersion();
+#endif
+  }
+
+  Napi::Value StreamEncoderBuilder::setNumThreads(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    auto value = numberFromJs<FLAC__uint32>(info[0]);
+    auto ret = FLAC__stream_encoder_set_num_threads(enc, value);
+    if (ret == FLAC__STREAM_ENCODER_SET_NUM_THREADS_OK) {
+      return info.This();
+    }
+
+    const char* message = nullptr;
+    if (ret == FLAC__STREAM_ENCODER_SET_NUM_THREADS_NOT_COMPILED_WITH_MULTITHREADING_ENABLED) {
+      message = "Library was compiled without multithreading support";
+    } else if (ret == FLAC__STREAM_ENCODER_SET_NUM_THREADS_TOO_MANY_THREADS) {
+      message = "Too many threads, reduce the number of them";
+    } else {
+      message = "Unknown error";
+    }
+
+    auto error = Napi::Error::New(info.Env(), message);
+    error.ThrowAsJavaScriptException();
+    return info.Env().Undefined();
+#else
+    return throwUnsupportedVersion();
+#endif
   }
 
   // -- builder methods --

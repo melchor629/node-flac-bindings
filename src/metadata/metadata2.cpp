@@ -62,9 +62,11 @@ namespace flac_bindings {
           InstanceMethod("readWithCallbacks", &Chain::readWithCallbacks),
           InstanceMethod("readOggWithCallbacks", &Chain::readOggWithCallbacks),
           InstanceMethod("write", &Chain::write),
+          InstanceMethod("writeNewFile", &Chain::writeNewFile),
           InstanceMethod("writeAsync", &Chain::writeAsync),
           InstanceMethod("writeWithCallbacks", &Chain::writeWithCallbacks),
           InstanceMethod("writeWithCallbacksAndTempFile", &Chain::writeWithCallbacksAndTempFile),
+          InstanceMethod("writeNewFileAsync", &Chain::writeNewFileAsync),
           InstanceMethod("checkIfTempFileIsNeeded", &Chain::checkIfTempFileIsNeeded),
           InstanceMethod("mergePadding", &Chain::mergePadding),
           InstanceMethod("sortPadding", &Chain::sortPadding),
@@ -168,6 +170,18 @@ namespace flac_bindings {
       checkStatus(info.Env(), ret);
     }
 
+    void writeNewFile(const CallbackInfo& info) {
+#if FLAC_API_VERSION_CURRENT >= 14
+      auto filename = stringFromJs(info[0]);
+      auto padding = maybeBooleanFromJs<FLAC__bool>(info[1]).value_or(false);
+
+      auto ret = FLAC__metadata_chain_write_new_file(chain, filename.c_str(), padding);
+      checkStatus(info.Env(), ret);
+#else
+      throwUnsupportedVersion(info.Env());
+#endif
+    }
+
     Napi::Value writeAsync(const CallbackInfo& info) {
       auto padding = maybeBooleanFromJs<FLAC__bool>(info[0]).value_or(true);
       auto preserve = maybeBooleanFromJs<FLAC__bool>(info[1]).value_or(false);
@@ -235,6 +249,22 @@ namespace flac_bindings {
       work->Receiver().Set("this", info.This());
       work->Queue();
       return work->getPromise();
+    }
+
+    Napi::Value writeNewFileAsync(const CallbackInfo& info) {
+#if FLAC_API_VERSION_CURRENT >= 14
+      auto filename = stringFromJs(info[0]);
+      auto padding = maybeBooleanFromJs<FLAC__bool>(info[1]).value_or(false);
+
+      return simpleAsyncImpl(
+        info.This(),
+        "flac_bindings::Chain::writeNewFileAsync",
+        [this, filename, padding]() {
+          return FLAC__metadata_chain_write_new_file(chain, filename.c_str(), padding);
+        });
+#else
+      throwUnsupportedVersion(info.Env());
+#endif
     }
 
     Napi::Value checkIfTempFileIsNeeded(const CallbackInfo& info) {

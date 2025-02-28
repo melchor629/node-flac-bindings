@@ -12,6 +12,7 @@ namespace flac_bindings {
       {
         InstanceMethod("getState", &StreamDecoderBuilder::getState),
         InstanceMethod("getMd5Checking", &StreamDecoderBuilder::getMd5Checking),
+        InstanceMethod("getDecodeChainedStream", &StreamDecoderBuilder::getDecodeChainedStream),
 
         InstanceMethod("setOggSerialNumber", &StreamDecoderBuilder::setOggSerialNumber),
         InstanceMethod("setMd5Checking", &StreamDecoderBuilder::setMd5Checking),
@@ -25,6 +26,7 @@ namespace flac_bindings {
         InstanceMethod(
           "setMetadataIgnoreApplication",
           &StreamDecoderBuilder::setMetadataIgnoreApplication),
+        InstanceMethod("setDecodeChainedStream", &StreamDecoderBuilder::setDecodeChainedStream),
 
         InstanceMethod("buildWithStream", &StreamDecoderBuilder::buildWithStream),
         InstanceMethod("buildWithOggStream", &StreamDecoderBuilder::buildWithOggStream),
@@ -71,6 +73,17 @@ namespace flac_bindings {
 
     auto md5Checking = FLAC__stream_decoder_get_md5_checking(dec);
     return booleanToJs(info.Env(), md5Checking);
+  }
+
+  Napi::Value StreamDecoderBuilder::getDecodeChainedStream(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    auto is_chained_stream = FLAC__stream_decoder_get_decode_chained_stream(dec);
+    return booleanToJs(info.Env(), is_chained_stream);
+#else
+    return booleanToJs(info.Env(), false);
+#endif
   }
 
   // -- setters --
@@ -148,6 +161,16 @@ namespace flac_bindings {
     }
 
     FLAC__stream_decoder_set_metadata_ignore_application(dec, id);
+    return info.This();
+  }
+
+  Napi::Value StreamDecoderBuilder::setDecodeChainedStream(const CallbackInfo& info) {
+    checkIfBuilt(info.Env());
+
+#if FLAC_API_VERSION_CURRENT >= 14
+    auto value = booleanFromJs<FLAC__bool>(info[0]);
+    FLAC__stream_decoder_set_decode_chained_stream(dec, value);
+#endif
     return info.This();
   }
 

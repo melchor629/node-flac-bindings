@@ -82,7 +82,7 @@ if(USE_FLAC_SOURCES OR NOT FLAC_FOUND)
 
   option(BUILD_TESTING OFF)
 
-  # fetch libogg (v1.3.5)
+  # fetch libogg
   FetchContent_Declare(
     Ogg
     GIT_REPOSITORY  https://github.com/xiph/ogg
@@ -100,11 +100,11 @@ if(USE_FLAC_SOURCES OR NOT FLAC_FOUND)
   # expected target is different in FLAC, so creating an alias to be able to use it
   add_library(Ogg::ogg ALIAS ogg)
 
-  # fetch flac (v1.4.1)
+  # fetch flac
   FetchContent_Declare(
     FLAC
     GIT_REPOSITORY  https://github.com/xiph/flac
-    GIT_TAG         1.4.3
+    GIT_TAG         1.5.0
   )
 
   option(WITH_OGG YES)

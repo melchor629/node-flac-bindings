@@ -312,6 +312,7 @@ describe('encode & decode: js streams', () => {
         qlpCoeffPrecision: 0,
         totalSamplesEstimate: 48000,
         metadata: [],
+        numThreads: true,
       })
 
       await expect((async () => {

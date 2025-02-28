@@ -20,7 +20,7 @@ export default [
     name: 'flac-bindings:examples',
     files: ['examples/**'],
     rules: {
-      'import/no-unresolved': 'off',
+      'import-x/no-unresolved': 'off',
       'no-console': 'off',
     },
   },

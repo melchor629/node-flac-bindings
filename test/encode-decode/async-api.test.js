@@ -244,6 +244,50 @@ describe('encode & decode: async api', () => {
     await expect(dec.finishAsync()).resolves.not.toBeNull()
   })
 
+  it('decoder should be able to decode one chained link', async () => {
+    const callbacks = await generateFlacCallbacks.async(api.Decoder, pathForFile('chained.oga'), 'r')
+    deferredScope.defer(() => callbacks.close())
+    const dec = await new api.DecoderBuilder().setDecodeChainedStream(true).buildWithOggStreamAsync(
+      callbacks.read,
+      callbacks.seek,
+      callbacks.tell,
+      callbacks.length,
+      callbacks.eof,
+      () => 0,
+      null,
+
+      (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+    )
+
+    expect(await dec.processUntilEndOfLinkAsync()).toBeTruthy()
+    expect(dec.getState()).toBe(api.Decoder.State.END_OF_LINK)
+    expect(await dec.finishLinkAsync()).toBeTruthy()
+    expect(dec.getState()).toBe(api.Decoder.State.SEARCH_FOR_METADATA)
+    expect(await dec.getDecodePositionAsync()).toBeNull()
+    expect(await dec.finishAsync()).not.toBeNull()
+  })
+
+  it('decoder should be able to skip one chained link', async () => {
+    const callbacks = await generateFlacCallbacks.async(api.Decoder, pathForFile('chained.oga'), 'r')
+    deferredScope.defer(() => callbacks.close())
+    const dec = await new api.DecoderBuilder().setDecodeChainedStream(true).buildWithOggStreamAsync(
+      callbacks.read,
+      callbacks.seek,
+      callbacks.tell,
+      callbacks.length,
+      callbacks.eof,
+      () => 0,
+      null,
+
+      (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+    )
+
+    expect(await dec.skipSingleLinkAsync()).toBeTruthy()
+    expect(dec.getState()).toBe(api.Decoder.State.SEARCH_FOR_METADATA)
+    expect(await dec.getDecodePositionAsync()).toBeNull()
+    expect(await dec.finishAsync()).not.toBeNull()
+  })
+
   it('decoder should emit metadata', async () => {
     const metadataBlocks = []
     const dec = await new api.DecoderBuilder().buildWithFileAsync(
@@ -261,6 +305,43 @@ describe('encode & decode: async api', () => {
     await expect(dec.finishAsync()).resolves.not.toBeNull()
 
     expect(metadataBlocks).toHaveLength(1)
+  })
+
+  it('decoder can get total samples (file)', async () => {
+    const dec = await new api.DecoderBuilder()
+      .setDecodeChainedStream(true)
+      .buildWithOggFileAsync(
+        pathForFile('chained.oga'),
+        () => 0,
+        null,
+        (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+      )
+
+    const totalSamples = await dec.findTotalSamplesAsync()
+    expect(await dec.finishAsync()).not.toBeNull()
+
+    expect(totalSamples).toBe(496125)
+  })
+
+  it('decoder cannot get total samples (stream)', async () => {
+    const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('loop.flac'), 'r')
+    deferredScope.defer(() => callbacks.close())
+    const dec = await new api.DecoderBuilder()
+      .buildWithStreamAsync(
+        callbacks.read,
+        null,
+        null,
+        callbacks.length,
+        callbacks.eof,
+        () => 0,
+        null,
+        (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+      )
+
+    const totalSamples = await dec.findTotalSamplesAsync()
+    expect(await dec.finishAsync()).not.toBeNull()
+
+    expect(totalSamples).toBe(0)
   })
 
   it('encode using stream (non-ogg)', async () => {
@@ -384,6 +465,29 @@ describe('encode & decode: async api', () => {
         (...args) => progressCallbackValues.push(args),
       )
 
+    await expect(enc.processInterleavedAsync(encData)).resolves.toBeTruthy()
+    await expect(enc.finishAsync()).resolves.not.toBeNull()
+
+    comparePCM(okData, tmpFile.path, 24, true)
+    expect(progressCallbackValues).toHaveLength(30)
+  })
+
+  it('encode with multi-threading (ogg)', async () => {
+    const cpus = await (import('node:os').then((e) => Math.min(64, e.cpus().length)))
+
+    const progressCallbackValues = []
+    const enc = await new api.EncoderBuilder()
+      .setBitsPerSample(24)
+      .setChannels(2)
+      .setCompressionLevel(9)
+      .setSampleRate(44100)
+      .setNumThreads(cpus)
+      .buildWithOggFileAsync(
+        tmpFile.path,
+        (...args) => progressCallbackValues.push(args),
+      )
+
+    expect(enc.numThreads).toBe(cpus)
     await expect(enc.processInterleavedAsync(encData)).resolves.toBeTruthy()
     await expect(enc.finishAsync()).resolves.not.toBeNull()
 

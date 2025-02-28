@@ -123,6 +123,7 @@ namespace flac_bindings {
 
     Napi::Value getState(const CallbackInfo&);
     Napi::Value getMd5Checking(const CallbackInfo&);
+    Napi::Value getDecodeChainedStream(const CallbackInfo&);
 
     Napi::Value setOggSerialNumber(const CallbackInfo&);
     Napi::Value setMd5Checking(const CallbackInfo&);
@@ -132,6 +133,7 @@ namespace flac_bindings {
     Napi::Value setMetadataIgnore(const CallbackInfo&);
     Napi::Value setMetadataIgnoreAll(const CallbackInfo&);
     Napi::Value setMetadataIgnoreApplication(const CallbackInfo&);
+    Napi::Value setDecodeChainedStream(const CallbackInfo&);
 
     Napi::Value buildWithStream(const CallbackInfo&);
     Napi::Value buildWithOggStream(const CallbackInfo&);
@@ -168,28 +170,37 @@ namespace flac_bindings {
     Napi::Value getBitsPerSample(const CallbackInfo&);
     Napi::Value getSampleRate(const CallbackInfo&);
     Napi::Value getBlocksize(const CallbackInfo&);
+    Napi::Value getLinkLengths(const CallbackInfo&);
 
     Napi::Value finish(const CallbackInfo&);
+    Napi::Value finishLink(const CallbackInfo&);
     Napi::Value flush(const CallbackInfo&);
     Napi::Value reset(const CallbackInfo&);
     Napi::Value processSingle(const CallbackInfo&);
     Napi::Value processUntilEndOfMetadata(const CallbackInfo&);
     Napi::Value processUntilEndOfStream(const CallbackInfo&);
+    Napi::Value processUntilEndOfLink(const CallbackInfo&);
     Napi::Value skipSingleFrame(const CallbackInfo&);
+    Napi::Value skipSingleLink(const CallbackInfo&);
     Napi::Value seekAbsolute(const CallbackInfo&);
     Napi::Value getDecodePosition(const CallbackInfo&);
+    Napi::Value findTotalSamples(const CallbackInfo&);
 
     Napi::Value getState(const CallbackInfo&);
     Napi::Value getResolvedStateString(const CallbackInfo&);
 
     Napi::Value finishAsync(const CallbackInfo&);
+    Napi::Value finishLinkAsync(const CallbackInfo&);
     Napi::Value flushAsync(const CallbackInfo&);
     Napi::Value processSingleAsync(const CallbackInfo&);
     Napi::Value processUntilEndOfMetadataAsync(const CallbackInfo&);
     Napi::Value processUntilEndOfStreamAsync(const CallbackInfo&);
+    Napi::Value processUntilEndOfLinkAsync(const CallbackInfo&);
     Napi::Value skipSingleFrameAsync(const CallbackInfo&);
+    Napi::Value skipSingleLinkAsync(const CallbackInfo&);
     Napi::Value seekAbsoluteAsync(const CallbackInfo&);
     Napi::Value getDecodePositionAsync(const CallbackInfo&);
+    Napi::Value findTotalSamplesAsync(const CallbackInfo&);
 
     inline void checkPendingAsyncWork(
       const Napi::Env& env,
@@ -281,11 +292,14 @@ namespace flac_bindings {
 
   public:
     static AsyncDecoderWork* forFinish(const StoreList&, StreamDecoder&);
+    static AsyncDecoderWork* forFinishLink(const StoreList&, DecoderWorkContext*);
     static AsyncDecoderWork* forFlush(const StoreList&, DecoderWorkContext*);
     static AsyncDecoderWork* forProcessSingle(const StoreList&, DecoderWorkContext*);
     static AsyncDecoderWork* forProcessUntilEndOfMetadata(const StoreList&, DecoderWorkContext*);
     static AsyncDecoderWork* forProcessUntilEndOfStream(const StoreList&, DecoderWorkContext*);
+    static AsyncDecoderWork* forProcessUntilEndOfLink(const StoreList&, DecoderWorkContext*);
     static AsyncDecoderWork* forSkipSingleFrame(const StoreList&, DecoderWorkContext*);
+    static AsyncDecoderWork* forSkipSingleLink(const StoreList&, DecoderWorkContext*);
     static AsyncDecoderWork* forSeekAbsolute(const StoreList&, uint64_t, DecoderWorkContext*);
     static AsyncDecoderWork*
       forInitStream(const StoreList&, std::shared_ptr<DecoderWorkContext>, StreamDecoderBuilder&);
@@ -304,6 +318,7 @@ namespace flac_bindings {
       std::shared_ptr<DecoderWorkContext>,
       StreamDecoderBuilder&);
     static AsyncDecoderWork* forGetDecoderPosition(const StoreList&, DecoderWorkContext*);
+    static AsyncDecoderWork* forFindTotalSamples(const StoreList&, DecoderWorkContext*);
   };
 
 }
