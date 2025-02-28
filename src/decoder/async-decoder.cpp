@@ -141,7 +141,11 @@ namespace flac_bindings {
   AsyncDecoderWork*
     AsyncDecoderWork::forProcessUntilEndOfLink(const StoreList& list, DecoderWorkContext* ctx) {
     auto workFunction = [ctx]() {
+#if FLAC_API_VERSION_CURRENT >= 14
       return FLAC__stream_decoder_process_until_end_of_link(ctx->dec);
+#else
+      return false;
+#endif
     };
     return new AsyncDecoderWork(
       list,
@@ -167,7 +171,11 @@ namespace flac_bindings {
   AsyncDecoderWork*
     AsyncDecoderWork::forSkipSingleLink(const StoreList& list, DecoderWorkContext* ctx) {
     auto workFunction = [ctx]() {
+#if FLAC_API_VERSION_CURRENT >= 14
       return FLAC__stream_decoder_skip_single_link(ctx->dec);
+#else
+      return false;
+#endif
     };
     return new AsyncDecoderWork(
       list,
@@ -332,7 +340,11 @@ namespace flac_bindings {
   AsyncDecoderWork*
     AsyncDecoderWork::forFindTotalSamples(const StoreList& list, DecoderWorkContext* ctx) {
     auto workFunction = [ctx]() -> AsyncDecoderWork::ValueType {
+#if FLAC_API_VERSION_CURRENT >= 14
       return FLAC__stream_decoder_find_total_samples(ctx->dec);
+#else
+      return 0;
+#endif
     };
     auto convertFunction = [](const Napi::Env& env, AsyncDecoderWork::ValueType value) {
       if (std::holds_alternative<uint64_t>(value)) {
