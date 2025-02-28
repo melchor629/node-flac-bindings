@@ -25,13 +25,13 @@ jobs:
       - name: Prepare
         run: |
           apt-get update
-          apt-get install -y cmake libflac-dev flac
+          apt-get install -y cmake flac
       - name: Install
         run: npm ci
       - name: Build
         run: |
           npx cmake-js configure --CDnapi_build_version=${{ matrix.node.napi }}
-          npx cmake-js build
+          npx cmake-js build -j4
       - name: Lint
         run: npm run lint
       - name: Test

@@ -12,7 +12,7 @@ if [[ ! -z "$1" ]] && [[ "$1" = "rebuild" ]]; then
   echo Compiling native code
   npx cmake-js clean
   npx cmake-js configure --CDCOVERAGE=ON --debug -p 4
-  npx cmake-js build --debug
+  npx cmake-js build --debug -j4
 fi
 
 echo Running tests

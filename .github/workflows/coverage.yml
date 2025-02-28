@@ -19,7 +19,7 @@ jobs:
       - name: Prepare
         run: |
           apt-get update
-          apt-get install -y cmake libflac-dev flac lcov
+          apt-get install -y cmake flac lcov
       - name: Install
         run: npm ci
       - name: Build & Test

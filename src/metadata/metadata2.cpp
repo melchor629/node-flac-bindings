@@ -263,7 +263,7 @@ namespace flac_bindings {
           return FLAC__metadata_chain_write_new_file(chain, filename.c_str(), padding);
         });
 #else
-      throwUnsupportedVersion(info.Env());
+      return throwUnsupportedVersion(info.Env());
 #endif
     }
 
