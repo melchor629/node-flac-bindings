@@ -207,7 +207,7 @@ namespace flac_bindings {
     auto value = FLAC__stream_encoder_get_limit_min_bitrate(enc);
     return booleanToJs(info.Env(), value);
 #else
-    return throwUnsupportedVersion();
+    return throwUnsupportedVersion(info.Env());
 #endif
   }
 
@@ -222,7 +222,7 @@ namespace flac_bindings {
     auto value = FLAC__stream_encoder_get_num_threads(enc);
     return numberToJs(info.Env(), value);
 #else
-    return throwUnsupportedVersion();
+    return throwUnsupportedVersion(info.Env());
 #endif
   }
 
@@ -419,7 +419,7 @@ namespace flac_bindings {
     FLAC__stream_encoder_set_limit_min_bitrate(enc, value);
     return info.This();
 #else
-    return throwUnsupportedVersion();
+    return throwUnsupportedVersion(info.Env());
 #endif
   }
 
@@ -446,7 +446,7 @@ namespace flac_bindings {
     error.ThrowAsJavaScriptException();
     return info.Env().Undefined();
 #else
-    return throwUnsupportedVersion();
+    return throwUnsupportedVersion(info.Env());
 #endif
   }
 
