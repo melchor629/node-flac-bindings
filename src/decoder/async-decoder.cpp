@@ -76,7 +76,11 @@ namespace flac_bindings {
 
   AsyncDecoderWork* AsyncDecoderWork::forFinishLink(const StoreList& list, DecoderWorkContext* ctx) {
     auto workFunction = [ctx]() -> int {
+#if FLAC_API_VERSION_CURRENT >= 14
       return FLAC__stream_decoder_finish_link(ctx->dec);
+#else
+      return false;
+#endif
     };
 
     return new AsyncDecoderWork(
