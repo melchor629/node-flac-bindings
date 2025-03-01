@@ -230,6 +230,46 @@ describe('encode & decode: sync api', () => {
     expect(dec.finish()).not.toBeNull()
   })
 
+  it('decoder should be able to count links', () => {
+    const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('chained.oga'), 'r')
+    deferredScope.defer(() => callbacks.close())
+    const dec = new api.DecoderBuilder().setDecodeChainedStream(true).buildWithOggStream(
+      callbacks.read,
+      callbacks.seek,
+      callbacks.tell,
+      callbacks.length,
+      callbacks.eof,
+      () => 0,
+      null,
+
+      (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+    )
+
+    expect(dec.findTotalSamples()).toBe(165375 * 3)
+
+    const links = dec.getLinkLengths()
+    expect(links).toEqual([165375, 165375, 165375])
+    expect(dec.finish()).not.toBeNull()
+  })
+
+  it('decoder fails counting links if are not indexed', () => {
+    const callbacks = generateFlacCallbacks.sync(api.Decoder, pathForFile('chained.oga'), 'r')
+    deferredScope.defer(() => callbacks.close())
+    const dec = new api.DecoderBuilder().setDecodeChainedStream(true).buildWithOggStream(
+      callbacks.read,
+      callbacks.seek,
+      callbacks.tell,
+      callbacks.length,
+      callbacks.eof,
+      () => 0,
+      null,
+
+      (errorCode) => console.error(api.Decoder.ErrorStatusString[errorCode], errorCode),
+    )
+
+    expect(() => dec.getLinkLengths()).toThrow('Decode has not indexed the stream yet')
+  })
+
   it('decoder should emit metadata', () => {
     const metadataBlocks = []
     const dec = new api.DecoderBuilder().buildWithFile(
