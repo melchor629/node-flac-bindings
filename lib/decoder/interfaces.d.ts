@@ -4,6 +4,8 @@ import { format } from '../api.js'
 export interface DecoderOptions {
   /** If set to true, the input must be an Ogg/FLAC stream. */
   isOggStream?: boolean
+  /** Enables chaining decoding. Emits `end-link` when a link is finished. */
+  isChainedStream?: boolean
   /**
   * If set to true, it will emit the `metadata` for each metadata block.
   * If set to an array, it will only emit `metadata` for the types

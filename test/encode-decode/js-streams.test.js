@@ -133,6 +133,29 @@ describe('encode & decode: js streams', () => {
       comparePCM(okData, raw, 24)
     })
 
+    it('decode using stream (chained ogg)', async () => {
+      const input = fs.createReadStream(pathForFile('chained.oga'))
+      const dec = new StreamDecoder({ outputAs32: false, isOggStream: true, isChainedStream: true })
+      const chunks = []
+      let endLinks = 0
+      let metadata = 0
+
+      input.pipe(dec)
+      dec.on('data', (chunk) => chunks.push(chunk))
+      dec.on('end-link', () => { endLinks += 1 })
+      dec.on('metadata', () => { metadata += 1 })
+      await events.once(dec, 'end')
+
+      const raw = Buffer.concat(chunks)
+      expect(raw).toHaveLength(totalSamples * 3 * 2 * 3)
+      expect(dec.processedSamples).toStrictEqual(totalSamples * 3)
+      expect(endLinks).toBe(2)
+      expect(metadata).toBe(3)
+      comparePCM(okData, raw.subarray(0, okData.byteLength), 24)
+      comparePCM(okData, raw.subarray(okData.byteLength, okData.byteLength * 2), 24)
+      comparePCM(okData, raw.subarray(okData.byteLength * 2), 24)
+    })
+
     it('encode using stream and file-bit input', async () => {
       const output = fs.createWriteStream(tmpFile.path)
       const enc = new StreamEncoder({
@@ -440,6 +463,32 @@ describe('encode & decode: js streams', () => {
       expect(raw).toHaveLength(totalSamples * 3 * 2)
       expect(dec.processedSamples).toStrictEqual(totalSamples)
       comparePCM(okData, raw, 24)
+    })
+
+    it('decode using file (chained ogg)', async () => {
+      const dec = new FileDecoder({
+        outputAs32: false,
+        file: pathForFile('chained.oga'),
+        isOggStream: true,
+        isChainedStream: true,
+      })
+      const chunks = []
+      let endLinks = 0
+      let metadata = 0
+
+      dec.on('data', (chunk) => chunks.push(chunk))
+      dec.on('end-link', () => { endLinks += 1 })
+      dec.on('metadata', () => { metadata += 1 })
+      await events.once(dec, 'end')
+
+      const raw = Buffer.concat(chunks)
+      expect(raw).toHaveLength(totalSamples * 3 * 2 * 3)
+      expect(dec.processedSamples).toStrictEqual(totalSamples * 3)
+      expect(endLinks).toBe(2)
+      expect(metadata).toBe(3)
+      comparePCM(okData, raw.subarray(0, okData.byteLength), 24)
+      comparePCM(okData, raw.subarray(okData.byteLength, okData.byteLength * 2), 24)
+      comparePCM(okData, raw.subarray(okData.byteLength * 2), 24)
     })
 
     it('encode using file and 24-bit input', async () => {
