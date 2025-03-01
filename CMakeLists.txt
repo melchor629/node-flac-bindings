@@ -11,8 +11,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(COVERAGE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
-  set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+  set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} --coverage")
+  add_compile_definitions(COVERAGE)
   message("-- Enabled code coverage")
 endif()
 

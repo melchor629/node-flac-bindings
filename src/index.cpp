@@ -5,6 +5,10 @@
 #include "mappings/native_iterator.hpp"
 #include <napi.h>
 
+#ifdef COVERAGE
+extern "C" void __gcov_dump(void);
+#endif
+
 namespace flac_bindings {
 
   using namespace Napi;
@@ -68,6 +72,15 @@ namespace flac_bindings {
         InstanceValue("Chain", initMetadata2Chain(env, *this), napi_enumerable),
         InstanceValue("Iterator", initMetadata2Iterator(env, *this), napi_enumerable),
         InstanceValue("fns", initFns(env), napi_enumerable),
+#ifdef COVERAGE
+        InstanceValue(
+          "_coverageFlush",
+          Function::New(env, [] (const CallbackInfo& info) {
+            __gcov_dump();
+            return info.Env().Undefined();
+          }, "_coverageFlush")
+        ),
+#endif
       });
 
     exports.Freeze();
