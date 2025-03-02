@@ -1,5 +1,5 @@
 #include "utils/async.hpp"
-#include <napi.h>
+#include <chrono>
 #include <thread>
 
 namespace flac_bindings {

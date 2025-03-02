@@ -23,6 +23,7 @@ const run = async (command, args = [], pipe = true) => {
   const proc = cp.spawn(command, args, {
     encoding: 'utf-8',
     stdio: pipe ? 'inherit' : undefined,
+    shell: process.platform === 'win32',
   })
 
   await once(proc, 'exit')

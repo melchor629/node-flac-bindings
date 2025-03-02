@@ -1,0 +1,128 @@
+name: Build Artifacts
+
+on:
+  push:
+    tags: ['*']
+
+jobs:
+  linux-build:
+    strategy:
+      matrix:
+        pack:
+          - tag: bookworm
+            arch: amd64
+            os: latest
+          - tag: bookworm
+            arch: arm64
+            os: 24.04-arm
+          - tag: alpine
+            arch: amd64
+            os: latest
+          - tag: alpine
+            arch: arm64
+            os: 24.04-arm
+    runs-on: ubuntu-${{ matrix.pack.os }}
+    permissions:
+      contents: read
+    container:
+      image: node:22-${{ matrix.pack.tag }}
+      env:
+          CI: true
+      volumes:
+        - /:/host
+    steps:
+      - uses: actions/checkout@v1
+      - name: Prepare
+        run: |
+          if [[ "${{ matrix.pack.tag}}" = "alpine" ]]; then
+            apk add --no-cache cmake build-base git
+          else
+            apt-get update
+            apt-get install -y cmake
+          fi
+      # see https://github.com/actions/runner/issues/801#issuecomment-2394425757
+      - name: alpine tricks
+        if: matrix.pack.tag == 'alpine' && matrix.pack.arch == 'arm64'
+        run: |
+          apk add nodejs
+          sed -i "s:ID=alpine:ID=NotpineForGHA:" /etc/os-release
+          cd /host/home/runner/runners/*/externals/
+          rm -rf node20/*
+          mkdir node20/bin
+          ln -s /usr/bin/node node20/bin/node
+        shell: sh
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run prebuild
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pack-${{ matrix.pack.tag }}-${{ matrix.pack.arch }}
+          path: prebuilds
+
+  macos-build:
+    strategy:
+      matrix:
+        pack:
+          - version: latest
+            arch: arm64
+          - version: '13'
+            arch: amd64
+    runs-on: macos-${{ matrix.pack.version }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run prebuild
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pack-macos-${{ matrix.pack.arch }}
+          path: prebuilds
+
+  windows-build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install
+        run: npm ci
+      - name: Build (x64)
+        run: npm run prebuild
+      - name: Build (x86)
+        run: |
+          $Env:NODE_ARCH = "x86"
+          npm run prebuild
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pack-windows
+          path: prebuilds
+
+  publish:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs:
+      - linux-build
+      - macos-build
+      - windows-build
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifscts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Display
+        run: ls -lh
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: '*.tar.br'
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
+          draft: true
+          generateReleaseNotes: true
