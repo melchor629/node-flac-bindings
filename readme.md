@@ -14,7 +14,7 @@ $ npm install flac-bindings
 $ yarn add flac-bindings
 ```
 
-This is a pure ESM package. If you get an error like `require() of ES Module`, then [read this gist](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c). If you still want to use CJS, then either import using `require('flac-bindings')`, use dynamic import `import('flac-bindings')`, or use any of the `2.7.x` versions.
+This is a pure ESM package. If you get an error like `require() of ES Module`, then [read this gist](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c). You may also need to update to the latest version of supported node.js versions as ESM packages can be imported in CJS under certain circumstancies.
 
 The library has some native code that binds the JS code to the flac library. Depending on your platform, an already-compiled library is available for you. The following logic applies:
 
