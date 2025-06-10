@@ -1,5 +1,5 @@
-import { FileDecoder } from 'flac-bindings'
 import Speaker from 'speaker'
+import { FileDecoder } from 'flac-bindings'
 import createArgs from './_args.js'
 
 const args = createArgs(import.meta.url)

@@ -1,6 +1,6 @@
 // requires sox (macOS/Windows) or arecord (Linux)
-import { FileEncoder } from 'flac-bindings'
 import mic from 'mic'
+import { FileEncoder } from 'flac-bindings'
 import createArgs from './_args.js'
 
 const args = createArgs(import.meta.url)

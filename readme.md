@@ -2,7 +2,7 @@
 
 Nodejs bindings to [libFLAC](https://github.com/xiph/flac)
 
-![Node-API v8](https://raw.githubusercontent.com/nodejs/abi-stable-node/doc/assets/Node-API%20v8%20Badge.svg)
+![Node-API v9](https://raw.githubusercontent.com/nodejs/abi-stable-node/doc/assets/Node-API%20v9%20Badge.svg)
 ![Node CI](https://github.com/melchor629/node-flac-bindings/workflows/Node%20CI/badge.svg?branch=dev)
 [![Coverage Status](https://coveralls.io/repos/github/melchor629/node-flac-bindings/badge.svg?branch=dev)](https://coveralls.io/github/melchor629/node-flac-bindings?branch=dev)
 
@@ -18,7 +18,7 @@ This is a pure ESM package. If you get an error like `require() of ES Module`, t
 
 The library has some native code that binds the JS code to the flac library. Depending on your platform, an already-compiled library is available for you. The following logic applies:
 
-- If your CPU is `amd64`/`x86_64` and the OS is `Linux/glibc`, `Linux/musl`, `macOS` or `Windows`, and node version is in the [N-API compatibility table](https://nodejs.org/dist/latest-v16.x/docs/api/n-api.html#n_api_node_api_version_matrix) for v8, then the prebuild version will download.
+- If your CPU is `amd64`/`x86_64` and the OS is `Linux/glibc`, `Linux/musl`, `macOS` or `Windows`, and node version is in the [N-API compatibility table](https://nodejs.org/dist/latest-v24.x/docs/api/n-api.html#n_api_node_api_version_matrix) for v8, then the prebuild version will download.
 - If your CPU is `arm64`/`aarch64` and the OS is `Linux/glibc`, `Linux/musl` or `macOS`, and node version is in the aformentioned compatibility table for v8, then the prebuild version will download.
 - If you have `pkg-config` and `libFLAC` development package installed (`apt install libflac-dev`, `pacman -S flac`, `apk add flac-dev`, `brew install flac`...), then it will use this library and only compile the binding code. Requires you to also have [Cmake](https://www.cmake.org) installed.
 - In any other case, it will download `libogg` and `libFLAC` source code and compile both libraries plus the binding code. Requires you to also have [Cmake](https://www.cmake.org) and `git` installed.

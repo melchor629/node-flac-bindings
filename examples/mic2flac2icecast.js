@@ -1,7 +1,7 @@
 import http from 'http'
 // requires sox (macOS/Windows) or arecord (Linux)
-import { StreamEncoder } from 'flac-bindings'
 import mic from 'mic'
+import { StreamEncoder } from 'flac-bindings'
 
 // here there are a lot of stuff to configure, change the script with the right value :)
 
