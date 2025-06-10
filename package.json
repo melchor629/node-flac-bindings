@@ -68,7 +68,7 @@
     "@vitest/eslint-plugin": "^1.1.8",
     "cmake-js": "^7.0.0",
     "eslint": "^9.0.0",
-    "jest-extended": "^4.0.0",
+    "jest-extended": "^6.0.0",
     "node-addon-api": "^8.0.0",
     "temp": "^0.9.4",
     "typescript": "^5.0.4",
@@ -80,7 +80,7 @@
   },
   "binary": {
     "napi_versions": [
-      8
+      9
     ]
   },
   "funding": {

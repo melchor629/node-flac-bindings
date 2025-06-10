@@ -127,7 +127,7 @@ endif()
 file(GLOB_RECURSE SOURCE_FILES "src/**/*.cpp" "src/**/*.hpp" "src/**/*.h" "src/*.cpp")
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${CMAKE_JS_SRC})
 
-set(napi_build_version 8 CACHE STRING "N-API Version")
+set(napi_build_version 9 CACHE STRING "N-API Version")
 message("-- Using N-API ${napi_build_version}")
 add_compile_definitions(
   NAPI_VERSION=${napi_build_version}

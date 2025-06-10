@@ -12,9 +12,11 @@ jobs:
       matrix:
         node:
           - version: 20
-            napi: 8
+            napi: 9
           - version: 22
-            napi: 8
+            napi: 9
+          - version: 24
+            napi: 9
     runs-on: ubuntu-latest
     container:
       image: node:${{ matrix.node.version }}-bookworm
