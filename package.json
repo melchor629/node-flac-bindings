@@ -41,7 +41,6 @@
   "author": "melchor9000",
   "license": "ISC",
   "dependencies": {
-    "bindings": "^1.5.0",
     "debug": "^4.3.4",
     "detect-libc": "^2.0.1",
     "tar-stream": "^3.0.0"
@@ -76,7 +75,7 @@
   },
   "engines": {
     "node": ">=20.0.0",
-    "electron": "^29.0.0"
+    "electron": ">=29.0.0"
   },
   "binary": {
     "napi_versions": [
