@@ -154,12 +154,7 @@ namespace flac_bindings {
         auto catchFunction =
           Function::New(env, promiseCatch, "asyncBackgroundTask_executionProgress_catch", context);
 
-        Promise promiseAfterThen =
-          promise.Get("then").As<Function>().Call(promise, {thenFunction}).template As<Promise>();
-        promiseAfterThen.Get("catch")
-          .As<Function>()
-          .Call(promiseAfterThen, {catchFunction})
-          .template As<Promise>();
+        promise.Then(thenFunction).Catch(catchFunction);
 
         currentProgressRequest->deferred = true;
       }
