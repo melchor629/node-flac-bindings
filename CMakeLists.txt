@@ -87,7 +87,7 @@ if(USE_FLAC_SOURCES OR NOT FLAC_FOUND)
   FetchContent_Declare(
     Ogg
     GIT_REPOSITORY  https://github.com/xiph/ogg
-    GIT_TAG         fa80aae9d50096160f2b56ada35527d7aee3f746 # includes cmake fix v1.3.5
+    GIT_TAG         v1.3.6
   )
 
   # polyfill for FetchContent_MakeAvailable
