@@ -46,7 +46,7 @@
     "tar-stream": "^3.0.0"
   },
   "peerDependencies": {
-    "cmake-js": "^7.0.0",
+    "cmake-js": "^8.0.0",
     "node-addon-api": "^8.5.0"
   },
   "peerDependenciesMeta": {
@@ -65,7 +65,7 @@
     "@types/temp": "^0.9.1",
     "@vitest/coverage-v8": "^4.0.0",
     "@vitest/eslint-plugin": "^1.1.8",
-    "cmake-js": "^7.0.0",
+    "cmake-js": "^8.0.0",
     "eslint": "^9.0.0",
     "jest-extended": "^7.0.0",
     "node-addon-api": "^8.0.0",
