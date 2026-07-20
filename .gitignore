@@ -40,7 +40,7 @@ jspm_packages
 .clang_complete
 test*.js
 *.flac
-!test/data/**/*.flac
+!packages/flac-bindings/test/data/**/*.flac
 upload.sh
 .vscode
 lib/index.cjs

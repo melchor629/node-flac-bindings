@@ -18,10 +18,11 @@ This is a pure ESM package. If you get an error like `require() of ES Module`, t
 
 The library has some native code that binds the JS code to the flac library. Depending on your platform, an already-compiled library is available for you. The following logic applies:
 
-- If your CPU is `amd64`/`x86_64` and the OS is `Linux/glibc`, `Linux/musl`, `macOS` or `Windows`, and node version is in the [N-API compatibility table](https://nodejs.org/dist/latest-v24.x/docs/api/n-api.html#n_api_node_api_version_matrix) for v8, then the prebuild version will download.
-- If your CPU is `arm64`/`aarch64` and the OS is `Linux/glibc`, `Linux/musl` or `macOS`, and node version is in the aformentioned compatibility table for v8, then the prebuild version will download.
-- If you have `pkg-config` and `libFLAC` development package installed (`apt install libflac-dev`, `pacman -S flac`, `apk add flac-dev`, `brew install flac`...), then it will use this library and only compile the binding code. Requires you to also have [Cmake](https://www.cmake.org) installed.
-- In any other case, it will download `libogg` and `libFLAC` source code and compile both libraries plus the binding code. Requires you to also have [Cmake](https://www.cmake.org) and `git` installed.
+- If your CPU is `amd64`/`x86_64` and the OS is `Linux/glibc`, `Linux/musl`, `macOS` or `Windows`, and node version is in the [N-API compatibility table](https://nodejs.org/dist/latest-v24.x/docs/api/n-api.html#n_api_node_api_version_matrix) for v10, then the prebuild version will download.
+- If your CPU is `arm64`/`aarch64` and the OS is `Linux/glibc`, `Linux/musl` or `macOS`, and node version is in the aformentioned compatibility table for v10, then the prebuild version will download.
+- If your CPU/OS is not supported, then install `@melchor629/flac-bindings-lib` which will compile the native code:
+    - If you have `pkg-config` and `libFLAC` development package installed (`apt install libflac-dev`, `pacman -S flac`, `apk add flac-dev`, `brew install flac`...), then it will use this library and only compile the binding code. Requires you to also have [Cmake](https://www.cmake.org) installed.
+    - In any other case, it will download `libogg` and `libFLAC` source code and compile both libraries plus the binding code. Requires you to also have [Cmake](https://www.cmake.org) and `git` installed.
 
 See [How to compile](#how-to-compile) section for more information.
 
@@ -130,7 +131,7 @@ You can also try to debug the native code by setting up a test JS file and launc
 
 ## How to compile
 
-In case you need to compile or want to, ensure to install the optional peer dependencies! These are optional because they are not required in general terms as the pre-compiled code is enought for most cases.
+In case you need to compile or want to, ensure to install the optional `@melchor629/flac-bindings-lib`! This is optional because it is not required in general terms as the pre-compiled code is enough for most cases. Additionaly, allow running `postinstall` scripts for that package.
 
 To compile the bindings you need [Cmake](https://www.cmake.org) installed in your system and accessible from the terminal, and the C and C++ compilers as well. On Windows, the compilers can be installed easily with `npm install --global --production windows-build-tools`. Don't forget `git`. It is mandatory!
 
@@ -138,11 +139,13 @@ There are some options to use when compiling. The build tries to use an already 
 
 > Supported `libFLAC` versions are 1.3.x and 1.4.x (binary versions 10 and 12).
 
-Then, you just need to recompile the package with: `npm rebuild flac-bindings`. If you are inside this repo tree, then run `npm run install`.
+Then, you just need to recompile the package with: `npm rebuild @melchor629/flac-bindings-lib`. If you are inside this repo tree, then run `npm run install`.
 
 For more advanced commands for compilation inside the repo tree, see below:
 
 ```sh
+cd packages/flac-bindings-lib
+
 # Compile (debug version)
 # -p -> If desired, tell cmake to run with parallel jobs (faster)
 npx cmake-js build --debug -p 4
@@ -167,8 +170,10 @@ The recommended steps are:
 
 ```sh
 # Do not run tests with sanitizers enabled, it's tricky to make it work
+cd packages/flac-bindings-lib
 npx cmake-js configure --debug
 npx cmake-js build --debug -p 4
+cd ../flac-bindings
 npm test
 
 # To run tests with coverage (requires lcov to be installed)

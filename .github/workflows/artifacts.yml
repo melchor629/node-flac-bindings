@@ -25,7 +25,7 @@ jobs:
     permissions:
       contents: read
     container:
-      image: node:22-${{ matrix.pack.tag }}
+      image: node:24-${{ matrix.pack.tag }}
       env:
           CI: true
       volumes:
@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: Prepare
         run: |
-          if [[ "${{ matrix.pack.tag}}" = "alpine" ]]; then
+          if [[ "${{ matrix.pack.tag }}" = "alpine" ]]; then
             apk add --no-cache cmake build-base git
           else
             apt-get update
@@ -54,12 +54,12 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build
-        run: npm run prebuild
+        run: npm run prebuild -w packages/flac-bindings-lib
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pack-${{ matrix.pack.tag }}-${{ matrix.pack.arch }}
-          path: prebuilds
+          path: packages/flac-bindings-lib/prebuilds
 
   macos-build:
     strategy:
@@ -77,12 +77,12 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build
-        run: npm run prebuild
+        run: npm run prebuild -w packages/flac-bindings-lib
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pack-macos-${{ matrix.pack.arch }}
-          path: prebuilds
+          path: packages/flac-bindings-lib/prebuilds
 
   windows-build:
     runs-on: windows-latest
@@ -93,18 +93,18 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build (x64)
-        run: npm run prebuild
+        run: npm run prebuild -w packages/flac-bindings-lib
       - name: Build (x86)
         run: |
           $Env:NODE_ARCH = "x86"
-          npm run prebuild
+          npm run prebuild -w packages/flac-bindings-lib
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pack-windows
-          path: prebuilds
+          path: packages/flac-bindings-lib/prebuilds
 
-  publish:
+  publish-libraries:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     needs:
@@ -112,17 +112,49 @@ jobs:
       - macos-build
       - windows-build
     permissions:
-      contents: write
+      contents: read
+      id-token: write
     steps:
-      - name: Download artifscts
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-      - name: Display
-        run: ls -lh
-      - uses: ncipollo/release-action@v1
+      - name: Unzip native libraries
+        run: |
+          mkdir -p packages
+          for f in *.tar.zstd; do
+            zstd -d -c "$f" | tar -xf - -C packages
+          done
+          rm -r *.tar.zstd
+          ls -lh packages/*
+      - name: Publish native libraries
+        run: |
+          TAG="$(echo '${{ github.ref_name }}' | awk '{ split($0,a,"-"); if (a[2] == "") { print "latest" } else { split(a[2],b,"."); print b[1] } }')"
+          for d in packages/*; do
+            cd "$d"
+            npm publish --access public --provenance --tag "$TAG"
+            cd ../..
+          done
+
+  publish:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs:
+      - publish-libraries
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          artifacts: '*.tar.br'
-          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
-          draft: true
-          generateReleaseNotes: true
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Publish main package
+        run: |
+          TAG="$(echo '${{ github.ref_name }}' | awk '{ split($0,a,"-"); if (a[2] == "") { print "latest" } else { split(a[2],b,"."); print b[1] } }')"
+          npm publish --access public --provenance --tag "$TAG"

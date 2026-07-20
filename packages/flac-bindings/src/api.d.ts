@@ -1,0 +1,16 @@
+export {
+  _coverageFlush,
+  _testAsync,
+  Chain,
+  Decoder,
+  DecoderBuilder,
+  Encoder,
+  EncoderBuilder,
+  Iterator,
+  SimpleIterator,
+  fns,
+  format,
+  metadata,
+  metadata0,
+  napiVersion,
+} from '@melchor629/flac-bindings-lib'

@@ -1,0 +1,58 @@
+{
+  "name": "@melchor629/flac-bindings-lib",
+  "version": "4.1.0",
+  "libflac": "1.5.0",
+  "libogg": "1.3.6",
+  "description": "libflac bindings to node.js with easy to use API (native library source)",
+  "repository": "https://github.com/melchor629/node-flac-bindings/",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./flac-bindings.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "node flac-build.js",
+    "postinstall": "node flac-build.js",
+    "prebuild": "node flac-prebuild.js"
+  },
+  "keywords": [
+    "flac",
+    "encoder",
+    "decoder",
+    "binding"
+  ],
+  "author": "melchor9000",
+  "license": "ISC",
+  "dependencies": {
+    "cmake-js": "^8.0.0",
+    "debug": "^4.3.4",
+    "node-addon-api": "^8.5.0"
+  },
+  "devDependencies": {
+    "@types/debug": "^4.1.7",
+    "@types/node": "^24.0.0"
+  },
+  "engines": {
+    "node": ">=22.14.0",
+    "electron": ">=35.0.0"
+  },
+  "binary": {
+    "napi_versions": [
+      10
+    ]
+  },
+  "funding": {
+    "type": "individual",
+    "url": "https://ko-fi.com/melchor629"
+  },
+  "files": [
+    "src/*",
+    "flac-bindings.d.ts",
+    "flac-build.js",
+    "CMakeLists.txt",
+    "readme.md"
+  ]
+}
