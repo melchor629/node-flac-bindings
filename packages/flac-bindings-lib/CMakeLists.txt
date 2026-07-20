@@ -1,13 +1,13 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.15)
 cmake_policy(SET CMP0091 NEW)
 cmake_policy(SET CMP0042 NEW)
 
-project(flac-bindings C CXX)
+project(flac-bindings)
 
 include(CheckCCompilerFlag)
 include(CheckIPOSupported)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(COVERAGE)
@@ -99,7 +99,7 @@ if(USE_FLAC_SOURCES OR NOT FLAC_FOUND)
   # tell CMake ogg already exists
   set(OGG_FOUND YES)
   # expected target is different in FLAC, so creating an alias to be able to use it
-  # add_library(Ogg::ogg ALIAS ogg)
+  add_library(Ogg::ogg ALIAS ogg)
 
   # fetch flac
   FetchContent_Declare(
