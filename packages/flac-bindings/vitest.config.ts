@@ -12,7 +12,7 @@ export default defineConfig({
       exclude: ['**/*.d.ts'],
       reporter: [
         'text',
-        ['lcovonly', { file: 'js.info', projectRoot: '' }],
+        ['lcovonly', { file: 'js.info', projectRoot: '../..' }],
       ],
     },
     include: ['test/**/*.test.[jt]s'],

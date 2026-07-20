@@ -20,7 +20,11 @@ echo Running tests
 npm test -w packages/flac-bindings -- --coverage || true
 
 echo Extracting coverage report from C++
-lcov -c --quiet --directory packages/flac-bindings-lib/build/CMakeFiles/flac-bindings.dir/src --base-directory packages/flac-bindings-lib/src -o coverage/cpp.info --no-external
+lcov -c --quiet \
+  --directory packages/flac-bindings-lib/build/CMakeFiles/flac-bindings.dir/src \
+  --base-directory packages/flac-bindings-lib/src \
+  -o coverage/cpp.info \
+  --no-external
 
 echo Generating html
 cat packages/flac-bindings/coverage/js.info coverage/cpp.info > coverage/combined.info
