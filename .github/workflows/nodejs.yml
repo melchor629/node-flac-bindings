@@ -19,11 +19,11 @@ jobs:
             napi: 10
     runs-on: ubuntu-latest
     container:
-      image: node:${{ matrix.node.version }}-bookworm
+      image: node:${{ matrix.node.version }}-trixie
       env:
         CI: true
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v7
       - name: Prepare
         run: |
           apt-get update
