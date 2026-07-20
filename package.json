@@ -2,5 +2,15 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "type": "module",
+  "scripts": {
+    "lint": "eslint packages/flac-bindings packages/flac-bindings-lib ./examples",
+    "test": "cd packages/flac-bindings && vitest run"
+  },
+  "devDependencies": {
+    "@melchor629/eslint-config": "^0.3.0",
+    "@vitest/eslint-plugin": "^1.1.8",
+    "eslint": "^9.0.0"
+  }
 }

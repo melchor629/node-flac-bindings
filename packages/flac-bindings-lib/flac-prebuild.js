@@ -5,7 +5,9 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import zlib from 'node:zlib'
+// eslint-disable-next-line import-x/no-extraneous-dependencies
 import detectLibc from 'detect-libc'
+// eslint-disable-next-line import-x/no-extraneous-dependencies
 import tar from 'tar-stream'
 import packageJson from './package.json' with { type: 'json' }
 
@@ -98,6 +100,8 @@ await fs.writeFile(napiPackageJson, JSON.stringify({
   bugs: packageJson.bugs,
   homepage: packageJson.homepage,
   engines: packageJson.engines,
+  libflac: packageJson.libflac,
+  libogg: packageJson.libogg,
 }, null, 2))
 
 // package

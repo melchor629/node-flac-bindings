@@ -36,6 +36,6 @@ jobs:
           npx cmake-js configure --CDnapi_build_version=${{ matrix.node.napi }}
           npx cmake-js build -j4
       - name: Lint
-        run: npm run lint -w packages/flac-bindings
+        run: npm run lint
       - name: Test
-        run: npm test -w packages/flac-bindings
+        run: npm test

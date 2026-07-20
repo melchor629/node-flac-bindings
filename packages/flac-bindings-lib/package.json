@@ -9,7 +9,7 @@
   "exports": {
     ".": {
       "types": "./flac-bindings.d.ts",
-      "default": "./index.js"
+      "default": "./flac-bindings.js"
     },
     "./package.json": "./package.json"
   },
@@ -33,7 +33,10 @@
   },
   "devDependencies": {
     "@types/debug": "^4.1.7",
-    "@types/node": "^24.0.0"
+    "@types/node": "^24.0.0",
+    "@types/tar-stream": "^3.0.0",
+    "detect-libc": "^2.1.2",
+    "tar-stream": "^3.0.0"
   },
   "engines": {
     "node": ">=22.14.0",
@@ -51,6 +54,7 @@
   "files": [
     "src/*",
     "flac-bindings.d.ts",
+    "flac-bindings.js",
     "flac-build.js",
     "CMakeLists.txt",
     "readme.md"

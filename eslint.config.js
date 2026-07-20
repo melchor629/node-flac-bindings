@@ -8,7 +8,7 @@ export default [
   }),
   {
     name: 'flac-bindings:vitest',
-    files: ['test/**'],
+    files: ['packages/flac-bindings/test/**'],
     plugins: {
       vitest,
     },
