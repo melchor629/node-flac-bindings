@@ -1,6 +1,6 @@
 {
   "name": "flac-bindings",
-  "version": "4.2.0-alpha.5",
+  "version": "4.2.0-alpha.6",
   "description": "libflac bindings to node.js with easy to use API",
   "repository": {
     "type": "git",
@@ -11,19 +11,23 @@
   "exports": {
     ".": {
       "types": "./lib/index.d.ts",
-      "import": "./lib/index.js"
+      "import": "./lib/index.js",
+      "require": "./lib/index.js"
     },
     "./api": {
       "types": "./lib/api.d.ts",
-      "import": "./lib/api.js"
+      "import": "./lib/api.js",
+      "require": "./lib/api.js"
     },
     "./decoder": {
       "types": "./lib/decoder/index.d.ts",
-      "import": "./lib/decoder/index.js"
+      "import": "./lib/decoder/index.js",
+      "require": "./lib/decoder/index.js"
     },
     "./encoder": {
       "types": "./lib/encoder/index.d.ts",
-      "import": "./lib/encoder/index.js"
+      "import": "./lib/encoder/index.js",
+      "require": "./lib/encoder/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -44,12 +48,22 @@
     "detect-libc": "^2.0.1"
   },
   "peerDependencies": {
-    "@melchor629/flac-bindings-lib": "4.2.0-alpha.5"
+    "@melchor629/flac-bindings-lib": "4.2.0-alpha.6"
   },
   "peerDependenciesMeta": {
     "@melchor629/flac-bindings-lib": {
       "optional": true
     }
+  },
+  "optionalDependencies": {
+    "@melchor629/flac-bindings-lib-darwin-arm64": "4.2.0-alpha.5",
+    "@melchor629/flac-bindings-lib-darwin-x64": "4.2.0-alpha.5",
+    "@melchor629/flac-bindings-lib-linux-glibc-arm64": "4.2.0-alpha.5",
+    "@melchor629/flac-bindings-lib-linux-glibc-x64": "4.2.0-alpha.5",
+    "@melchor629/flac-bindings-lib-linux-musl-arm64": "4.2.0-alpha.5",
+    "@melchor629/flac-bindings-lib-linux-musl-x64": "4.2.0-alpha.5",
+    "@melchor629/flac-bindings-lib-win32-x64": "4.2.0-alpha.5",
+    "@melchor629/flac-bindings-lib-win32-x86": "4.2.0-alpha.5"
   },
   "devDependencies": {
     "@melchor629/flac-bindings-lib": "*",

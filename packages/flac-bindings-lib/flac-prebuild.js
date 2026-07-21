@@ -82,7 +82,7 @@ const README = path.join('build', 'Release', 'README.md')
 process.stdout.write(`  - ${README}\n`)
 await fs.writeFile(README, `# ${packageName}
 
-Native library of \`flac-bindings\` for version ${opts.version} and napi v${opts.napiVersion}, OS ${opts.platform}${opts.libc} and CPU ${opts.arch}.
+Native library of [\`flac-bindings\`](https://www.npmjs.com/package/flac-bindings) for version ${opts.version} and napi v${opts.napiVersion}, OS ${opts.platform}${opts.libc} and CPU ${opts.arch}.
 `)
 const napiPackageJson = path.join('build', 'Release', 'package.json')
 process.stdout.write(`  - ${napiPackageJson}\n`)

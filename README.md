@@ -3,7 +3,8 @@
 Nodejs bindings to [libFLAC](https://github.com/xiph/flac)
 
 ![Node-API v9](https://raw.githubusercontent.com/nodejs/abi-stable-node/doc/assets/Node-API%20v9%20Badge.svg)
-![Node CI](https://github.com/melchor629/node-flac-bindings/workflows/Node%20CI/badge.svg?branch=dev)
+[![Node CI](https://github.com/melchor629/node-flac-bindings/actions/workflows/nodejs.yml/badge.svg)](https://github.com/melchor629/node-flac-bindings/actions/workflows/nodejs.yml)
+[![Build Artifacts](https://github.com/melchor629/node-flac-bindings/actions/workflows/artifacts.yml/badge.svg)](https://github.com/melchor629/node-flac-bindings/actions/workflows/artifacts.yml)
 [![Coverage Status](https://coveralls.io/repos/github/melchor629/node-flac-bindings/badge.svg?branch=dev)](https://coveralls.io/github/melchor629/node-flac-bindings?branch=dev)
 
 ## Project structure
