@@ -21,6 +21,7 @@ export default [
     files: ['examples/**'],
     rules: {
       'import-x/no-unresolved': 'off',
+      'import-x/no-extraneous-dependencies': 'off',
       'no-console': 'off',
     },
   },
