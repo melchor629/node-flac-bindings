@@ -1,6 +1,6 @@
 {
   "name": "flac-bindings",
-  "version": "4.2.0-alpha.6",
+  "version": "4.2.0-alpha.7",
   "description": "libflac bindings to node.js with easy to use API",
   "repository": {
     "type": "git",
@@ -48,7 +48,7 @@
     "detect-libc": "^2.0.1"
   },
   "peerDependencies": {
-    "@melchor629/flac-bindings-lib": "4.2.0-alpha.6"
+    "@melchor629/flac-bindings-lib": "4.2.0-alpha.7"
   },
   "peerDependenciesMeta": {
     "@melchor629/flac-bindings-lib": {
