@@ -128,7 +128,7 @@ jobs:
           TAG="$(echo '${{ github.ref_name }}' | awk '{ split($0,a,"-"); if (a[2] == "") { print "latest" } else { split(a[2],b,"."); print b[1] } }')"
           for d in packages/*; do
             cd "$d"
-            npm stage publish --access public --provenance --tag "$TAG"
+            npm publish --access public --provenance --tag "$TAG"
             cd ../..
           done
 
