@@ -24,6 +24,8 @@ for package in packages/flac-bindings packages/flac-bindings-lib; do
   git add "$package/package.json"
 done
 
+npm i
+
 git commit -m "Version ${VERSION}"
 git push
 
