@@ -24,11 +24,15 @@ for package in packages/flac-bindings packages/flac-bindings-lib; do
   git add "$package/package.json"
 done
 
+echo "Update package-lock.json"
 npm i
+git add package-lock.json
 
+echo "Pushing commit"
 git commit -m "Version ${VERSION}"
 git push
 
 sleep 1 # thanks github actions
+echo "Pushing tag"
 git tag "v$VERSION"
 git push --tags
