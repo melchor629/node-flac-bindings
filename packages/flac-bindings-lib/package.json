@@ -1,6 +1,6 @@
 {
   "name": "@melchor629/flac-bindings-lib",
-  "version": "v4.2.0-alpha.1",
+  "version": "v4.2.0-alpha.2",
   "libflac": "1.5.0",
   "libogg": "1.3.6",
   "description": "libflac bindings to node.js with easy to use API (native library source)",

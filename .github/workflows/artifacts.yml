@@ -27,10 +27,12 @@ jobs:
     container:
       image: node:24-${{ matrix.pack.tag }}
       env:
-          CI: true
-      volumes:
-        - /:/host
+        CI: true
     steps:
+      # see https://github.com/actions/runner/issues/801#issuecomment-3747934364
+      - uses: laverdet/alpine-arm64@v1
+        name: alpine tricks
+        if: matrix.pack.tag == 'alpine' && matrix.pack.arch == 'arm64'
       - uses: actions/checkout@v7
       - name: Prepare
         run: |
@@ -40,16 +42,6 @@ jobs:
             apt-get update
             apt-get install -y cmake
           fi
-      # see https://github.com/actions/runner/issues/801#issuecomment-2394425757
-      - name: alpine tricks
-        if: matrix.pack.tag == 'alpine' && matrix.pack.arch == 'arm64'
-        run: |
-          apk add nodejs
-          sed -i "s:ID=alpine:ID=NotpineForGHA:" /etc/os-release
-          cd /host/home/runner/runners/*/externals/
-          rm -rf node20/*
-          mkdir node20/bin
-          ln -s /usr/bin/node node20/bin/node
         shell: sh
       - name: Install
         run: npm ci
@@ -67,7 +59,7 @@ jobs:
         pack:
           - version: latest
             arch: arm64
-          - version: '13'
+          - version: '15-intel'
             arch: amd64
     runs-on: macos-${{ matrix.pack.version }}
     permissions:
