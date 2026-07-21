@@ -19,6 +19,7 @@ for package in packages/flac-bindings packages/flac-bindings-lib; do
   cat <<< "$(jq --arg VERSION "$VERSION" '.version=$VERSION' "$package/package.json")" > "$package/package.json"
   if [[ "$package" == "packages/flac-bindings" ]]; then
     cat <<< "$(jq --arg VERSION "$VERSION" '.peerDependencies["@melchor629/flac-bindings-lib"]=$VERSION' "$package/package.json")" > "$package/package.json"
+    cat <<< "$(jq --arg VERSION "$VERSION" '.optionalDependencies[]=$VERSION' "$package/package.json")" > "$package/package.json"
   fi
   git add "$package/package.json"
 done

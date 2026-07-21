@@ -1,6 +1,6 @@
 {
   "name": "flac-bindings",
-  "version": "4.2.0-alpha.7",
+  "version": "4.2.0-alpha.8",
   "description": "libflac bindings to node.js with easy to use API",
   "repository": {
     "type": "git",
@@ -10,24 +10,24 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./lib/index.d.ts",
-      "import": "./lib/index.js",
-      "require": "./lib/index.js"
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "require": "./src/index.js"
     },
     "./api": {
-      "types": "./lib/api.d.ts",
-      "import": "./lib/api.js",
-      "require": "./lib/api.js"
+      "types": "./src/api.d.ts",
+      "import": "./src/api.js",
+      "require": "./src/api.js"
     },
     "./decoder": {
-      "types": "./lib/decoder/index.d.ts",
-      "import": "./lib/decoder/index.js",
-      "require": "./lib/decoder/index.js"
+      "types": "./src/decoder/index.d.ts",
+      "import": "./src/decoder/index.js",
+      "require": "./src/decoder/index.js"
     },
     "./encoder": {
-      "types": "./lib/encoder/index.d.ts",
-      "import": "./lib/encoder/index.js",
-      "require": "./lib/encoder/index.js"
+      "types": "./src/encoder/index.d.ts",
+      "import": "./src/encoder/index.js",
+      "require": "./src/encoder/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -48,7 +48,7 @@
     "detect-libc": "^2.0.1"
   },
   "peerDependencies": {
-    "@melchor629/flac-bindings-lib": "4.2.0-alpha.7"
+    "@melchor629/flac-bindings-lib": "4.2.0-alpha.8"
   },
   "peerDependenciesMeta": {
     "@melchor629/flac-bindings-lib": {
@@ -56,14 +56,14 @@
     }
   },
   "optionalDependencies": {
-    "@melchor629/flac-bindings-lib-darwin-arm64": "4.2.0-alpha.5",
-    "@melchor629/flac-bindings-lib-darwin-x64": "4.2.0-alpha.5",
-    "@melchor629/flac-bindings-lib-linux-glibc-arm64": "4.2.0-alpha.5",
-    "@melchor629/flac-bindings-lib-linux-glibc-x64": "4.2.0-alpha.5",
-    "@melchor629/flac-bindings-lib-linux-musl-arm64": "4.2.0-alpha.5",
-    "@melchor629/flac-bindings-lib-linux-musl-x64": "4.2.0-alpha.5",
-    "@melchor629/flac-bindings-lib-win32-x64": "4.2.0-alpha.5",
-    "@melchor629/flac-bindings-lib-win32-x86": "4.2.0-alpha.5"
+    "@melchor629/flac-bindings-lib-darwin-arm64": "4.2.0-alpha.8",
+    "@melchor629/flac-bindings-lib-darwin-x64": "4.2.0-alpha.8",
+    "@melchor629/flac-bindings-lib-linux-glibc-arm64": "4.2.0-alpha.8",
+    "@melchor629/flac-bindings-lib-linux-glibc-x64": "4.2.0-alpha.8",
+    "@melchor629/flac-bindings-lib-linux-musl-arm64": "4.2.0-alpha.8",
+    "@melchor629/flac-bindings-lib-linux-musl-x64": "4.2.0-alpha.8",
+    "@melchor629/flac-bindings-lib-win32-x64": "4.2.0-alpha.8",
+    "@melchor629/flac-bindings-lib-win32-x86": "4.2.0-alpha.8"
   },
   "devDependencies": {
     "@melchor629/flac-bindings-lib": "*",
