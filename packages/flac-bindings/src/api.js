@@ -10,17 +10,19 @@ const precompiledPackageName = `@melchor629/flac-bindings-lib-${process.platform
 const libPackageName = '@melchor629/flac-bindings-lib'
 /** @type {import('@melchor629/flac-bindings-lib') | null} */
 let lib = null
+
 try {
   log(`Trying to load library package ${libPackageName}`)
   lib = require(libPackageName)
 } catch (e) {
   log(`Failed to load library package ${libPackageName}: ${e.message}`)
-}
-try {
-  log(`Trying to load precompiled package ${precompiledPackageName}`)
-  lib = require(precompiledPackageName)
-} catch (e) {
-  log(`Failed to load library package ${precompiledPackageName}: ${e.message}`)
+
+  try {
+    log(`Trying to load precompiled package ${precompiledPackageName}`)
+    lib = require(precompiledPackageName)
+  } catch (e) {
+    log(`Failed to load library package ${precompiledPackageName}: ${e.message}`)
+  }
 }
 if (lib == null) {
   throw new Error(`Could not find any pre-compiled package. Please install '${libPackageName}' with all required elements to compile the code.`)
