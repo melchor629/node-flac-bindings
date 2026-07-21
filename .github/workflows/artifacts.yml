@@ -146,7 +146,8 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      - name: Publish main package
+      - name: Publish main packages
         run: |
           TAG="$(echo '${{ github.ref_name }}' | awk '{ split($0,a,"-"); if (a[2] == "") { print "latest" } else { split(a[2],b,"."); print b[1] } }')"
-          npm publish --access public --provenance --tag "$TAG"
+          npm publish --access public --provenance --tag "$TAG" -w packages/flac-bindings
+          npm publish --access public --provenance --tag "$TAG" -w packages/flac-bindings-lib
