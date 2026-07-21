@@ -1,8 +1,12 @@
 {
   "name": "flac-bindings",
-  "version": "4.2.0-alpha.4",
+  "version": "4.2.0-alpha.5",
   "description": "libflac bindings to node.js with easy to use API",
-  "repository": "https://github.com/melchor629/node-flac-bindings/",
+  "repository": {
+    "type": "git",
+    "directory": "packages/flac-bindings",
+    "url": "git+https://github.com/melchor629/node-flac-bindings.git"
+  },
   "type": "module",
   "exports": {
     ".": {
@@ -40,7 +44,7 @@
     "detect-libc": "^2.0.1"
   },
   "peerDependencies": {
-    "@melchor629/flac-bindings-lib": "4.2.0-alpha.4"
+    "@melchor629/flac-bindings-lib": "4.2.0-alpha.5"
   },
   "peerDependenciesMeta": {
     "@melchor629/flac-bindings-lib": {
@@ -67,6 +71,6 @@
   },
   "files": [
     "src/*",
-    "readme.md"
+    "README.md"
   ]
 }
