@@ -13,5 +13,8 @@
     "@vitest/eslint-plugin": "^1.1.8",
     "eslint": "^9.0.0",
     "typescript": "^6.0.0"
+  },
+  "allowScripts": {
+    "unrs-resolver@1.12.2": true
   }
 }
