@@ -1,5 +1,5 @@
 import { Transform } from 'node:stream'
-import { BaseDecoder, DecoderOptions, DecoderPosition } from './interfaces.js'
+import type { BaseDecoder, DecoderOptions, DecoderPosition } from './interfaces.js'
 
 /**
  * FLAC decoder which transforms a stream of FLAC (or Ogg/FLAC) into

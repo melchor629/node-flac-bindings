@@ -2,9 +2,9 @@
   "compilerOptions": {
     "module": "node20",
     "moduleResolution": "node16",
-    "target": "ES2025",
+    "target": "ES2024",
     "lib": [
-      "ES2025"
+      "ES2024"
     ],
     "noImplicitAny": true,
     "noImplicitThis": true,

@@ -8,7 +8,6 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./flac-bindings.d.ts",
       "default": "./flac-bindings.js"
     },
     "./package.json": "./package.json"
