@@ -44,7 +44,7 @@ jobs:
           fi
         shell: sh
       - name: Install
-        run: npm ci
+        run: npm i
       - name: Build
         run: npm run prebuild -w packages/flac-bindings-lib
       - name: Upload artifact
@@ -67,7 +67,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install
-        run: npm ci
+        run: npm i
       - name: Build
         run: npm run prebuild -w packages/flac-bindings-lib
       - name: Upload artifact
@@ -83,7 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install
-        run: npm ci
+        run: npm i
       - name: Build (x64)
         run: npm run prebuild -w packages/flac-bindings-lib
       - name: Build (x86)
