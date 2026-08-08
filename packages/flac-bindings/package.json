@@ -1,6 +1,6 @@
 {
   "name": "flac-bindings",
-  "version": "5.0.0-beta.1",
+  "version": "5.0.0",
   "description": "libflac bindings to node.js with easy to use API",
   "repository": {
     "type": "git",
@@ -48,7 +48,7 @@
     "detect-libc": "^2.0.1"
   },
   "peerDependencies": {
-    "@melchor629/flac-bindings-lib": "5.0.0-beta.1"
+    "@melchor629/flac-bindings-lib": "5.0.0"
   },
   "peerDependenciesMeta": {
     "@melchor629/flac-bindings-lib": {
@@ -56,14 +56,14 @@
     }
   },
   "optionalDependencies": {
-    "@melchor629/flac-bindings-lib-darwin-arm64": "5.0.0-beta.1",
-    "@melchor629/flac-bindings-lib-darwin-x64": "5.0.0-beta.1",
-    "@melchor629/flac-bindings-lib-linux-glibc-arm64": "5.0.0-beta.1",
-    "@melchor629/flac-bindings-lib-linux-glibc-x64": "5.0.0-beta.1",
-    "@melchor629/flac-bindings-lib-linux-musl-arm64": "5.0.0-beta.1",
-    "@melchor629/flac-bindings-lib-linux-musl-x64": "5.0.0-beta.1",
-    "@melchor629/flac-bindings-lib-win32-x64": "5.0.0-beta.1",
-    "@melchor629/flac-bindings-lib-win32-x86": "5.0.0-beta.1"
+    "@melchor629/flac-bindings-lib-darwin-arm64": "5.0.0",
+    "@melchor629/flac-bindings-lib-darwin-x64": "5.0.0",
+    "@melchor629/flac-bindings-lib-linux-glibc-arm64": "5.0.0",
+    "@melchor629/flac-bindings-lib-linux-glibc-x64": "5.0.0",
+    "@melchor629/flac-bindings-lib-linux-musl-arm64": "5.0.0",
+    "@melchor629/flac-bindings-lib-linux-musl-x64": "5.0.0",
+    "@melchor629/flac-bindings-lib-win32-x64": "5.0.0",
+    "@melchor629/flac-bindings-lib-win32-x86": "5.0.0"
   },
   "devDependencies": {
     "@melchor629/flac-bindings-lib": "*",
