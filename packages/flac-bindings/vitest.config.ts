@@ -19,5 +19,6 @@ export default defineConfig({
     reporters: isCI ? ['default', 'junit'] : ['default'],
     setupFiles: './test/helper/setup.js',
     outputFile: 'tests.junit.xml',
+    fsModuleCache: true,
   },
 })

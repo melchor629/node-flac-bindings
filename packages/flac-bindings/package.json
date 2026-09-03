@@ -69,10 +69,10 @@
     "@melchor629/flac-bindings-lib": "*",
     "@types/node": "^24.0.0",
     "@types/temp": "^0.9.1",
-    "@vitest/coverage-v8": "^4.0.0",
+    "@vitest/coverage-v8": "^5.0.0",
     "jest-extended": "^7.0.0",
     "temp": "^0.9.4",
-    "vitest": "^4.0.0"
+    "vitest": "^5.0.0"
   },
   "engines": {
     "node": ">=22.14.0",
